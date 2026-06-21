@@ -17,6 +17,9 @@ const jetBrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'Terra.OS — System zarządzania Ziemią',
   description: 'Profesjonalne narzędzie do analizy przetargów budowlanych',
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({
