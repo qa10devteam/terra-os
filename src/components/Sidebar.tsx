@@ -1,116 +1,103 @@
 'use client';
 
+import { useState } from 'react';
 import { useStore } from '@/store/useStore';
-import { Shovel, Map, Calculator, Flag, Brain, X, User, Settings } from 'lucide-react';
-import dynamic from 'next/dynamic';
-import { useState, useEffect } from 'react';
+import {
+  Shovel,
+  Calculator,
+  Brain,
+  ClipboardCheck,
+  Truck,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 
-// Dynamic imports to avoid SSR issues with motion
-const MotionButton = dynamic(() => import('motion/react').then((m) => m.motion.button), { ssr: false });
-const MotionAside = dynamic(() => import('motion/react').then((m) => m.motion.aside), { ssr: false });
+const modules = [
+  { id: 'zwiad' as const, icon: Shovel, name: 'ZWIAD', desc: 'Zwiad przetargowy', color: 'text-accent-success' },
+  { id: 'kosztorys' as const, icon: Calculator, name: 'KOSZTORYS', desc: 'Kosztorys 2 warianty', color: 'text-accent-info' },
+  { id: 'silnik' as const, icon: Brain, name: 'SILNIK', desc: 'Silnik decyzyjny', color: 'text-accent-warning' },
+  { id: 'decyzja' as const, icon: ClipboardCheck, name: 'DECYZJA', desc: 'Rekomendacje', color: 'text-accent-violet' },
+  { id: 'logistyka' as const, icon: Truck, name: 'MÓZG', desc: 'Logistyka', color: 'text-earth-400' },
+];
 
 export function Sidebar() {
-  const { currentModule, setCurrentModule, isMenuOpen, toggleMenu, selectedTenderData } = useStore();
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    setIsMobile(window.innerWidth < 768);
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  const navItems = [
-    { key: 'zwiad' as const, name: 'ZWIAD', icon: Map, desc: 'Trzonek' },
-    { key: 'kosztorys' as const, name: 'KOSZTORYS', icon: Calculator, desc: 'Kij' },
-    { key: 'silnik' as const, name: 'SILNIK', icon: Flag, desc: 'Przetwarzanie' },
-    { key: 'decyzja' as const, name: 'DECYZJA', icon: Brain, desc: 'Łyżka' },
-  ];
+  const { currentModule, setCurrentModule, isMenuOpen, toggleMenu } = useStore();
+  const [hovered, setHovered] = useState<string | null>(null);
 
   return (
-    <>
-      {/* Mobile menu button */}
-      <MotionButton
-        onClick={toggleMenu}
-        className="fixed top-4 left-4 z-50 md:hidden p-2 rounded-lg bg-[#1A1A1A] border border-neutral-200"
-        whileTap={{ scale: 0.9 }}
-      >
-        {isMenuOpen ? <X className="w-6 h-6" /> : <Shovel className="w-6 h-6" />}
-      </MotionButton>
-
-      {/* Sidebar */}
-      <MotionAside
-        className={`fixed md:relative z-40 h-screen w-64 bg-[#1A1A1A] text-[#F4F4F0] flex flex-col items-start p-4 border-r border-neutral-200 transform transition-transform duration-300 ${
-          isMenuOpen ? 'translate-x-0' : isMobile ? '-translate-x-full' : 'translate-x-0'
-        }`}
-        initial={false}
-        animate={{ x: isMenuOpen ? 0 : isMobile ? -256 : 0 }}
-      >
-        {/* Logo */}
-        <div className="flex items-center gap-3 mb-8 w-full">
-          <div className="w-10 h-10 rounded-lg bg-[#00FF94]/20 flex items-center justify-center">
-            <Shovel className="w-6 h-6 text-[#00FF94]" />
-          </div>
-          <div>
-            <div className="font-display font-bold text-xl text-[#F4F4F0]">Terra.OS</div>
-            <div className="text-xs text-neutral-400">v1.0.0</div>
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex flex-col gap-2 w-full flex-1">
-          {navItems.map((item) => (
-            <MotionButton
-              key={item.key}
-              onClick={() => setCurrentModule(item.key)}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors group w-full text-left ${
-                currentModule === item.key
-                  ? 'bg-[#00FF94]/20 text-[#00FF94]'
-                  : 'hover:bg-[#3D3D3C]'
-              }`}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <item.icon className="w-5 h-5" />
-              <div>
-                <div className="font-display font-bold text-sm">{item.name}</div>
-                <div className="text-xs text-neutral-400">{item.desc}</div>
-              </div>
-            </MotionButton>
-          ))}
-        </nav>
-
-        {/* User info */}
-        <div className="w-full mt-auto">
-          <div className="p-3 rounded-lg bg-[#3D3D3C]/50">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 rounded-full bg-[#00FF94] flex items-center justify-center text-[#1A1A1A] font-bold">
-                M
-              </div>
-              <div>
-                <div className="font-display font-bold text-sm">Maciek K.</div>
-                <div className="text-xs text-neutral-400">Firma Robót Ziemnych</div>
-              </div>
-            </div>
-            <div className="flex gap-2 mt-2">
-              <button className="flex-1 p-2 rounded bg-[#1A1A1A] hover:bg-[#6B6B68] transition-colors">
-                <User className="w-4 h-4 mx-auto" />
-              </button>
-              <button className="flex-1 p-2 rounded bg-[#1A1A1A] hover:bg-[#6B6B68] transition-colors">
-                <Settings className="w-4 h-4 mx-auto" />
-              </button>
+    <div
+      className={`flex flex-col bg-earth-900 border-r border-earth-700 transition-all duration-300 ${
+        isMenuOpen ? 'w-64' : 'w-20'
+      }`}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-earth-700">
+        {isMenuOpen && (
+          <div className="flex items-center gap-2">
+            <Shovel className="w-6 h-6 text-accent-success" />
+            <div>
+              <h1 className="text-lg font-bold text-earth-100">Terra.OS</h1>
+              <p className="text-xs text-earth-400">v2.0 — GRUNT</p>
             </div>
           </div>
-        </div>
-      </MotionAside>
-
-      {/* Overlay for mobile */}
-      {isMenuOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+        )}
+        <button
           onClick={toggleMenu}
-        />
-      )}
-    </>
+          className="p-2 rounded-lg hover:bg-earth-700 text-earth-400 hover:text-earth-100 transition-colors"
+        >
+          {isMenuOpen ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+        </button>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 py-4">
+        {modules.map(({ id, icon: Icon, name, desc, color }) => (
+          <button
+            key={id}
+            onClick={() => setCurrentModule(id)}
+            onMouseEnter={() => setHovered(id)}
+            onMouseLeave={() => setHovered(null)}
+            className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
+              currentModule === id
+                ? 'bg-earth-800 border-l-4 border-accent-success'
+                : 'hover:bg-earth-800/50'
+            }`}
+          >
+            <Icon className={`w-5 h-5 flex-shrink-0 ${currentModule === id ? color : 'text-earth-400'}`} />
+            {isMenuOpen && (
+              <div className="flex-1 text-left">
+                <div className="text-sm font-semibold text-earth-100">{name}</div>
+                <div className="text-xs text-earth-400">{desc}</div>
+              </div>
+            )}
+            {!isMenuOpen && hovered === id && (
+              <div className="absolute left-20 ml-2 px-3 py-2 bg-earth-700 rounded-lg shadow-lg whitespace-nowrap z-50">
+                <div className="text-sm font-semibold text-earth-100">{name}</div>
+                <div className="text-xs text-earth-400">{desc}</div>
+              </div>
+            )}
+          </button>
+        ))}
+      </nav>
+
+      {/* Footer */}
+      <div className="p-4 border-t border-earth-700">
+        {isMenuOpen ? (
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-earth-700 flex items-center justify-center text-sm font-bold text-earth-300">
+              MK
+            </div>
+            <div>
+              <div className="text-sm font-medium text-earth-200">Michał K.</div>
+              <div className="text-xs text-earth-400">Operator</div>
+            </div>
+          </div>
+        ) : (
+          <div className="w-10 h-10 rounded-full bg-earth-700 flex items-center justify-center text-sm font-bold text-earth-300 mx-auto">
+            MK
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

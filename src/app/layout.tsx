@@ -2,24 +2,21 @@ import type { Metadata } from 'next';
 import { Space_Grotesk, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 
-const spaceGrotesk = Space_Grotesk({ 
+const space = Space_Grotesk({
   subsets: ['latin'],
   variable: '--font-space',
   display: 'swap',
 });
 
-const jetBrainsMono = JetBrains_Mono({
+const mono = JetBrains_Mono({
   subsets: ['latin'],
   variable: '--font-mono',
   display: 'swap',
 });
 
 export const metadata: Metadata = {
-  title: 'Terra.OS — System zarządzania Ziemią',
-  description: 'Profesjonalne narzędzie do analizy przetargów budowlanych',
-  icons: {
-    icon: '/favicon.ico',
-  },
+  title: 'Terra.OS — System Zarządzania Przetargami i Budową',
+  description: 'Lokalny system dla wykonawców robót ziemnych — zwiad, kosztorys, silnik decyzyjny',
 };
 
 export default function RootLayout({
@@ -29,7 +26,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pl">
-      <body className={`${spaceGrotesk.variable} ${jetBrainsMono.variable} font-sans`}>
+      <body className={`${space.variable} ${mono.variable} font-display`}>
         {children}
       </body>
     </html>

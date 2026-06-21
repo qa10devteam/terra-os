@@ -1,51 +1,92 @@
 'use client';
 
 import { create } from 'zustand';
-import { AppState, Tender, ModuleKey } from '@/types';
-import { mockData } from '@/data/mockData';
+import type {
+  Tender,
+  Estimate,
+  RiskAnalysis,
+  DecisionRecommendation,
+  Equipment,
+  Employee,
+} from '@/types';
+
+// ── Module names used in navigation ────────────────────────────────────────
+
+export type ModuleName = 'zwiad' | 'kosztorys' | 'silnik' | 'decyzja' | 'logistyka';
+
+interface AppState {
+  // ── Navigation ──────────────────────────────────────────────────────────
+  currentModule: ModuleName;
+  setCurrentModule: (module: ModuleName) => void;
+
+  // ── Tender state ────────────────────────────────────────────────────────
+  tenders: Tender[];
+  selectedTender: Tender | null;
+  setSelectedTender: (tender: Tender | null) => void;
+
+  // ── Estimates ───────────────────────────────────────────────────────────
+  estimates: Record<string, Estimate>;
+  setEstimate: (tenderId: string, estimate: Estimate) => void;
+
+  // ── Risk analysis ───────────────────────────────────────────────────────
+  riskAnalysis: Record<string, RiskAnalysis>;
+  setRiskAnalysis: (tenderId: string, analysis: RiskAnalysis) => void;
+
+  // ── Decisions ───────────────────────────────────────────────────────────
+  decisions: Record<string, DecisionRecommendation>;
+  setDecision: (tenderId: string, decision: DecisionRecommendation) => void;
+
+  // ── Resources (Module 3) ────────────────────────────────────────────────
+  equipment: Equipment[];
+  employees: Employee[];
+  setEquipment: (equipment: Equipment[]) => void;
+  setEmployees: (employees: Employee[]) => void;
+
+  // ── UI state ────────────────────────────────────────────────────────────
+  isMenuOpen: boolean;
+  toggleMenu: () => void;
+
+  // ── Loading states ──────────────────────────────────────────────────────
+  isLoading: boolean;
+  setIsLoading: (loading: boolean) => void;
+}
 
 export const useStore = create<AppState>((set) => ({
-  // Navigation
+  // ── Navigation ──────────────────────────────────────────────────────────
   currentModule: 'zwiad',
+  setCurrentModule: (module) => set({ currentModule: module }),
+
+  // ── Tender state ────────────────────────────────────────────────────────
+  tenders: [],
   selectedTender: null,
+  setSelectedTender: (tender) => set({ selectedTender: tender }),
+
+  // ── Estimates ───────────────────────────────────────────────────────────
+  estimates: {},
+  setEstimate: (tenderId, estimate) =>
+    set((state) => ({ estimates: { ...state.estimates, [tenderId]: estimate } })),
+
+  // ── Risk analysis ───────────────────────────────────────────────────────
+  riskAnalysis: {},
+  setRiskAnalysis: (tenderId, analysis) =>
+    set((state) => ({ riskAnalysis: { ...state.riskAnalysis, [tenderId]: analysis } })),
+
+  // ── Decisions ───────────────────────────────────────────────────────────
+  decisions: {},
+  setDecision: (tenderId, decision) =>
+    set((state) => ({ decisions: { ...state.decisions, [tenderId]: decision } })),
+
+  // ── Resources (Module 3) ────────────────────────────────────────────────
+  equipment: [],
+  employees: [],
+  setEquipment: (equipment) => set({ equipment }),
+  setEmployees: (employees) => set({ employees }),
+
+  // ── UI state ────────────────────────────────────────────────────────────
   isMenuOpen: false,
-  
-  // Data
-  tenders: mockData.tenders,
-  selectedTenderData: null,
-  
-  // Actions
-  setCurrentModule: (module: ModuleKey) => 
-    set({ currentModule: module, isMenuOpen: false }),
-  
-  selectTender: (id: string) => 
-    set((state) => {
-      const tender = state.tenders.find(t => t.id === id) || null;
-      return { 
-        selectedTender: id,
-        selectedTenderData: tender
-      };
-    }),
-  
-  toggleMenu: () => 
-    set((state) => ({ isMenuOpen: !state.isMenuOpen })),
+  toggleMenu: () => set((state) => ({ isMenuOpen: !state.isMenuOpen })),
+
+  // ── Loading states ──────────────────────────────────────────────────────
+  isLoading: false,
+  setIsLoading: (loading) => set({ isLoading: loading }),
 }));
-
-// Custom hooks for specific slices of state
-export const useNavigation = () => {
-  const currentModule = useStore((state) => state.currentModule);
-  const setCurrentModule = useStore((state) => state.setCurrentModule);
-  return { currentModule, setCurrentModule };
-};
-
-export const useTenders = () => {
-  const tenders = useStore((state) => state.tenders);
-  const selectTender = useStore((state) => state.selectTender);
-  return { tenders, selectTender };
-};
-
-export const useMenu = () => {
-  const isMenuOpen = useStore((state) => state.isMenuOpen);
-  const toggleMenu = useStore((state) => state.toggleMenu);
-  return { isMenuOpen, toggleMenu };
-};

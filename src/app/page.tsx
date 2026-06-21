@@ -1,39 +1,26 @@
 'use client';
 
-import { useState } from 'react';
-import dynamic from 'next/dynamic';
-import { OpeningView } from '@/components/OpeningView';
-import { AppLayout } from '@/components/AppLayout';
-
-// Dynamic imports to avoid SSR issues with motion
-const MotionDiv = dynamic(() => import('motion/react').then((m) => m.motion.div), { ssr: false });
-const AnimatePresence = dynamic(() => import('motion/react').then((m) => m.AnimatePresence), { ssr: false });
+import { Sidebar } from '@/components/Sidebar';
+import { useStore } from '@/store/useStore';
+import { ZwiadPage } from '@/components/pages/ZwiadPage';
+import { KosztorysPage } from '@/components/pages/KosztorysPage';
+import { SilnikPage } from '@/components/pages/SilnikPage';
+import { DecyzjaPage } from '@/components/pages/DecyzjaPage';
+import { LogistykaPage } from '@/components/pages/LogistykaPage';
 
 export default function Home() {
-  const [showApp, setShowApp] = useState(false);
-
+  const { currentModule } = useStore();
+  
   return (
-    <AnimatePresence mode="wait">
-      {!showApp ? (
-        <MotionDiv
-          key="opening"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <OpeningView onEnter={() => setShowApp(true)} />
-        </MotionDiv>
-      ) : (
-        <MotionDiv
-          key="app"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-        >
-          <AppLayout />
-        </MotionDiv>
-      )}
-    </AnimatePresence>
+    <div className="flex h-screen w-full overflow-hidden">
+      <Sidebar />
+      <main className="flex-1 overflow-y-auto bg-earth-950">
+        {currentModule === 'zwiad' && <ZwiadPage />}
+        {currentModule === 'kosztorys' && <KosztorysPage />}
+        {currentModule === 'silnik' && <SilnikPage />}
+        {currentModule === 'decyzja' && <DecyzjaPage />}
+        {currentModule === 'logistyka' && <LogistykaPage />}
+      </main>
+    </div>
   );
 }

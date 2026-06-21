@@ -1,64 +1,164 @@
-// Terra.OS Types - Single Source of Truth
 export interface Tender {
   id: string;
+  externalId: string;
+  source: 'BZP' | 'TED' | 'BK' | 'BIP';
   title: string;
-  value: number;
+  cpv: string[];
+  voivodeship: string;
+  publishDate: string;
   deadline: string;
-  location: string;
-  source: 'BIP' | 'BZP' | 'TED' | 'BK';
-  status: 'new' | 'analyzed' | 'decision';
-  redFlags: RedFlag[];
-  estimatedCosts: CostBreakdown[];
+  estimatedValue: number;
+  matchScore: number;
+  status: 'new' | 'analyzing' | 'ready' | 'accepted' | 'rejected' | 'archived';
+  documents: TenderDocument[];
+  summary?: TenderSummary;
+  redFlags?: RedFlag[];
+  discrepancies?: Discrepancy[];
+}
+
+export interface TenderDocument {
+  id: string;
+  type: 'SWZ' | 'projekt' | 'STWiOR' | 'przedmiar';
+  fileName: string;
+  fileSize: number;
+  parsed: boolean;
+  chunks: DocumentChunk[];
+}
+
+export interface DocumentChunk {
+  id: string;
+  tenderId: string;
+  page?: number;
+  position?: string;
+  text: string;
+  embedding: number[];
+  type: 'text' | 'table' | 'clause' | 'price';
+}
+
+export interface TenderSummary {
+  overview: string;
+  scope: string;
+  keyDates: string[];
+  requirements: string[];
 }
 
 export interface RedFlag {
   id: string;
-  description: string;
-  impact: number;
-  page: string;
+  tenderId: string;
+  type: 'price' | 'quantity' | 'technical' | 'legal' | 'timeline';
   severity: 'low' | 'medium' | 'high' | 'critical';
-  category: 'technical' | 'financial' | 'legal' | 'safety';
+  description: string;
+  sourcePage: number;
+  sourcePosition?: string;
+  potentialCost?: number;
+  recommendedAction: string;
 }
 
-export interface CostBreakdown {
+export interface Discrepancy {
   id: string;
-  category: string;
-  documentation: number;
-  yourReal: number;
+  tenderId: string;
+  type: 'quantity' | 'description' | 'missing' | 'extra';
+  description: string;
+  beforemiarItem?: string;
+  designCoverage: boolean;
+  severity: 'low' | 'medium' | 'high';
+  provenance: { page?: number; line?: number; position?: string };
+}
+
+export interface Estimate {
+  id: string;
+  tenderId: string;
+  variant: 'A' | 'B';
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+  lines: EstimateLine[];
+  totals: EstimateTotals;
+}
+
+export interface EstimateLine {
+  id: string;
+  position: string;
+  description: string;
   unit: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  source?: string;
+}
+
+export interface EstimateTotals {
+  net: number;
+  vat: number;
+  gross: number;
+  labor: number;
+  equipment: number;
+  materials: number;
+  overhead: number;
+  profit: number;
 }
 
 export interface RiskAnalysis {
-  tenderId: string;
-  overallRisk: 'low' | 'medium' | 'high' | 'critical';
-  riskScore: number;
-  redFlags: RedFlag[];
-  recommendations: string[];
+  id: string;
+  estimateId: string;
+  timestamp: string;
+  l1Feasibility: L1Feasibility;
+  l2RiskDistribution: L2RiskDistribution;
+  l3Explanation: string;
 }
 
-export interface Decision {
+export interface L1Feasibility {
+  verdict: 'feasible' | 'risky' | 'infeasible';
+  violations: AxiomViolation[];
+  derivedFacts: string[];
+}
+
+export interface AxiomViolation {
+  id: string;
+  axiomClass: 'A' | 'B' | 'C' | 'D';
+  description: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  provenance: { page?: number; line?: number; clause?: string };
+}
+
+export interface L2RiskDistribution {
+  scenarios: RiskScenario[];
+  dominantDrivers: string[];
+  targetMarginProbability: number;
+}
+
+export interface RiskScenario {
+  name: string;
+  probability: number;
+  outcome: number;
+  margin: number;
+}
+
+export interface DecisionRecommendation {
+  id: string;
   tenderId: string;
-  recommendedPrice: number;
+  offerPrice: number;
+  recommendation: 'offer' | 'reject' | 'negotiate';
   confidence: number;
-  action: 'accept' | 'decline' | 'negotiate';
-  rationale: string[];
-  risksMitigated: string[];
+  reasoning: string;
+  keyFactors: string[];
+  timestamp: string;
 }
 
-export type ModuleKey = 'zwiad' | 'kosztorys' | 'silnik' | 'decyzja';
+export interface Equipment {
+  id: string;
+  name: string;
+  type: 'excavator' | 'dump_truck' | 'roller' | 'other';
+  capacity?: string;
+  availability: boolean;
+  location?: string;
+}
 
-export interface AppState {
-  // Navigation
-  currentModule: ModuleKey;
-  selectedTender: string | null;
-  isMenuOpen: boolean;
-  
-  // Data
-  tenders: Tender[];
-  selectedTenderData: Tender | null;
-  
-  // Actions
-  setCurrentModule: (module: ModuleKey) => void;
-  selectTender: (id: string) => void;
-  toggleMenu: () => void;
+export interface Employee {
+  id: string;
+  name: string;
+  nameShort: string;
+  competencies: string[];
+  available: boolean;
+  currentProject?: string;
 }
