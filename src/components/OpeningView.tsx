@@ -42,7 +42,7 @@ export function OpeningView({ onStart }: { onStart: () => void }) {
             className="relative z-10 mb-8"
           >
             <img
-              src="/assets/logo/terra-os-logo.png"
+              src="/assets/logo/logo.svg"
               alt="Terra.OS"
               className="w-64 h-auto mx-auto"
             />

@@ -2,24 +2,40 @@
 
 import { useState } from 'react';
 import { useStore } from '@/store/useStore';
-import {
-  Shovel,
-  Calculator,
-  Brain,
-  ClipboardCheck,
-  Truck,
-  LayoutDashboard,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+
+// Custom SVG Icons
+const ShovelIcon = ({ className }: { className?: string }) => (
+  <img src="/assets/icons/shovel.svg" alt="Zwiad" className={className} />
+);
+const CalcIcon = ({ className }: { className?: string }) => (
+  <img src="/assets/icons/calculator.svg" alt="Kosztorys" className={className} />
+);
+const BrainIcon = ({ className }: { className?: string }) => (
+  <img src="/assets/icons/brain.svg" alt="Silnik" className={className} />
+);
+const ClipboardIcon = ({ className }: { className?: string }) => (
+  <img src="/assets/icons/clipboard.svg" alt="Decyzja" className={className} />
+);
+const TruckIcon = ({ className }: { className?: string }) => (
+  <img src="/assets/icons/truck.svg" alt="Logistyka" className={className} />
+);
+const DashboardIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="3" width="7" height="7" rx="1" />
+    <rect x="14" y="3" width="7" height="7" rx="1" />
+    <rect x="3" y="14" width="7" height="7" rx="1" />
+    <rect x="14" y="14" width="7" height="7" rx="1" />
+  </svg>
+);
 
 const modules = [
-  { id: 'dashboard' as const, icon: LayoutDashboard, name: 'DASHBOARD', desc: 'Panel główny', color: 'text-earth-100' },
-  { id: 'zwiad' as const, icon: Shovel, name: 'ZWIAD', desc: 'Zwiad przetargowy', color: 'text-accent-success' },
-  { id: 'kosztorys' as const, icon: Calculator, name: 'KOSZTORYS', desc: 'Kosztorys 2 warianty', color: 'text-accent-info' },
-  { id: 'silnik' as const, icon: Brain, name: 'SILNIK', desc: 'Silnik decyzyjny', color: 'text-accent-warning' },
-  { id: 'decyzja' as const, icon: ClipboardCheck, name: 'DECYZJA', desc: 'Rekomendacje', color: 'text-accent-violet' },
-  { id: 'logistyka' as const, icon: Truck, name: 'MÓZG', desc: 'Logistyka', color: 'text-earth-400' },
+  { id: 'dashboard' as const, icon: DashboardIcon, name: 'DASHBOARD', desc: 'Panel główny', color: 'text-earth-100' },
+  { id: 'zwiad' as const, icon: ShovelIcon, name: 'ZWIAD', desc: 'Zwiad przetargowy', color: 'text-accent-success' },
+  { id: 'kosztorys' as const, icon: CalcIcon, name: 'KOSZTORYS', desc: 'Kosztorys 2 warianty', color: 'text-accent-info' },
+  { id: 'silnik' as const, icon: BrainIcon, name: 'SILNIK', desc: 'Silnik decyzyjny', color: 'text-accent-warning' },
+  { id: 'decyzja' as const, icon: ClipboardIcon, name: 'DECYZJA', desc: 'Rekomendacje', color: 'text-accent-violet' },
+  { id: 'logistyka' as const, icon: TruckIcon, name: 'MÓZG', desc: 'Logistyka', color: 'text-earth-400' },
 ];
 
 export function Sidebar() {
@@ -36,11 +52,7 @@ export function Sidebar() {
       <div className="flex items-center justify-between p-4 border-b border-earth-700">
         {isMenuOpen && (
           <div className="flex items-center gap-2">
-            <Shovel className="w-6 h-6 text-accent-success" />
-            <div>
-              <h1 className="text-lg font-bold text-earth-100">Terra.OS</h1>
-              <p className="text-xs text-earth-400">v2.0 — GRUNT</p>
-            </div>
+            <img src="/assets/logo/logo.svg" alt="Terra.OS" className="h-8 w-auto" />
           </div>
         )}
         <button

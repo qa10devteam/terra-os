@@ -9,6 +9,12 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 
+// Custom SVG Icons
+const ShovelIcon = () => <img src="/assets/icons/shovel.svg" alt="Zwiad" className="w-12 h-12" />;
+const CalcIcon = () => <img src="/assets/icons/calculator.svg" alt="Kosztorys" className="w-12 h-12" />;
+const BrainIcon = () => <img src="/assets/icons/brain.svg" alt="Silnik" className="w-12 h-12" />;
+const ClipboardIcon = () => <img src="/assets/icons/clipboard.svg" alt="Decyzja" className="w-12 h-12" />;
+
 const modules = [
   {
     id: 'zwiad' as const,
@@ -18,7 +24,7 @@ const modules = [
     color: 'text-accent-success',
     bg: 'bg-accent-success/10',
     border: 'border-accent-success/30',
-    img: '/assets/icons/module-icons.png',
+    icon: <ShovelIcon />,
   },
   {
     id: 'kosztorys' as const,
@@ -28,6 +34,7 @@ const modules = [
     color: 'text-accent-info',
     bg: 'bg-accent-info/10',
     border: 'border-accent-info/30',
+    icon: <CalcIcon />,
   },
   {
     id: 'silnik' as const,
@@ -37,6 +44,7 @@ const modules = [
     color: 'text-accent-warning',
     bg: 'bg-accent-warning/10',
     border: 'border-accent-warning/30',
+    icon: <BrainIcon />,
   },
   {
     id: 'decyzja' as const,
@@ -46,6 +54,7 @@ const modules = [
     color: 'text-accent-violet',
     bg: 'bg-accent-violet/10',
     border: 'border-accent-violet/30',
+    icon: <ClipboardIcon />,
   },
 ];
 
@@ -76,12 +85,7 @@ export function DashboardPage() {
             onClick={() => setCurrentModule(mod.id)}
             className={`card p-6 text-left border-l-4 ${mod.border} ${mod.bg} transition-all`}
           >
-            {/* Use the custom module icons image */}
-            <img 
-              src={mod.img} 
-              alt={mod.name} 
-              className="w-full h-16 object-contain mb-4 opacity-90 hover:opacity-100 transition-opacity"
-            />
+            <div className="mb-4">{mod.icon}</div>
             <h3 className="text-xl font-bold text-earth-100 mb-1">{mod.name}</h3>
             <p className="text-sm text-earth-400 mb-3">{mod.desc}</p>
             <span className={`text-xs font-medium ${mod.color}`}>{mod.status}</span>
