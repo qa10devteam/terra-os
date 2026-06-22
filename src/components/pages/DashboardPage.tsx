@@ -3,31 +3,25 @@
 import { motion } from 'framer-motion';
 import { useStore } from '@/store/useStore';
 import {
-  Shovel,
-  Calculator,
-  Brain,
-  ClipboardCheck,
   TrendingUp,
   Clock,
   FileText,
   AlertTriangle,
-  CheckCircle,
 } from 'lucide-react';
 
 const modules = [
   {
     id: 'zwiad' as const,
-    icon: Shovel,
     name: 'ZWIAD',
     desc: 'Zwiad przetargowy',
     status: '3 przetargi',
     color: 'text-accent-success',
     bg: 'bg-accent-success/10',
     border: 'border-accent-success/30',
+    img: '/assets/icons/module-icons.png',
   },
   {
     id: 'kosztorys' as const,
-    icon: Calculator,
     name: 'KOSZTORYS',
     desc: 'Kosztorys 2 warianty',
     status: '2 warianty',
@@ -37,7 +31,6 @@ const modules = [
   },
   {
     id: 'silnik' as const,
-    icon: Brain,
     name: 'SILNIK',
     desc: 'Silnik decyzyjny',
     status: '3 warstw',
@@ -47,7 +40,6 @@ const modules = [
   },
   {
     id: 'decyzja' as const,
-    icon: ClipboardCheck,
     name: 'DECYZJA',
     desc: 'Rekomendacje',
     status: '1 decyzja',
@@ -58,8 +50,8 @@ const modules = [
 ];
 
 const activities = [
-  { time: '14:32', action: 'Analiza przetargu BZP-2026-001', icon: CheckCircle, color: 'text-accent-success' },
-  { time: '13:15', action: 'Wygenerowano kosztorys wariant B', icon: Calculator, color: 'text-accent-info' },
+  { time: '14:32', action: 'Analiza przetargu BZP-2026-001', icon: FileText, color: 'text-accent-success' },
+  { time: '13:15', action: 'Wygenerowano kosztorys wariant B', icon: TrendingUp, color: 'text-accent-info' },
   { time: '11:45', action: 'Wykryto 2 czerwone flagi', icon: AlertTriangle, color: 'text-accent-danger' },
   { time: '10:20', action: 'Zaimportowano dokumentację z BZP', icon: FileText, color: 'text-earth-400' },
 ];
@@ -72,7 +64,7 @@ export function DashboardPage() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-earth-100 mb-2">Dashboard</h1>
-        <p className="text-earth-400">Podsumowanie aktywności i modułów</p>
+        <p className="text-earth-400">Panel Macieka — Podsumowanie aktywności</p>
       </div>
       
       {/* Module Cards */}
@@ -84,7 +76,12 @@ export function DashboardPage() {
             onClick={() => setCurrentModule(mod.id)}
             className={`card p-6 text-left border-l-4 ${mod.border} ${mod.bg} transition-all`}
           >
-            <mod.icon className={`w-8 h-8 mb-4 ${mod.color}`} />
+            {/* Use the custom module icons image */}
+            <img 
+              src={mod.img} 
+              alt={mod.name} 
+              className="w-full h-16 object-contain mb-4 opacity-90 hover:opacity-100 transition-opacity"
+            />
             <h3 className="text-xl font-bold text-earth-100 mb-1">{mod.name}</h3>
             <p className="text-sm text-earth-400 mb-3">{mod.desc}</p>
             <span className={`text-xs font-medium ${mod.color}`}>{mod.status}</span>
@@ -104,14 +101,14 @@ export function DashboardPage() {
         <div className="card p-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-earth-400">Kosztorysy</span>
-            <Calculator className="w-4 h-4 text-accent-info" />
+            <TrendingUp className="w-4 h-4 text-accent-info" />
           </div>
           <div className="text-2xl font-bold text-earth-100">2</div>
         </div>
         <div className="card p-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-earth-400">Decyzje</span>
-            <ClipboardCheck className="w-4 h-4 text-accent-violet" />
+            <FileText className="w-4 h-4 text-accent-violet" />
           </div>
           <div className="text-2xl font-bold text-earth-100">1</div>
         </div>

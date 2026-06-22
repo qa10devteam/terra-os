@@ -17,7 +17,7 @@ import type {
 
 // ============================================================================
 // Terra.OS — Realistic Mock Data (GRUNT Blueprint)
-// Polish earthworks contracts for firma p. Michała (Dzierżoniów)
+// Polish earthworks contracts for firma p. Macieka (Dzierżoniów)
 // ============================================================================
 
 // ── Tenders ─────────────────────────────────────────────────────────────────
@@ -299,7 +299,7 @@ export const equipment: Equipment[] = [
 ];
 
 export const employees: Employee[] = [
-  { id: 'emp-1', name: 'Michał K.', nameShort: 'MK', competencies: ['operator_koparki', 'kierownik_budowy'], available: true },
+  { id: 'emp-1', name: 'Maciek K.', nameShort: 'MK', competencies: ['operator_koparki', 'kierownik_budowy'], available: true },
   { id: 'emp-2', name: 'Jan W.', nameShort: 'JW', competencies: ['operator_wywrotki'], available: true },
   { id: 'emp-3', name: 'Piotr Z.', nameShort: 'PZ', competencies: ['operator_koparki', 'operator_wywrotki'], available: false, currentProject: 'tender-1' },
   { id: 'emp-4', name: 'Tomasz L.', nameShort: 'TL', competencies: ['operator_walcowarki'], available: true },

@@ -18,13 +18,19 @@ export function OpeningView({ onStart }: { onStart: () => void }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, scale: 1.1, transition: { duration: 0.5 } }}
-      className="h-screen w-full flex flex-col items-center justify-center bg-earth-950 text-earth-100"
+      className="h-screen w-full flex flex-col items-center justify-center bg-earth-950 text-earth-100 overflow-hidden"
     >
-      {/* Background grid effect */}
-      <div className="absolute inset-0 opacity-5" style={{
-        backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
-        backgroundSize: '40px 40px'
-      }} />
+      {/* Hero background image */}
+      <div className="absolute inset-0 z-0 opacity-40">
+        <img
+          src="/assets/illustrations/shovel-hero.png"
+          alt="Terra.OS"
+          className="w-full h-full object-cover"
+        />
+      </div>
+      
+      {/* Dark overlay */}
+      <div className="absolute inset-0 z-0 bg-gradient-to-t from-earth-950 via-earth-950/80 to-transparent" />
       
       {/* Shovel animation */}
       <AnimatePresence mode="wait">
@@ -35,58 +41,11 @@ export function OpeningView({ onStart }: { onStart: () => void }) {
             exit={{ opacity: 0, scale: 0.8 }}
             className="relative z-10 mb-8"
           >
-            <svg width="200" height="200" viewBox="0 0 200 200" fill="none" className="mx-auto">
-              {/* Shovel handle */}
-              <motion.line
-                x1="100"
-                y1="40"
-                x2="100"
-                y2="140"
-                stroke="#F59E0B"
-                strokeWidth="8"
-                strokeLinecap="round"
-                initial={{ pathLength: 0 }}
-                animate={{ pathLength: 1 }}
-                transition={{ duration: 1, ease: "easeInOut" }}
-              />
-              {/* Shovel head */}
-              <motion.path
-                d="M60 140 Q60 180 100 180 Q140 180 140 140"
-                stroke="#22C55E"
-                strokeWidth="8"
-                fill="none"
-                strokeLinecap="round"
-                initial={{ pathLength: 0 }}
-                animate={{ pathLength: 1 }}
-                transition={{ duration: 1, ease: "easeInOut", delay: 0.5 }}
-              />
-              {/* Shovel blade */}
-              <motion.rect
-                x="50"
-                y="130"
-                width="100"
-                height="20"
-                rx="10"
-                fill="#22C55E"
-                opacity="0.3"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.3 }}
-                transition={{ duration: 0.5, delay: 1 }}
-              />
-              {/* Glow effect */}
-              <motion.circle
-                cx="100"
-                cy="100"
-                r="60"
-                fill="none"
-                stroke="#22C55E"
-                strokeWidth="2"
-                opacity="0"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: [0, 0.5, 0], scale: [0.8, 1.2, 1.2] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
-            </svg>
+            <img
+              src="/assets/logo/terra-os-logo.png"
+              alt="Terra.OS"
+              className="w-64 h-auto mx-auto"
+            />
           </motion.div>
         )}
       </AnimatePresence>
@@ -104,7 +63,7 @@ export function OpeningView({ onStart }: { onStart: () => void }) {
               Terra<span className="text-accent-success">.OS</span>
             </h1>
             <p className="text-xl text-earth-400 mb-2">System Zarządzania Przetargami i Budową</p>
-            <p className="text-sm text-earth-500 mb-12">v2.0 — Dla firm robót ziemnych</p>
+            <p className="text-sm text-earth-500 mb-12">v2.1 — Dla firmy Macieka (Dzierżoniów)</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -150,7 +109,7 @@ export function OpeningView({ onStart }: { onStart: () => void }) {
           transition={{ delay: 0.3 }}
           className="absolute bottom-8 text-earth-600 text-xs"
         >
-          © 2026 QA10 — Terra.OS
+          © 2026 QA10 — Terra.OS | Dzierżoniów, Dolnośląskie
         </motion.div>
       )}
     </motion.div>

@@ -90,7 +90,7 @@ export function Sidebar() {
               MK
             </div>
             <div>
-              <div className="text-sm font-medium text-earth-200">Michał K.</div>
+              <div className="text-sm font-medium text-earth-200">Maciek K.</div>
               <div className="text-xs text-earth-400">Operator</div>
             </div>
           </div>
