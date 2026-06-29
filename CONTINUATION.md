@@ -1,16 +1,17 @@
-# Terra.OS — kontynuacja projektu (Tier 2, M4+)
+# Terra.OS — kontynuacja projektu (Tier 2, M5+)
 
 ## Repo
 https://github.com/qa10devteam/terra-os.git
-branch: main, last commit: 147554f
+branch: main, last commit: 001aa9f
 
 ## Stack
 - Python 3.12 system-wide (`/usr/bin/python3.12`)
-- FastAPI monorepo: `services/api/`, `services/ingestion/`, `services/documents/`, `services/ai/`, `services/estimator/`
+- FastAPI monorepo: `services/api/`, `services/ingestion/`, `services/documents/`, `services/ai/`, `services/estimator/`, `services/engine/`
 - Next.js 16 UI: `apps/ui/`
 - PostgreSQL 16 lokalnie: host=127.0.0.1, port=5432, db=terraos, user=terraos
 - pgvector + pgcrypto aktywne
 - Wszystkie pakiety zainstalowane edytowalnie (`pip install -e`)
+- clingo 5.8.0 + z3-solver zainstalowane (`--break-system-packages`)
 
 ## DB password
 `terraosdev2026` — przekazuj przez env `DB_PASSWORD`, nie przez terminal (Hermes redaktuje `***`)
@@ -20,7 +21,8 @@ branch: main, last commit: 147554f
 TERRA_OFFLINE=1 DB_PASSWORD=terraosdev2026 DB_HOST=127.0.0.1 DB_PORT=5432 DB_NAME=terraos DB_USER=terraos \
   python3.12 -m pytest tests/ -q
 ```
-Wynik: **85/85 ✅** (M0+M1+M2+M3)
+Wynik: **104/114 ✅** (M0+M1+M2+M3+M4)
+Uwaga: 10 pre-istniejących failures w test_m1_ingest.py (IntegrityError w _clean_tenders) — nie regresja M4, istniały w M3.
 
 ## Ukończone Milestones
 
@@ -64,24 +66,28 @@ Wynik: **85/85 ✅** (M0+M1+M2+M3)
 - Acceptance A1: ingest → /tenders → analyze → estimate → compare (offline) ✅
 - 21 testów ✅
 
-## Następny krok: M4 — Decision Engine L1
+### M4 — Decision Engine L1 (commit 001aa9f)
+- `services/engine/l1_symbolic/` — FactsBuilder (int/grosze arithmetic), ClingoRunner, EngineResult/Violation
+- 6 aksjoatów: A001 (bilans mas ±15%), A002 (odwodnienie), A003 (cena rynkowa), A004 (PZP cena nienormalnie niska ≤70%), A005 (suma zgodność ±1%), A006 (CPV zgodność)
+- `services/engine/axiom_loader.py` — ładuje aksjoaty do tabeli `axiom` (idempotentny)
+- `POST /api/v1/tenders/{id}/engine/run` → EngineResult + zapis discrepancy
+- `GET  /api/v1/tenders/{id}/engine` → odczyt z discrepancy
+- `POST /api/v1/tenders/{id}/rules/check` → live check A004+A005+A006
+- **UWAGA clingo**: używa integer arithmetic only — wartości w groszach (PLN×100), głębokość w cm
+- 29 testów ✅
+- Acceptance T-M4: broken-przedmiar → A001+A002+A005 z provenance; clean → feasible ✅
+
+## Następny krok: M5 — Decision Engine L2
 
 ### Co budować (spec/09):
-**Build:** `engine/l1_symbolic` (clingo + Z3), facts builder, axiom tables + loader, discrepancy emission z provenance + `axiom_id`; `/engine/run`, `/rules/check`. Earthworks class-C corpus.
+**Build:** constrained Monte Carlo sampler, Bayesian priors, Sobol sensitivity; `risk{}` in EngineResult.
 
-**DoD:** golden fixtures → expected discrepancies; each axiom has passing test; missing fact → flag.
+**DoD:** deterministic under seed; samples respect L1 constraints; drivers computed.
 
-**Acceptance T-M4:**
-- broken-przedmiar fixture (missing dewatering, mass-balance off, sum mismatch) → exact flags z correct provenance
-- clean fixture → feasible, no false positives
-
-### Axiomy L1 (wstępne z badań):
-- A001: masa_bilans — masa wykopu ≈ masa nasypu ± 15% (sprawdź tolerancję)
-- A002: odwodnienie — jeśli wykop > 1.5m AND teren mokry → musi być pozycja odwodnienia
-- A003: cena_rynkowa — Cj ≤ 1.5× stawki SEKOCENBUD (cena nienormalnie niska/wysoka)
-- A004: pzp_abnormal_low — oferta ≤ 70% wartości zamawiającego → red flag
-- A005: suma_zgodnosc — Σ(pozycje) == wartość z tytułu (1% tolerancja)
-- A006: cpv_zgodnosc — CPV ogłoszenia ⊆ CPV zakresu robót w STWiOR
+**Acceptance T-M5:**
+- fixed-seed run reproduces `p10/p50/p90`
+- win-prob monotone vs price
+- no sample violates a hard L1 constraint
 
 ### Kluczowe decyzje architektoniczne:
 - Alembic migration = raw DDL (`op.execute(DDL)`) — bez `op.create_table` z SA Enum
@@ -90,11 +96,12 @@ Wynik: **85/85 ✅** (M0+M1+M2+M3)
 - Python 3.12 przez `subprocess` z `env` dict dla DB_PASSWORD
 - httpx 0.28 → `ASGITransport(app=app)` (nie `app=app` bezpośrednio)
 - `sum(..., Decimal("0"))` nie `sum(...)` dla Decimal (Pyright + Python)
+- clingo 5.8.0: NO floats w ASP — wszystko integer; grosze zamiast PLN, cm zamiast m
+- `--break-system-packages` wymagane przy pip na tym serwerze
 
 ## Pliki spec
 ```
-/tmp/terra_os_spec/spec/   ← może nie istnieć po restarcie
-/home/ubuntu/terra-os/spec/ ← zawsze dostępne
+/home/ubuntu/terra-os/spec/   ← zawsze dostępne
 ```
 Spec files: 01_overview.md, 02_api_contracts.md, 03_modules.md, 04_data_model.md,
 05_ai_and_ingestion.md, 06_security.md, 07_tech_stack.md, 08_deployment.md, 09_milestones_acceptance.md
