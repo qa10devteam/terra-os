@@ -77,14 +77,29 @@ Uwaga: 10 pre-istniejących failures w test_m1_ingest.py (IntegrityError w _clea
 - 29 testów ✅
 - Acceptance T-M4: broken-przedmiar → A001+A002+A005 z provenance; clean → feasible ✅
 
-## Następny krok: M5 — Decision Engine L2
+### M5 — Decision Engine L2 (commit 9e9b9b6)
+- `services/engine/l2_stochastic/` — constrained Monte Carlo sampler, Bayesian priors, Sobol sensitivity
+- 5 domyślnych czynników ryzyka: soil_class_productivity, material_cost, equipment_availability, weather_delay, subcontractor_cost
+- `run_l2(RiskInput)` → `RiskResult{margin_p10, margin_p50, margin_p90, win_prob_at_price[], drivers[]}`
+- L1 constraint enforcement: próbki naruszające A004 (offer ≤ 70% market) odrzucane
+- Sobol S1/ST: Saltelli (2002) estimator — wyznacza kluczowe czynniki ryzyka
+- `POST /api/v1/tenders/{id}/engine/run` → teraz zwraca L1+L2 (risk{} block)
+- `POST /api/v1/tenders/{id}/risk` → standalone L2 endpoint
+- Persistence: `risk_run` tabela — p10/p50/p90, win_prob_at_price JSONB, drivers JSONB
+- 28 testów ✅ (determinism, monotone, p10≤p50≤p90, no L1 violation, Sobol bounds)
+- scipy 1.18.0 zainstalowane (`--break-system-packages`)
+
+## Następny krok: M6 — Email-broker + interactive kosztorys + auto-fill
 
 ### Co budować (spec/09):
-**Build:** constrained Monte Carlo sampler, Bayesian priors, Sobol sensitivity; `risk{}` in EngineResult.
+**Build:** RFQ agent (gated send, IMAP parse), variable sidebar (`PATCH params` już jest w M3),
+chat-brain structured edits, live rule-violation check, auto-fill draft (gated).
 
-**DoD:** deterministic under seed; samples respect L1 constraints; drivers computed.
+**DoD:** all external sends gated; chat edits applied by deterministic code; rules/check returns violations.
 
-**Acceptance T-M5:**
+**Acceptance A2 (Tier 2 end-to-end):**
+A1 + engine verdict (L1+L2) + risk distribution + RFQ round-trip (gated send → fixtured reply parsed)
++ interactive param edit that reconciles. Auto-fill produces a draft, never submits.
 - fixed-seed run reproduces `p10/p50/p90`
 - win-prob monotone vs price
 - no sample violates a hard L1 constraint
