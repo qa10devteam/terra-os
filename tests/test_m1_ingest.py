@@ -187,8 +187,9 @@ import sqlalchemy
 
 
 def _clean_tenders(engine):
-    """Remove all tenders from test DB."""
     with engine.begin() as conn:
+        conn.execute(sqlalchemy.text("DELETE FROM estimate"))
+        conn.execute(sqlalchemy.text("DELETE FROM analysis"))
         conn.execute(sqlalchemy.text("DELETE FROM tender"))
 
 
