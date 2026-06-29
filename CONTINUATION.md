@@ -46,7 +46,12 @@ Uwaga: 10 pre-istniejących failures w test_m1_ingest.py (IntegrityError w _clea
 - Approval gate: JEDYNA ścieżka do send/submit → audit_log
 - Acceptance A2: ingest→analyze→estimate→compare→engine(L1+L2)→RFQ→approve→inbound→parse→param_edit→autofill ✅
 
-## Następny krok: M7 — Module 3 core (Tier 3)
+### M7 — Logistics optimizer + Module 3 core (commit 7e2718b) · 31 testów ✅ · Acceptance T-M7 ✅
+- `services/logistics/__init__.py` — OR-Tools CP-SAT optimizer (C1–C6 constraints, skill/availability coverage)
+- `services/api/.../routers/module3.py` — GET/POST /resources/equipment|employees, /availability, /contracts, /logistics/optimize, /plans, /plans/{id}/dispatch (gated), /mobile/devices/register, /mobile/plans, /mobile/status
+- Acceptance T-M7: 2 kontrakty / 7 pracowników / 2 koparki → valid assignment + over-constrained → engine_infeasible ✅
+
+## Następny krok: M8 — Flutter mobile app (Tier 3)
 
 ### Co budować (spec/09):
 **Build:** registries (equipment/employees/competency/availability/contracts),
