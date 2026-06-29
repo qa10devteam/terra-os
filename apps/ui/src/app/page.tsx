@@ -9,6 +9,9 @@ import { KosztorysPage } from '@/components/pages/KosztorysPage';
 import { SilnikPage } from '@/components/pages/SilnikPage';
 import { DecyzjaPage } from '@/components/pages/DecyzjaPage';
 import { LogistykaPage } from '@/components/pages/LogistykaPage';
+import { RfqPage } from '@/components/pages/RfqPage';
+import { PipelinePage } from '@/components/pages/PipelinePage';
+import { SystemPage } from '@/components/pages/SystemPage';
 import { Sidebar } from '@/components/Sidebar';
 import { ToastContainer } from '@/components/Toast';
 import { useStore } from '@/store/useStore';
@@ -32,6 +35,9 @@ export default function Home() {
           {currentModule === 'silnik' && <SilnikPage key="silnik" />}
           {currentModule === 'decyzja' && <DecyzjaPage key="decyzja" />}
           {currentModule === 'logistyka' && <LogistykaPage key="logistyka" />}
+          {currentModule === 'rfq' && <RfqPage key="rfq" />}
+          {currentModule === 'pipeline' && <PipelinePage key="pipeline" />}
+          {currentModule === 'system' && <SystemPage key="system" />}
         </AnimatePresence>
       </main>
       <ToastContainer />

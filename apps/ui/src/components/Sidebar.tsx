@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useStore } from '@/store/useStore';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Shield, Workflow, Settings } from 'lucide-react';
 
 // Custom SVG Icons
 const ShovelIcon = ({ className }: { className?: string }) => (
@@ -36,6 +36,9 @@ const modules = [
   { id: 'silnik' as const, icon: BrainIcon, name: 'SILNIK', desc: 'Silnik decyzyjny', color: 'text-accent-warning' },
   { id: 'decyzja' as const, icon: ClipboardIcon, name: 'DECYZJA', desc: 'Rekomendacje', color: 'text-accent-violet' },
   { id: 'logistyka' as const, icon: TruckIcon, name: 'MÓZG', desc: 'Logistyka', color: 'text-earth-400' },
+  { id: 'rfq' as const, icon: Shield, name: 'RFQ', desc: 'Zatwierdzenia', color: 'text-amber-400' },
+  { id: 'pipeline' as const, icon: Workflow, name: 'PIPELINE', desc: 'Supervisor', color: 'text-teal-400' },
+  { id: 'system' as const, icon: Settings, name: 'SYSTEM', desc: 'Backup & Config', color: 'text-earth-300' },
 ];
 
 export function Sidebar() {

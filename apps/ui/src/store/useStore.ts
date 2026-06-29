@@ -12,7 +12,7 @@ import type {
 
 // ── Module names used in navigation ────────────────────────────────────────
 
-export type ModuleName = 'dashboard' | 'zwiad' | 'kosztorys' | 'silnik' | 'decyzja' | 'logistyka';
+export type ModuleName = 'dashboard' | 'zwiad' | 'kosztorys' | 'silnik' | 'decyzja' | 'logistyka' | 'rfq' | 'pipeline' | 'system';
 
 interface AppState {
   // ── Navigation ──────────────────────────────────────────────────────────
