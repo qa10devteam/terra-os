@@ -188,8 +188,23 @@ import sqlalchemy
 
 def _clean_tenders(engine):
     with engine.begin() as conn:
+        # Delete in FK-safe order (children first)
+        conn.execute(sqlalchemy.text("DELETE FROM field_status"))
+        conn.execute(sqlalchemy.text("DELETE FROM dispatch"))
+        conn.execute(sqlalchemy.text("DELETE FROM daily_plan"))
+        conn.execute(sqlalchemy.text("DELETE FROM calendar_event"))
+        conn.execute(sqlalchemy.text("DELETE FROM contract"))
+        conn.execute(sqlalchemy.text("DELETE FROM rfq_message"))
+        conn.execute(sqlalchemy.text("DELETE FROM rfq"))
+        conn.execute(sqlalchemy.text("DELETE FROM risk_run"))
+        conn.execute(sqlalchemy.text("DELETE FROM estimate_line"))
         conn.execute(sqlalchemy.text("DELETE FROM estimate"))
+        conn.execute(sqlalchemy.text("DELETE FROM discrepancy"))
+        conn.execute(sqlalchemy.text("DELETE FROM przedmiar_item"))
+        conn.execute(sqlalchemy.text("DELETE FROM document_chunk"))
+        conn.execute(sqlalchemy.text("DELETE FROM tender_document"))
         conn.execute(sqlalchemy.text("DELETE FROM analysis"))
+        conn.execute(sqlalchemy.text("DELETE FROM approval_request"))
         conn.execute(sqlalchemy.text("DELETE FROM tender"))
 
 
