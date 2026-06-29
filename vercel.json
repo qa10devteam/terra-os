@@ -1,0 +1,6 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "npm --prefix apps/ui install && npm --prefix apps/ui run build",
+  "outputDirectory": "apps/ui/.next",
+  "installCommand": "npm --prefix apps/ui install"
+}

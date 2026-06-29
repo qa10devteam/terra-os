@@ -1,0 +1,8 @@
+{
+  "name": "terra-os-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "vercel-build": "npm --prefix apps/ui ci && npm --prefix apps/ui run build"
+  }
+}
