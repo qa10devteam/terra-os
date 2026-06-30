@@ -1,117 +1,161 @@
 'use client';
 
-import { useState } from 'react';
 import { useStore } from '@/store/useStore';
-import { ChevronLeft, ChevronRight, Shield, Workflow, Settings } from 'lucide-react';
-
-// Custom SVG Icons
-const ShovelIcon = ({ className }: { className?: string }) => (
-  <img src="/assets/icons/shovel.svg" alt="Zwiad" className={className} />
-);
-const CalcIcon = ({ className }: { className?: string }) => (
-  <img src="/assets/icons/calculator.svg" alt="Kosztorys" className={className} />
-);
-const BrainIcon = ({ className }: { className?: string }) => (
-  <img src="/assets/icons/brain.svg" alt="Silnik" className={className} />
-);
-const ClipboardIcon = ({ className }: { className?: string }) => (
-  <img src="/assets/icons/clipboard.svg" alt="Decyzja" className={className} />
-);
-const TruckIcon = ({ className }: { className?: string }) => (
-  <img src="/assets/icons/truck.svg" alt="Logistyka" className={className} />
-);
-const DashboardIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <rect x="3" y="3" width="7" height="7" rx="1" />
-    <rect x="14" y="3" width="7" height="7" rx="1" />
-    <rect x="3" y="14" width="7" height="7" rx="1" />
-    <rect x="14" y="14" width="7" height="7" rx="1" />
-  </svg>
-);
+import {
+  ChevronLeft,
+  ChevronRight,
+  LayoutDashboard,
+  Radar,
+  Calculator,
+  Brain,
+  Scale,
+  Truck,
+  ShieldCheck,
+  GitBranch,
+  Settings,
+  CloudSun,
+} from 'lucide-react';
 
 const modules = [
-  { id: 'dashboard' as const, icon: DashboardIcon, name: 'DASHBOARD', desc: 'Panel główny', color: 'text-earth-100' },
-  { id: 'zwiad' as const, icon: ShovelIcon, name: 'ZWIAD', desc: 'Zwiad przetargowy', color: 'text-accent-success' },
-  { id: 'kosztorys' as const, icon: CalcIcon, name: 'KOSZTORYS', desc: 'Kosztorys 2 warianty', color: 'text-accent-info' },
-  { id: 'silnik' as const, icon: BrainIcon, name: 'SILNIK', desc: 'Silnik decyzyjny', color: 'text-accent-warning' },
-  { id: 'decyzja' as const, icon: ClipboardIcon, name: 'DECYZJA', desc: 'Rekomendacje', color: 'text-accent-violet' },
-  { id: 'logistyka' as const, icon: TruckIcon, name: 'MÓZG', desc: 'Logistyka', color: 'text-earth-400' },
-  { id: 'rfq' as const, icon: Shield, name: 'RFQ', desc: 'Zatwierdzenia', color: 'text-amber-400' },
-  { id: 'pipeline' as const, icon: Workflow, name: 'PIPELINE', desc: 'Supervisor', color: 'text-teal-400' },
-  { id: 'system' as const, icon: Settings, name: 'SYSTEM', desc: 'Backup & Config', color: 'text-earth-300' },
+  { id: 'dashboard' as const, icon: LayoutDashboard, name: 'Dashboard',  desc: 'Panel główny' },
+  { id: 'zwiad'     as const, icon: Radar,           name: 'Zwiad',      desc: 'Zwiad przetargowy' },
+  { id: 'kosztorys' as const, icon: Calculator,      name: 'Kosztorys',  desc: 'Kosztorys 2 warianty' },
+  { id: 'silnik'    as const, icon: Brain,           name: 'Silnik',     desc: 'Silnik decyzyjny' },
+  { id: 'decyzja'   as const, icon: Scale,           name: 'Decyzja',    desc: 'Rekomendacje' },
+  { id: 'logistyka' as const, icon: Truck,           name: 'Logistyka',  desc: 'Zasoby' },
+  { id: 'rfq'       as const, icon: ShieldCheck,     name: 'RFQ',        desc: 'Zatwierdzenia' },
+  { id: 'pipeline'  as const, icon: GitBranch,       name: 'Pipeline',   desc: 'Supervisor' },
+  { id: 'pogoda'    as const, icon: CloudSun,        name: 'Pogoda',     desc: 'Prognoza 14 dni' },
+  { id: 'system'    as const, icon: Settings,        name: 'System',     desc: 'Backup & Config' },
 ];
 
 export function Sidebar() {
   const { currentModule, setCurrentModule, isMenuOpen, toggleMenu } = useStore();
-  const [hovered, setHovered] = useState<string | null>(null);
 
   return (
     <div
-      className={`flex flex-col bg-earth-900 border-r border-earth-700 transition-all duration-300 ${
-        isMenuOpen ? 'w-64' : 'w-20'
+      className={`relative flex flex-col bg-earth-900/50 border-r border-earth-800/80 backdrop-blur-xl transition-all duration-300 ease-in-out ${
+        isMenuOpen ? 'w-60' : 'w-[68px]'
       }`}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-earth-700">
-        {isMenuOpen && (
-          <div className="flex items-center gap-2">
-            <img src="/assets/logo/logo.svg" alt="Terra.OS" className="h-10 w-auto" />
+      {/* ── Logo / Header ───────────────────────────────────────────── */}
+      <div className="flex items-center justify-between px-3 h-16 border-b border-earth-800/60">
+        {/* Logo when expanded */}
+        {isMenuOpen ? (
+          <span className="text-base font-bold text-earth-100 tracking-tight select-none">
+            Terra<span className="text-accent-primary">.OS</span>
+          </span>
+        ) : (
+          /* "T" badge when collapsed */
+          <div className="w-8 h-8 rounded-full bg-accent-primary/10 border border-accent-primary/30 flex items-center justify-center mx-auto">
+            <span className="text-accent-primary text-sm font-bold leading-none select-none">T</span>
           </div>
         )}
+
         <button
           onClick={toggleMenu}
-          className="p-2 rounded-lg hover:bg-earth-700 text-earth-400 hover:text-earth-100 transition-colors"
+          aria-label={isMenuOpen ? 'Zwiń menu' : 'Rozwiń menu'}
+          className="p-1.5 rounded-md hover:bg-earth-800 text-earth-500 hover:text-earth-200 transition-colors duration-200 ml-auto flex-shrink-0"
         >
-          {isMenuOpen ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+          {isMenuOpen ? (
+            <ChevronLeft className="w-4 h-4" />
+          ) : (
+            <ChevronRight className="w-4 h-4" />
+          )}
         </button>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 py-4">
-        {modules.map(({ id, icon: Icon, name, desc, color }) => (
-          <button
-            key={id}
-            onClick={() => setCurrentModule(id)}
-            onMouseEnter={() => setHovered(id)}
-            onMouseLeave={() => setHovered(null)}
-            className={`w-full flex items-center gap-3 px-4 py-3 transition-colors ${
-              currentModule === id
-                ? 'bg-earth-800 border-l-4 border-accent-success'
-                : 'hover:bg-earth-800/50'
-            }`}
-          >
-            <Icon className={`w-8 h-8 flex-shrink-0 ${currentModule === id ? color : 'text-earth-400'}`} />
-            {isMenuOpen && (
-              <div className="flex-1 text-left">
-                <div className="text-sm font-semibold text-earth-100">{name}</div>
-                <div className="text-xs text-earth-400">{desc}</div>
-              </div>
-            )}
-            {!isMenuOpen && hovered === id && (
-              <div className="absolute left-20 ml-2 px-3 py-2 bg-earth-700 rounded-lg shadow-lg whitespace-nowrap z-50">
-                <div className="text-sm font-semibold text-earth-100">{name}</div>
-                <div className="text-xs text-earth-400">{desc}</div>
-              </div>
-            )}
-          </button>
-        ))}
+      {/* ── Navigation ──────────────────────────────────────────────── */}
+      <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
+        {modules.map(({ id, icon: Icon, name, desc }) => {
+          const isActive = currentModule === id;
+          return (
+            <div key={id} className="relative group/item">
+              <button
+                onClick={() => setCurrentModule(id)}
+                className={`relative w-full flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-200 ${
+                  isActive
+                    ? 'bg-accent-primary/10 text-accent-primary border-l-2 border-accent-primary/60'
+                    : 'text-earth-400 hover:text-earth-200 hover:bg-earth-800/60 border-l-2 border-transparent'
+                }`}
+              >
+                <Icon
+                  className={`w-[18px] h-[18px] flex-shrink-0 transition-colors duration-200 ${
+                    isActive
+                      ? 'text-accent-primary'
+                      : 'text-earth-500 group-hover/item:text-earth-300'
+                  }`}
+                />
+                {isMenuOpen && (
+                  <span
+                    className={`text-sm font-medium truncate transition-colors duration-200 ${
+                      isActive
+                        ? 'text-accent-primary'
+                        : 'text-earth-300 group-hover/item:text-earth-100'
+                    }`}
+                  >
+                    {name}
+                  </span>
+                )}
+              </button>
+
+              {/* Tooltip — only when collapsed */}
+              {!isMenuOpen && (
+                <div
+                  className="
+                    pointer-events-none
+                    absolute left-full top-1/2 -translate-y-1/2 ml-3 z-50
+                    px-3 py-2
+                    bg-earth-800 border border-earth-700/50
+                    rounded-lg shadow-xl shadow-black/40
+                    whitespace-nowrap
+                    opacity-0 scale-95
+                    group-hover/item:opacity-100 group-hover/item:scale-100
+                    transition-all duration-150 ease-out
+                  "
+                >
+                  <div className="text-sm font-semibold text-earth-100">{name}</div>
+                  <div className="text-xs text-earth-400 mt-0.5">{desc}</div>
+                  {/* Arrow */}
+                  <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-earth-700/50" />
+                </div>
+              )}
+            </div>
+          );
+        })}
       </nav>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-earth-700">
+      {/* ── Footer ──────────────────────────────────────────────────── */}
+      <div className="p-3 border-t border-earth-800/60 space-y-2">
+        {/* User row */}
         {isMenuOpen ? (
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-earth-700 flex items-center justify-center text-sm font-bold text-earth-300">
+          <div className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-earth-800/40 transition-colors cursor-pointer">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-primary/30 to-accent-primary/10 border border-accent-primary/20 flex items-center justify-center text-xs font-bold text-accent-primary flex-shrink-0">
               MK
             </div>
-            <div>
-              <div className="text-sm font-medium text-earth-200">Maciek K.</div>
-              <div className="text-xs text-earth-400">Operator</div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium text-earth-200 truncate">Maciek K.</div>
+              <div className="text-xs text-earth-500">Operator</div>
             </div>
           </div>
         ) : (
-          <div className="w-10 h-10 rounded-full bg-earth-700 flex items-center justify-center text-sm font-bold text-earth-300 mx-auto">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-primary/30 to-accent-primary/10 border border-accent-primary/20 flex items-center justify-center text-xs font-bold text-accent-primary mx-auto">
             MK
+          </div>
+        )}
+
+        {/* Version + API status */}
+        {isMenuOpen ? (
+          <div className="flex items-center justify-between px-2 py-1">
+            <span className="text-[10px] text-earth-600 font-mono tracking-wide">v1.0.0</span>
+            <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-accent-primary animate-pulse" />
+              <span className="text-[10px] text-earth-600">API</span>
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-center">
+            <div className="w-1.5 h-1.5 rounded-full bg-accent-primary animate-pulse" />
           </div>
         )}
       </div>

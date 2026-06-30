@@ -103,6 +103,42 @@ def create_estimate(tender_id: str) -> EstimatePair:
 
 # ─── GET /estimates/{id} ─────────────────────────────────────────────────────
 
+@router.get("/tenders/{tender_id}/estimates")
+def list_estimates_for_tender(tender_id: str) -> list[dict]:
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(
+            sa.text("SELECT id, variant, total_net_pln, lines, params FROM estimate WHERE tender_id = :tid ORDER BY variant"),
+            {"tid": tender_id},
+        ).fetchall()
+    if not rows:
+        raise HTTPException(status_code=404, detail="No estimates found for this tender")
+    results = []
+    for row in rows:
+        lines_raw = row[3] or []
+        # Normalize lines to a consistent format regardless of seed data shape
+        normalized_lines = []
+        for i, l in enumerate(lines_raw):
+            normalized_lines.append({
+                "position_no": l.get("position_no", str(i + 1)),
+                "description": l.get("description", ""),
+                "unit": l.get("unit", ""),
+                "quantity": str(l.get("quantity", "0")),
+                "unit_price": str(l.get("unit_price", "0")),
+                "line_total_pln": str(l.get("line_total_pln", l.get("total", "0"))),
+                "knr_code": l.get("knr_code"),
+                "chapter": l.get("chapter"),
+            })
+        results.append({
+            "id": str(row[0]),
+            "variant": row[1],
+            "total_net_pln": str(row[2]),
+            "lines": normalized_lines,
+            "params": row[4] or {},
+        })
+    return results
+
+
 @router.get("/estimates/{estimate_id}", response_model=EstimateResponse)
 def get_estimate(estimate_id: str) -> EstimateResponse:
     engine = get_engine()

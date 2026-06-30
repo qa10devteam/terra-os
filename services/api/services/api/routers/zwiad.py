@@ -205,3 +205,27 @@ def get_tender(tender_id: str) -> TenderDetail:
         url=row[13],
         raw=dict(row[14]) if row[14] else {},
     )
+
+
+# ─── PATCH /tenders/{id} — update status ──────────────────────────────────────
+
+class TenderPatch(BaseModel):
+    status: str | None = None
+
+@router.patch("/tenders/{tender_id}")
+def patch_tender(tender_id: str, body: TenderPatch) -> dict:
+    import sqlalchemy as sa
+    engine = get_engine()
+    updates = {}
+    if body.status:
+        updates["status"] = body.status
+    if not updates:
+        raise HTTPException(status_code=400, detail="Nothing to update")
+    with engine.begin() as conn:
+        result = conn.execute(
+            sa.text(f"UPDATE tender SET status = :status WHERE id = :id"),
+            {"status": body.status, "id": tender_id},
+        )
+        if result.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Tender not found")
+    return {"ok": True, "id": tender_id, "status": body.status}

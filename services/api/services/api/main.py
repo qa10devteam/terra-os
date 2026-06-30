@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from terra_shared.errors import TerraError
-from .routers import health, zwiad, documents, estimator, engine, rfq, chat, module3, system, export
+from .routers import health, zwiad, documents, estimator, engine, rfq, chat, module3, system, export, bzp, market_data
 
 
 @asynccontextmanager
@@ -29,7 +29,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "tauri://localhost"],
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -53,3 +53,5 @@ app.include_router(chat.router)
 app.include_router(module3.router)
 app.include_router(system.router)
 app.include_router(export.router)
+app.include_router(bzp.router)
+app.include_router(market_data.router)

@@ -1,365 +1,288 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStore } from '@/store/useStore';
-import { estimateA, estimateB } from '@/lib/mockData';
 import {
-  Calculator,
-  FileText,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  Upload,
-  Download,
-  Edit3,
-  TrendingUp,
-  TrendingDown,
-  Info,
+  Calculator, ChevronDown, ChevronUp, AlertCircle,
+  ArrowRight, TrendingUp, TrendingDown, ChevronRight,
 } from 'lucide-react';
-import dynamic from 'next/dynamic';
 
-interface PieSegment {
-  name: string;
-  value: number;
-  color: string;
-  percent: number;
-  cumulative: number;
+interface EstimateLine {
+  position_no: string;
+  description: string;
+  unit: string;
+  quantity: string;
+  unit_price: string;
+  line_total_pln: string;
+  knr_code?: string | null;
+  chapter?: string | null;
 }
 
-function PieChart({ data, label }: { data: { name: string; value: number; color: string }[]; label: string }) {
-  const total = data.reduce((sum, d) => sum + d.value, 0);
-  const [hovered, setHovered] = useState<number | null>(null);
-  
-  const segments: PieSegment[] = data.reduce((acc, d, i) => {
-    const percent = d.value / total;
-    acc.push({
-      ...d,
-      percent,
-      cumulative: acc.length > 0 ? acc[acc.length - 1].cumulative + acc[acc.length - 1].percent : 0,
-    });
-    return acc;
-  }, [] as PieSegment[]);
-  
+interface Estimate {
+  id: string;
+  variant: 'doc' | 'owner';
+  total_net_pln: string;
+  lines: EstimateLine[];
+  params: Record<string, unknown>;
+}
+
+function fmt(val: string | number | null | undefined) {
+  if (val === null || val === undefined) return '—';
+  const n = typeof val === 'string' ? parseFloat(val) : val;
+  if (isNaN(n)) return '—';
+  return n.toLocaleString('pl-PL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + ' PLN';
+}
+
+function groupByChapter(lines: EstimateLine[]) {
+  const chapters: Record<string, EstimateLine[]> = {};
+  for (const l of lines) {
+    const ch = l.chapter || 'Pozostałe';
+    if (!chapters[ch]) chapters[ch] = [];
+    chapters[ch].push(l);
+  }
+  return chapters;
+}
+
+function SkeletonCard() {
   return (
-    <div className="card p-6">
-      <h3 className="text-lg font-semibold text-earth-100 mb-4">{label}</h3>
-      <div className="flex items-center gap-6">
-        <div className="relative w-32 h-32 flex-shrink-0">
-          <svg viewBox="0 0 32 32" className="w-full h-full -rotate-90">
-            {segments.map((seg, i) => (
-              <circle
-                key={i}
-                cx="16"
-                cy="16"
-                r="12"
-                fill="transparent"
-                stroke={seg.color}
-                strokeWidth="8"
-                strokeDasharray={`${seg.percent * 75.4} 75.4`}
-                strokeDashoffset={-seg.cumulative * 75.4}
-                className="transition-all duration-200"
-                opacity={hovered === i ? 1 : 0.7}
-              />
-            ))}
-          </svg>
-        </div>
-        <div className="flex-1 space-y-2">
-          {segments.map((seg, i) => (
-            <div
-              key={i}
-              className="flex items-center justify-between cursor-pointer"
-              onMouseEnter={() => setHovered(i)}
-              onMouseLeave={() => setHovered(null)}
-            >
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: seg.color }} />
-                <span className="text-sm text-earth-200">{seg.name}</span>
-              </div>
-              <span className="text-sm font-semibold text-earth-100">
-                {((seg.percent * 100)).toFixed(0)}%
-              </span>
-            </div>
-          ))}
-        </div>
+    <div className="glass-card rounded-xl p-4 animate-pulse">
+      <div className="h-3 w-24 bg-earth-700 rounded mb-2" />
+      <div className="h-6 w-36 bg-earth-700 rounded mb-1" />
+      <div className="h-2.5 w-20 bg-earth-800 rounded" />
+    </div>
+  );
+}
+
+function SkeletonTable() {
+  return (
+    <div className="glass-card rounded-xl overflow-hidden animate-pulse">
+      <div className="px-4 py-3 border-b border-earth-800/60 flex justify-between">
+        <div className="h-4 w-32 bg-earth-700 rounded" />
+        <div className="h-4 w-24 bg-earth-700 rounded" />
       </div>
+      {[1, 2, 3, 4].map(i => (
+        <div key={i} className="px-4 py-3 border-b border-earth-800/30 flex justify-between">
+          <div className="h-3 w-48 bg-earth-800 rounded" />
+          <div className="h-3 w-20 bg-earth-800 rounded" />
+        </div>
+      ))}
     </div>
   );
 }
 
 export function KosztorysPage() {
-  const { selectedTender } = useStore();
-  const [activeTab, setActiveTab] = useState<'A' | 'B' | 'compare'>('compare');
-  
-  const delta = estimateB.totals.gross - estimateA.totals.gross;
-  const deltaPercent = ((delta / estimateA.totals.gross) * 100).toFixed(1);
-  
+  const { selectedTender, setCurrentModule } = useStore();
+  const tender = selectedTender as any;
+
+  const [estimates, setEstimates] = useState<Estimate[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [expandedChapters, setExpandedChapters] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (!tender?.id) return;
+    setLoading(true);
+    setError(null);
+    fetch(`/api/v1/tenders/${tender.id}/estimates`)
+      .then(r => {
+        if (!r.ok) throw new Error(r.status === 404 ? 'Brak kosztorysów dla tego przetargu' : `Błąd ${r.status}`);
+        return r.json();
+      })
+      .then((data: Estimate[]) => { setEstimates(data); setLoading(false); })
+      .catch(e => { setError(e.message); setLoading(false); });
+  }, [tender?.id]);
+
+  if (!tender) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-6 text-center">
+        <div className="w-20 h-20 rounded-2xl bg-earth-800 flex items-center justify-center border border-earth-700/40">
+          <Calculator className="w-10 h-10 text-earth-500" />
+        </div>
+        <div>
+          <p className="text-earth-200 font-semibold text-xl">Brak wybranego przetargu</p>
+          <p className="text-earth-500 text-sm mt-2 max-w-xs mx-auto leading-relaxed">
+            Wybierz przetarg ze Zwiadu aby zobaczyć kosztorys
+          </p>
+        </div>
+        <button
+          onClick={() => setCurrentModule('zwiad')}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent-primary/10 text-accent-primary hover:bg-accent-primary/20 transition-colors text-sm font-medium border border-accent-primary/20"
+        >
+          Przejdź do Zwiadu <ArrowRight className="w-4 h-4" />
+        </button>
+      </div>
+    );
+  }
+
+  const doc = estimates.find(e => e.variant === 'doc');
+  const owner = estimates.find(e => e.variant === 'owner');
+  const docTotal = doc ? parseFloat(doc.total_net_pln) : 0;
+  const ownerTotal = owner ? parseFloat(owner.total_net_pln) : 0;
+  const delta = ownerTotal - docTotal;
+  const deltaPct = docTotal > 0 ? ((delta / docTotal) * 100) : 0;
+  const isFavorable = delta <= 0;
+
+  const toggleChapter = (ch: string) =>
+    setExpandedChapters(prev => ({ ...prev, [ch]: !prev[ch] }));
+
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-2">
-          <h1 className="text-3xl font-bold text-earth-100">KOSZTORYS</h1>
-          <span className="badge-info">Kosztorys w 2 wariantach</span>
+    <div className="flex flex-col gap-6 p-6 h-full overflow-y-auto">
+      {/* Breadcrumb + Header */}
+      <div>
+        <div className="flex items-center gap-1.5 text-xs text-earth-600 mb-1.5">
+          <span className="hover:text-earth-400 cursor-pointer" onClick={() => setCurrentModule('zwiad')}>Zwiad</span>
+          <ChevronRight className="w-3 h-3" />
+          <span className="text-earth-400">Kosztorys</span>
         </div>
-        <p className="text-earth-400">
-          Porównanie kosztorysu z dokumentacji (Variant A) vs. kosztorys Pana stawkami (Variant B)
-        </p>
+        <h2 className="text-xl font-semibold text-earth-100">Kosztorys</h2>
+        <p className="text-earth-500 text-sm mt-0.5 line-clamp-1">{tender.title}</p>
       </div>
-      
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        <div className="card p-4">
-          <div className="text-sm text-earth-400 mb-1">Wariant A (dokumentacja)</div>
-          <div className="text-2xl font-bold text-earth-100">{(estimateA.totals.gross / 1000).toFixed(0)}k zł</div>
-          <div className="text-xs text-earth-400">Netto: {(estimateA.totals.net / 1000).toFixed(0)}k zł</div>
-        </div>
-        <div className="card p-4">
-          <div className="text-sm text-earth-400 mb-1">Wariant B (Pan)</div>
-          <div className="text-2xl font-bold text-earth-100">{(estimateB.totals.gross / 1000).toFixed(0)}k zł</div>
-          <div className="text-xs text-earth-400">Netto: {(estimateB.totals.net / 1000).toFixed(0)}k zł</div>
-        </div>
-        <div className="card p-4">
-          <div className="text-sm text-earth-400 mb-1">Różnica</div>
-          <div className="text-2xl font-bold text-accent-danger">+{deltaPercent}%</div>
-          <div className="text-xs text-earth-400">
-            +{(delta / 1000).toFixed(0)}k zł
+
+      {/* Skeleton */}
+      {loading && (
+        <>
+          <div className="grid grid-cols-3 gap-4">
+            <SkeletonCard /><SkeletonCard /><SkeletonCard />
           </div>
-        </div>
-        <div className="card p-4">
-          <div className="text-sm text-earth-400 mb-1">Marża szacowana</div>
-          <div className="text-2xl font-bold text-accent-success">18%</div>
-          <div className="text-xs text-earth-400">Na wariantach</div>
-        </div>
-      </div>
-      
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6">
-        <button
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            activeTab === 'compare' ? 'bg-accent-success text-earth-950' : 'bg-earth-800 text-earth-300 hover:bg-earth-700'
-          }`}
-          onClick={() => setActiveTab('compare')}
-        >
-          Porównanie
-        </button>
-        <button
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            activeTab === 'A' ? 'bg-accent-info text-earth-950' : 'bg-earth-800 text-earth-300 hover:bg-earth-700'
-          }`}
-          onClick={() => setActiveTab('A')}
-        >
-          Wariant A - z dokumentacji
-        </button>
-        <button
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            activeTab === 'B' ? 'bg-accent-warning text-earth-950' : 'bg-earth-800 text-earth-300 hover:bg-earth-700'
-          }`}
-          onClick={() => setActiveTab('B')}
-        >
-          Wariant B - Pan
-        </button>
-      </div>
-      
-      {/* Compare View */}
-      {activeTab === 'compare' && (
-        <div className="space-y-6">
-          {/* Delta Alert */}
-          <div className="p-4 bg-accent-danger/10 border border-accent-danger/30 rounded-lg">
-            <div className="flex items-center gap-3 mb-2">
-              <AlertTriangle className="w-5 h-5 text-accent-danger" />
-              <h3 className="font-semibold text-accent-danger">Krytyczna różnica między wariantami</h3>
-            </div>
-            <p className="text-sm text-earth-200">
-              Wariant B (Pan) jest droższy o {deltaPercent}% (+{(delta / 1000).toFixed(0)}k zł) niż wariant A z dokumentacji.
-              To oznacza, że Pana rzeczywiste koszty są wyższe niż szacowane w przedmiarze.
-              <span className="block mt-2 font-medium">
-                Rekomendacja: Skoryguj ofertę lub negocjuj przedmiar.
-              </span>
-            </p>
+          <div className="grid grid-cols-2 gap-4">
+            <SkeletonTable /><SkeletonTable />
           </div>
-          
-          {/* Charts */}
-          <div className="grid grid-cols-2 gap-6">
-            <PieChart
-              data={[
-                { name: 'Robocizna', value: estimateA.totals.labor, color: '#22C55E' },
-                { name: 'Sprzęt', value: estimateA.totals.equipment, color: '#3B82F6' },
-                { name: 'Materiały', value: estimateA.totals.materials, color: '#F59E0B' },
-                { name: 'Nakład', value: estimateA.totals.overhead, color: '#8B5CF6' },
-              ]}
-              label="Wariant A — Struktura kosztów"
-            />
-            <PieChart
-              data={[
-                { name: 'Robocizna', value: estimateB.totals.labor, color: '#22C55E' },
-                { name: 'Sprzęt', value: estimateB.totals.equipment, color: '#3B82F6' },
-                { name: 'Materiały', value: estimateB.totals.materials, color: '#F59E0B' },
-                { name: 'Nakład', value: estimateB.totals.overhead, color: '#8B5CF6' },
-              ]}
-              label="Wariant B — Struktura kosztów"
-            />
-          </div>
-          
-          {/* Comparison Table */}
-          <div className="card p-6">
-            <h3 className="text-lg font-semibold text-earth-100 mb-4">Porównanie pozycji</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr>
-                    <th className="table-header">Pozycja</th>
-                    <th className="table-header">Jedn.</th>
-                    <th className="table-header text-accent-info">A - Ilość</th>
-                    <th className="table-header text-accent-info">A - Cena</th>
-                    <th className="table-header text-accent-warning">B - Ilość</th>
-                    <th className="table-header text-accent-warning">B - Cena</th>
-                    <th className="table-header">Różnica</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {estimateA.lines.map((lineA, i) => {
-                    const lineB = estimateB.lines[i];
-                    if (!lineB) return null;
-                    const diff = lineB.totalPrice - lineA.totalPrice;
-                    return (
-                      <tr key={lineA.id}>
-                        <td className="table-cell font-medium text-earth-100">{lineA.description}</td>
-                        <td className="table-cell text-earth-300">{lineA.unit}</td>
-                        <td className="table-cell text-accent-info">{lineA.quantity.toLocaleString('pl-PL')}</td>
-                        <td className="table-cell text-accent-info">{lineA.unitPrice.toFixed(2)} zł</td>
-                        <td className="table-cell text-accent-warning">{lineB.quantity.toLocaleString('pl-PL')}</td>
-                        <td className="table-cell text-accent-warning">{lineB.unitPrice.toFixed(2)} zł</td>
-                        <td className={`table-cell ${diff > 0 ? 'text-accent-danger' : 'text-accent-success'}`}>
-                          {diff > 0 ? '+' : ''}{diff.toLocaleString('pl-PL')} zł
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
+        </>
+      )}
+
+      {/* Error */}
+      {error && (
+        <div className="flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400">
+          <AlertCircle className="w-5 h-5 shrink-0" />
+          <span>{error}</span>
         </div>
       )}
-      
-      {/* Variant A View */}
-      {activeTab === 'A' && (
-        <div className="space-y-6">
-          <div className="card p-6">
-            <h3 className="text-lg font-semibold text-earth-100 mb-4">Wariant A — z dokumentacji</h3>
-            <div className="text-sm text-earth-400 mb-4">
-              Kalkulacja uproszczona zgodna z Rozp. MRiT z 20.12.2021, oparta o przedmiar i ceny rynkowe (KNR).
-              Tak liczy zamawiający.
+
+      {!loading && !error && estimates.length > 0 && (
+        <>
+          {/* Summary cards */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="glass-card rounded-xl p-4">
+              <p className="text-earth-500 text-xs mb-1">Dokumentacja (A)</p>
+              <p className="text-earth-100 font-semibold text-lg font-mono tabular-nums">{fmt(docTotal)}</p>
+              <p className="text-earth-600 text-xs mt-0.5">wariant docs</p>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr>
-                    <th className="table-header">Pozycja</th>
-                    <th className="table-header">Opis</th>
-                    <th className="table-header">Jedn.</th>
-                    <th className="table-header">Ilość</th>
-                    <th className="table-header">Cena jedn.</th>
-                    <th className="table-header text-right">Wartość</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {estimateA.lines.map((line) => (
-                    <tr key={line.id}>
-                      <td className="table-cell text-accent-info font-mono">{line.position}</td>
-                      <td className="table-cell text-earth-200">{line.description}</td>
-                      <td className="table-cell text-earth-300">{line.unit}</td>
-                      <td className="table-cell text-earth-200">{line.quantity.toLocaleString('pl-PL')}</td>
-                      <td className="table-cell text-earth-200">{line.unitPrice.toFixed(2)} zł</td>
-                      <td className="table-cell text-earth-100 font-semibold text-right">
-                        {line.totalPrice.toLocaleString('pl-PL')} zł
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="glass-card rounded-xl p-4">
+              <p className="text-earth-500 text-xs mb-1">Inwestorski (B)</p>
+              <p className="text-earth-100 font-semibold text-lg font-mono tabular-nums">{fmt(ownerTotal)}</p>
+              <p className="text-earth-600 text-xs mt-0.5">wariant owner</p>
             </div>
-            <div className="mt-4 p-4 bg-earth-800 rounded-lg">
-              <div className="grid grid-cols-4 gap-4 text-center">
-                <div>
-                  <div className="text-sm text-earth-400">Netto</div>
-                  <div className="text-lg font-bold text-earth-100">{estimateA.totals.net.toLocaleString('pl-PL')} zł</div>
-                </div>
-                <div>
-                  <div className="text-sm text-earth-400">VAT 23%</div>
-                  <div className="text-lg font-bold text-earth-100">{estimateA.totals.vat.toLocaleString('pl-PL')} zł</div>
-                </div>
-                <div>
-                  <div className="text-sm text-earth-400">Brutto</div>
-                  <div className="text-lg font-bold text-accent-success">{estimateA.totals.gross.toLocaleString('pl-PL')} zł</div>
-                </div>
-                <div>
-                  <div className="text-sm text-earth-400">Marża</div>
-                  <div className="text-lg font-bold text-accent-warning">18%</div>
-                </div>
+            {/* Delta card */}
+            <div className={`glass-card rounded-xl p-4 border ${isFavorable ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-red-500/30 bg-red-500/5'}`}>
+              <p className="text-earth-500 text-xs mb-1">Delta (B − A)</p>
+              <div className="flex items-center gap-1.5">
+                {isFavorable
+                  ? <TrendingDown className="w-4 h-4 text-emerald-400" />
+                  : <TrendingUp className="w-4 h-4 text-red-400" />}
+                <p className={`font-semibold text-lg font-mono tabular-nums ${isFavorable ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {delta > 0 ? '+' : ''}{fmt(delta)}
+                </p>
               </div>
+              <p className={`text-xs mt-0.5 font-mono ${isFavorable ? 'text-emerald-600' : 'text-red-500'}`}>
+                {deltaPct > 0 ? '+' : ''}{deltaPct.toFixed(1)}% vs dokumentacja
+              </p>
             </div>
           </div>
-        </div>
-      )}
-      
-      {/* Variant B View */}
-      {activeTab === 'B' && (
-        <div className="space-y-6">
-          <div className="card p-6">
-            <h3 className="text-lg font-semibold text-earth-100 mb-4">Wariant B — Pana stawkami</h3>
-            <div className="text-sm text-earth-400 mb-4">
-              Oparty na Pana własnym arkuszu Excel: realne ceny materiałów, robocizny, wydajności brygad.
-              Tak naprawdę wygląda Pana koszt.
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr>
-                    <th className="table-header">Pozycja</th>
-                    <th className="table-header">Opis</th>
-                    <th className="table-header">Jedn.</th>
-                    <th className="table-header">Ilość</th>
-                    <th className="table-header">Cena jedn.</th>
-                    <th className="table-header text-right">Wartość</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {estimateB.lines.map((line) => (
-                    <tr key={line.id}>
-                      <td className="table-cell text-accent-warning font-mono">{line.position}</td>
-                      <td className="table-cell text-earth-200">{line.description}</td>
-                      <td className="table-cell text-earth-300">{line.unit}</td>
-                      <td className="table-cell text-earth-200">{line.quantity.toLocaleString('pl-PL')}</td>
-                      <td className="table-cell text-earth-200">{line.unitPrice.toFixed(2)} zł</td>
-                      <td className="table-cell text-earth-100 font-semibold text-right">
-                        {line.totalPrice.toLocaleString('pl-PL')} zł
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="mt-4 p-4 bg-earth-800 rounded-lg">
-              <div className="grid grid-cols-4 gap-4 text-center">
-                <div>
-                  <div className="text-sm text-earth-400">Netto</div>
-                  <div className="text-lg font-bold text-earth-100">{estimateB.totals.net.toLocaleString('pl-PL')} zł</div>
+
+          {/* Side-by-side tables */}
+          <div className="grid grid-cols-2 gap-4">
+            {[doc, owner].map((est) => {
+              if (!est) return null;
+              const label = est.variant === 'doc' ? 'Dokumentacja (A)' : 'Inwestorski (B)';
+              const chapters = groupByChapter(est.lines);
+              return (
+                <div key={est.id} className="glass-card rounded-xl overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-earth-800/60">
+                    <span className="text-sm font-medium text-earth-200">{label}</span>
+                    <span className="text-xs text-accent-primary font-mono tabular-nums">{fmt(est.total_net_pln)}</span>
+                  </div>
+                  <div className="divide-y divide-earth-800/40">
+                    {Object.entries(chapters).map(([ch, lines]) => {
+                      const chKey = `${est.variant}-${ch}`;
+                      const expanded = expandedChapters[chKey] !== false;
+                      const chTotal = lines.reduce((s, l) => s + parseFloat(l.line_total_pln || '0'), 0);
+                      return (
+                        <div key={chKey}>
+                          <button
+                            onClick={() => toggleChapter(chKey)}
+                            className="w-full flex items-center justify-between px-4 py-2 hover:bg-earth-800/30 transition-colors text-left"
+                          >
+                            <span className="text-xs font-medium text-earth-300">{ch}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-earth-500 font-mono tabular-nums">{fmt(chTotal)}</span>
+                              {expanded
+                                ? <ChevronUp className="w-3 h-3 text-earth-600" />
+                                : <ChevronDown className="w-3 h-3 text-earth-600" />}
+                            </div>
+                          </button>
+                          {expanded && (
+                            <table className="w-full text-xs">
+                              <tbody>
+                                {lines.map((line, i) => (
+                                  <tr key={i} className="hover:bg-earth-800/20 border-t border-earth-800/30">
+                                    <td className="pl-6 pr-2 py-1.5 text-earth-600 w-8">{line.position_no}</td>
+                                    <td className="px-2 py-1.5 text-earth-300">{line.description}</td>
+                                    <td className="px-2 py-1.5 text-earth-500 text-right whitespace-nowrap">{line.quantity} {line.unit}</td>
+                                    <td className="pl-2 pr-4 py-1.5 text-earth-400 text-right whitespace-nowrap font-mono tabular-nums">
+                                      {parseFloat(line.line_total_pln || '0').toLocaleString('pl-PL', { maximumFractionDigits: 0 })}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {/* Chapter delta row */}
+                  <div className={`flex items-center justify-between px-4 py-2.5 border-t-2 ${isFavorable ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-red-500/20 bg-red-500/5'}`}>
+                    <span className="text-xs font-semibold text-earth-300">RAZEM NETTO</span>
+                    <span className="text-sm font-bold font-mono tabular-nums text-earth-100">{fmt(est.total_net_pln)}</span>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-sm text-earth-400">VAT 23%</div>
-                  <div className="text-lg font-bold text-earth-100">{estimateB.totals.vat.toLocaleString('pl-PL')} zł</div>
-                </div>
-                <div>
-                  <div className="text-sm text-earth-400">Brutto</div>
-                  <div className="text-lg font-bold text-accent-danger">{estimateB.totals.gross.toLocaleString('pl-PL')} zł</div>
-                </div>
-                <div>
-                  <div className="text-sm text-earth-400">Marża</div>
-                  <div className="text-lg font-bold text-accent-warning">5%</div>
-                </div>
+              );
+            })}
+          </div>
+
+          {/* Delta summary row */}
+          <div className={`glass-card rounded-xl p-4 flex items-center justify-between border ${isFavorable ? 'border-emerald-500/30' : 'border-red-500/30'}`}>
+            <div className="flex items-center gap-3">
+              {isFavorable
+                ? <TrendingDown className="w-5 h-5 text-emerald-400" />
+                : <TrendingUp className="w-5 h-5 text-red-400" />}
+              <div>
+                <p className="text-earth-400 text-xs">Różnica kosztorysów (B minus A)</p>
+                <p className={`text-sm font-medium ${isFavorable ? 'text-emerald-300' : 'text-red-300'}`}>
+                  {isFavorable ? 'Wariant inwestorski jest korzystniejszy' : 'Wariant inwestorski jest droższy'}
+                </p>
               </div>
             </div>
+            <div className="text-right">
+              <p className={`text-2xl font-bold font-mono tabular-nums ${isFavorable ? 'text-emerald-400' : 'text-red-400'}`}>
+                {delta > 0 ? '+' : ''}{fmt(delta)}
+              </p>
+              <p className={`text-xs font-mono ${isFavorable ? 'text-emerald-600' : 'text-red-500'}`}>
+                {deltaPct > 0 ? '+' : ''}{deltaPct.toFixed(2)}%
+              </p>
+            </div>
+          </div>
+        </>
+      )}
+
+      {!loading && !error && estimates.length === 0 && (
+        <div className="flex flex-col items-center justify-center flex-1 gap-4 text-center py-16">
+          <div className="w-14 h-14 rounded-2xl bg-earth-800 flex items-center justify-center border border-earth-700/40">
+            <Calculator className="w-7 h-7 text-earth-500" />
+          </div>
+          <div>
+            <p className="text-earth-300 font-medium">Brak kosztorysów</p>
+            <p className="text-earth-500 text-sm mt-1">Uruchom wycenę przez Silnik decyzyjny</p>
           </div>
         </div>
       )}

@@ -1,283 +1,311 @@
 'use client';
 
-import { useState } from 'react';
-import { riskAnalysis } from '@/lib/mockData';
+import { useState, useEffect } from 'react';
+import { useStore } from '@/store/useStore';
 import {
-  Brain,
-  AlertTriangle,
-  ShieldAlert,
-  CheckCircle,
-  XCircle,
-  Target,
-  TrendingUp,
-  TrendingDown,
-  Info,
-  Layers,
-  Cpu,
+  Brain, AlertTriangle, CheckCircle, XCircle, Play, ArrowRight,
+  BarChart2, Zap, ShieldAlert, Info,
 } from 'lucide-react';
-import dynamic from 'next/dynamic';
 
-function BarChart({ data, label }: { data: { name: string; value: number; color: string }[]; label: string }) {
-  const maxValue = Math.max(...data.map(d => d.value));
-  const [hovered, setHovered] = useState<number | null>(null);
-  
-  return (
-    <div className="card p-6">
-      <h3 className="text-lg font-semibold text-earth-100 mb-4">{label}</h3>
-      <div className="space-y-4">
-        {data.map((bar, i) => (
-          <div key={i}>
-            <div className="flex justify-between text-sm mb-1">
-              <span className="text-earth-300">{bar.name}</span>
-              <span className="text-earth-100 font-semibold">{bar.value.toFixed(1)}%</span>
-            </div>
-            <div className="h-4 bg-earth-800 rounded-full overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all duration-300"
-                style={{
-                  width: `${(bar.value / maxValue) * 100}%`,
-                  backgroundColor: bar.color,
-                  opacity: hovered === i ? 1 : 0.8,
-                }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+interface Violation {
+  axiom_code: string;
+  severity: string;
+  message: string;
+  provenance: Record<string, unknown>;
 }
 
-function ScenarioChart({ scenarios }: { scenarios: typeof riskAnalysis.l2RiskDistribution.scenarios }) {
-  const [hovered, setHovered] = useState<number | null>(null);
-  
-  return (
-    <div className="card p-6">
-      <h3 className="text-lg font-semibold text-earth-100 mb-4">Rozkład scenariuszy</h3>
-      <div className="flex items-end justify-between h-48 gap-2">
-        {scenarios.map((scenario, i) => (
-          <div
-            key={i}
-            className="flex-1 flex flex-col items-center gap-2 cursor-pointer"
-            onMouseEnter={() => setHovered(i)}
-            onMouseLeave={() => setHovered(null)}
-          >
-            <div className="text-xs text-earth-300">{(scenario.probability * 100).toFixed(0)}%</div>
-            <div
-              className="w-full rounded-t-lg transition-all duration-300"
-              style={{
-                height: `${(scenario.margin + 0.2) * 200}px`,
-                backgroundColor: scenario.margin > 0 ? '#22C55E' : '#EF4444',
-                opacity: hovered === i ? 1 : 0.7,
-              }}
-            />
-            <div className="text-xs text-earth-300 text-center">{scenario.name}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+interface Driver {
+  factor: string;
+  S1: number;
+  ST: number;
 }
+
+interface RiskData {
+  margin_p10: number;
+  margin_p50: number;
+  margin_p90: number;
+  drivers: Driver[];
+  n_samples_used: number;
+}
+
+interface EngineResult {
+  feasible: boolean;
+  violations: Violation[];
+  risk: RiskData | null;
+  explanation_md: string;
+}
+
+const SEVERITY_ORDER = ['block', 'warn', 'info'];
+
+const SEVERITY_META: Record<string, { label: string; classes: string; icon: React.ReactNode }> = {
+  block: {
+    label: 'BLOKADA',
+    classes: 'text-red-400 bg-red-500/10 border-red-500/30',
+    icon: <XCircle className="w-4 h-4 text-red-400 shrink-0" />,
+  },
+  warn: {
+    label: 'OSTRZEŻENIE',
+    classes: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/30',
+    icon: <AlertTriangle className="w-4 h-4 text-yellow-400 shrink-0" />,
+  },
+  info: {
+    label: 'INFO',
+    classes: 'text-blue-400 bg-blue-500/10 border-blue-500/30',
+    icon: <Info className="w-4 h-4 text-blue-400 shrink-0" />,
+  },
+};
+
+function pct(v: number) { return (v * 100).toFixed(1) + '%'; }
 
 export function SilnikPage() {
-  const [activeTab, setActiveTab] = useState<'l1' | 'l2' | 'l3'>('l1');
-  const { l1Feasibility, l2RiskDistribution, l3Explanation } = riskAnalysis;
-  
-  const getSeverityColor = (severity: string) => {
-    const colors: Record<string, string> = {
-      low: 'text-accent-info',
-      medium: 'text-accent-warning',
-      high: 'text-accent-danger',
-      critical: 'text-accent-danger',
-    };
-    return colors[severity] || 'text-earth-400';
+  const { selectedTender, setCurrentModule } = useStore();
+  const tender = selectedTender as any;
+
+  const [result, setResult] = useState<EngineResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [running, setRunning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchResult = (id: string) => {
+    setLoading(true);
+    setError(null);
+    fetch(`/api/v1/tenders/${id}/engine`)
+      .then(r => {
+        if (r.status === 404) return null;
+        if (!r.ok) throw new Error(`Błąd ${r.status}`);
+        return r.json();
+      })
+      .then(data => { setResult(data); setLoading(false); })
+      .catch(e => { setError(e.message); setLoading(false); });
   };
-  
-  const getSeverityBadge = (severity: string) => {
-    const classes: Record<string, string> = {
-      low: 'badge-info',
-      medium: 'badge-warning',
-      high: 'badge-danger',
-      critical: 'badge-danger',
-    };
-    return <span className={classes[severity] || 'badge-info'}>{severity}</span>;
+
+  useEffect(() => {
+    if (tender?.id) fetchResult(tender.id);
+  }, [tender?.id]);
+
+  const runEngine = () => {
+    if (!tender?.id) return;
+    setRunning(true);
+    setError(null);
+    fetch(`/api/v1/tenders/${tender.id}/engine/run`, { method: 'POST' })
+      .then(r => { if (!r.ok) throw new Error(`Błąd ${r.status}`); return r.json(); })
+      .then(data => { setResult(data); setRunning(false); })
+      .catch(e => { setError(e.message); setRunning(false); });
   };
-  
+
+  if (!tender) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-6 text-center">
+        <div className="w-20 h-20 rounded-2xl bg-earth-800 flex items-center justify-center border border-earth-700/40">
+          <Brain className="w-10 h-10 text-earth-500" />
+        </div>
+        <div>
+          <p className="text-earth-200 font-semibold text-xl">Nie wybrano przetargu</p>
+          <p className="text-earth-500 text-sm mt-2 max-w-xs mx-auto leading-relaxed">
+            Wejdź do Zwiadu i wybierz przetarg, aby uruchomić analizę
+          </p>
+        </div>
+        <button
+          onClick={() => setCurrentModule('zwiad')}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent-primary/10 text-accent-primary hover:bg-accent-primary/20 transition-colors text-sm font-medium border border-accent-primary/20"
+        >
+          Przejdź do Zwiadu <ArrowRight className="w-4 h-4" />
+        </button>
+      </div>
+    );
+  }
+
+  // Group violations by severity
+  const violationsBySeverity: Record<string, Violation[]> = {};
+  if (result?.violations) {
+    for (const v of result.violations) {
+      if (!violationsBySeverity[v.severity]) violationsBySeverity[v.severity] = [];
+      violationsBySeverity[v.severity].push(v);
+    }
+  }
+
   return (
-    <div className="p-6">
+    <div className="flex flex-col gap-6 p-6 h-full overflow-y-auto">
       {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-2">
-          <h1 className="text-3xl font-bold text-earth-100">SILNIK</h1>
-          <span className="badge-warning">Silnik decyzyjny</span>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-semibold text-earth-100">Silnik decyzyjny</h2>
+          <p className="text-earth-500 text-sm mt-0.5 line-clamp-1">{tender.title}</p>
         </div>
-        <p className="text-earth-400">
-          3-warstwowy silnik aksjomatyczno-stochastyczny — L1 reguły twarde, L2 analiza ryzyka, L3 wyjaśnienie AI
-        </p>
+        <button
+          onClick={runEngine}
+          disabled={running || loading}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-accent-primary text-earth-950 font-semibold text-sm hover:bg-emerald-400 transition-colors disabled:opacity-50 shrink-0"
+        >
+          {running
+            ? <><div className="w-4 h-4 border-2 border-earth-900 border-t-transparent rounded-full animate-spin" /> Analizuję…</>
+            : <><Play className="w-4 h-4" /> {result ? 'Przelicz ponownie' : 'Uruchom analizę'}</>}
+        </button>
       </div>
-      
-      {/* Verdict */}
-      <div className={`p-6 mb-6 rounded-lg border-2 ${
-        l1Feasibility.verdict === 'feasible' ? 'bg-accent-success/10 border-accent-success' :
-        l1Feasibility.verdict === 'risky' ? 'bg-accent-warning/10 border-accent-warning' :
-        'bg-accent-danger/10 border-accent-danger'
-      }`}>
-        <div className="flex items-center gap-3 mb-4">
-          {l1Feasibility.verdict === 'feasible' ? (
-            <CheckCircle className="w-8 h-8 text-accent-success" />
-          ) : l1Feasibility.verdict === 'risky' ? (
-            <AlertTriangle className="w-8 h-8 text-accent-warning" />
-          ) : (
-            <XCircle className="w-8 h-8 text-accent-danger" />
-          )}
-          <div>
-            <h2 className="text-2xl font-bold text-earth-100">
-              {l1Feasibility.verdict === 'feasible' ? 'Wykonalny' :
-               l1Feasibility.verdict === 'risky' ? 'Ryzykowny' :
-               'Niewykonalny'}
-            </h2>
-            <p className="text-earth-300">
-              {l1Feasibility.violations.length} naruszeń wykryto • {l1Feasibility.derivedFacts.length} faktów wyprowadzonych
-            </p>
+
+      {loading && (
+        <div className="flex items-center gap-3 text-earth-500">
+          <div className="w-4 h-4 border-2 border-earth-700 border-t-accent-primary rounded-full animate-spin" />
+          Ładowanie wyników…
+        </div>
+      )}
+
+      {error && (
+        <div className="flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400">
+          <AlertTriangle className="w-5 h-5 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {!loading && result && (
+        <>
+          {/* Verdict Banner — GO / NO-GO */}
+          <div className={`rounded-2xl p-6 flex items-center gap-5 border-2 ${
+            result.feasible
+              ? 'bg-emerald-500/10 border-emerald-500/40'
+              : 'bg-red-500/10 border-red-500/40'
+          }`}>
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 ${
+              result.feasible ? 'bg-emerald-500/20' : 'bg-red-500/20'
+            }`}>
+              {result.feasible
+                ? <CheckCircle className="w-9 h-9 text-emerald-400" />
+                : <XCircle className="w-9 h-9 text-red-400" />}
+            </div>
+            <div className="flex-1">
+              <p className="text-earth-500 text-xs font-medium uppercase tracking-wider mb-0.5">Werdykt silnika</p>
+              <p className={`text-4xl font-black tracking-tight ${result.feasible ? 'text-emerald-400' : 'text-red-400'}`}>
+                {result.feasible ? 'GO' : 'NO-GO'}
+              </p>
+              <p className="text-earth-400 text-sm mt-1">
+                {result.feasible
+                  ? 'Przetarg WYKONALNY — kwalifikuje się do wyceny'
+                  : 'Przetarg NIEWYKONALNY — wykryto blokady'}
+              </p>
+            </div>
+            <div className="text-right shrink-0">
+              <p className="text-earth-500 text-xs">Naruszenia</p>
+              <p className={`text-3xl font-bold ${(result.violations?.length ?? 0) > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                {result.violations?.length ?? 0}
+              </p>
+            </div>
           </div>
-        </div>
-      </div>
-      
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6">
-        <button
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            activeTab === 'l1' ? 'bg-earth-700 text-earth-100' : 'bg-earth-800 text-earth-400 hover:bg-earth-700'
-          }`}
-          onClick={() => setActiveTab('l1')}
-        >
-          <Layers className="w-4 h-4 inline mr-2" />
-          L1 — Reguły twarde
-        </button>
-        <button
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            activeTab === 'l2' ? 'bg-earth-700 text-earth-100' : 'bg-earth-800 text-earth-400 hover:bg-earth-700'
-          }`}
-          onClick={() => setActiveTab('l2')}
-        >
-          <Target className="w-4 h-4 inline mr-2" />
-          L2 — Analiza ryzyka
-        </button>
-        <button
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            activeTab === 'l3' ? 'bg-earth-700 text-earth-100' : 'bg-earth-800 text-earth-400 hover:bg-earth-700'
-          }`}
-          onClick={() => setActiveTab('l3')}
-        >
-          <Cpu className="w-4 h-4 inline mr-2" />
-          L3 — Wyjaśnienie AI
-        </button>
-      </div>
-      
-      {/* L1 Tab */}
-      {activeTab === 'l1' && (
-        <div className="space-y-6">
-          <div className="card p-6">
-            <h3 className="text-lg font-semibold text-earth-100 mb-4 flex items-center gap-2">
-              <ShieldAlert className="w-5 h-5 text-accent-danger" />
-              Naruszenia reguł (L1)
-            </h3>
-            <div className="space-y-4">
-              {l1Feasibility.violations.map((violation) => (
-                <div key={violation.id} className="p-4 bg-earth-800 rounded-lg border border-earth-700">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="badge-info">{violation.axiomClass}</span>
-                      <span className={`text-xs font-semibold uppercase ${getSeverityColor(violation.severity)}`}>
-                        {violation.severity}
-                      </span>
-                    </div>
-                    <span className="text-xs text-earth-400 font-mono">
-                      {violation.provenance.page ? `str. ${violation.provenance.page}` : violation.provenance.clause}
-                    </span>
+
+          {/* Risk Gauges: P10/P50/P90 */}
+          {result.risk && (
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { label: 'Marża P10', sublabel: 'pesymistyczna', val: result.risk.margin_p10, bg: 'bg-red-500/10 border-red-500/30', text: 'text-red-400', bar: 'bg-red-400' },
+                { label: 'Marża P50', sublabel: 'mediana', val: result.risk.margin_p50, bg: 'bg-yellow-500/10 border-yellow-500/30', text: 'text-yellow-400', bar: 'bg-yellow-400' },
+                { label: 'Marża P90', sublabel: 'optymistyczna', val: result.risk.margin_p90, bg: 'bg-emerald-500/10 border-emerald-500/30', text: 'text-emerald-400', bar: 'bg-emerald-400' },
+              ].map(({ label, sublabel, val, bg, text, bar }) => (
+                <div key={label} className={`glass-card rounded-xl p-5 border ${bg}`}>
+                  <p className="text-earth-500 text-xs mb-0.5">{label}</p>
+                  <p className="text-earth-600 text-xs mb-3">{sublabel}</p>
+                  <p className={`text-3xl font-black ${text}`}>{pct(val)}</p>
+                  <div className="mt-3 h-1.5 bg-earth-800 rounded-full overflow-hidden">
+                    <div className={`h-full ${bar} rounded-full transition-all`} style={{ width: `${Math.min(Math.max(val * 100, 0), 100)}%` }} />
                   </div>
-                  <p className="text-earth-200">{violation.description}</p>
                 </div>
               ))}
             </div>
-          </div>
-          
-          <div className="card p-6">
-            <h3 className="text-lg font-semibold text-earth-100 mb-4 flex items-center gap-2">
-              <Info className="w-5 h-5 text-accent-info" />
-              Fakty wyprowadzone
-            </h3>
-            <div className="space-y-2">
-              {l1Feasibility.derivedFacts.map((fact, i) => (
-                <div key={i} className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-accent-success mt-1 flex-shrink-0" />
-                  <span className="text-earth-200 text-sm">{fact}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* L2 Tab */}
-      {activeTab === 'l2' && (
-        <div className="space-y-6">
-          <ScenarioChart scenarios={l2RiskDistribution.scenarios} />
-          
-          <BarChart
-            data={l2RiskDistribution.scenarios.map(s => ({
-              name: s.name,
-              value: s.probability * 100,
-              color: s.margin > 0 ? '#22C55E' : '#EF4444',
-            }))}
-            label="Prawdopodobieństwo scenariuszy"
-          />
-          
-          <div className="card p-6">
-            <h3 className="text-lg font-semibold text-earth-100 mb-4">Dominujące czynniki ryzyka</h3>
-            <div className="space-y-2">
-              {l2RiskDistribution.dominantDrivers.map((driver, i) => (
-                <div key={i} className="flex items-start gap-2">
-                  <AlertTriangle className="w-4 h-4 text-accent-warning mt-1 flex-shrink-0" />
-                  <span className="text-earth-200 text-sm">{driver}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* L3 Tab */}
-      {activeTab === 'l3' && (
-        <div className="space-y-6">
-          <div className="card p-6">
-            <h3 className="text-lg font-semibold text-earth-100 mb-4 flex items-center gap-2">
-              <Cpu className="w-5 h-5 text-accent-violet" />
-              Wyjaśnienie AI (L3)
-            </h3>
-            <div className="text-earth-200 leading-relaxed whitespace-pre-wrap">
-              {l3Explanation}
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-3 gap-4">
-            <div className="card p-4">
-              <div className="text-sm text-earth-400 mb-1">Model lokalny</div>
-              <div className="text-lg font-bold text-earth-100">Ollama</div>
-              <div className="text-xs text-earth-400">Qwen3 14B + Gemma 4 12B</div>
-            </div>
-            <div className="card p-4">
-              <div className="text-sm text-earth-400 mb-1">Model chmurowy</div>
-              <div className="text-lg font-bold text-earth-100">Claude</div>
-              <div className="text-xs text-earth-400">Bedrock eu-central-1</div>
-            </div>
-            <div className="card p-4">
-              <div className="text-sm text-earth-400 mb-1">Prawd. marży ≥10%</div>
-              <div className="text-lg font-bold text-accent-success">
-                {(l2RiskDistribution.targetMarginProbability * 100).toFixed(0)}%
+          )}
+
+          {/* Violations grouped by severity */}
+          {result.violations.length > 0 && (
+            <div className="glass-card rounded-xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-earth-800/60 flex items-center gap-2">
+                <ShieldAlert className="w-4 h-4 text-red-400" />
+                <span className="text-sm font-medium text-earth-200">Naruszenia reguł</span>
+                <span className="ml-auto text-xs text-earth-500">{result.violations.length} łącznie</span>
               </div>
-              <div className="text-xs text-earth-400">Przy obecnych założeniach</div>
+              <div>
+                {SEVERITY_ORDER.filter(sev => violationsBySeverity[sev]?.length).map(sev => {
+                  const meta = SEVERITY_META[sev] || SEVERITY_META.info;
+                  return (
+                    <div key={sev}>
+                      <div className={`px-4 py-2 flex items-center gap-2 text-xs font-semibold border-b border-earth-800/40 ${meta.classes}`}>
+                        {meta.icon}
+                        <span>{meta.label} ({violationsBySeverity[sev].length})</span>
+                      </div>
+                      <div className="divide-y divide-earth-800/30">
+                        {violationsBySeverity[sev].map((v, i) => (
+                          <div key={i} className="px-4 py-3 flex items-start gap-3 hover:bg-earth-800/15">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-earth-200 text-sm">{v.message}</p>
+                              <p className="text-earth-600 text-xs mt-0.5 font-mono">{v.axiom_code}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
+          )}
+
+          {/* Drivers table with mini bar chart */}
+          {result.risk && result.risk.drivers.length > 0 && (
+            <div className="glass-card rounded-xl overflow-hidden">
+              <div className="px-4 py-3 border-b border-earth-800/60 flex items-center gap-2">
+                <Zap className="w-4 h-4 text-accent-primary" />
+                <span className="text-sm font-medium text-earth-200">Czynniki ryzyka</span>
+                <span className="text-earth-600 text-xs ml-auto">{result.risk.n_samples_used.toLocaleString()} próbek Monte Carlo</span>
+              </div>
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-earth-800/40">
+                    <th className="text-left px-4 py-2 text-earth-500 font-medium">Czynnik</th>
+                    <th className="text-right px-3 py-2 text-earth-500 font-medium w-16">S1</th>
+                    <th className="text-right px-3 py-2 text-earth-500 font-medium w-16">ST</th>
+                    <th className="px-4 py-2 text-earth-500 font-medium w-40">Udział ST</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-earth-800/30">
+                  {result.risk.drivers.slice(0, 10).map((d, i) => (
+                    <tr key={i} className="hover:bg-earth-800/20">
+                      <td className="px-4 py-2.5 text-earth-300">{d.factor}</td>
+                      <td className="px-3 py-2.5 text-earth-500 text-right font-mono">{pct(d.S1)}</td>
+                      <td className="px-3 py-2.5 text-earth-400 text-right font-mono font-semibold">{pct(d.ST)}</td>
+                      <td className="px-4 py-2.5">
+                        <div className="h-1.5 bg-earth-800 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-accent-primary rounded-full"
+                            style={{ width: `${Math.min(d.ST * 100, 100)}%` }}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* No risk data */}
+          {!result.risk && (
+            <div className="glass-card rounded-xl p-6 flex items-center gap-4 text-earth-500 border border-earth-800/40">
+              <BarChart2 className="w-8 h-8 shrink-0" />
+              <div>
+                <p className="text-earth-300 text-sm font-medium">Brak danych ryzyka</p>
+                <p className="text-xs mt-0.5">Uruchom analizę ponownie aby wygenerować scenariusze Monte Carlo</p>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {!loading && !result && !error && (
+        <div className="flex flex-col items-center justify-center flex-1 gap-5 text-center py-16">
+          <div className="w-16 h-16 rounded-2xl bg-earth-800 flex items-center justify-center border border-earth-700/40">
+            <Brain className="w-8 h-8 text-earth-600" />
+          </div>
+          <div>
+            <p className="text-earth-300 font-medium">Gotowy do analizy</p>
+            <p className="text-earth-500 text-sm mt-1">
+              Kliknij <strong className="text-earth-200">Uruchom analizę</strong> aby sprawdzić wykonalność
+            </p>
           </div>
         </div>
       )}

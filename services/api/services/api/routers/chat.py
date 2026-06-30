@@ -29,6 +29,42 @@ class ChatRequest(BaseModel):
     message: str
 
 
+class GeneralChatRequest(BaseModel):
+    message: str
+    tender_id: str | None = None
+    context: str | None = None
+
+
+@router.post("/chat")
+def general_chat(body: GeneralChatRequest):
+    """Ogólny asystent Terra.OS — odpowiada po polsku na pytania o przetargi."""
+    from fastapi.responses import StreamingResponse
+    import json
+
+    def stream():
+        def sse(event, data):
+            return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+
+        msg = body.message.lower()
+
+        # Proste polskie odpowiedzi deterministyczne
+        if any(w in msg for w in ['przetarg', 'ofert', 'kosztorys', 'wycen']):
+            answer = f"Widzę że pytasz o {body.message}. W systemie Terra.OS masz dostęp do {20} przetargów w bazie. Użyj modułu Zwiad aby przefiltrować, następnie Kosztorys aby porównać warianty, a Silnik aby ocenić ryzyko."
+        elif any(w in msg for w in ['ryzyko', 'silnik', 'analiz']):
+            answer = "Silnik decyzyjny Terra.OS analizuje wykonalność na 3 poziomach: L1 (reguły twarde), L2 (ryzyko Monte Carlo 2000 próbek), L3 (wyjaśnienie). Przejdź do modułu Silnik i kliknij 'Uruchom analizę'."
+        elif any(w in msg for w in ['narzut', 'kp', 'zysk', 'marż']):
+            answer = "Możesz modyfikować parametry kosztorysu: narzut (KP%), zysk (zysk%), robociznę (zł/rg). Przejdź do Kosztorysu i użyj czatu przy konkretnej wycenie."
+        elif any(w in msg for w in ['pomoc', 'jak', 'co', 'help']):
+            answer = "Terra.OS to system wsparcia decyzji dla wykonawców robót ziemnych. Moduły: Zwiad (lista przetargów) → Kosztorys (2 warianty: doc/owner) → Silnik (analiza ryzyka) → Decyzja (GO/NO-GO). Wybierz przetarg w Zwiadzie aby rozpocząć."
+        else:
+            answer = f"Rozumiem: '{body.message}'. Jestem asystentem Terra.OS. Mogę pomóc z analizą przetargów, kosztorysami i oceną ryzyka. Zacznij od wyboru przetargu w module Zwiad."
+
+        yield sse("token", {"text": answer})
+        yield sse("done", {"ok": True})
+
+    return StreamingResponse(stream(), media_type="text/event-stream")
+
+
 # Recognized ops for deterministic application
 _VALID_OPS = {"set_param", "set_kp", "set_zysk", "set_robocizna"}
 
@@ -220,3 +256,76 @@ def _stream_chat(
         _write_audit(engine, estimate_id, tenant_id, edit, result)
 
     yield sse("done", result)
+
+
+# ─── Ogólny czat asystenta Terra.OS ───────────────────────────────────────────
+
+class GeneralChatRequest(BaseModel):
+    message: str
+    tender_id: str | None = None
+    context: str | None = None
+
+
+@router.post("/chat")
+def general_chat(body: GeneralChatRequest):
+    """Ogólny asystent Terra.OS — odpowiada po polsku na pytania o przetargi."""
+    from fastapi.responses import StreamingResponse as SR
+    import json as _json
+
+    def stream():
+        def sse(event, data):
+            return f"event: {event}\ndata: {_json.dumps(data, ensure_ascii=False)}\n\n"
+
+        msg = body.message.lower()
+
+        if any(w in msg for w in ['przetarg', 'ofert', 'kosztorys', 'wycen']):
+            answer = (
+                "W systemie Terra.OS masz dostęp do przetargów z BZP. "
+                "Użyj modułu **Zwiad** aby przefiltrować listę, kliknij przetarg aby pobrać dokumentację, "
+                "następnie **Kosztorys** aby porównać warianty doc/owner, a **Silnik** aby ocenić ryzyko Monte Carlo."
+            )
+        elif any(w in msg for w in ['ryzyko', 'silnik', 'analiz', 'monte']):
+            answer = (
+                "Silnik decyzyjny analizuje wykonalność na 3 poziomach: "
+                "**L1** – reguły twarde (blokery), "
+                "**L2** – ryzyko Monte Carlo (2000 próbek, marże P10/P50/P90), "
+                "**L3** – wyjaśnienie decyzji. "
+                "Przejdź do modułu Silnik i kliknij 'Uruchom analizę'."
+            )
+        elif any(w in msg for w in ['narzut', 'kp', 'zysk', 'marż', 'robocizn']):
+            answer = (
+                "Parametry kosztorysu do modyfikacji: "
+                "**KP%** (koszty pośrednie/narzut), **zysk%**, **robocizna [zł/rg]**, **calibration_coeff**. "
+                "Wejdź w Kosztorys wybranego przetargu — po prawej stronie znajdziesz panel edycji parametrów."
+            )
+        elif any(w in msg for w in ['dokument', 'siwz', 'przedmiar', 'pobierz']):
+            answer = (
+                "Aby pobrać dokumentację przetargową: wybierz przetarg w module **Zwiad**, "
+                "kliknij na wiersz przetargu — pojawi się panel szczegółów z przyciskiem 'Pobierz dokumentację'. "
+                "System uruchomi OCR i parsowanie przedmiaru automatycznie."
+            )
+        elif any(w in msg for w in ['decyzja', 'go', 'nogo', 'złóż', 'oferta']):
+            answer = (
+                "Moduł **Decyzja** agreguje wyniki: kosztorys (delta doc/owner), "
+                "silnik ryzyka (P10/P50/P90) i naruszenia reguł. "
+                "System sugeruje GO / NO-GO / NEGOCJUJ. "
+                "Kliknięcie 'Złóż ofertę' zmienia status przetargu na decided_go."
+            )
+        elif any(w in msg for w in ['pomoc', 'jak', 'help', 'co to', 'co umiesz']):
+            answer = (
+                "Terra.OS — system wsparcia decyzji dla wykonawców robót ziemnych. "
+                "**Flow:** Zwiad (lista BZP) → dokumentacja → Kosztorys (2 warianty) → Silnik (ryzyko) → Decyzja (GO/NO-GO). "
+                "Możesz mnie zapytać o: przetargi, kosztorysy, ryzyko, parametry wyceny, dokumentację."
+            )
+        else:
+            answer = (
+                f"Pytasz o: {body.message!r}. "
+                "Jestem asystentem Terra.OS — pomagam w analizie przetargów budowlanych, "
+                "kosztorysowaniu i ocenie ryzyka. "
+                "Zadaj konkretne pytanie np. 'jak działa kosztorys?' lub 'co to jest marża P50?'"
+            )
+
+        yield sse("token", {"text": answer})
+        yield sse("done", {"ok": True})
+
+    return SR(stream(), media_type="text/event-stream")
