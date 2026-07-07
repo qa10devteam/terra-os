@@ -47,6 +47,7 @@ from .routers import (
     tenders_v2, estimates_v2, decisions_v2, documents_upload, bzp_v2,
     notifications, search, audit, analytics,
     benchmark, advanced_analytics, analytics_v2,
+    organizations,
 )
 
 # Fazy 41-60 — optional routers (graceful import)
@@ -223,6 +224,7 @@ app.include_router(gdpr.router)
 app.include_router(api_keys.router)
 app.include_router(billing.router)
 app.include_router(demo.router)
+app.include_router(organizations.router)
 
 # Fazy 2-40 — This agent's routers
 app.include_router(tenders_v2.router)
