@@ -25,12 +25,18 @@ interface CompareResult {
   margin_headroom_pct: string;
 }
 
-function fmt(val: string | number | null | undefined) {
+function fmtPLN(val: string | number | null | undefined) {
   if (val === null || val === undefined) return '—';
   const n = typeof val === 'string' ? parseFloat(val) : val;
   if (isNaN(n)) return '—';
-  return n.toLocaleString('pl-PL', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + ' PLN';
+  return n.toLocaleString('pl-PL', { style: 'currency', currency: 'PLN', maximumFractionDigits: 0 });
 }
+
+// Status → polska etykieta
+const STATUS_LABELS: Record<string, string> = {
+  decided_go: 'GO ✓',
+  decided_nogo: 'NO-GO ✗',
+};
 
 type ToastState = { type: 'success' | 'error'; message: string } | null;
 
@@ -77,17 +83,19 @@ export function DecyzjaPage() {
       .then(r => { if (!r.ok) throw new Error(`Błąd ${r.status}`); return r.json(); })
       .then(() => {
         setActionStatus(status);
+        const statusLabel = STATUS_LABELS[status] ?? status;
         setToast({
           type: 'success',
-          message: status === 'decided_go' ? '✅ Decyzja GO — oferta będzie złożona' : '❌ Przetarg odrzucony',
+          message: `Decyzja zapisana — przetarg przesunięty do statusu: ${statusLabel}`,
         });
       })
       .catch((e) => {
         setActionStatus('error');
-        setToast({ type: 'error', message: `Błąd: ${e.message}` });
+        setToast({ type: 'error', message: `Błąd zapisu decyzji: ${e.message}` });
       });
   };
 
+  // ── Empty state — nie wybrano przetargu ─────────────────────────────────────
   if (!tender) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-6 text-center">
@@ -95,9 +103,9 @@ export function DecyzjaPage() {
           <Scale className="w-10 h-10 text-earth-500" />
         </div>
         <div>
-          <p className="text-earth-200 font-semibold text-xl">Nie wybrano przetargu</p>
+          <p className="text-earth-200 font-semibold text-xl">Wybierz przetarg z wyceną</p>
           <p className="text-earth-500 text-sm mt-2 max-w-xs mx-auto leading-relaxed">
-            Przejdź do Zwiadu i wybierz przetarg, aby podjąć decyzję
+            Wybierz przetarg z wyceną do podjęcia decyzji — GO (złóż ofertę) lub NO-GO (odrzuć)
           </p>
         </div>
         <button
@@ -126,22 +134,25 @@ export function DecyzjaPage() {
       bg: 'bg-emerald-500/10 border-emerald-500/40',
       textColor: 'text-emerald-400',
       iconBg: 'bg-emerald-500/20',
-      icon: <CheckCircle className="w-9 h-9 text-emerald-400" />,
-      subtitle: 'Złóż ofertę — warunki sprzyjające',
+      icon: <CheckCircle className="w-10 h-10 text-emerald-400" />,
+      subtitle: 'Złóż ofertę — warunki sprzyjające, marża akceptowalna',
+      explanation: 'System rekomenduje złożenie oferty. Ostateczna decyzja należy do kierownika budowy.',
     },
     'NO-GO': {
       bg: 'bg-red-500/10 border-red-500/40',
       textColor: 'text-red-400',
       iconBg: 'bg-red-500/20',
-      icon: <XCircle className="w-9 h-9 text-red-400" />,
-      subtitle: 'Odrzuć przetarg — zbyt wysokie ryzyko',
+      icon: <XCircle className="w-10 h-10 text-red-400" />,
+      subtitle: 'Odrzuć przetarg — zbyt wysokie ryzyko lub blokady systemowe',
+      explanation: 'System rekomenduje rezygnację. Sprawdź naruszenia reguł w module Silnik.',
     },
     'NEGOCJUJ': {
       bg: 'bg-yellow-500/10 border-yellow-500/40',
       textColor: 'text-yellow-400',
       iconBg: 'bg-yellow-500/20',
-      icon: <AlertCircle className="w-9 h-9 text-yellow-400" />,
-      subtitle: 'Warunki graniczne — rozważ negocjacje',
+      icon: <AlertCircle className="w-10 h-10 text-yellow-400" />,
+      subtitle: 'Warunki graniczne — rozważ negocjacje przed złożeniem oferty',
+      explanation: 'Marża jest na granicy akceptowalności. Zalecane negocjacje warunków umowy.',
     },
   };
   const rec = recConfig[recommendation];
@@ -153,18 +164,19 @@ export function DecyzjaPage() {
     <div className="flex flex-col gap-6 p-6 h-full overflow-y-auto">
       {/* Header */}
       <div>
-        <h2 className="text-xl font-semibold text-earth-100">Decyzja</h2>
-        <p className="text-earth-500 text-sm mt-0.5 line-clamp-1">{tender.title}</p>
+        <h2 className="text-xl font-semibold text-earth-100">Decyzja — GO / NO-GO</h2>
+        <p className="text-earth-500 text-sm mt-0.5">Zatwierdź lub odrzuć udział w przetargu</p>
+        <p className="text-earth-600 text-xs mt-1 line-clamp-1">{tender.title}</p>
       </div>
 
       {loading && (
         <div className="flex items-center gap-3 text-earth-500">
           <div className="w-4 h-4 border-2 border-earth-700 border-t-accent-primary rounded-full animate-spin" />
-          Ładowanie danych…
+          Ładowanie danych analizy…
         </div>
       )}
 
-      {/* Toast notification */}
+      {/* Toast — potwierdzenie decyzji */}
       {toast && (
         <div className={`flex items-center gap-3 p-4 rounded-xl border text-sm font-medium ${
           toast.type === 'success'
@@ -178,23 +190,35 @@ export function DecyzjaPage() {
 
       {!loading && (
         <>
-          {/* Verdict card */}
-          <div className={`rounded-2xl p-6 flex items-center gap-5 border-2 ${rec.bg}`}>
-            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 ${rec.iconBg}`}>
-              {rec.icon}
-            </div>
-            <div className="flex-1">
-              <p className="text-earth-500 text-xs font-medium uppercase tracking-wider mb-0.5">Rekomendacja systemu</p>
-              <p className={`text-4xl font-black tracking-tight ${rec.textColor}`}>{recommendation}</p>
-              <p className="text-earth-400 text-sm mt-1">{rec.subtitle}</p>
+          {/* Verdict banner — DUŻY, z pełnym wyjaśnieniem */}
+          <div className={`rounded-2xl p-6 border-2 ${rec.bg}`}>
+            <div className="flex items-start gap-5">
+              <div className={`w-18 h-18 rounded-2xl flex items-center justify-center shrink-0 p-3 ${rec.iconBg}`}>
+                {rec.icon}
+              </div>
+              <div className="flex-1">
+                <p className="text-earth-500 text-xs font-medium uppercase tracking-wider mb-1">
+                  Rekomendacja systemu
+                </p>
+                <p className={`text-5xl font-black tracking-tight leading-none ${rec.textColor}`}>
+                  {recommendation}
+                </p>
+                <p className={`text-base font-semibold mt-2 ${rec.textColor}`}>
+                  {rec.subtitle}
+                </p>
+                <p className="text-earth-400 text-sm mt-1 leading-relaxed">
+                  {rec.explanation}
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Three metrics side by side */}
+          {/* Trzy metryki — polskie etykiety, PLN sformatowane */}
           <div className="grid grid-cols-3 gap-4">
-            {/* Delta kosztorys */}
+            {/* Różnica kosztorysów */}
             <div className="glass-card rounded-xl p-4">
-              <p className="text-earth-500 text-xs mb-3">Delta kosztorys (B − A)</p>
+              <p className="text-earth-500 text-xs mb-0.5">Różnica kosztorysów (B − A)</p>
+              <p className="text-earth-600 text-xs mb-3">Wycena własna minus dokumentacja</p>
               {compare ? (
                 <div>
                   <div className="flex items-center gap-2">
@@ -202,49 +226,62 @@ export function DecyzjaPage() {
                       ? <TrendingUp className="w-4 h-4 text-red-400" />
                       : <TrendingDown className="w-4 h-4 text-emerald-400" />}
                     <span className={`text-xl font-bold font-mono tabular-nums ${delta > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
-                      {delta > 0 ? '+' : ''}{fmt(delta)}
+                      {delta > 0 ? '+' : ''}{fmtPLN(delta)}
                     </span>
                   </div>
                   {headroom !== null && (
                     <p className="text-earth-500 text-xs mt-1.5">
-                      Headroom: <span className={headroom < 0 ? 'text-red-400' : 'text-emerald-400'}>{headroom.toFixed(2)}%</span>
+                      Przestrzeń marżowa:{' '}
+                      <span className={headroom < 0 ? 'text-red-400' : 'text-emerald-400'}>
+                        {headroom.toFixed(2)}%
+                      </span>
                     </p>
                   )}
                 </div>
               ) : (
-                <p className="text-earth-600 text-sm">Brak kosztorysów</p>
+                <p className="text-earth-600 text-sm">Brak kosztorysów — uruchom wycenę</p>
               )}
             </div>
 
             {/* Marża P50 */}
             <div className="glass-card rounded-xl p-4">
-              <p className="text-earth-500 text-xs mb-3">Marża P50 (mediana)</p>
+              <p className="text-earth-500 text-xs mb-0.5">Marża P50 — najbardziej prawdopodobna</p>
+              <p className="text-earth-600 text-xs mb-3">Wynik symulacji Monte Carlo</p>
               {engine?.risk ? (
                 <div>
                   <p className="text-yellow-400 font-black text-3xl">
                     {(engine.risk.margin_p50 * 100).toFixed(1)}%
                   </p>
                   <div className="flex gap-3 mt-2">
-                    <span className="text-xs text-earth-600">P10: <span className="text-red-400">{(engine.risk.margin_p10 * 100).toFixed(1)}%</span></span>
-                    <span className="text-xs text-earth-600">P90: <span className="text-emerald-400">{(engine.risk.margin_p90 * 100).toFixed(1)}%</span></span>
+                    <span className="text-xs text-earth-600">
+                      P10 (pesym.): <span className="text-red-400">{(engine.risk.margin_p10 * 100).toFixed(1)}%</span>
+                    </span>
+                    <span className="text-xs text-earth-600">
+                      P90 (optym.): <span className="text-emerald-400">{(engine.risk.margin_p90 * 100).toFixed(1)}%</span>
+                    </span>
                   </div>
                 </div>
               ) : (
-                <p className="text-earth-600 text-sm">Brak danych — uruchom Silnik</p>
+                <p className="text-earth-600 text-sm">Brak danych — uruchom Silnik decyzyjny</p>
               )}
             </div>
 
-            {/* Violations count */}
+            {/* Naruszenia reguł */}
             <div className="glass-card rounded-xl p-4">
-              <p className="text-earth-500 text-xs mb-3">Naruszenia reguł</p>
+              <p className="text-earth-500 text-xs mb-0.5">Naruszenia reguł</p>
+              <p className="text-earth-600 text-xs mb-3">Wykryte przez silnik decyzyjny</p>
               {engine ? (
                 <div>
                   <p className={`font-black text-3xl ${blockCount > 0 ? 'text-red-400' : warnCount > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
                     {engine.violations?.length ?? 0}
                   </p>
                   <div className="flex gap-3 mt-2">
-                    <span className="text-xs text-earth-600">Blok: <span className="text-red-400">{blockCount}</span></span>
-                    <span className="text-xs text-earth-600">Warn: <span className="text-yellow-400">{warnCount}</span></span>
+                    <span className="text-xs text-earth-600">
+                      Blokady: <span className="text-red-400">{blockCount}</span>
+                    </span>
+                    <span className="text-xs text-earth-600">
+                      Ostrzeżenia: <span className="text-yellow-400">{warnCount}</span>
+                    </span>
                   </div>
                 </div>
               ) : (
@@ -253,52 +290,60 @@ export function DecyzjaPage() {
             </div>
           </div>
 
-          {/* Key drivers */}
+          {/* Kluczowe czynniki ryzyka */}
           {engine?.risk && engine.risk.drivers.length > 0 && (
             <div className="glass-card rounded-xl p-4">
-              <p className="text-earth-500 text-xs mb-3">Kluczowe czynniki ryzyka</p>
+              <p className="text-earth-500 text-xs mb-1">Kluczowe czynniki ryzyka (top 5)</p>
+              <p className="text-earth-600 text-xs mb-3">Czynniki o największym wpływie na marżę — z analizy Monte Carlo</p>
               <div className="flex flex-wrap gap-2">
                 {engine.risk.drivers.slice(0, 5).map((d, i) => (
                   <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-earth-800 text-earth-300 border border-earth-700/40">
-                    {d.factor} <span className="text-earth-500">({(d.ST * 100).toFixed(0)}%)</span>
+                    {d.factor}{' '}
+                    <span className="text-earth-500">({(d.ST * 100).toFixed(0)}% wpływu)</span>
                   </span>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Action buttons */}
+          {/* Przyciski decyzji */}
           {actionStatus === 'decided_go' ? (
             <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
-              <CheckCircle className="w-5 h-5" />
-              <span className="font-medium">Decyzja GO — status przetargu zaktualizowany</span>
+              <CheckCircle className="w-5 h-5 shrink-0" />
+              <div>
+                <p className="font-semibold">Decyzja GO zapisana</p>
+                <p className="text-xs text-emerald-600 mt-0.5">Przetarg przesunięty do statusu: GO ✓ — prześlij do realizacji</p>
+              </div>
             </div>
           ) : actionStatus === 'decided_nogo' ? (
             <div className="flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400">
-              <XCircle className="w-5 h-5" />
-              <span className="font-medium">Przetarg odrzucony — status zaktualizowany</span>
+              <XCircle className="w-5 h-5 shrink-0" />
+              <div>
+                <p className="font-semibold">Decyzja NO-GO zapisana</p>
+                <p className="text-xs text-red-600 mt-0.5">Przetarg przesunięty do statusu: NO-GO ✗ — oznaczony jako odrzucony</p>
+              </div>
             </div>
           ) : (
             <div className="flex gap-4 mt-2">
               <button
                 onClick={() => takeAction('decided_go')}
                 disabled={actionStatus === 'loading'}
-                className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-emerald-500 text-white font-bold text-sm hover:bg-emerald-400 transition-colors disabled:opacity-50 shadow-lg shadow-emerald-500/20"
+                className="flex-1 flex items-center justify-center gap-2 py-4 rounded-xl bg-emerald-500 text-white font-bold text-sm hover:bg-emerald-400 transition-colors disabled:opacity-50 shadow-lg shadow-emerald-500/20"
               >
                 {actionStatus === 'loading'
                   ? <Loader2 className="w-4 h-4 animate-spin" />
                   : <ThumbsUp className="w-5 h-5" />}
-                POTWIERDŹ GO
+                Zatwierdź GO — prześlij do realizacji
               </button>
               <button
                 onClick={() => takeAction('decided_nogo')}
                 disabled={actionStatus === 'loading'}
-                className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-earth-800 text-earth-300 font-bold text-sm hover:bg-earth-700 transition-colors disabled:opacity-50 border border-earth-700"
+                className="flex-1 flex items-center justify-center gap-2 py-4 rounded-xl bg-earth-800 text-earth-300 font-bold text-sm hover:bg-earth-700 transition-colors disabled:opacity-50 border border-earth-700"
               >
                 {actionStatus === 'loading'
                   ? <Loader2 className="w-4 h-4 animate-spin" />
                   : <ThumbsDown className="w-5 h-5" />}
-                ODRZUĆ
+                Odrzuć — oznacz jako NO-GO
               </button>
             </div>
           )}

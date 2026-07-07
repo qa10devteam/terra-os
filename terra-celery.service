@@ -1,0 +1,21 @@
+[Unit]
+Description=Terra.OS Celery Worker
+After=network.target redis.service postgresql.service
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/terra-os
+Environment=DB_PASSWORD=change_me
+Environment=DB_HOST=127.0.0.1
+Environment=DB_PORT=5432
+Environment=DB_NAME=terraos
+Environment=DB_USER=terraos
+Environment=TERRA_OFFLINE=0
+Environment=PYTHONPATH=/home/ubuntu/terra-os:/home/ubuntu/terra-os/packages/db
+ExecStart=/usr/bin/python3.12 -m celery -A services.api.services.api.celery_app worker --loglevel=info -Q critical,normal,batch
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

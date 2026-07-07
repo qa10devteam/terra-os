@@ -1,453 +1,444 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { Search, RefreshCw, Download, Save, SlidersHorizontal, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '@/store/useStore';
-import {
-  Search, Filter, ChevronUp, ChevronDown, X, Download,
-  AlertTriangle, CheckCircle, ArrowRight, Calculator, Brain,
-  MapPin, Calendar, Tag, Building2, Loader2, FileText, TrendingUp,
-} from 'lucide-react';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import { SkeletonRow } from '@/components/ui/SkeletonLoader';
+import { TenderDetail } from '@/components/TenderDetail';
+import { showToast } from '@/components/Toast';
 
-// ── Types ──────────────────────────────────────────────────────────────────────
 interface TenderItem {
   id: string;
   title: string;
-  buyer: string;
+  buyer: string | null;
   cpv: string[];
-  voivodeship: string;
-  value_pln: string | number;
-  deadline_at: string;
-  published_at?: string;
+  voivodeship: string | null;
+  value_pln: number | null;
+  deadline_at: string | null;
   status: string;
   match_score: number | null;
-  match_reason?: string;
-  source?: string;
-  external_id?: string;
-  url?: string;
+  match_reason: string | null;
+  source: string | null;
 }
 
-interface AnalysisResult {
-  summary_md: string;
-  red_flags: { severity: string; category: string; message: string; confidence: number }[];
-  key_facts: Record<string, unknown>;
-  przedmiar_items: { position_no: string; description: string; unit: string; quantity: number; knr_code?: string }[];
-}
+type SortKey = 'title' | 'buyer' | 'value_pln' | 'deadline_at' | 'match_score' | 'status';
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+const ALL_STATUSES = ['new', 'matched', 'watching', 'analyzing', 'estimated', 'decided_go', 'decided_nogo', 'archived'];
 const STATUS_LABELS: Record<string, string> = {
-  new: 'Nowy', matched: 'Dopasowany', analyzing: 'Analiza',
-  estimated: 'Wyceniony', decided_go: 'GO ✓', decided_nogo: 'NO-GO',
-  archived: 'Archiwum',
-};
-const STATUS_COLORS: Record<string, string> = {
-  new: 'bg-blue-500/15 text-blue-400',
-  matched: 'bg-purple-500/15 text-purple-400',
-  analyzing: 'bg-yellow-500/15 text-yellow-400',
-  estimated: 'bg-emerald-500/15 text-emerald-400',
-  decided_go: 'bg-emerald-600/20 text-emerald-300',
-  decided_nogo: 'bg-red-500/15 text-red-400',
-  archived: 'bg-earth-700/40 text-earth-500',
-};
-const SEVERITY_COLORS: Record<string, string> = {
-  high: 'bg-red-500/10 text-red-400 border-red-500/20',
-  medium: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
-  low: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  block: 'bg-red-500/10 text-red-400 border-red-500/20',
-  warn: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+  new: 'Nowy', matched: 'Dopasowany', watching: 'Obserwowany', analyzing: 'Analiza',
+  estimated: 'Wyceniony', decided_go: 'GO', decided_nogo: 'NO-GO', archived: 'Archiwum',
 };
 
-function fmtPLN(v: string | number | null | undefined) {
-  if (v === null || v === undefined) return '—';
-  const n = typeof v === 'string' ? parseFloat(v) : v;
-  if (isNaN(n)) return '—';
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + ' M PLN';
-  if (n >= 1_000) return (n / 1_000).toFixed(0) + ' k PLN';
-  return n.toFixed(0) + ' PLN';
+function fmtPLN(v: number | null | undefined) {
+  if (!v) return '—';
+  if (v >= 1_000_000) return (v / 1_000_000).toFixed(1) + ' M';
+  if (v >= 1_000) return (v / 1_000).toFixed(0) + ' tys.';
+  return v.toFixed(0);
 }
-function fmtDate(s?: string) {
+function fmtDate(s: string | null | undefined) {
   if (!s) return '—';
-  return new Date(s).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  return new Date(s).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: '2-digit' });
+}
+function daysUntil(s: string | null) {
+  if (!s) return null;
+  return Math.ceil((new Date(s).getTime() - Date.now()) / 86400000);
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
+function exportCSV(tenders: TenderItem[]) {
+  const headers = ['ID', 'Tytuł', 'Zamawiający', 'CPV', 'Region', 'Wartość (PLN)', 'Deadline', 'Status', 'Score'];
+  const rows = tenders.map(t => [
+    t.id, t.title, t.buyer ?? '', t.cpv.join(';'), t.voivodeship ?? '',
+    t.value_pln ?? '', t.deadline_at ?? '', t.status, Math.round((t.match_score ?? 0) * 100),
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'przetargi.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export function ZwiadPage() {
-  const { setSelectedTender, setCurrentModule } = useStore();
-
-  // List state
+  const { accessToken, setSelectedTender, selectedTender } = useStore();
   const [tenders, setTenders] = useState<TenderItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
-  const [loadingList, setLoadingList] = useState(true);
-  const [listError, setListError] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [sortBy, setSortBy] = useState<'deadline_at' | 'value_pln' | 'match_score'>('match_score');
+  const [syncing, setSyncing] = useState(false);
+  const [query, setQuery] = useState('');
+  const [sortKey, setSortKey] = useState<SortKey>('match_score');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-  const [page, setPage] = useState(0);
-  const PER_PAGE = 12;
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [minValue, setMinValue] = useState('');
+  const [maxValue, setMaxValue] = useState('');
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkStatus, setBulkStatus] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [openTender, setOpenTender] = useState<TenderItem | null>(null);
 
-  // Detail panel state
-  const [selected, setSelected] = useState<TenderItem | null>(null);
-  const [analysisLoading, setAnalysisLoading] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
-  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const fetchTenders = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const headers: Record<string, string> = {};
+      if (accessToken) headers['Authorization'] = 'Bearer ' + accessToken;
+      const res = await fetch('/api/v1/tenders?limit=100', { headers });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const json = await res.json();
+      setTenders(json.items ?? []);
+      setTotal(json.total ?? 0);
+    } catch (e: unknown) {
+      setError((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }, [accessToken]);
 
-  // Fetch list
+  useEffect(() => { fetchTenders(); }, [fetchTenders]);
+
+  // Auto-open TenderDetail when navigated from Dashboard with selectedTender
   useEffect(() => {
-    setLoadingList(true);
-    setListError(null);
-    const params = new URLSearchParams({ limit: '50' });
-    if (statusFilter) params.set('status', statusFilter);
-    fetch(`/api/v1/tenders?${params}`)
-      .then(r => { if (!r.ok) throw new Error(`Błąd ${r.status}`); return r.json(); })
-      .then(data => { setTenders(data.items ?? []); setTotal(data.total ?? 0); setLoadingList(false); })
-      .catch(e => { setListError(e.message); setLoadingList(false); });
-  }, [statusFilter]);
+    if (selectedTender && !openTender) {
+      setOpenTender(selectedTender as unknown as TenderItem);
+      setSelectedTender(null);
+    }
+  }, [selectedTender]);
 
-  // Auto-fetch existing analysis when panel opens
-  useEffect(() => {
-    if (!selected) return;
-    setAnalysisResult(null);
-    setAnalysisError(null);
-    fetch(`/api/v1/tenders/${selected.id}/analysis`)
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data) setAnalysisResult(data); })
-      .catch(() => {});
-  }, [selected?.id]);
+  async function handleSync() {
+    setSyncing(true);
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (accessToken) headers['Authorization'] = 'Bearer ' + accessToken;
+      await fetch('/api/v1/ingest/run', { method: 'POST', headers });
+      showToast('success', 'Synchronizacja uruchomiona!');
+      setTimeout(fetchTenders, 2000);
+    } catch {
+      showToast('error', 'Błąd synchronizacji');
+    } finally {
+      setSyncing(false);
+    }
+  }
 
-  const handleSort = (col: typeof sortBy) => {
-    if (sortBy === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-    else { setSortBy(col); setSortDir('desc'); }
-  };
+  async function handleBulkStatus() {
+    if (!bulkStatus || selected.size === 0) return;
+    const ids = [...selected];
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (accessToken) headers['Authorization'] = 'Bearer ' + accessToken;
+    for (const id of ids) {
+      await fetch('/api/v1/tenders/' + id, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ status: bulkStatus }),
+      }).catch(() => {});
+    }
+    showToast('success', 'Status zaktualizowany dla ' + ids.length + ' przetargów');
+    setSelected(new Set());
+    fetchTenders();
+  }
 
-  const filtered = tenders.filter(t =>
-    !search || t.title.toLowerCase().includes(search.toLowerCase()) ||
-    t.buyer.toLowerCase().includes(search.toLowerCase())
-  );
+  function saveFilters() {
+    const filters = { selectedStatuses, minValue, maxValue, sortKey, sortDir };
+    localStorage.setItem('terra-zwiad-filters', JSON.stringify(filters));
+    showToast('success', 'Filtry zapisane');
+  }
 
-  const sorted = [...filtered].sort((a, b) => {
-    let va: number, vb: number;
-    if (sortBy === 'match_score') { va = a.match_score ?? 0; vb = b.match_score ?? 0; }
-    else if (sortBy === 'value_pln') { va = parseFloat(String(a.value_pln)) || 0; vb = parseFloat(String(b.value_pln)) || 0; }
-    else { va = new Date(a.deadline_at).getTime(); vb = new Date(b.deadline_at).getTime(); }
-    return sortDir === 'asc' ? va - vb : vb - va;
-  });
+  function loadFilters() {
+    try {
+      const saved = localStorage.getItem('terra-zwiad-filters');
+      if (saved) {
+        const f = JSON.parse(saved);
+        setSelectedStatuses(f.selectedStatuses ?? []);
+        setMinValue(f.minValue ?? '');
+        setMaxValue(f.maxValue ?? '');
+        setSortKey(f.sortKey ?? 'match_score');
+        setSortDir(f.sortDir ?? 'desc');
+        showToast('info', 'Filtry załadowane');
+      }
+    } catch {}
+  }
 
-  const paged = sorted.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
-  const totalPages = Math.ceil(sorted.length / PER_PAGE);
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortKey(key); setSortDir('asc'); }
+  }
 
-  const SortIcon = ({ col }: { col: typeof sortBy }) =>
-    sortBy === col
-      ? (sortDir === 'desc' ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />)
-      : <ChevronDown className="w-3 h-3 opacity-30" />;
+  function toggleSelect(id: string) {
+    setSelected(s => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
-  const fetchAnalysis = () => {
-    if (!selected) return;
-    setAnalysisLoading(true);
-    setAnalysisError(null);
-    fetch(`/api/v1/tenders/${selected.id}/analyze`, { method: 'POST' })
-      .then(r => { if (!r.ok) throw new Error(`Błąd ${r.status}`); return r.json(); })
-      .then(() => fetch(`/api/v1/tenders/${selected.id}/analysis`))
-      .then(r => r.json())
-      .then(data => { setAnalysisResult(data); setAnalysisLoading(false); })
-      .catch(e => { setAnalysisError(e.message); setAnalysisLoading(false); });
-  };
+  // Filter + sort
+  const filtered = tenders
+    .filter(t => {
+      if (query && !t.title.toLowerCase().includes(query.toLowerCase()) &&
+          !(t.buyer ?? '').toLowerCase().includes(query.toLowerCase())) return false;
+      if (selectedStatuses.length > 0 && !selectedStatuses.includes(t.status)) return false;
+      if (minValue && t.value_pln !== null && t.value_pln < Number(minValue)) return false;
+      if (maxValue && t.value_pln !== null && t.value_pln > Number(maxValue)) return false;
+      return true;
+    })
+    .sort((a, b) => {
+      const av = a[sortKey] ?? (typeof a[sortKey] === 'number' ? 0 : '');
+      const bv = b[sortKey] ?? (typeof b[sortKey] === 'number' ? 0 : '');
+      const cmp = String(av).localeCompare(String(bv), 'pl', { numeric: true });
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+
+  function SortBtn({ col, label, cls }: { col: SortKey; label: string; cls?: string }) {
+    return (
+      <th
+        onClick={() => toggleSort(col)}
+        className={"px-3 py-2.5 text-left text-xs font-semibold text-earth-500 uppercase tracking-wide cursor-pointer hover:text-earth-300 select-none " + (cls ?? '')}
+      >
+        {label}{sortKey === col ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
+      </th>
+    );
+  }
 
   return (
-    <div className="flex h-full overflow-hidden">
-      {/* ── LEFT: tender list ─────────────────────────────────── */}
-      <div className={`flex flex-col transition-all duration-300 ${selected ? 'w-[58%]' : 'w-full'} overflow-hidden border-r border-earth-800/60`}>
-        {/* Toolbar */}
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-earth-800/60">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-earth-600" />
-            <input
-              value={search}
-              onChange={e => { setSearch(e.target.value); setPage(0); }}
-              placeholder="Szukaj po nazwie lub zamawiającym…"
-              className="w-full pl-9 pr-3 py-2 rounded-lg bg-earth-800 border border-earth-700 text-sm text-earth-100 placeholder:text-earth-600 focus:outline-none focus:border-accent-primary/50"
-            />
-          </div>
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-earth-600 pointer-events-none" />
-            <select
-              value={statusFilter}
-              onChange={e => { setStatusFilter(e.target.value); setPage(0); }}
-              className="pl-9 pr-8 py-2 rounded-lg bg-earth-800 border border-earth-700 text-sm text-earth-300 focus:outline-none focus:border-accent-primary/50 appearance-none"
-            >
-              <option value="">Wszystkie statusy</option>
-              {Object.entries(STATUS_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-            </select>
-          </div>
-          <span className="text-earth-600 text-xs whitespace-nowrap">{filtered.length} z {total}</span>
-        </div>
-
-        {/* Table */}
-        <div className="flex-1 overflow-auto">
-          {loadingList ? (
-            <div className="flex items-center justify-center h-32 gap-2 text-earth-500">
-              <Loader2 className="w-4 h-4 animate-spin" /> Ładowanie przetargów…
+    <>
+      <div className="flex flex-col h-full overflow-hidden">
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-earth-800/60 shrink-0">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h2 className="text-lg font-semibold text-earth-100">Zwiad przetargowy</h2>
+              <p className="text-earth-500 text-xs">{total} przetargów w bazie</p>
             </div>
-          ) : listError ? (
-            <div className="flex items-center gap-2 m-5 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-              <AlertTriangle className="w-4 h-4 shrink-0" />{listError}
-            </div>
-          ) : (
-            <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-earth-950 z-10">
-                <tr className="border-b border-earth-800/60">
-                  <th className="text-left px-5 py-3 text-earth-500 font-medium">Przetarg</th>
-                  <th
-                    className="text-right px-3 py-3 text-earth-500 font-medium cursor-pointer hover:text-earth-300 whitespace-nowrap"
-                    onClick={() => handleSort('value_pln')}
+            <div className="flex items-center gap-2">
+              {selected.size > 0 && (
+                <div className="flex items-center gap-2 bg-earth-800 rounded-xl px-3 py-1.5">
+                  <span className="text-xs text-earth-400">{selected.size} zaznaczonych</span>
+                  <select
+                    value={bulkStatus}
+                    onChange={e => setBulkStatus(e.target.value)}
+                    className="bg-earth-700 text-xs text-earth-200 rounded-lg px-2 py-1 focus:outline-none"
                   >
-                    <span className="flex items-center justify-end gap-1">Wartość <SortIcon col="value_pln" /></span>
-                  </th>
-                  <th
-                    className="text-right px-3 py-3 text-earth-500 font-medium cursor-pointer hover:text-earth-300 whitespace-nowrap"
-                    onClick={() => handleSort('match_score')}
-                  >
-                    <span className="flex items-center justify-end gap-1">Dopas. <SortIcon col="match_score" /></span>
-                  </th>
-                  <th
-                    className="text-right px-5 py-3 text-earth-500 font-medium cursor-pointer hover:text-earth-300 whitespace-nowrap"
-                    onClick={() => handleSort('deadline_at')}
-                  >
-                    <span className="flex items-center justify-end gap-1">Termin <SortIcon col="deadline_at" /></span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-earth-800/40">
-                {paged.map(t => (
-                  <tr
-                    key={t.id}
-                    onClick={() => setSelected(t)}
-                    className={`cursor-pointer transition-colors hover:bg-earth-800/30 ${selected?.id === t.id ? 'bg-earth-800/50 border-l-2 border-l-accent-primary' : ''}`}
-                  >
-                    <td className="px-5 py-3">
-                      <p className="text-earth-200 font-medium line-clamp-1 text-sm">{t.title}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${STATUS_COLORS[t.status] ?? 'bg-earth-700 text-earth-400'}`}>
-                          {STATUS_LABELS[t.status] ?? t.status}
-                        </span>
-                        <span className="text-earth-600 text-xs truncate">{t.buyer}</span>
-                      </div>
-                    </td>
-                    <td className="px-3 py-3 text-right text-earth-300 whitespace-nowrap">{fmtPLN(t.value_pln)}</td>
-                    <td className="px-3 py-3">
-                      {t.match_score !== null ? (
-                        <div className="flex items-center gap-1.5 justify-end">
-                          <div className="w-16 h-1.5 bg-earth-800 rounded-full overflow-hidden">
-                            <div
-                              className="h-full rounded-full"
-                              style={{
-                                width: `${(t.match_score * 100).toFixed(0)}%`,
-                                backgroundColor: t.match_score > 0.7 ? '#10b981' : t.match_score > 0.4 ? '#f59e0b' : '#ef4444',
-                              }}
-                            />
-                          </div>
-                          <span className="text-earth-400 text-xs w-7 text-right">{(t.match_score * 100).toFixed(0)}%</span>
-                        </div>
-                      ) : <span className="text-earth-700 text-xs text-right block">—</span>}
-                    </td>
-                    <td className="px-5 py-3 text-right text-earth-500 text-xs whitespace-nowrap">{fmtDate(t.deadline_at)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-5 py-3 border-t border-earth-800/60">
-            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
-              className="text-xs text-earth-500 hover:text-earth-300 disabled:opacity-30">← Poprzednia</button>
-            <span className="text-xs text-earth-600">{page + 1} / {totalPages}</span>
-            <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}
-              className="text-xs text-earth-500 hover:text-earth-300 disabled:opacity-30">Następna →</button>
-          </div>
-        )}
-      </div>
-
-      {/* ── RIGHT: detail panel ───────────────────────────────── */}
-      <AnimatePresence>
-        {selected && (
-          <motion.div
-            initial={{ x: '100%', opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: '100%', opacity: 0 }}
-            transition={{ duration: 0.25, ease: 'easeOut' }}
-            className="w-[42%] flex flex-col overflow-hidden bg-earth-950"
-          >
-            {/* Panel header */}
-            <div className="flex items-start gap-3 px-5 py-4 border-b border-earth-800/60">
-              <div className="flex-1 min-w-0">
-                <p className="text-earth-100 font-semibold text-sm leading-snug line-clamp-2">{selected.title}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${STATUS_COLORS[selected.status] ?? ''}`}>
-                    {STATUS_LABELS[selected.status] ?? selected.status}
-                  </span>
-                  {selected.source && <span className="text-earth-600 text-xs uppercase">{selected.source}</span>}
-                </div>
-              </div>
-              <button onClick={() => setSelected(null)} className="p-1.5 hover:bg-earth-800 rounded-lg transition-colors mt-0.5">
-                <X className="w-4 h-4 text-earth-500" />
-              </button>
-            </div>
-
-            {/* Panel body */}
-            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-              {/* Key facts */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="glass-card rounded-xl p-3">
-                  <div className="flex items-center gap-1.5 text-earth-500 text-xs mb-1"><TrendingUp className="w-3 h-3" /> Wartość</div>
-                  <p className="text-earth-100 font-semibold">{fmtPLN(selected.value_pln)}</p>
-                </div>
-                <div className="glass-card rounded-xl p-3">
-                  <div className="flex items-center gap-1.5 text-earth-500 text-xs mb-1"><Calendar className="w-3 h-3" /> Termin</div>
-                  <p className="text-earth-100 font-semibold">{fmtDate(selected.deadline_at)}</p>
-                </div>
-                <div className="glass-card rounded-xl p-3">
-                  <div className="flex items-center gap-1.5 text-earth-500 text-xs mb-1"><MapPin className="w-3 h-3" /> Województwo</div>
-                  <p className="text-earth-200 text-sm capitalize">{selected.voivodeship || '—'}</p>
-                </div>
-                <div className="glass-card rounded-xl p-3">
-                  <div className="flex items-center gap-1.5 text-earth-500 text-xs mb-1"><Building2 className="w-3 h-3" /> Zamawiający</div>
-                  <p className="text-earth-200 text-xs line-clamp-2">{selected.buyer}</p>
-                </div>
-              </div>
-
-              {/* Match score */}
-              {selected.match_score !== null && (
-                <div className="glass-card rounded-xl p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-earth-500 text-xs">Dopasowanie profilu</span>
-                    <span className="text-earth-200 font-semibold">{(selected.match_score * 100).toFixed(0)}%</span>
-                  </div>
-                  <div className="h-2 bg-earth-800 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full transition-all"
-                      style={{
-                        width: `${(selected.match_score * 100).toFixed(0)}%`,
-                        backgroundColor: selected.match_score > 0.7 ? '#10b981' : selected.match_score > 0.4 ? '#f59e0b' : '#ef4444',
-                      }}
-                    />
-                  </div>
-                  {selected.match_reason && <p className="text-earth-600 text-xs mt-1.5">{selected.match_reason}</p>}
+                    <option value="">Zmień status...</option>
+                    {ALL_STATUSES.map(s => <option key={s} value={s}>{STATUS_LABELS[s]}</option>)}
+                  </select>
+                  <button onClick={handleBulkStatus} className="text-xs bg-accent-primary/20 text-accent-primary px-2 py-1 rounded-lg hover:bg-accent-primary/30">
+                    <Check className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               )}
+              <button onClick={() => exportCSV(filtered)} className="flex items-center gap-1.5 px-3 py-1.5 bg-earth-800 text-earth-400 hover:text-earth-200 rounded-xl text-xs transition-colors">
+                <Download className="w-3.5 h-3.5" /> CSV
+              </button>
+              <button onClick={loadFilters} className="flex items-center gap-1.5 px-3 py-1.5 bg-earth-800 text-earth-400 hover:text-earth-200 rounded-xl text-xs transition-colors">
+                Załaduj filtry
+              </button>
+              <button onClick={saveFilters} className="flex items-center gap-1.5 px-3 py-1.5 bg-earth-800 text-earth-400 hover:text-earth-200 rounded-xl text-xs transition-colors">
+                <Save className="w-3.5 h-3.5" /> Zapisz filtry
+              </button>
+              <button
+                onClick={handleSync}
+                disabled={syncing}
+                className="flex items-center gap-1.5 px-4 py-2 bg-accent-primary text-earth-950 rounded-xl text-xs font-semibold hover:bg-emerald-400 transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={"w-3.5 h-3.5 " + (syncing ? "animate-spin" : "")} />
+                Synchronizuj
+              </button>
+            </div>
+          </div>
 
-              {/* CPV codes */}
-              {selected.cpv?.length > 0 && (
-                <div className="glass-card rounded-xl p-3">
-                  <div className="flex items-center gap-1.5 text-earth-500 text-xs mb-2"><Tag className="w-3 h-3" /> Kody CPV</div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {selected.cpv.map((c, i) => (
-                      <span key={i} className="text-xs px-2 py-0.5 rounded-full bg-earth-800 text-earth-400 font-mono">{c}</span>
+          <div className="flex items-center gap-2">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-earth-600" />
+              <input
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Szukaj przetargów..."
+                className="w-full bg-earth-800/60 border border-earth-700/60 rounded-xl pl-9 pr-4 py-2 text-sm text-earth-100 placeholder-earth-600 focus:outline-none focus:border-accent-primary/60"
+              />
+            </div>
+            <button
+              onClick={() => setFiltersOpen(f => !f)}
+              className={"flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs transition-colors " + (filtersOpen ? "bg-accent-primary/20 text-accent-primary" : "bg-earth-800 text-earth-400 hover:text-earth-200")}
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5" /> Filtry
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-1 overflow-hidden">
+          {/* Sidebar filters */}
+          <AnimatePresence>
+            {filtersOpen ? (
+              <motion.div
+                initial={{ width: 0, opacity: 0 }}
+                animate={{ width: 200, opacity: 1 }}
+                exit={{ width: 0, opacity: 0 }}
+                className="border-r border-earth-800/60 overflow-hidden shrink-0"
+              >
+                <div className="p-4 w-[200px] space-y-4">
+                  <div>
+                    <p className="text-xs font-semibold text-earth-500 uppercase tracking-wide mb-2">Status</p>
+                    {ALL_STATUSES.map(s => (
+                      <label key={s} className="flex items-center gap-2 mb-1.5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedStatuses.includes(s)}
+                          onChange={() => setSelectedStatuses(arr => arr.includes(s) ? arr.filter(x => x !== s) : [...arr, s])}
+                          className="accent-emerald-500"
+                        />
+                        <span className="text-xs text-earth-300">{STATUS_LABELS[s]}</span>
+                      </label>
                     ))}
                   </div>
+                  <div>
+                    <p className="text-xs font-semibold text-earth-500 uppercase tracking-wide mb-2">Wartość (PLN)</p>
+                    <input
+                      value={minValue}
+                      onChange={e => setMinValue(e.target.value)}
+                      placeholder="Min"
+                      type="number"
+                      className="w-full bg-earth-800 rounded-lg px-2 py-1.5 text-xs text-earth-200 mb-1 focus:outline-none"
+                    />
+                    <input
+                      value={maxValue}
+                      onChange={e => setMaxValue(e.target.value)}
+                      placeholder="Max"
+                      type="number"
+                      className="w-full bg-earth-800 rounded-lg px-2 py-1.5 text-xs text-earth-200 focus:outline-none"
+                    />
+                  </div>
+                  <button
+                    onClick={() => { setSelectedStatuses([]); setMinValue(''); setMaxValue(''); }}
+                    className="text-xs text-earth-600 hover:text-earth-300 transition-colors"
+                  >
+                    Wyczyść filtry
+                  </button>
                 </div>
-              )}
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
 
-              {/* Analyze button */}
-              <button
-                onClick={fetchAnalysis}
-                disabled={analysisLoading}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-earth-800 border border-earth-700 text-earth-200 text-sm font-medium hover:bg-earth-700 transition-colors disabled:opacity-50"
-              >
-                {analysisLoading
-                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Analizuję dokumentację…</>
-                  : <><Download className="w-4 h-4" /> {analysisResult ? 'Odśwież dokumentację' : 'Pobierz dokumentację'}</>}
-              </button>
+          {/* Table */}
+          <div className="flex-1 overflow-auto">
+            {error ? (
+              <div className="m-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+                Błąd: {error}
+                <button onClick={fetchTenders} className="ml-3 underline">Spróbuj ponownie</button>
+              </div>
+            ) : (
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-earth-950/95 backdrop-blur-sm z-10">
+                  <tr className="border-b border-earth-800/60">
+                    <th className="pl-4 pr-2 py-2.5 w-8">
+                      <input
+                        type="checkbox"
+                        checked={selected.size === filtered.length && filtered.length > 0}
+                        onChange={e => setSelected(e.target.checked ? new Set(filtered.map(t => t.id)) : new Set())}
+                        className="accent-emerald-500"
+                      />
+                    </th>
+                    <th className="px-3 py-2.5 text-left text-xs font-semibold text-earth-500 uppercase tracking-wide">Status</th>
+                    <SortBtn col="title" label="Tytuł" cls="min-w-[200px]" />
+                    <SortBtn col="buyer" label="Zamawiający" cls="hidden md:table-cell" />
+                    <th className="px-3 py-2.5 text-left text-xs font-semibold text-earth-500 uppercase tracking-wide hidden lg:table-cell">CPV</th>
+                    <th className="px-3 py-2.5 text-left text-xs font-semibold text-earth-500 uppercase tracking-wide hidden lg:table-cell">Region</th>
+                    <SortBtn col="value_pln" label="Wartość" />
+                    <SortBtn col="deadline_at" label="Deadline" />
+                    <SortBtn col="match_score" label="Score" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    Array.from({ length: 8 }).map((_, i) => (
+                      <tr key={i}><td colSpan={9}><SkeletonRow cols={8} /></td></tr>
+                    ))
+                  ) : filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="px-4 py-16 text-center">
+                        <div className="max-w-sm mx-auto">
+                          <p className="text-earth-500 text-sm mb-1">Brak przetargów</p>
+                          {query || selectedStatuses.length > 0
+                            ? <p className="text-earth-700 text-xs">Zmień filtry aby zobaczyć wyniki</p>
+                            : <p className="text-earth-700 text-xs mb-4">Kliknij Synchronizuj aby pobrać dane z BZP</p>
+                          }
+                          {!query && selectedStatuses.length === 0 && (
+                            <button
+                              onClick={handleSync}
+                              disabled={syncing}
+                              className="px-5 py-2 bg-accent-primary text-earth-950 rounded-xl text-xs font-semibold hover:bg-emerald-400 transition-colors"
+                            >
+                              Synchronizuj teraz
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ) : filtered.map(t => {
+                    const days = daysUntil(t.deadline_at);
+                    const urgent = days !== null && days <= 3;
+                    const score = t.match_score !== null ? Math.round(t.match_score * 100) : 0;
+                    return (
+                      <tr
+                        key={t.id}
+                        onClick={(e) => { if ((e.target as HTMLElement).tagName !== 'INPUT') { setOpenTender(t); setSelectedTender(t as any); } }}
+                        className="border-b border-earth-800/30 hover:bg-earth-800/40 transition-colors cursor-pointer"
+                      >
+                        <td className="pl-4 pr-2 py-2.5" onClick={e => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={selected.has(t.id)}
+                            onChange={() => toggleSelect(t.id)}
+                            className="accent-emerald-500"
+                          />
+                        </td>
+                        <td className="px-3 py-2.5"><StatusBadge status={t.status} /></td>
+                        <td className="px-3 py-2.5 max-w-xs">
+                          <p className="text-xs text-earth-200 line-clamp-2 font-medium">{t.title}</p>
+                        </td>
+                        <td className="px-3 py-2.5 hidden md:table-cell">
+                          <p className="text-xs text-earth-500 truncate max-w-[120px]">{t.buyer ?? '—'}</p>
+                        </td>
+                        <td className="px-3 py-2.5 hidden lg:table-cell">
+                          <p className="text-xs font-mono text-earth-600">{t.cpv[0] ?? '—'}</p>
+                        </td>
+                        <td className="px-3 py-2.5 hidden lg:table-cell">
+                          <p className="text-xs text-earth-500">{t.voivodeship ?? '—'}</p>
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <p className="text-xs font-mono text-earth-300">{fmtPLN(t.value_pln)}</p>
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <p className={"text-xs font-mono " + (urgent ? "text-red-400" : "text-earth-400")}>{fmtDate(t.deadline_at)}</p>
+                          {days !== null && days <= 7 && (
+                            <p className={"text-[10px] " + (urgent ? "text-red-500" : "text-yellow-600")}>{days}d</p>
+                          )}
+                        </td>
+                        <td className="px-3 py-2.5">
+                          <span
+                            className="text-xs font-bold px-2 py-0.5 rounded-full"
+                            style={{
+                              color: score >= 80 ? '#10b981' : score >= 60 ? '#F59E0B' : '#EF4444',
+                              backgroundColor: (score >= 80 ? '#10b981' : score >= 60 ? '#F59E0B' : '#EF4444') + '20',
+                            }}
+                          >
+                            {score}%
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      </div>
 
-              {analysisError && (
-                <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
-                  <AlertTriangle className="w-4 h-4 shrink-0" />{analysisError}
-                </div>
-              )}
-
-              {/* Analysis results */}
-              {analysisResult && (
-                <div className="space-y-3">
-                  {/* Summary */}
-                  {analysisResult.summary_md && (
-                    <div className="glass-card rounded-xl p-3">
-                      <div className="flex items-center gap-1.5 text-earth-500 text-xs mb-2"><FileText className="w-3 h-3" /> Podsumowanie</div>
-                      <p className="text-earth-300 text-xs leading-relaxed whitespace-pre-line">{analysisResult.summary_md.replace(/^#+\s/gm, '')}</p>
-                    </div>
-                  )}
-
-                  {/* Red flags */}
-                  {analysisResult.red_flags?.length > 0 && (
-                    <div className="glass-card rounded-xl overflow-hidden">
-                      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-earth-800/60">
-                        <AlertTriangle className="w-3 h-3 text-yellow-400" />
-                        <span className="text-earth-400 text-xs font-medium">Red flags ({analysisResult.red_flags.length})</span>
-                      </div>
-                      <div className="divide-y divide-earth-800/40">
-                        {analysisResult.red_flags.map((f, i) => (
-                          <div key={i} className="px-3 py-2 flex items-start gap-2">
-                            <span className={`text-xs px-1.5 py-0.5 rounded border font-medium shrink-0 ${SEVERITY_COLORS[f.severity] ?? SEVERITY_COLORS.low}`}>
-                              {f.severity.toUpperCase()}
-                            </span>
-                            <p className="text-earth-300 text-xs leading-relaxed">{f.message}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Przedmiar */}
-                  {analysisResult.przedmiar_items?.length > 0 && (
-                    <div className="glass-card rounded-xl overflow-hidden">
-                      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-earth-800/60">
-                        <CheckCircle className="w-3 h-3 text-emerald-400" />
-                        <span className="text-earth-400 text-xs font-medium">Przedmiar ({analysisResult.przedmiar_items.length} poz.)</span>
-                      </div>
-                      <table className="w-full text-xs">
-                        <thead>
-                          <tr className="border-b border-earth-800/40">
-                            <th className="px-3 py-1.5 text-left text-earth-600 font-normal">Poz.</th>
-                            <th className="px-3 py-1.5 text-left text-earth-600 font-normal">Opis</th>
-                            <th className="px-3 py-1.5 text-right text-earth-600 font-normal">Ilość</th>
-                            <th className="px-3 py-1.5 text-right text-earth-600 font-normal pr-3">KNR</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-earth-800/30">
-                          {analysisResult.przedmiar_items.map((item, i) => (
-                            <tr key={i} className="hover:bg-earth-800/20">
-                              <td className="px-3 py-1.5 text-earth-500 font-mono">{item.position_no}</td>
-                              <td className="px-3 py-1.5 text-earth-300">{item.description}</td>
-                              <td className="px-3 py-1.5 text-right text-earth-400">{item.quantity} {item.unit}</td>
-                              <td className="px-3 py-1.5 text-right text-earth-600 font-mono text-xs pr-3">{item.knr_code ?? '—'}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Action buttons */}
-            <div className="flex gap-2 px-5 py-4 border-t border-earth-800/60">
-              <button
-                onClick={() => { setSelectedTender(selected as any); setCurrentModule('kosztorys'); }}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-accent-primary text-earth-950 font-semibold text-sm hover:bg-emerald-400 transition-colors"
-              >
-                <Calculator className="w-4 h-4" /> Kosztorys
-              </button>
-              <button
-                onClick={() => { setSelectedTender(selected as any); setCurrentModule('silnik'); }}
-                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-earth-800 text-earth-200 font-semibold text-sm hover:bg-earth-700 transition-colors border border-earth-700"
-              >
-                <Brain className="w-4 h-4" /> Silnik <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+      <TenderDetail tender={openTender} onClose={() => setOpenTender(null)} />
+    </>
   );
 }

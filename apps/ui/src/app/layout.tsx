@@ -1,7 +1,6 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Space_Grotesk, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
-import { ToastContainer } from '@/components/Toast';
 
 const space = Space_Grotesk({
   subsets: ['latin'],
@@ -15,12 +14,28 @@ const mono = JetBrains_Mono({
   display: 'swap',
 });
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: '#00ff88',
+};
+
 export const metadata: Metadata = {
   title: 'Terra.OS — System Zarządzania Przetargami i Budową',
-  description: 'Lokalny system dla wykonawców robót ziemnych — zwiad, kosztorys, silnik decyzyjny',
+  description: 'Platforma do zarządzania przetargami budowlanymi. AI analiza ryzyka SWZ, automatyczny BZP sync, silnik kalkulacji.',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Terra.OS',
+  },
   icons: {
-    icon: '/assets/logo/app-icon.png',
-    apple: '/assets/logo/app-icon.png',
+    icon: '/favicon.ico',
+    apple: '/icons/icon-192.png',
+  },
+  other: {
+    'mobile-web-app-capable': 'yes',
   },
 };
 
@@ -31,9 +46,24 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pl">
+      <head>
+        {/* PWA Service Worker registration */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js')
+                    .then(function(reg) { console.log('[PWA] SW registered:', reg.scope); })
+                    .catch(function(err) { console.warn('[PWA] SW registration failed:', err); });
+                });
+              }
+            `,
+          }}
+        />
+      </head>
       <body className={`${space.variable} ${mono.variable} font-display`}>
         {children}
-        <ToastContainer />
       </body>
     </html>
   );

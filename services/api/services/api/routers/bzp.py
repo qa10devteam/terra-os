@@ -82,10 +82,13 @@ def _fetch_page(date_from: str, date_to: str, page: int, size: int = 50) -> list
         "PublicationDateFrom": date_from,
         "PublicationDateTo": date_to,
     }
-    r = httpx.get(BZP_BASE, params=params, headers={"Accept": "application/json"}, timeout=30)
-    r.raise_for_status()
-    data = r.json()
-    return data if isinstance(data, list) else []
+    try:
+        r = httpx.get(BZP_BASE, params=params, headers={"Accept": "application/json"}, timeout=30)
+        r.raise_for_status()
+        data = r.json()
+        return data if isinstance(data, list) else []
+    except Exception:
+        return []
 
 
 def _do_sync(days_back: int) -> dict:
@@ -197,36 +200,117 @@ def bzp_stats_live():
     now = datetime.now(timezone.utc)
     date_from = (now - timedelta(days=2)).strftime("%Y-%m-%dT00:00:00")
     date_to = now.strftime("%Y-%m-%dT23:59:59")
-    r = httpx.get(
-        f"{BZP_BASE}/stats",
-        params={"PublicationDateFrom": date_from, "PublicationDateTo": date_to},
-        headers={"Accept": "application/json"}, timeout=15,
-    )
-    r.raise_for_status()
-    return r.json()
+    try:
+        r = httpx.get(
+            f"{BZP_BASE}/stats",
+            params={"PublicationDateFrom": date_from, "PublicationDateTo": date_to},
+            headers={"Accept": "application/json"}, timeout=15,
+        )
+        r.raise_for_status()
+        return r.json()
+    except Exception:
+        # Fallback when BZP API is unavailable
+        return {
+            "total": 0,
+            "by_type": {},
+            "period": {"from": date_from, "to": date_to},
+            "source": "fallback",
+            "message": "BZP API temporarily unavailable"
+        }
 
 
-@router.get("/bzp/document/{bzp_number}")
+@router.get("/bzp/document/{bzp_number:path}")
 def bzp_document(bzp_number: str):
     """Pobiera pełną treść ogłoszenia BZP po numerze BZP (np. 2026/BZP 00302518)."""
-    params = {
-        "pageSize": 1,
-        "pageNumber": 0,
-        "NoticeType": "ContractNotice",
-        "BzpNumber": bzp_number,
-    }
-    r = httpx.get(BZP_BASE, params=params, headers={"Accept": "application/json"}, timeout=30)
-    r.raise_for_status()
-    data = r.json()
-    items = data if isinstance(data, list) else []
-    if not items:
+    from urllib.parse import unquote
+    bzp_number = unquote(bzp_number)
+
+    now = datetime.now(timezone.utc)
+    item = None
+
+    # Sprawdź czy mamy datę publikacji w bazie danych — pozwoli zawęzić okno wyszukiwania
+    published_at = None
+    try:
+        engine_db = get_engine()
+        with engine_db.connect() as conn:
+            row = conn.execute(
+                sa.text("SELECT published_at FROM tender WHERE source='bzp' AND external_id=:e LIMIT 1"),
+                {"e": bzp_number}
+            ).fetchone()
+            if row and row[0]:
+                published_at = row[0]
+    except Exception:
+        pass
+
+    # Zdefiniuj okna wyszukiwania
+    if published_at:
+        # Wiemy kiedy było opublikowane — szukaj w tym dniu ±1 dzień
+        from datetime import date
+        pub_dt = published_at if hasattr(published_at, 'strftime') else now
+        date_windows = [
+            (
+                (pub_dt - timedelta(days=1)).strftime("%Y-%m-%dT00:00:00"),
+                (pub_dt + timedelta(days=1)).strftime("%Y-%m-%dT23:59:59"),
+            )
+        ]
+    else:
+        # Nieznana data — szukaj w kolejnych oknach: ostatnie 3, 7, 30 dni
+        date_windows = [
+            ((now - timedelta(days=3)).strftime("%Y-%m-%dT00:00:00"), now.strftime("%Y-%m-%dT23:59:59")),
+            ((now - timedelta(days=7)).strftime("%Y-%m-%dT00:00:00"), now.strftime("%Y-%m-%dT23:59:59")),
+            ((now - timedelta(days=30)).strftime("%Y-%m-%dT00:00:00"), now.strftime("%Y-%m-%dT23:59:59")),
+        ]
+
+    for date_from, date_to in date_windows:
+        if item is not None:
+            break
+        page = 0
+        while page < 50 and item is None:
+            params = {
+                "pageSize": 50,
+                "pageNumber": page,
+                "NoticeType": "ContractNotice",
+                "PublicationDateFrom": date_from,
+                "PublicationDateTo": date_to,
+            }
+            try:
+                r = httpx.get(BZP_BASE, params=params, headers={"Accept": "application/json"}, timeout=30)
+                r.raise_for_status()
+                data = r.json()
+                items_page = data if isinstance(data, list) else []
+                if not items_page:
+                    break
+                for it in items_page:
+                    if (it.get("bzpNumber") or "").strip() == bzp_number.strip():
+                        item = it
+                        break
+                if len(items_page) < 50:
+                    break
+                page += 1
+            except Exception:
+                break
+
+    if not item:
         raise HTTPException(status_code=404, detail=f"Nie znaleziono ogłoszenia BZP: {bzp_number}")
 
-    item = items[0]
     html_body = item.get("htmlBody") or ""
-    full_text = re.sub('<[^>]+>', '', html_body).strip()
+    # Pobierz pełny tekst bez limitu — cała dokumentacja przetargowa
+    full_text = re.sub(r'<[^>]+>', ' ', html_body)
+    full_text = re.sub(r'\s+', ' ', full_text).strip()
     value_pln = _parse_value_pln(html_body)
     cpv_list = [c.strip() for c in (item.get("cpvCode") or "").split(",") if c.strip()]
+
+    # Próbuj też pobrać załączniki/sekcje SIWZ przez Jina Reader jeśli dostępny URL
+    bzp_url = item.get("orderLink") or item.get("internetAddress") or ""
+    attachments = []
+    if bzp_url:
+        try:
+            jina_url = f"https://r.jina.ai/{bzp_url}"
+            jr = httpx.get(jina_url, timeout=15, headers={"Accept": "text/plain"})
+            if jr.status_code == 200 and jr.text:
+                attachments.append({"source": bzp_url, "text": jr.text[:20000]})
+        except Exception:
+            pass
 
     return {
         "bzp_number": item.get("bzpNumber") or bzp_number,
@@ -235,7 +319,11 @@ def bzp_document(bzp_number: str):
         "cpv": cpv_list,
         "deadline": item.get("submittingOffersDate"),
         "value_pln": value_pln,
-        "full_text": full_text[:5000],
+        "full_text": full_text,          # pełny tekst BEZ limitu
+        "html_body": html_body,          # surowy HTML dla renderowania
+        "internet_address": bzp_url,
+        "attachments": attachments,
+        "char_count": len(full_text),
     }
 
 

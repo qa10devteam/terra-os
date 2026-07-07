@@ -102,7 +102,7 @@ export function SilnikPage() {
         <div>
           <p className="text-earth-200 font-semibold text-xl">Nie wybrano przetargu</p>
           <p className="text-earth-500 text-sm mt-2 max-w-xs mx-auto leading-relaxed">
-            Wejdź do Zwiadu i wybierz przetarg, aby uruchomić analizę
+            Uruchom silnik kalkulacji dla wybranego przetargu
           </p>
         </div>
         <button
@@ -179,8 +179,8 @@ export function SilnikPage() {
               </p>
               <p className="text-earth-400 text-sm mt-1">
                 {result.feasible
-                  ? 'Przetarg WYKONALNY — kwalifikuje się do wyceny'
-                  : 'Przetarg NIEWYKONALNY — wykryto blokady'}
+                  ? 'Rekomendacja AI — wymaga akceptacji kierownika. Przetarg WYKONALNY — kwalifikuje się do złożenia oferty.'
+                  : 'Rekomendacja AI — wymaga akceptacji kierownika. Przetarg NIEWYKONALNY — wykryto blokady, nie należy składać oferty.'}
               </p>
             </div>
             <div className="text-right shrink-0">
@@ -195,9 +195,9 @@ export function SilnikPage() {
           {result.risk && (
             <div className="grid grid-cols-3 gap-4">
               {[
-                { label: 'Marża P10', sublabel: 'pesymistyczna', val: result.risk.margin_p10, bg: 'bg-red-500/10 border-red-500/30', text: 'text-red-400', bar: 'bg-red-400' },
-                { label: 'Marża P50', sublabel: 'mediana', val: result.risk.margin_p50, bg: 'bg-yellow-500/10 border-yellow-500/30', text: 'text-yellow-400', bar: 'bg-yellow-400' },
-                { label: 'Marża P90', sublabel: 'optymistyczna', val: result.risk.margin_p90, bg: 'bg-emerald-500/10 border-emerald-500/30', text: 'text-emerald-400', bar: 'bg-emerald-400' },
+                 { label: 'Marża P10', sublabel: 'Scenariusz pesymistyczny', val: result.risk.margin_p10, bg: 'bg-red-500/10 border-red-500/30', text: 'text-red-400', bar: 'bg-red-400' },
+                 { label: 'Marża P50', sublabel: 'Najbardziej prawdopodobny', val: result.risk.margin_p50, bg: 'bg-yellow-500/10 border-yellow-500/30', text: 'text-yellow-400', bar: 'bg-yellow-400' },
+                 { label: 'Marża P90', sublabel: 'Scenariusz optymistyczny', val: result.risk.margin_p90, bg: 'bg-emerald-500/10 border-emerald-500/30', text: 'text-emerald-400', bar: 'bg-emerald-400' },
               ].map(({ label, sublabel, val, bg, text, bar }) => (
                 <div key={label} className={`glass-card rounded-xl p-5 border ${bg}`}>
                   <p className="text-earth-500 text-xs mb-0.5">{label}</p>
@@ -212,12 +212,12 @@ export function SilnikPage() {
           )}
 
           {/* Violations grouped by severity */}
-          {result.violations.length > 0 && (
+          {(result.violations?.length ?? 0) > 0 && (
             <div className="glass-card rounded-xl overflow-hidden">
               <div className="px-4 py-3 border-b border-earth-800/60 flex items-center gap-2">
                 <ShieldAlert className="w-4 h-4 text-red-400" />
                 <span className="text-sm font-medium text-earth-200">Naruszenia reguł</span>
-                <span className="ml-auto text-xs text-earth-500">{result.violations.length} łącznie</span>
+                <span className="ml-auto text-xs text-earth-500">{result.violations?.length ?? 0} naruszeń</span>
               </div>
               <div>
                 {SEVERITY_ORDER.filter(sev => violationsBySeverity[sev]?.length).map(sev => {
@@ -233,7 +233,7 @@ export function SilnikPage() {
                           <div key={i} className="px-4 py-3 flex items-start gap-3 hover:bg-earth-800/15">
                             <div className="flex-1 min-w-0">
                               <p className="text-earth-200 text-sm">{v.message}</p>
-                              <p className="text-earth-600 text-xs mt-0.5 font-mono">{v.axiom_code}</p>
+                              <p className="text-earth-600 text-xs mt-0.5 font-mono">Reguła: {v.axiom_code}</p>
                             </div>
                           </div>
                         ))}
@@ -256,10 +256,10 @@ export function SilnikPage() {
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-earth-800/40">
-                    <th className="text-left px-4 py-2 text-earth-500 font-medium">Czynnik</th>
-                    <th className="text-right px-3 py-2 text-earth-500 font-medium w-16">S1</th>
-                    <th className="text-right px-3 py-2 text-earth-500 font-medium w-16">ST</th>
-                    <th className="px-4 py-2 text-earth-500 font-medium w-40">Udział ST</th>
+                    <th className="text-left px-4 py-2 text-earth-500 font-medium">Czynnik ryzyka</th>
+                    <th className="text-right px-3 py-2 text-earth-500 font-medium w-20" title="Efekt pierwszego rzędu — bezpośredni wpływ czynnika">S1 (bezpośredni)</th>
+                    <th className="text-right px-3 py-2 text-earth-500 font-medium w-20" title="Efekt całkowity — wpływ łącznie z interakcjami">ST (łączny)</th>
+                    <th className="px-4 py-2 text-earth-500 font-medium w-40">Wpływ na marżę</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-earth-800/30">
@@ -302,9 +302,9 @@ export function SilnikPage() {
             <Brain className="w-8 h-8 text-earth-600" />
           </div>
           <div>
-            <p className="text-earth-300 font-medium">Gotowy do analizy</p>
-            <p className="text-earth-500 text-sm mt-1">
-              Kliknij <strong className="text-earth-200">Uruchom analizę</strong> aby sprawdzić wykonalność
+            <p className="text-earth-300 font-medium text-lg">Uruchom silnik kalkulacji</p>
+            <p className="text-earth-500 text-sm mt-1 max-w-xs mx-auto leading-relaxed">
+              Kliknij <strong className="text-earth-200">Uruchom analizę</strong>, aby sprawdzić wykonalność przetargu i zobaczyć rekomendację GO / NO-GO
             </p>
           </div>
         </div>

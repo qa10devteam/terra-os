@@ -32,27 +32,29 @@ const PL_DAYS = ['Nd', 'Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob'];
 const PL_DAYS_FULL = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'];
 
 // ── Weather helpers ───────────────────────────────────────────────────────────
-function WeatherIcon({ code, className = 'w-6 h-6' }: { code: number; className?: string }) {
-  if (code === 0) return <Sun className={`${className} text-yellow-400`} />;
-  if (code <= 3) return <Cloud className={`${className} text-earth-400`} />;
-  if (code <= 49) return <Droplets className={`${className} text-accent-info`} />;
-  if (code <= 59) return <CloudRain className={`${className} text-accent-info`} />;
-  if (code <= 69) return <CloudSnow className={`${className} text-sky-300`} />;
-  if (code <= 79) return <Snowflake className={`${className} text-sky-200`} />;
-  if (code <= 84) return <CloudRain className={`${className} text-blue-500`} />;
-  if (code <= 94) return <CloudSnow className={`${className} text-sky-300`} />;
+function WeatherIcon({ code, className = 'w-6 h-6' }: { code?: number | null; className?: string }) {
+  const c = code ?? 0;
+  if (c === 0) return <Sun className={`${className} text-yellow-400`} />;
+  if (c <= 3) return <Cloud className={`${className} text-earth-400`} />;
+  if (c <= 49) return <Droplets className={`${className} text-accent-info`} />;
+  if (c <= 59) return <CloudRain className={`${className} text-accent-info`} />;
+  if (c <= 69) return <CloudSnow className={`${className} text-sky-300`} />;
+  if (c <= 79) return <Snowflake className={`${className} text-sky-200`} />;
+  if (c <= 84) return <CloudRain className={`${className} text-blue-500`} />;
+  if (c <= 94) return <CloudSnow className={`${className} text-sky-300`} />;
   return <CloudLightning className={`${className} text-yellow-400`} />;
 }
 
-function weatherLabel(code: number): string {
-  if (code === 0) return 'Słonecznie';
-  if (code <= 3) return 'Pochmurno';
-  if (code <= 49) return 'Mgła';
-  if (code <= 59) return 'Mżawka';
-  if (code <= 69) return 'Deszcz';
-  if (code <= 79) return 'Śnieg';
-  if (code <= 84) return 'Przelotne opady';
-  if (code <= 94) return 'Śnieg/krupy';
+function weatherLabel(code?: number | null): string {
+  const c = code ?? 0;
+  if (c === 0) return 'Słonecznie';
+  if (c <= 3) return 'Pochmurno';
+  if (c <= 49) return 'Mgła';
+  if (c <= 59) return 'Mżawka';
+  if (c <= 69) return 'Deszcz';
+  if (c <= 79) return 'Śnieg';
+  if (c <= 84) return 'Przelotne opady';
+  if (c <= 94) return 'Śnieg/krupy';
   return 'Burza';
 }
 
@@ -65,25 +67,49 @@ function calcRisk(precipitation: number, windspeed: number, tempMin: number): Ri
   return 'niski';
 }
 
+function apiRiskToLevel(apiRisk?: string | null): RiskLevel | null {
+  if (!apiRisk) return null;
+  const r = apiRisk.toLowerCase();
+  if (r === 'wysoki' || r === 'stop') return 'wysoki';
+  if (r === 'średni' || r === 'caution') return 'średni';
+  if (r === 'niski' || r === 'ok') return 'niski';
+  return null;
+}
+
 const riskConfig: Record<RiskLevel, { cls: string; dot: string; label: string; icon: string }> = {
   wysoki: { cls: 'bg-accent-danger/15 text-accent-danger border border-accent-danger/30', dot: 'bg-accent-danger', label: 'Stop roboty', icon: '⛔' },
   średni: { cls: 'bg-accent-warning/15 text-accent-warning border border-accent-warning/30', dot: 'bg-accent-warning', label: 'Ostrożnie', icon: '⚠️' },
   niski:  { cls: 'bg-accent-primary/15 text-accent-primary border border-accent-primary/30', dot: 'bg-accent-primary', label: 'OK', icon: '✓' },
 };
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+// ── Types (matching actual API response) ──────────────────────────────────────
 interface DayForecast {
   date: string;
-  weather_code: number;
-  temperature_min: number;
-  temperature_max: number;
-  precipitation_sum: number;
-  windspeed_max: number;
+  // API field names:
+  temp_min: number;
+  temp_max: number;
+  precipitation_mm: number;
+  wind_max_kmh: number;
+  // Optional fields:
+  weather_code?: number | null;
+  construction_risk?: string | null;
+  snowfall_cm?: number | null;
+  wind_gusts_kmh?: number | null;
+  precip_probability_pct?: number | null;
+  risk_reasons?: string[];
 }
 
 interface WeatherResponse {
-  city: string;
-  daily: DayForecast[];
+  // API doesn't return city directly — use local state
+  city?: string | null;
+  forecast: DayForecast[];
+  // Other API fields:
+  lat?: number;
+  lon?: number;
+  timezone?: string;
+  source?: string;
+  forecast_days?: number;
+  summary?: unknown;
 }
 
 // ── Skeleton cards ────────────────────────────────────────────────────────────
@@ -146,8 +172,9 @@ export function PogodaPage() {
     setShowDropdown(false);
   }
 
-  const firstRow = weather?.daily.slice(0, 7) ?? [];
-  const secondRow = weather?.daily.slice(7, 14) ?? [];
+  const forecast = weather?.forecast ?? [];
+  const firstRow = forecast.slice(0, 7);
+  const secondRow = forecast.slice(7, 14);
 
   function getDayLabel(dateStr: string, short = false) {
     const d = new Date(dateStr);
@@ -158,7 +185,10 @@ export function PogodaPage() {
   }
 
   function DayCard({ day, size = 'normal' }: { day: DayForecast; size?: 'normal' | 'small' }) {
-    const risk = calcRisk(day.precipitation_sum, day.windspeed_max, day.temperature_min);
+    // Use API risk if available, otherwise calculate locally
+    const risk: RiskLevel =
+      apiRiskToLevel(day.construction_risk) ??
+      calcRisk(day.precipitation_mm ?? 0, day.wind_max_kmh ?? 0, day.temp_min ?? 0);
     const rc = riskConfig[risk];
     const { dayName, dd } = getDayLabel(day.date, true);
     const isSelected = selectedDay?.date === day.date;
@@ -186,14 +216,14 @@ export function PogodaPage() {
           )}
 
           <div className="flex items-center justify-center gap-1 mb-2">
-            <span className="text-blue-400 font-mono text-xs">{day.temperature_min.toFixed(0)}°</span>
+            <span className="text-blue-400 font-mono text-xs">{(day.temp_min ?? 0).toFixed(0)}°</span>
             <span className="text-earth-700 text-xs">/</span>
-            <span className="text-orange-400 font-mono text-xs font-semibold">{day.temperature_max.toFixed(0)}°</span>
+            <span className="text-orange-400 font-mono text-xs font-semibold">{(day.temp_max ?? 0).toFixed(0)}°</span>
           </div>
 
           <div className="flex items-center justify-center gap-2 text-xs text-earth-600 mb-2">
-            <span><CloudRain className="w-3 h-3 inline mr-0.5" />{day.precipitation_sum.toFixed(0)}mm</span>
-            <span><Wind className="w-3 h-3 inline mr-0.5" />{day.windspeed_max.toFixed(0)}</span>
+            <span><CloudRain className="w-3 h-3 inline mr-0.5" />{(day.precipitation_mm ?? 0).toFixed(0)}mm</span>
+            <span><Wind className="w-3 h-3 inline mr-0.5" />{(day.wind_max_kmh ?? 0).toFixed(0)}</span>
           </div>
 
           <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-xs font-medium ${rc.cls}`}>
@@ -233,8 +263,9 @@ export function PogodaPage() {
             className="w-full bg-earth-900 border border-earth-700 rounded-xl px-4 py-2.5 text-sm text-earth-100 placeholder-earth-600 focus:outline-none focus:border-accent-primary/50 transition-colors"
           />
           <AnimatePresence>
-            {showDropdown && filteredCities.length > 0 && (
+            {showDropdown && filteredCities.length > 0 ? (
               <motion.div
+                key="city-dropdown"
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
@@ -252,7 +283,7 @@ export function PogodaPage() {
                   </button>
                 ))}
               </motion.div>
-            )}
+            ) : null}
           </AnimatePresence>
         </div>
 
@@ -294,15 +325,18 @@ export function PogodaPage() {
 
         {/* Selected day detail */}
         <AnimatePresence>
-          {selectedDay && (
+          {selectedDay ? (
             <motion.div
+              key="day-detail"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
               className="glass-card rounded-2xl p-5"
             >
               {(() => {
-                const risk = calcRisk(selectedDay.precipitation_sum, selectedDay.windspeed_max, selectedDay.temperature_min);
+                const risk: RiskLevel =
+                  apiRiskToLevel(selectedDay.construction_risk) ??
+                  calcRisk(selectedDay.precipitation_mm ?? 0, selectedDay.wind_max_kmh ?? 0, selectedDay.temp_min ?? 0);
                 const rc = riskConfig[risk];
                 const { dayName, dd } = getDayLabel(selectedDay.date, false);
                 return (
@@ -322,22 +356,22 @@ export function PogodaPage() {
                     <div className="grid grid-cols-4 gap-3">
                       <div className="bg-earth-800/40 rounded-xl p-3 text-center">
                         <Thermometer className="w-4 h-4 text-blue-400 mx-auto mb-1" />
-                        <p className="text-blue-400 font-mono text-lg">{selectedDay.temperature_min.toFixed(1)}°C</p>
+                        <p className="text-blue-400 font-mono text-lg">{(selectedDay.temp_min ?? 0).toFixed(1)}°C</p>
                         <p className="text-earth-600 text-xs">Min</p>
                       </div>
                       <div className="bg-earth-800/40 rounded-xl p-3 text-center">
                         <Thermometer className="w-4 h-4 text-orange-400 mx-auto mb-1" />
-                        <p className="text-orange-400 font-mono text-lg">{selectedDay.temperature_max.toFixed(1)}°C</p>
+                        <p className="text-orange-400 font-mono text-lg">{(selectedDay.temp_max ?? 0).toFixed(1)}°C</p>
                         <p className="text-earth-600 text-xs">Max</p>
                       </div>
                       <div className="bg-earth-800/40 rounded-xl p-3 text-center">
                         <CloudRain className="w-4 h-4 text-accent-info mx-auto mb-1" />
-                        <p className="text-accent-info font-mono text-lg">{selectedDay.precipitation_sum.toFixed(1)}</p>
+                        <p className="text-accent-info font-mono text-lg">{(selectedDay.precipitation_mm ?? 0).toFixed(1)}</p>
                         <p className="text-earth-600 text-xs">Opady mm</p>
                       </div>
                       <div className="bg-earth-800/40 rounded-xl p-3 text-center">
                         <Wind className="w-4 h-4 text-earth-400 mx-auto mb-1" />
-                        <p className="text-earth-200 font-mono text-lg">{selectedDay.windspeed_max.toFixed(0)}</p>
+                        <p className="text-earth-200 font-mono text-lg">{(selectedDay.wind_max_kmh ?? 0).toFixed(0)}</p>
                         <p className="text-earth-600 text-xs">Wiatr km/h</p>
                       </div>
                     </div>
@@ -345,7 +379,7 @@ export function PogodaPage() {
                 );
               })()}
             </motion.div>
-          )}
+          ) : null}
         </AnimatePresence>
 
         {/* Risk legend */}
@@ -365,19 +399,23 @@ export function PogodaPage() {
 
 // ── Mock data fallback ────────────────────────────────────────────────────────
 function generateMock(city: string): WeatherResponse {
-  const daily: DayForecast[] = [];
+  const forecast: DayForecast[] = [];
   const today = new Date();
   for (let i = 0; i < 14; i++) {
     const d = new Date(today);
     d.setDate(d.getDate() + i);
-    daily.push({
+    const precip = Math.round(Math.random() * 20 * 10) / 10;
+    const wind = Math.round(Math.random() * 80);
+    const tempMin = Math.round((Math.random() * 20 - 5) * 10) / 10;
+    forecast.push({
       date: d.toISOString().split('T')[0],
       weather_code: [0, 1, 2, 3, 51, 61, 71, 80, 95][Math.floor(Math.random() * 9)],
-      temperature_min: Math.round((Math.random() * 20 - 5) * 10) / 10,
-      temperature_max: Math.round((Math.random() * 20 + 5) * 10) / 10,
-      precipitation_sum: Math.round(Math.random() * 20 * 10) / 10,
-      windspeed_max: Math.round(Math.random() * 80),
+      temp_min: tempMin,
+      temp_max: Math.round((tempMin + Math.random() * 15 + 5) * 10) / 10,
+      precipitation_mm: precip,
+      wind_max_kmh: wind,
+      construction_risk: calcRisk(precip, wind, tempMin),
     });
   }
-  return { city, daily };
+  return { city, forecast };
 }

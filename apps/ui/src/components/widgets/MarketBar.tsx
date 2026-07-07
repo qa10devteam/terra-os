@@ -88,9 +88,20 @@ export function MarketBar() {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       })
-      .then((data: CurrenciesResponse) => {
-        setRates(data.rates);
-        setUpdatedAt(data.updated_at);
+      .then((data: any) => {
+        // API returns rates as object {EUR: {mid, name}, ...} — convert to array
+        if (data.rates && !Array.isArray(data.rates)) {
+          const parsed: CurrencyRate[] = Object.entries(data.rates).map(([code, val]: [string, any]) => ({
+            code,
+            rate: val.mid ?? 0,
+            change: val.change_pct ?? 0,
+            change_abs: val.change_abs ?? 0,
+          }));
+          setRates(parsed);
+        } else if (Array.isArray(data.rates)) {
+          setRates(data.rates);
+        }
+        setUpdatedAt(data.effective_date || data.updated_at || '');
         setError(false);
       })
       .catch(() => {

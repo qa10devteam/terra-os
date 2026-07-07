@@ -29,41 +29,6 @@ class ChatRequest(BaseModel):
     message: str
 
 
-class GeneralChatRequest(BaseModel):
-    message: str
-    tender_id: str | None = None
-    context: str | None = None
-
-
-@router.post("/chat")
-def general_chat(body: GeneralChatRequest):
-    """Ogólny asystent Terra.OS — odpowiada po polsku na pytania o przetargi."""
-    from fastapi.responses import StreamingResponse
-    import json
-
-    def stream():
-        def sse(event, data):
-            return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
-
-        msg = body.message.lower()
-
-        # Proste polskie odpowiedzi deterministyczne
-        if any(w in msg for w in ['przetarg', 'ofert', 'kosztorys', 'wycen']):
-            answer = f"Widzę że pytasz o {body.message}. W systemie Terra.OS masz dostęp do {20} przetargów w bazie. Użyj modułu Zwiad aby przefiltrować, następnie Kosztorys aby porównać warianty, a Silnik aby ocenić ryzyko."
-        elif any(w in msg for w in ['ryzyko', 'silnik', 'analiz']):
-            answer = "Silnik decyzyjny Terra.OS analizuje wykonalność na 3 poziomach: L1 (reguły twarde), L2 (ryzyko Monte Carlo 2000 próbek), L3 (wyjaśnienie). Przejdź do modułu Silnik i kliknij 'Uruchom analizę'."
-        elif any(w in msg for w in ['narzut', 'kp', 'zysk', 'marż']):
-            answer = "Możesz modyfikować parametry kosztorysu: narzut (KP%), zysk (zysk%), robociznę (zł/rg). Przejdź do Kosztorysu i użyj czatu przy konkretnej wycenie."
-        elif any(w in msg for w in ['pomoc', 'jak', 'co', 'help']):
-            answer = "Terra.OS to system wsparcia decyzji dla wykonawców robót ziemnych. Moduły: Zwiad (lista przetargów) → Kosztorys (2 warianty: doc/owner) → Silnik (analiza ryzyka) → Decyzja (GO/NO-GO). Wybierz przetarg w Zwiadzie aby rozpocząć."
-        else:
-            answer = f"Rozumiem: '{body.message}'. Jestem asystentem Terra.OS. Mogę pomóc z analizą przetargów, kosztorysami i oceną ryzyka. Zacznij od wyboru przetargu w module Zwiad."
-
-        yield sse("token", {"text": answer})
-        yield sse("done", {"ok": True})
-
-    return StreamingResponse(stream(), media_type="text/event-stream")
-
 
 # Recognized ops for deterministic application
 _VALID_OPS = {"set_param", "set_kp", "set_zysk", "set_robocizna"}

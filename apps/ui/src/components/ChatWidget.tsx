@@ -2,13 +2,14 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { MessageCircle, X, Send, Brain, User } from 'lucide-react';
+import { MessageCircle, X, Send, Brain, User, RefreshCw } from 'lucide-react';
 
 interface Message {
   id: string;
   role: 'user' | 'assistant';
   text: string;
   streaming?: boolean;
+  isError?: boolean;
 }
 
 function TypingDots() {
@@ -25,6 +26,8 @@ function TypingDots() {
   );
 }
 
+const STREAM_TIMEOUT_MS = 45_000; // 45 s — poniżej limitu Cloudflare (~60 s)
+
 export function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
@@ -36,8 +39,19 @@ export function ChatWidget() {
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
+
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const lastUserTextRef = useRef<string>('');
+
+  // Cleanup on unmount — abort any open stream
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []);
 
   useEffect(() => {
     if (open) {
@@ -49,10 +63,19 @@ export function ChatWidget() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const sendMessage = async () => {
-    const text = input.trim();
+  const sendMessage = async (retryText?: string) => {
+    const text = retryText ?? input.trim();
     if (!text || loading) return;
-    setInput('');
+
+    // Reset state
+    if (!retryText) setInput('');
+    setTimedOut(false);
+    lastUserTextRef.current = text;
+
+    // Abort any previous in-flight request
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     const userMsg: Message = { id: Date.now().toString(), role: 'user', text };
     const assistantId = (Date.now() + 1).toString();
@@ -61,11 +84,15 @@ export function ChatWidget() {
     setMessages(prev => [...prev, userMsg, assistantMsg]);
     setLoading(true);
 
+    // Kill the stream after STREAM_TIMEOUT_MS — Cloudflare closes it anyway at ~60 s
+    const timeoutId = setTimeout(() => controller.abort(), STREAM_TIMEOUT_MS);
+
     try {
       const res = await fetch('/api/v1/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text }),
+        signal: controller.signal,
       });
 
       if (!res.ok || !res.body) throw new Error(`Błąd ${res.status}`);
@@ -96,17 +123,35 @@ export function ChatWidget() {
         }
       }
 
+      // Stream finished normally
       setMessages(prev => prev.map(m =>
         m.id === assistantId ? { ...m, streaming: false } : m
       ));
+
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'Nieznany błąd';
+      const wasAborted = controller.signal.aborted;
+      const errorMsg = wasAborted
+        ? 'Przerwano — przekroczono limit czasu połączenia. Spróbuj ponownie.'
+        : (e instanceof Error ? `Błąd połączenia: ${e.message}` : 'Nieznany błąd połączenia.');
+
       setMessages(prev => prev.map(m =>
-        m.id === assistantId ? { ...m, text: `Błąd połączenia: ${msg}`, streaming: false } : m
+        m.id === assistantId
+          ? { ...m, text: errorMsg, streaming: false, isError: true }
+          : m
       ));
+
+      if (wasAborted) setTimedOut(true);
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
     }
+  };
+
+  const handleRetry = () => {
+    const text = lastUserTextRef.current;
+    if (!text) return;
+    setTimedOut(false);
+    sendMessage(text);
   };
 
   return (
@@ -160,7 +205,9 @@ export function ChatWidget() {
                   <div className={`max-w-[80%] px-3 py-2 rounded-xl text-sm leading-relaxed ${
                     msg.role === 'user'
                       ? 'bg-accent-primary/20 text-earth-100 rounded-tr-sm'
-                      : 'bg-earth-800/80 text-earth-200 rounded-tl-sm border border-earth-700/30'
+                      : msg.isError
+                        ? 'bg-red-500/10 text-red-300 rounded-tl-sm border border-red-500/20'
+                        : 'bg-earth-800/80 text-earth-200 rounded-tl-sm border border-earth-700/30'
                   }`}>
                     {msg.streaming && !msg.text ? (
                       <TypingDots />
@@ -178,8 +225,22 @@ export function ChatWidget() {
               <div ref={bottomRef} />
             </div>
 
-            {/* Input */}
-            <div className="p-3 border-t border-earth-800/60 bg-earth-900/40 shrink-0">
+            {/* Input + retry bar */}
+            <div className="p-3 border-t border-earth-800/60 bg-earth-900/40 shrink-0 space-y-2">
+              {/* Retry button — shows when stream was cut */}
+              {timedOut && (
+                <motion.button
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  onClick={handleRetry}
+                  disabled={loading}
+                  className="w-full flex items-center justify-center gap-2 py-1.5 rounded-lg bg-accent-warning/10 border border-accent-warning/30 text-accent-warning text-xs font-medium hover:bg-accent-warning/20 transition-colors disabled:opacity-50"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Spróbuj ponownie
+                </motion.button>
+              )}
+
               <div className="flex gap-2">
                 <input
                   ref={inputRef}
@@ -192,7 +253,7 @@ export function ChatWidget() {
                   className="flex-1 px-3 py-2 rounded-xl bg-earth-800 border border-earth-700/60 text-earth-100 text-sm placeholder:text-earth-600 focus:outline-none focus:border-accent-primary/50 disabled:opacity-50 transition-colors"
                 />
                 <motion.button
-                  onClick={sendMessage}
+                  onClick={() => sendMessage()}
                   disabled={loading || !input.trim()}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}

@@ -1,6 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type {
   Tender,
   Estimate,
@@ -12,9 +13,26 @@ import type {
 
 // ── Module names used in navigation ────────────────────────────────────────
 
-export type ModuleName = 'dashboard' | 'zwiad' | 'kosztorys' | 'silnik' | 'decyzja' | 'logistyka' | 'rfq' | 'pipeline' | 'system' | 'pogoda';
+export type ModuleName = 'dashboard' | 'zwiad' | 'kosztorys' | 'silnik' | 'decyzja' | 'logistyka' | 'rfq' | 'pipeline' | 'system' | 'pogoda' | 'analytics';
+
+// ── Auth types ──────────────────────────────────────────────────────────────
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  org_id: string | null;
+  role: string;
+}
 
 interface AppState {
+  // ── Auth ────────────────────────────────────────────────────────────────
+  user: AuthUser | null;
+  accessToken: string | null;
+  refreshToken: string | null;
+  setAuth: (user: AuthUser, accessToken: string, refreshToken: string) => void;
+  clearAuth: () => void;
+
   // ── Navigation ──────────────────────────────────────────────────────────
   currentModule: ModuleName;
   setCurrentModule: (module: ModuleName) => void;
@@ -51,42 +69,61 @@ interface AppState {
   setIsLoading: (loading: boolean) => void;
 }
 
-export const useStore = create<AppState>((set) => ({
-  // ── Navigation ──────────────────────────────────────────────────────────
-  currentModule: 'dashboard',
-  setCurrentModule: (module) => set({ currentModule: module }),
+export const useStore = create<AppState>()(
+  persist(
+    (set) => ({
+      // ── Auth ──────────────────────────────────────────────────────────────
+      user: null,
+      accessToken: null,
+      refreshToken: null,
+      setAuth: (user, accessToken, refreshToken) => set({ user, accessToken, refreshToken }),
+      clearAuth: () => set({ user: null, accessToken: null, refreshToken: null }),
 
-  // ── Tender state ────────────────────────────────────────────────────────
-  tenders: [],
-  selectedTender: null,
-  setSelectedTender: (tender) => set({ selectedTender: tender }),
+      // ── Navigation ──────────────────────────────────────────────────────
+      currentModule: 'dashboard',
+      setCurrentModule: (module) => set({ currentModule: module }),
 
-  // ── Estimates ───────────────────────────────────────────────────────────
-  estimates: {},
-  setEstimate: (tenderId, estimate) =>
-    set((state) => ({ estimates: { ...state.estimates, [tenderId]: estimate } })),
+      // ── Tender state ──────────────────────────────────────────────────────
+      tenders: [],
+      selectedTender: null,
+      setSelectedTender: (tender) => set({ selectedTender: tender }),
 
-  // ── Risk analysis ───────────────────────────────────────────────────────
-  riskAnalysis: {},
-  setRiskAnalysis: (tenderId, analysis) =>
-    set((state) => ({ riskAnalysis: { ...state.riskAnalysis, [tenderId]: analysis } })),
+      // ── Estimates ─────────────────────────────────────────────────────────
+      estimates: {},
+      setEstimate: (tenderId, estimate) =>
+        set((state) => ({ estimates: { ...state.estimates, [tenderId]: estimate } })),
 
-  // ── Decisions ───────────────────────────────────────────────────────────
-  decisions: {},
-  setDecision: (tenderId, decision) =>
-    set((state) => ({ decisions: { ...state.decisions, [tenderId]: decision } })),
+      // ── Risk analysis ─────────────────────────────────────────────────────
+      riskAnalysis: {},
+      setRiskAnalysis: (tenderId, analysis) =>
+        set((state) => ({ riskAnalysis: { ...state.riskAnalysis, [tenderId]: analysis } })),
 
-  // ── Resources (Module 3) ────────────────────────────────────────────────
-  equipment: [],
-  employees: [],
-  setEquipment: (equipment) => set({ equipment }),
-  setEmployees: (employees) => set({ employees }),
+      // ── Decisions ─────────────────────────────────────────────────────────
+      decisions: {},
+      setDecision: (tenderId, decision) =>
+        set((state) => ({ decisions: { ...state.decisions, [tenderId]: decision } })),
 
-  // ── UI state ────────────────────────────────────────────────────────────
-  isMenuOpen: false,
-  toggleMenu: () => set((state) => ({ isMenuOpen: !state.isMenuOpen })),
+      // ── Resources (Module 3) ──────────────────────────────────────────────
+      equipment: [],
+      employees: [],
+      setEquipment: (equipment) => set({ equipment }),
+      setEmployees: (employees) => set({ employees }),
 
-  // ── Loading states ──────────────────────────────────────────────────────
-  isLoading: false,
-  setIsLoading: (loading) => set({ isLoading: loading }),
-}));
+      // ── UI state ──────────────────────────────────────────────────────────
+      isMenuOpen: false,
+      toggleMenu: () => set((state) => ({ isMenuOpen: !state.isMenuOpen })),
+
+      // ── Loading states ────────────────────────────────────────────────────
+      isLoading: false,
+      setIsLoading: (loading) => set({ isLoading: loading }),
+    }),
+    {
+      name: 'terra-auth',
+      partialize: (state) => ({
+        user: state.user,
+        accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
+      }),
+    }
+  )
+);

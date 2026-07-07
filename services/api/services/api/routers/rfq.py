@@ -20,10 +20,11 @@ import uuid
 from typing import Any
 
 import sqlalchemy as sa
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from terra_db.session import get_engine
+from ..auth.deps import AuthUser, TenantDep, get_current_user
 
 router = APIRouter(prefix="/api/v1", tags=["rfq", "approvals"])
 
@@ -90,7 +91,7 @@ class ApproveResult(BaseModel):
 # ──────────────────────────────────────────────────────────────────────────────
 
 @router.post("/tenders/{tender_id}/rfq", status_code=202, response_model=ApprovalResponse)
-def create_rfq(tender_id: str, body: RFQCreate) -> ApprovalResponse:
+def create_rfq(tender_id: str, body: RFQCreate, tenant_id: TenantDep, user: AuthUser) -> ApprovalResponse:
     """Prepare RFQ emails to counterparties. GATED — returns 202 + approval_id.
 
     Does NOT send any emails. Creates rfq row (draft) + approval_request.
@@ -140,7 +141,7 @@ def create_rfq(tender_id: str, body: RFQCreate) -> ApprovalResponse:
 # ──────────────────────────────────────────────────────────────────────────────
 
 @router.get("/rfq/{rfq_id}", response_model=RFQResponse)
-def get_rfq(rfq_id: str) -> RFQResponse:
+def get_rfq(rfq_id: str, tenant_id: TenantDep, user: AuthUser) -> RFQResponse:
     """Get RFQ with messages and parsed offers."""
     engine = get_engine()
 
@@ -183,7 +184,7 @@ def get_rfq(rfq_id: str) -> RFQResponse:
 # ──────────────────────────────────────────────────────────────────────────────
 
 @router.post("/rfq/{rfq_id}/inbound")
-def rfq_inbound(rfq_id: str, body: InboundMessage) -> dict:
+def rfq_inbound(rfq_id: str, body: InboundMessage, tenant_id: TenantDep, user: AuthUser) -> dict:
     """Record and parse an inbound reply (fixtured IMAP message).
 
     Parses price and lead_time from email body using regex.
@@ -235,7 +236,7 @@ def rfq_inbound(rfq_id: str, body: InboundMessage) -> dict:
 # ──────────────────────────────────────────────────────────────────────────────
 
 @router.post("/tenders/{tender_id}/autofill", status_code=202, response_model=ApprovalResponse)
-def autofill_tender(tender_id: str) -> ApprovalResponse:
+def autofill_tender(tender_id: str, tenant_id: TenantDep, user: AuthUser) -> ApprovalResponse:
     """Prepare tender form auto-fill draft from owner_profile. GATED — 202 + approval_id.
 
     NEVER submits the form. Draft is produced; submission requires approval.
@@ -281,16 +282,17 @@ def autofill_tender(tender_id: str) -> ApprovalResponse:
 # ──────────────────────────────────────────────────────────────────────────────
 
 @router.get("/approvals", response_model=list[ApprovalRequest])
-def list_approvals(status: str = "pending") -> list[ApprovalRequest]:
-    """List approval requests by status."""
+def list_approvals(tenant_id: TenantDep, user: AuthUser, status: str = "pending") -> list[ApprovalRequest]:
+    """List approval requests by status — filtered by tenant (IDOR fix)."""
     engine = get_engine()
     with engine.connect() as conn:
         rows = conn.execute(
             sa.text(
                 "SELECT id, action, payload, status, requested_at "
-                "FROM approval_request WHERE status=:s ORDER BY requested_at DESC LIMIT 50"
+                "FROM approval_request WHERE status=:s AND tenant_id=:tid "
+                "ORDER BY requested_at DESC LIMIT 50"
             ),
-            {"s": status},
+            {"s": status, "tid": tenant_id},
         ).fetchall()
     return [
         ApprovalRequest(
@@ -302,7 +304,7 @@ def list_approvals(status: str = "pending") -> list[ApprovalRequest]:
 
 
 @router.post("/approvals/{approval_id}/approve", response_model=ApproveResult)
-def approve_action(approval_id: str) -> ApproveResult:
+def approve_action(approval_id: str, tenant_id: TenantDep, user: AuthUser) -> ApproveResult:
     """Execute approved action + write audit log.
 
     This is the ONLY path that triggers sends/submissions.
@@ -345,7 +347,7 @@ def approve_action(approval_id: str) -> ApproveResult:
 
 
 @router.post("/approvals/{approval_id}/reject")
-def reject_action(approval_id: str) -> dict:
+def reject_action(approval_id: str, tenant_id: TenantDep, user: AuthUser) -> dict:
     """Reject an approval request."""
     engine = get_engine()
 

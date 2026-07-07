@@ -36,6 +36,10 @@ CITIES_PL = {
     "olsztyn":    (53.7784, 20.4801),
     "torun":      (53.0138, 18.5983),
     "bydgoszcz":  (53.1235, 18.0084),
+    "dzierzoniow": (50.7276, 16.6515),
+    "dzierżoniów": (50.7276, 16.6515),
+    "strzelin":   (50.7815, 17.0671),
+    "walbrzych":  (50.7714, 16.2843),
 }
 
 
@@ -44,32 +48,52 @@ CITIES_PL = {
 @router.get("/currencies")
 def get_currencies():
     """
-    Aktualne kursy walut z NBP (Tabela A — kursy średnie).
-    Używane do kalibracji kosztorysów: materiały EUR/USD → PLN.
+    Aktualne kursy walut z NBP (Tabela A) + zmiana vs poprzedni dzień.
     """
-    try:
-        r = httpx.get(f"{NBP_BASE}/a/eur/?format=json", timeout=10)
-        eur = r.json()["rates"][0] if r.status_code == 200 else None
+    def fetch_rate(code: str):
+        try:
+            r = httpx.get(f"{NBP_BASE}/a/{code}/last/2/?format=json", timeout=10)
+            if r.status_code == 200:
+                rates = r.json()["rates"]
+                current = rates[-1] if rates else None
+                previous = rates[-2] if len(rates) >= 2 else None
+                if current and previous:
+                    change_abs = round(current["mid"] - previous["mid"], 4)
+                    change_pct = round((change_abs / previous["mid"]) * 100, 4)
+                    return {"mid": current["mid"], "change_abs": change_abs, "change_pct": change_pct, "date": current["effectiveDate"]}
+                elif current:
+                    return {"mid": current["mid"], "change_abs": 0, "change_pct": 0, "date": current["effectiveDate"]}
+        except Exception:
+            pass
+        # fallback: single rate
+        try:
+            r = httpx.get(f"{NBP_BASE}/a/{code}/?format=json", timeout=10)
+            if r.status_code == 200:
+                rate = r.json()["rates"][0]
+                return {"mid": rate["mid"], "change_abs": 0, "change_pct": 0, "date": rate["effectiveDate"]}
+        except Exception:
+            pass
+        return None
 
-        r2 = httpx.get(f"{NBP_BASE}/a/usd/?format=json", timeout=10)
-        usd = r2.json()["rates"][0] if r2.status_code == 200 else None
+    eur = fetch_rate("eur")
+    usd = fetch_rate("usd")
+    chf = fetch_rate("chf")
 
-        r3 = httpx.get(f"{NBP_BASE}/a/chf/?format=json", timeout=10)
-        chf = r3.json()["rates"][0] if r3.status_code == 200 else None
-    except Exception as e:
-        raise HTTPException(502, f"NBP API niedostępne: {e}")
+    if not eur:
+        raise HTTPException(502, "NBP API niedostępne")
 
     return {
         "source": "NBP (Narodowy Bank Polski)",
         "table": "A",
-        "effective_date": eur["effectiveDate"] if eur else None,
+        "effective_date": eur["date"] if eur else None,
         "rates": {
-            "EUR": {"mid": eur["mid"] if eur else None, "name": "Euro"},
-            "USD": {"mid": usd["mid"] if usd else None, "name": "Dolar USA"},
-            "CHF": {"mid": chf["mid"] if chf else None, "name": "Frank szwajcarski"},
+            "EUR": {"mid": eur["mid"] if eur else None, "change_abs": eur["change_abs"] if eur else 0, "change_pct": eur["change_pct"] if eur else 0, "name": "Euro"},
+            "USD": {"mid": usd["mid"] if usd else None, "change_abs": usd["change_abs"] if usd else 0, "change_pct": usd["change_pct"] if usd else 0, "name": "Dolar USA"},
+            "CHF": {"mid": chf["mid"] if chf else None, "change_abs": chf["change_abs"] if chf else 0, "change_pct": chf["change_pct"] if chf else 0, "name": "Frank szwajcarski"},
         },
         "note": "Kursy średnie NBP — do przeliczania materiałów importowanych i indeksacji kontraktów.",
     }
+
 
 
 @router.get("/currencies/{code}/history")
