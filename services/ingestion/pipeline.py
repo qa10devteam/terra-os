@@ -10,9 +10,10 @@ from sqlalchemy.engine import Engine
 from .bzp_connector import BZPConnector
 from .filters import apply_filters
 from .fixtures import load_bzp_fixtures
-from .normalize import normalize_bzp_notice
+from .normalize import normalize_bzp_notice, normalize_ted_notice
 from .repository import get_or_create_default_tenant, upsert_tender
 from .scorer import OwnerProfileSnap, score_tender
+from .ted_connector import TEDConnector
 
 logger = logging.getLogger(__name__)
 
@@ -28,12 +29,15 @@ class IngestResult:
         self.created: int = 0
         self.updated: int = 0
         self.errors: int = 0
+        self.bip_stored: int = 0
+        self.dedup_pairs: int = 0
 
     def __repr__(self) -> str:
         return (
             f"IngestResult(fetched={self.raw_fetched}, norm={self.normalized}, "
             f"passed={self.passed_filter}, dropped={self.dropped_filter}, "
-            f"created={self.created}, updated={self.updated}, errors={self.errors})"
+            f"created={self.created}, updated={self.updated}, errors={self.errors}, "
+            f"bip={self.bip_stored}, dedup={self.dedup_pairs})"
         )
 
 
@@ -43,11 +47,16 @@ def run_ingest(
     days_back: int = 7,
     offline: bool | None = None,
     owner_profile: OwnerProfileSnap | None = None,
+    include_ted: bool = True,
+    include_bip: bool = False,
+    bip_region: str | None = None,
+    bip_max_sites: int = 50,
+    run_dedup: bool = True,
 ) -> IngestResult:
-    """Full M1 ingestion pipeline.
+    """Full M1 ingestion pipeline — BZP + TED EU.
 
     Steps:
-      1. Fetch raw notices from BZP (or fixtures if offline)
+      1. Fetch raw notices from BZP + TED (or fixtures if offline)
       2. Normalize each notice to TenderIn
       3. Apply CPV + geo filters
       4. Score each tender vs owner profile
@@ -57,27 +66,51 @@ def run_ingest(
     use_fixtures = offline if offline is not None else TERRA_OFFLINE
     profile = owner_profile or OwnerProfileSnap()
 
-    # Step 1: Fetch
+    date_from = date.today() - timedelta(days=days_back)
+    date_to = date.today()
+
+    # Step 1a: BZP fetch
     if use_fixtures:
         logger.info("OFFLINE mode — loading BZP fixtures")
-        raw_notices = load_bzp_fixtures()
+        bzp_raw = load_bzp_fixtures()
     else:
         connector = BZPConnector()
-        date_from = date.today() - timedelta(days=days_back)
-        raw_notices = connector.fetch_notices(date_from=date_from)
+        bzp_raw = connector.fetch_notices(date_from=date_from, date_to=date_to)
 
-    result.raw_fetched = len(raw_notices)
-    logger.info("Fetched %d raw notices", result.raw_fetched)
+    logger.info("BZP fetched %d raw notices", len(bzp_raw))
 
-    # Step 2: Normalize
+    # Step 1b: TED fetch
+    ted_raw: list = []
+    if include_ted and not use_fixtures:
+        try:
+            ted = TEDConnector()
+            ted_raw = ted.fetch_notices(date_from=date_from, date_to=date_to)
+            ted.close()
+            logger.info("TED fetched %d raw notices", len(ted_raw))
+        except Exception as exc:
+            logger.error("TED fetch failed: %s", exc)
+
+    result.raw_fetched = len(bzp_raw) + len(ted_raw)
+
+    # Step 2a: Normalize BZP
     tenders_in = []
-    for notice in raw_notices:
+    for notice in bzp_raw:
         try:
             tin = normalize_bzp_notice(notice)
             if tin is not None:
                 tenders_in.append(tin)
         except Exception as exc:
-            logger.warning("Normalize error: %s", exc)
+            logger.warning("BZP normalize error: %s", exc)
+            result.errors += 1
+
+    # Step 2b: Normalize TED
+    for notice in ted_raw:
+        try:
+            tin = normalize_ted_notice(notice)
+            if tin is not None:
+                tenders_in.append(tin)
+        except Exception as exc:
+            logger.warning("TED normalize error: %s", exc)
             result.errors += 1
 
     result.normalized = len(tenders_in)
@@ -113,4 +146,31 @@ def run_ingest(
             result.errors += 1
 
     logger.info("Ingest done: %r", result)
+
+    # Step 6 (optional): BIP scraping
+    if include_bip and not use_fixtures:
+        try:
+            from services.ingestion.bip_connector import run_bip_scraper
+            bip_stats = run_bip_scraper(
+                engine=engine,
+                tenant_id=str(tenant_id),
+                region=bip_region,
+                max_sites=bip_max_sites,
+                days_back=days_back,
+            )
+            result.bip_stored = bip_stats.get("tenders_stored", 0)
+            logger.info("BIP ingest: %d tenders stored", result.bip_stored)
+        except Exception as exc:
+            logger.error("BIP ingest failed: %s", exc)
+
+    # Step 7 (optional): Cross-source deduplication
+    if run_dedup and not use_fixtures:
+        try:
+            from services.ingestion.deduplicator import run_deduplicator
+            dedup_stats = run_deduplicator(engine=engine, tenant_id=str(tenant_id))
+            result.dedup_pairs = dedup_stats.get("new_pairs", 0)
+            logger.info("Dedup: %d new duplicate pairs", result.dedup_pairs)
+        except Exception as exc:
+            logger.error("Dedup failed: %s", exc)
+
     return result
