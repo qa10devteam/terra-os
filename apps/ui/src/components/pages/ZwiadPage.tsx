@@ -617,7 +617,7 @@ function DetailPanel({
   onClose: () => void;
   authFetch: (url: string, opts?: RequestInit) => Promise<unknown>;
 }) {
-  const [tab, setTab] = useState<'details' | 'estimate' | 'documents'>('details');
+  const [tab, setTab] = useState<'details' | 'estimate' | 'documents' | 'automation'>('details');
   const score = tender.match_score ?? 0;
   const pct = Math.round(score * 100);
   const { text: scoreText, bar: scoreBar, bg: scoreBg } = scoreColor(score);
@@ -693,6 +693,7 @@ function DetailPanel({
           { key: 'details', label: 'Szczegóły', icon: FileText },
           { key: 'documents', label: 'Dokumenty', icon: Download },
           { key: 'estimate', label: 'Kosztorys', icon: BarChart3 },
+          { key: 'automation', label: 'Automatyzacje', icon: Zap },
         ] as const).map(({ key, label, icon: Icon }) => (
           <button
             key={key}
@@ -804,6 +805,17 @@ function DetailPanel({
               transition={{ duration: 0.15 }}
             >
               <EstimatesTab tenderId={tender.id} authFetch={authFetch} />
+            </motion.div>
+          ) : tab === 'automation' ? (
+            <motion.div
+              key="automation"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.15 }}
+              className="p-4"
+            >
+              <AutomationSuggestions entityType="tender" entityId={tender.id} authFetch={authFetch as (url: string, opts?: RequestInit) => Promise<Response>} />
             </motion.div>
           ) : (
             <motion.div
