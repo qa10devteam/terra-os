@@ -9,14 +9,14 @@
 |---|------|------|-------|
 | 1 | TED EU connector + normalizer | ✅ DONE | 569 TED w DB, BT-21-Lot titles, classification-cpv |
 | 2 | TED: CPV + wartość z search API | ✅ DONE | real titles PL, classification-cpv |
-| 3 | BZP dokumenty SIWZ | ❌ TODO | Router `bzp_documents.py` istnieje, sprawdzić live fetch + UI drawer |
+| 3 | BZP dokumenty SIWZ | ✅ DONE | Live fetch działa (13 docs dla testu), DocumentsTab w ZwiadPage, POST /fetch + GET lista |
 | 4 | BZP ResultNotice (kto wygrał) | ✅ DONE | `fetch_result_notices()` + `sync_result_notices_to_historical_bids()` w bzp_connector.py |
 | 5 | Historical tenders → main table | ✅ DONE | `scripts/migrate_historical_to_tender.py` — 500 rows migrated (5035 dostępnych CPV45%) |
 | 6 | Cron systemd timer (BZP daily) | ✅ DONE | `terra-ingest.timer` 04:00 UTC, errors=0 |
 | 7 | Cron TED tygodniowy | ✅ DONE | `terra-ingest-ted.timer` Sun 05:00 UTC, errors=0 |
 | 8 | BIP connector | ❌ TODO | `source_kind='bip'` istnieje, brak implementacji |
 | 9 | Deduplicator cross-source | ⚠️ PARTIAL | pg_trgm działa (1 para znaleziona), brak BZP↔TED fuzzy match po buyer+title |
-| 10 | Geo enrichment (NUTS/TERC) | ❌ TODO | TED: 569 bez voivodeship; potrzeba NUTS→voivodeship mapping |
+| 10 | Geo enrichment (NUTS/TERC) | ✅ DONE | nuts_mapping.py + enrich_ted_nuts.py: 567/569 TED dostało voivodeship (city fallback) |
 | 11 | ZwiadPage — filtr po źródle | ✅ DONE | Source dropdown: bzp/ted/bip |
 | 12 | ZwiadPage — filtr po CPV | ✅ DONE | CPV prefix search (4511→536, 45111200→103) |
 | 13 | ZwiadPage — filtr po wartości | ✅ DONE | min_value/max_value (min 500k→361 wyników) |
@@ -25,7 +25,7 @@
 | 16 | Scoring v2 — wagi konfigurowalne | ❌ TODO | Scorer hardcoded; dodać tenant-level config (tabela `scoring_config`) |
 | 17 | Scorer — deadline proximity bonus | ❌ TODO | Przetargi z bliskim deadline powinny mieć boost |
 | 18 | Scorer — historical win rate CPV | ❌ TODO | Jeśli tenant wygrywał w CPV X → boost |
-| 19 | Alert email — nowe przetargi | ❌ TODO | `tender_alert` tabela istnieje, brak email dispatch |
+| 19 | Alert email — nowe przetargi | ✅ DONE | alert_dispatcher.py, systemd timer hourly, fallback JSON, 1 aktywny alert (Roboty CPV45) |
 | 20 | Health check źródeł | ✅ DONE | `/api/v1/sources/health` — BZP OK, TED OK |
 | 21 | Dashboard — real tender total | ✅ DONE | `api.ts` używa `json.total` zamiast `tenders.length` |
 | 22 | MarketIntelPage — seasonality tab | ✅ DONE | `useSeasonality` hook + `SeasonalityChart` komponent |
