@@ -377,6 +377,70 @@ def run_intelligence(kid: str, user: AuthUser) -> dict:
     return results
 
 
+@router.get("/{kid}/anomalies")
+def get_kosztorys_anomalies(kid: str, user: AuthUser) -> dict:
+    """Pobierz listę pozycji z anomaliami cenowymi."""
+    tenant_id = _require_tenant(user)
+    with get_engine().connect() as conn:
+        _get_kosztorys_or_404(conn, kid, tenant_id)
+        rows = conn.execute(sa.text("""
+            SELECT id::text, lp, kst_code, opis, jednostka,
+                   ilosc::float, r_jcena::float, m_jcena::float, s_jcena::float,
+                   is_anomaly
+            FROM kosztorys_pozycja
+            WHERE kosztorys_id=:kid AND tenant_id=:tid AND is_anomaly=TRUE
+            ORDER BY lp
+        """), {"kid": kid, "tid": tenant_id}).fetchall()
+    return {
+        "kosztorys_id": kid,
+        "anomalies": [dict(r._mapping) for r in rows],
+        "count": len(rows),
+    }
+
+
+@router.get("/{kid}/win-probability")
+def get_win_probability(kid: str, cpv: str | None = None, user: AuthUser = None) -> dict:  # type: ignore[assignment]
+    """Pobierz szacowaną szansę wygrania przetargu dla tego kosztorysu."""
+    tenant_id = _require_tenant(user)
+    with get_engine().connect() as conn:
+        hdr = _get_kosztorys_or_404(conn, kid, tenant_id)
+        total_netto = float(hdr.suma_netto or 0)
+        wp_stored = float(hdr.win_probability) if hdr.win_probability else None
+
+    if wp_stored is not None:
+        return {
+            "kosztorys_id": kid,
+            "win_probability": wp_stored,
+            "total_netto": total_netto,
+            "cached": True,
+        }
+
+    # Compute on-the-fly
+    cpv_prefix = cpv or "45"
+    try:
+        from ..intelligence.bid_intelligence import estimate_win_probability
+        wp = estimate_win_probability(
+            our_price=total_netto,
+            estimated_value=total_netto,
+            cpv_prefix=cpv_prefix,
+            n_competitors=4,
+        )
+        return {
+            "kosztorys_id": kid,
+            "win_probability": wp.get("p_win"),
+            "win_analysis": wp,
+            "total_netto": total_netto,
+            "cached": False,
+        }
+    except Exception as e:
+        return {
+            "kosztorys_id": kid,
+            "win_probability": None,
+            "error": str(e),
+            "total_netto": total_netto,
+        }
+
+
 # ─── Działy ───────────────────────────────────────────────────────────────────
 
 @router.post("/{kid}/dzialy", status_code=201)
