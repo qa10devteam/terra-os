@@ -6,7 +6,8 @@ import {
   Building2, Users, Send, Settings2,
   Save, Loader2, Trash2, Shield, User, Crown, Eye,
   Mail, XCircle, Plus, RefreshCw, CheckCircle2,
-  ChevronRight, Tag, MapPin, Calendar, Hash,
+  ChevronRight, Tag, MapPin, Calendar, Hash, Target,
+  SlidersHorizontal, Zap, TrendingUp,
 } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { useAuthFetch } from '@/lib/api-v2';
@@ -14,7 +15,7 @@ import { showToast } from '@/components/Toast';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
-type SectionId = 'organizacja' | 'zespol' | 'zaproszenia' | 'ustawienia';
+type SectionId = 'organizacja' | 'zespol' | 'zaproszenia' | 'ustawienia' | 'scoring';
 
 interface OrgData {
   id: string;
@@ -45,6 +46,27 @@ interface Invite {
   expires_at: string | null;
 }
 
+interface ScoringConfig {
+  cpv_weight: number;
+  value_weight: number;
+  region_weight: number;
+  deadline_weight: number;
+  historical_win_weight: number;
+  min_value_pln: number;
+  max_value_pln: number;
+  preferred_cpvs: string[];
+  preferred_regions: string[];
+  is_default: boolean;
+}
+
+interface RescoreResult {
+  total: number;
+  processed: number;
+  avg_score_before: number;
+  avg_score_after: number;
+  message: string;
+}
+
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
 const SECTIONS: { id: SectionId; label: string; icon: typeof Building2 }[] = [
@@ -52,6 +74,7 @@ const SECTIONS: { id: SectionId; label: string; icon: typeof Building2 }[] = [
   { id: 'zespol',      label: 'Zespol',       icon: Users     },
   { id: 'zaproszenia', label: 'Zaproszenia',  icon: Send      },
   { id: 'ustawienia',  label: 'Ustawienia',   icon: Settings2 },
+  { id: 'scoring',     label: 'Scoring AI',   icon: Target    },
 ];
 
 const CPV_OPTIONS = [
@@ -85,6 +108,27 @@ const ROLE_META: Record<string, { label: string; Icon: typeof User; color: strin
   viewer:    { label: 'Przegladajacy', Icon: Eye,    color: 'text-earth-400'   },
 };
 
+const DEFAULT_SCORING_CONFIG: ScoringConfig = {
+  cpv_weight: 0.2,
+  value_weight: 0.2,
+  region_weight: 0.2,
+  deadline_weight: 0.2,
+  historical_win_weight: 0.2,
+  min_value_pln: 0,
+  max_value_pln: 10000000,
+  preferred_cpvs: [],
+  preferred_regions: [],
+  is_default: true,
+};
+
+const WEIGHT_FIELDS: { key: keyof Pick<ScoringConfig, 'cpv_weight' | 'value_weight' | 'region_weight' | 'deadline_weight' | 'historical_win_weight'>; label: string; description: string }[] = [
+  { key: 'cpv_weight',            label: 'Waga CPV',                description: 'Dopasowanie kodow CPV do preferencji' },
+  { key: 'value_weight',          label: 'Waga wartosci',           description: 'Wartosc przetargu w stosunku do zakresu' },
+  { key: 'region_weight',         label: 'Waga regionu',            description: 'Dopasowanie lokalizacji przetargu' },
+  { key: 'deadline_weight',       label: 'Waga terminu',            description: 'Czas pozostaly na zlozenie oferty' },
+  { key: 'historical_win_weight', label: 'Waga historii wygranych', description: 'Historyczny wskaznik wygranych w kategorii' },
+];
+
 // ─── Shared micro-components ───────────────────────────────────────────────────
 
 const INPUT = 'w-full bg-earth-800/60 border border-earth-700/60 rounded-xl px-4 py-2.5 text-sm text-earth-100 placeholder-earth-600 focus:outline-none focus:border-blue-500/60 transition-colors';
@@ -114,12 +158,13 @@ function ActionBtn({
   loading?: boolean;
   icon?: React.ReactNode;
   disabled?: boolean;
-  variant?: 'primary' | 'secondary' | 'danger';
+  variant?: 'primary' | 'secondary' | 'danger' | 'accent';
 }) {
   const styles = {
     primary:   'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30',
     secondary: 'bg-earth-800/60 text-earth-300 hover:bg-earth-700/60 border border-earth-700/60',
     danger:    'bg-red-500/15 text-red-400 hover:bg-red-500/25 border border-red-500/25',
+    accent:    'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 border border-blue-500/30',
   }[variant];
   return (
     <button
@@ -731,6 +776,370 @@ function UstawieniaSection() {
   );
 }
 
+// ─── Section: Scoring AI ───────────────────────────────────────────────────────
+
+function WeightSlider({
+  label,
+  description,
+  value,
+  onChange,
+}: {
+  label: string;
+  description: string;
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  const pct = Math.round(value * 100);
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <p className="text-sm text-earth-200 font-medium">{label}</p>
+          <p className="text-xs text-earth-600">{description}</p>
+        </div>
+        <span className="text-sm font-mono font-semibold text-emerald-400 shrink-0 w-12 text-right">
+          {pct}%
+        </span>
+      </div>
+      <div className="relative h-2 bg-earth-800 rounded-full border border-earth-700/40">
+        <div
+          className="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-600 to-emerald-400 rounded-full transition-all"
+          style={{ width: `${pct}%` }}
+        />
+        <input
+          type="range"
+          min={0}
+          max={1}
+          step={0.05}
+          value={value}
+          onChange={e => onChange(parseFloat(e.target.value))}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+        />
+      </div>
+    </div>
+  );
+}
+
+function ScoringSection() {
+  const authFetch = useAuthFetch();
+  const [loading, setLoading]   = useState(true);
+  const [saving, setSaving]     = useState(false);
+  const [rescoring, setRescoring] = useState(false);
+  const [config, setConfig]     = useState<ScoringConfig>(DEFAULT_SCORING_CONFIG);
+  const [rescoreResult, setRescoreResult] = useState<RescoreResult | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data: ScoringConfig = await authFetch('/api/v2/scoring/config');
+      setConfig(data);
+    } catch (e: unknown) {
+      showToast('error', (e as Error).message ?? 'Blad wczytywania konfiguracji scoringu');
+    } finally {
+      setLoading(false);
+    }
+  }, [authFetch]);
+
+  useEffect(() => { load(); }, [load]);
+
+  // Auto-normalize all 5 weights so they sum to 1.0
+  function setWeight(key: keyof Pick<ScoringConfig, 'cpv_weight' | 'value_weight' | 'region_weight' | 'deadline_weight' | 'historical_win_weight'>, newVal: number) {
+    setConfig(prev => {
+      const updated = { ...prev, [key]: newVal };
+      const sum = updated.cpv_weight + updated.value_weight + updated.region_weight + updated.deadline_weight + updated.historical_win_weight;
+      if (sum === 0) return updated;
+      // Normalize
+      return {
+        ...updated,
+        cpv_weight:            updated.cpv_weight            / sum,
+        value_weight:          updated.value_weight          / sum,
+        region_weight:         updated.region_weight         / sum,
+        deadline_weight:       updated.deadline_weight       / sum,
+        historical_win_weight: updated.historical_win_weight / sum,
+      };
+    });
+  }
+
+  function toggleCpv(code: string) {
+    setConfig(prev => ({
+      ...prev,
+      preferred_cpvs: prev.preferred_cpvs.includes(code)
+        ? prev.preferred_cpvs.filter(c => c !== code)
+        : [...prev.preferred_cpvs, code],
+    }));
+  }
+
+  function toggleRegion(r: string) {
+    setConfig(prev => ({
+      ...prev,
+      preferred_regions: prev.preferred_regions.includes(r)
+        ? prev.preferred_regions.filter(x => x !== r)
+        : [...prev.preferred_regions, r],
+    }));
+  }
+
+  async function save() {
+    setSaving(true);
+    try {
+      const saved: ScoringConfig = await authFetch('/api/v2/scoring/config', {
+        method: 'PUT',
+        body: JSON.stringify({
+          cpv_weight:            config.cpv_weight,
+          value_weight:          config.value_weight,
+          region_weight:         config.region_weight,
+          deadline_weight:       config.deadline_weight,
+          historical_win_weight: config.historical_win_weight,
+          min_value_pln:         config.min_value_pln,
+          max_value_pln:         config.max_value_pln,
+          preferred_cpvs:        config.preferred_cpvs,
+          preferred_regions:     config.preferred_regions,
+        }),
+      });
+      setConfig(saved);
+      showToast('success', 'Konfiguracja scoringu zostala zapisana');
+    } catch (e: unknown) {
+      showToast('error', (e as Error).message ?? 'Blad zapisu konfiguracji scoringu');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function rescore() {
+    setRescoring(true);
+    setRescoreResult(null);
+    try {
+      const result: RescoreResult = await authFetch('/api/v2/scoring/rescore', { method: 'POST' });
+      setRescoreResult(result);
+      showToast('success', result.message ?? `Przeliczono ${result.processed} przetargow`);
+    } catch (e: unknown) {
+      showToast('error', (e as Error).message ?? 'Blad przeliczania scoringu');
+    } finally {
+      setRescoring(false);
+    }
+  }
+
+  const weightSum = config.cpv_weight + config.value_weight + config.region_weight + config.deadline_weight + config.historical_win_weight;
+  const sumPct = Math.round(weightSum * 100);
+
+  if (loading) return <Spinner label="Wczytywanie konfiguracji AI..." />;
+
+  return (
+    <div className="space-y-6 max-w-2xl">
+
+      {/* Header info card */}
+      <GlassCard className="p-5">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
+            <Target className="w-5 h-5 text-blue-400" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-earth-100">Konfiguracja Scoring AI</h3>
+            <p className="text-xs text-earth-500 mt-0.5">
+              Dostosuj wagi i filtry uzywane przez algorytm do oceny przetargow
+              {config.is_default && (
+                <span className="ml-2 text-amber-400/80">(konfiguracja domyslna)</span>
+              )}
+            </p>
+          </div>
+        </div>
+      </GlassCard>
+
+      {/* Weight sliders */}
+      <GlassCard className="p-5 space-y-5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="w-4 h-4 text-earth-500" />
+            <p className="text-sm font-semibold text-earth-200">Wagi algorytmu</p>
+          </div>
+          <span className={`text-xs font-mono px-2 py-0.5 rounded-lg border ${
+            Math.abs(sumPct - 100) < 2
+              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+              : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+          }`}>
+            Suma: {sumPct}%
+          </span>
+        </div>
+        <p className="text-xs text-earth-600 -mt-2">
+          Wagi sa automatycznie normalizowane do sumy 100%. Przeciagnij suwaki aby dostosowac priorytety.
+        </p>
+
+        <div className="space-y-4">
+          {WEIGHT_FIELDS.map(f => (
+            <WeightSlider
+              key={f.key}
+              label={f.label}
+              description={f.description}
+              value={config[f.key]}
+              onChange={v => setWeight(f.key, v)}
+            />
+          ))}
+        </div>
+      </GlassCard>
+
+      {/* Value range */}
+      <GlassCard className="p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <Hash className="w-4 h-4 text-earth-500" />
+          <p className="text-sm font-semibold text-earth-200">Zakres wartosci przetargow (PLN)</p>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Minimalna wartość (PLN)">
+            <input
+              type="number"
+              min={0}
+              step={1000}
+              value={config.min_value_pln}
+              onChange={e => setConfig(prev => ({ ...prev, min_value_pln: Math.max(0, parseFloat(e.target.value) || 0) }))}
+              className={INPUT}
+              placeholder="0"
+            />
+          </Field>
+          <Field label="Maksymalna wartość (PLN)">
+            <input
+              type="number"
+              min={0}
+              step={1000}
+              value={config.max_value_pln}
+              onChange={e => setConfig(prev => ({ ...prev, max_value_pln: Math.max(0, parseFloat(e.target.value) || 0) }))}
+              className={INPUT}
+              placeholder="10000000"
+            />
+          </Field>
+        </div>
+        <p className="text-xs text-earth-700">
+          Przetargi poza tym zakresem otrzymaja nizszy score wartosci. Ustaw 0 aby wylaczych filtr.
+        </p>
+      </GlassCard>
+
+      {/* Preferred CPVs */}
+      <GlassCard className="p-5 space-y-3">
+        <div className="flex items-center gap-2">
+          <Tag className="w-4 h-4 text-earth-500" />
+          <p className="text-sm font-semibold text-earth-200">Preferowane kody CPV</p>
+          <span className="text-xs text-earth-600 ml-auto">{config.preferred_cpvs.length} wybranych</span>
+        </div>
+
+        {config.preferred_cpvs.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {config.preferred_cpvs.map(code => {
+              const opt = CPV_OPTIONS.find(o => o.code === code);
+              return (
+                <PillTag
+                  key={code}
+                  label={opt ? `${opt.code} – ${opt.label}` : code}
+                  onRemove={() => toggleCpv(code)}
+                />
+              );
+            })}
+          </div>
+        )}
+
+        <div className="space-y-2 pt-1">
+          {CPV_OPTIONS.map(opt => (
+            <label key={opt.code} className="flex items-center gap-2.5 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={config.preferred_cpvs.includes(opt.code)}
+                onChange={() => toggleCpv(opt.code)}
+                className="accent-emerald-500 w-3.5 h-3.5"
+              />
+              <span className="font-mono text-xs text-earth-600 w-20 shrink-0">{opt.code}</span>
+              <span className="text-sm text-earth-400 group-hover:text-earth-300 transition-colors">{opt.label}</span>
+            </label>
+          ))}
+        </div>
+      </GlassCard>
+
+      {/* Preferred Regions */}
+      <GlassCard className="p-5 space-y-3">
+        <div className="flex items-center gap-2">
+          <MapPin className="w-4 h-4 text-earth-500" />
+          <p className="text-sm font-semibold text-earth-200">Preferowane regiony</p>
+          <span className="text-xs text-earth-600 ml-auto">{config.preferred_regions.length} wybranych</span>
+        </div>
+
+        {config.preferred_regions.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {config.preferred_regions.map(r => (
+              <PillTag key={r} label={r} onRemove={() => toggleRegion(r)} />
+            ))}
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-1.5 pt-1">
+          {VOIVODESHIPS.map(v => (
+            <label key={v} className="flex items-center gap-2 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={config.preferred_regions.includes(v)}
+                onChange={() => toggleRegion(v)}
+                className="accent-emerald-500 w-3.5 h-3.5"
+              />
+              <span className="text-sm text-earth-400 group-hover:text-earth-300 transition-colors capitalize">{v}</span>
+            </label>
+          ))}
+        </div>
+      </GlassCard>
+
+      {/* Action buttons */}
+      <div className="flex items-center gap-3">
+        <ActionBtn onClick={save} loading={saving} icon={<Save className="w-4 h-4" />}>
+          Zapisz konfigurację
+        </ActionBtn>
+        <ActionBtn
+          variant="accent"
+          onClick={rescore}
+          loading={rescoring}
+          icon={<Zap className="w-4 h-4" />}
+        >
+          Przelicz scoring
+        </ActionBtn>
+      </div>
+
+      {/* Rescore result */}
+      <AnimatePresence>
+        {rescoreResult && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.2 }}
+          >
+            <GlassCard className="p-5 space-y-3 border border-emerald-500/20">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <p className="text-sm font-semibold text-emerald-400">Scoring przeliczony pomyslnie</p>
+              </div>
+              <p className="text-xs text-earth-500">{rescoreResult.message}</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-earth-800/60 rounded-xl p-3 border border-earth-700/40">
+                  <p className="text-xs text-earth-600 mb-1">Przetwarzone</p>
+                  <p className="text-lg font-bold text-earth-100 font-mono">
+                    {rescoreResult.processed}
+                    <span className="text-xs text-earth-600 font-normal ml-1">/ {rescoreResult.total}</span>
+                  </p>
+                </div>
+                <div className="bg-earth-800/60 rounded-xl p-3 border border-earth-700/40">
+                  <p className="text-xs text-earth-600 mb-1">Zmiana avg. score</p>
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-base font-bold text-earth-500 font-mono">
+                      {rescoreResult.avg_score_before.toFixed(2)}
+                    </p>
+                    <TrendingUp className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    <p className="text-base font-bold text-emerald-400 font-mono">
+                      {rescoreResult.avg_score_after.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </GlassCard>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 // ─── Main component ────────────────────────────────────────────────────────────
 
 export function SettingsPage() {
@@ -784,6 +1193,7 @@ export function SettingsPage() {
               {section === 'zespol'      ? <ZespolSection />       : null}
               {section === 'zaproszenia' ? <ZaproszeniaSSection /> : null}
               {section === 'ustawienia'  ? <UstawieniaSection />   : null}
+              {section === 'scoring'     ? <ScoringSection />      : null}
             </motion.div>
           </AnimatePresence>
         </div>

@@ -118,6 +118,34 @@ export interface FTSResult {
   rank: number;
 }
 
+// Win-rates
+export interface WinRateRow {
+  contractor_name: string;
+  wins: number;
+  avg_value_pln: number | null;
+  cpvs: string[];
+}
+
+export interface WinRatesResponse {
+  cpv_prefix: string;
+  data: WinRateRow[];
+  total: number;
+}
+
+// Top buyers per CPV
+export interface TopBuyerCpvRow {
+  buyer: string;
+  tenders: number;
+  avg_value_pln: number | null;
+  cpvs: string[];
+}
+
+export interface TopBuyersCpvResponse {
+  cpv_prefix: string;
+  data: TopBuyerCpvRow[];
+  total: number;
+}
+
 // Alerts
 export interface TenderAlert {
   id: string;
@@ -377,6 +405,52 @@ export function useFTS(q: string) {
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [fetch, q]);
+
+  return { data, loading, total };
+}
+
+export function useWinRates(cpv_prefix: string, limit = 20) {
+  const fetch = useAuthFetch();
+  const [data, setData] = useState<WinRateRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [total, setTotal] = useState(0);
+
+  useEffect(() => {
+    if (!cpv_prefix || cpv_prefix.length < 2) { setData([]); return; }
+    let cancelled = false;
+    setLoading(true);
+    const params = new URLSearchParams({ cpv_prefix, limit: String(limit) });
+    fetch(`/api/v2/intelligence/win-rates?${params}`)
+      .then((d: WinRatesResponse) => {
+        if (!cancelled) { setData(d.data || []); setTotal(d.total || 0); }
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [fetch, cpv_prefix, limit]);
+
+  return { data, loading, total };
+}
+
+export function useTopBuyersCpv(cpv_prefix: string, limit = 20) {
+  const fetch = useAuthFetch();
+  const [data, setData] = useState<TopBuyerCpvRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [total, setTotal] = useState(0);
+
+  useEffect(() => {
+    if (!cpv_prefix || cpv_prefix.length < 2) { setData([]); return; }
+    let cancelled = false;
+    setLoading(true);
+    const params = new URLSearchParams({ cpv_prefix, limit: String(limit) });
+    fetch(`/api/v2/intelligence/top-buyers-cpv?${params}`)
+      .then((d: TopBuyersCpvResponse) => {
+        if (!cancelled) { setData(d.data || []); setTotal(d.total || 0); }
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [fetch, cpv_prefix, limit]);
 
   return { data, loading, total };
 }

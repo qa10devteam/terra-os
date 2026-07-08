@@ -495,6 +495,93 @@ def market_summary(
     }
 
 
+# ─── Win-rates per CPV ────────────────────────────────────────────────────────
+
+@router.get("/win-rates", summary="Historyczne win-rates wykonawców per CPV (historical_tenders)")
+def win_rates(
+    user: AuthUser,
+    cpv_prefix: str = Query(..., min_length=2, max_length=8, description="CPV prefix np. '45' lub '45233'"),
+    limit: int = Query(20, ge=1, le=100),
+):
+    """Top wykonawcy wg liczby wygranych przetargów dla danego prefixu CPV.
+
+    Zapytanie wprost do historical_tenders (1.4M) — pomija pre-agregowane widoki,
+    dzięki czemu działa dla dowolnie wąskich prefixów (2–8 znaków).
+    """
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(text("""
+            SELECT
+                contractor_name,
+                COUNT(*)                             AS wins,
+                ROUND(AVG(estimated_value)::numeric) AS avg_value,
+                array_agg(DISTINCT cpv_code)         AS cpvs
+            FROM historical_tenders
+            WHERE cpv_code LIKE :prefix || '%'
+              AND contractor_name IS NOT NULL
+            GROUP BY contractor_name
+            ORDER BY wins DESC
+            LIMIT :limit
+        """), {"prefix": cpv_prefix, "limit": limit}).mappings().all()
+
+    return {
+        "cpv_prefix": cpv_prefix,
+        "data": [
+            {
+                "contractor_name": r["contractor_name"],
+                "wins": r["wins"],
+                "avg_value_pln": float(r["avg_value"]) if r["avg_value"] is not None else None,
+                "cpvs": sorted(set(r["cpvs"]))[:10],
+            }
+            for r in rows
+        ],
+        "total": len(rows),
+    }
+
+
+# ─── Top buyers per CPV ───────────────────────────────────────────────────────
+
+@router.get("/top-buyers-cpv", summary="Top zamawiający per CPV z historical_tenders")
+def top_buyers_cpv(
+    user: AuthUser,
+    cpv_prefix: str = Query(..., min_length=2, max_length=8, description="CPV prefix np. '45' lub '45233'"),
+    limit: int = Query(20, ge=1, le=100),
+):
+    """Top zamawiający wg liczby przetargów dla danego prefixu CPV.
+
+    Grupowanie po nazwie zamawiającego (buyer) — bezpośrednio z historical_tenders.
+    """
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(text("""
+            SELECT
+                buyer,
+                COUNT(*)                             AS tenders,
+                ROUND(AVG(estimated_value)::numeric) AS avg_value,
+                array_agg(DISTINCT cpv_code)         AS cpvs
+            FROM historical_tenders
+            WHERE cpv_code LIKE :prefix || '%'
+              AND buyer IS NOT NULL
+            GROUP BY buyer
+            ORDER BY tenders DESC
+            LIMIT :limit
+        """), {"prefix": cpv_prefix, "limit": limit}).mappings().all()
+
+    return {
+        "cpv_prefix": cpv_prefix,
+        "data": [
+            {
+                "buyer": r["buyer"],
+                "tenders": r["tenders"],
+                "avg_value_pln": float(r["avg_value"]) if r["avg_value"] is not None else None,
+                "cpvs": sorted(set(r["cpvs"]))[:10],
+            }
+            for r in rows
+        ],
+        "total": len(rows),
+    }
+
+
 # ─── Sekocenbud search ─────────────────────────────────────────────────────────
 
 @router.get("/sekocenbud", summary="Wyszukiwanie w bazie SEKOCENBUD (23 725 pozycji)")

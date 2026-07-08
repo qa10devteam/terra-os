@@ -8,15 +8,16 @@ import {
 } from 'recharts';
 import {
   TrendingUp, TrendingDown, Minus, Search, Filter,
-  BarChart3, Users, Building2, Zap, RefreshCw,
+  BarChart3, Users, Building2, Zap, RefreshCw, Award,
 } from 'lucide-react';
 import { PageShell } from '@/components/PageShell';
 import { SkeletonCard } from '@/components/SkeletonCard';
 import {
   useIntelSummary, useIntelTrends, useCompetitorsTop, useBuyersTop,
-  useInflation, useFTS,
+  useInflation, useFTS, useWinRates, useTopBuyersCpv,
   fmtMln, fmtPct, PROVINCE_MAP, CPV_LABELS,
   type TrendRow, type ContractorTop, type BuyerTop,
+  type WinRateRow, type TopBuyerCpvRow,
 } from '@/lib/api-v2';
 
 // ── Palette ───────────────────────────────────────────────────────────────────
@@ -245,6 +246,183 @@ function formatQuarter(q: string): string {
   return `Q${qNum}'${year.slice(2)}`;
 }
 
+/** Format raw PLN value as "X mln" or "X tys." */
+function fmtPln(v: number | null | undefined): string {
+  if (v == null) return '—';
+  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)} mln`;
+  if (v >= 1_000) return `${(v / 1_000).toFixed(0)} tys.`;
+  return `${Math.round(v)} zł`;
+}
+
+// ── Win-rates table ───────────────────────────────────────────────────────────
+function WinRatesTable({ data, loading }: { data: WinRateRow[]; loading: boolean }) {
+  if (loading) return <div className="h-48 animate-pulse bg-earth-800 rounded-xl" />;
+  if (!data.length) return (
+    <div className="p-6 text-center text-earth-500 text-sm">
+      Brak danych — wpisz prefiks CPV i kliknij Szukaj
+    </div>
+  );
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-earth-700">
+            {['#', 'Wykonawca', 'Wygrane', 'Śr. wartość', 'Kody CPV'].map(h => (
+              <th key={h} className="text-left py-2 px-3 text-earth-400 font-medium text-xs uppercase tracking-wide">{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((r, i) => (
+            <motion.tr
+              key={`${r.contractor_name}-${i}`}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.025 }}
+              className="border-b border-earth-800 hover:bg-earth-800/50 transition-colors"
+            >
+              <td className="py-2 px-3 text-earth-500 font-mono text-xs">{i + 1}</td>
+              <td className="py-2 px-3">
+                <div className="font-medium text-earth-100 truncate max-w-[220px]">{r.contractor_name}</div>
+              </td>
+              <td className="py-2 px-3">
+                <div className="flex items-center gap-2">
+                  <div className="h-1.5 rounded-full bg-emerald-500/20 overflow-hidden" style={{ width: 48 }}>
+                    <div
+                      className="h-full bg-emerald-500 rounded-full"
+                      style={{ width: `${Math.min(100, (r.wins / (data[0]?.wins || 1)) * 100)}%` }}
+                    />
+                  </div>
+                  <span className="text-emerald-400 font-mono text-xs font-semibold">{r.wins}</span>
+                </div>
+              </td>
+              <td className="py-2 px-3 text-earth-300 font-mono text-xs">{fmtPln(r.avg_value_pln)}</td>
+              <td className="py-2 px-3">
+                <div className="flex flex-wrap gap-1">
+                  {r.cpvs.slice(0, 4).map(c => (
+                    <span key={c} className="px-1.5 py-0.5 bg-earth-800 border border-earth-700 rounded text-[10px] text-earth-400 font-mono">
+                      {c.slice(0, 8)}
+                    </span>
+                  ))}
+                  {r.cpvs.length > 4 && (
+                    <span className="text-[10px] text-earth-600">+{r.cpvs.length - 4}</span>
+                  )}
+                </div>
+              </td>
+            </motion.tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ── Top buyers CPV table ──────────────────────────────────────────────────────
+function TopBuyersCpvTable({ data, loading }: { data: TopBuyerCpvRow[]; loading: boolean }) {
+  if (loading) return <div className="h-40 animate-pulse bg-earth-800 rounded-xl" />;
+  if (!data.length) return null;
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-earth-700">
+            {['#', 'Zamawiający', 'Przetargi', 'Śr. wartość'].map(h => (
+              <th key={h} className="text-left py-2 px-3 text-earth-400 font-medium text-xs uppercase tracking-wide">{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((r, i) => (
+            <motion.tr
+              key={`${r.buyer}-${i}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: i * 0.02 }}
+              className="border-b border-earth-800 hover:bg-earth-800/50 transition-colors"
+            >
+              <td className="py-2 px-3 text-earth-500 font-mono text-xs">{i + 1}</td>
+              <td className="py-2 px-3">
+                <div className="font-medium text-earth-100 truncate max-w-[260px]">{r.buyer}</div>
+              </td>
+              <td className="py-2 px-3 text-blue-400 font-mono text-xs font-semibold">{r.tenders}</td>
+              <td className="py-2 px-3 text-earth-300 font-mono text-xs">{fmtPln(r.avg_value_pln)}</td>
+            </motion.tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+// ── Wygrane (Win-rates) panel ─────────────────────────────────────────────────
+function WygranePanel({ defaultCpv }: { defaultCpv: string }) {
+  const [input, setInput] = useState(defaultCpv || '45');
+  const [search, setSearch] = useState(defaultCpv || '45');
+
+  const { data: winRates, loading: wrLoading, total: wrTotal } = useWinRates(search);
+  const { data: topBuyers, loading: tbLoading, total: tbTotal } = useTopBuyersCpv(search);
+
+  const handleSearch = () => {
+    const val = input.trim();
+    if (val.length >= 2) setSearch(val);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Search bar */}
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Award size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-earth-400" />
+          <input
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSearch()}
+            placeholder="Prefiks CPV np. 45, 4523, 45233000"
+            className="w-full bg-earth-800 border border-earth-700 rounded-lg pl-9 pr-4 py-2.5 text-sm text-earth-100 placeholder-earth-500 focus:outline-none focus:border-emerald-500 transition-colors"
+          />
+        </div>
+        <button
+          onClick={handleSearch}
+          className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-1.5"
+        >
+          <Search size={13} />
+          Szukaj
+        </button>
+      </div>
+
+      {/* Contractors section */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h4 className="text-sm font-semibold text-earth-100">Top wykonawcy</h4>
+            <p className="text-xs text-earth-500 mt-0.5">
+              CPV {search} • {wrTotal} wykonawców • historical_tenders
+            </p>
+          </div>
+          {(wrLoading) && <RefreshCw size={13} className="text-earth-400 animate-spin" />}
+        </div>
+        <WinRatesTable data={winRates} loading={wrLoading} />
+      </div>
+
+      {/* Buyers section */}
+      {(topBuyers.length > 0 || tbLoading) && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <h4 className="text-sm font-semibold text-earth-100">Top zamawiający</h4>
+              <p className="text-xs text-earth-500 mt-0.5">
+                CPV {search} • {tbTotal} zamawiających
+              </p>
+            </div>
+            {tbLoading && <RefreshCw size={13} className="text-earth-400 animate-spin" />}
+          </div>
+          <TopBuyersCpvTable data={topBuyers} loading={tbLoading} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── CPV filter pills ──────────────────────────────────────────────────────────
 const CPV_PILLS = [
   { value: '', label: 'Wszystkie' },
@@ -268,7 +446,7 @@ const PROVINCE_PILLS = [
 export function MarketIntelPage() {
   const [cpv, setCpv] = useState('45');
   const [province, setProvince] = useState('');
-  const [tab, setTab] = useState<'trends' | 'competitors' | 'buyers' | 'inflation'>('trends');
+  const [tab, setTab] = useState<'trends' | 'competitors' | 'buyers' | 'inflation' | 'wygrane'>('trends');
 
   const { data: summary, loading: sumLoading } = useIntelSummary(cpv || undefined);
   const { data: trends, loading: trendsLoading } = useIntelTrends(cpv || undefined, 8, province || undefined);
@@ -391,6 +569,7 @@ export function MarketIntelPage() {
               { key: 'competitors', label: 'Konkurenci', icon: Users },
               { key: 'buyers', label: 'Zamawiający', icon: Building2 },
               { key: 'inflation', label: 'Inflacja ICB', icon: Filter },
+              { key: 'wygrane', label: 'Wygrane', icon: Award },
             ].map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
@@ -479,6 +658,18 @@ export function MarketIntelPage() {
                     })()}
                   </div>
                 )}
+              </div>
+            )}
+
+            {tab === 'wygrane' && (
+              <div>
+                <div className="mb-4">
+                  <h3 className="text-sm font-semibold text-earth-100">Historyczne wygrane per CPV</h3>
+                  <p className="text-xs text-earth-500 mt-0.5">
+                    Kto wygrał przetargi w danej kategorii CPV • 1.4M rekordów BZP 2024–2025
+                  </p>
+                </div>
+                <WygranePanel defaultCpv={cpv} />
               </div>
             )}
           </div>
