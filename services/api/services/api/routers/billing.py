@@ -9,8 +9,6 @@ Endpoints:
 """
 from __future__ import annotations
 
-import sys
-sys.path.insert(0, '/home/ubuntu/terra-os/packages/vendor')
 
 import hashlib
 import hmac
@@ -23,10 +21,9 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy import text
-from sqlalchemy.orm import Session
 
 from ..auth.deps import AuthUser
-from terra_db.session import get_session
+from terra_db.session import get_engine
 
 logger = logging.getLogger(__name__)
 
@@ -36,15 +33,13 @@ router = APIRouter(prefix="/api/v2/billing", tags=["billing"])
 # ─── DB dependency ─────────────────────────────────────────────────────────────
 
 def get_db():
-    SessionLocal = get_session()
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    engine = get_engine()
+    with engine.connect() as conn:
+        yield conn
+        conn.commit()
 
 
-DB = Annotated[Session, Depends(get_db)]
+DB = Annotated[Any, Depends(get_db)]
 
 
 # ─── Plans catalog ─────────────────────────────────────────────────────────────
@@ -156,7 +151,7 @@ class CheckoutRequest(BaseModel):
 
 # ─── Internal helpers ──────────────────────────────────────────────────────────
 
-def _get_or_create_subscription(db: Session, org_id: str) -> dict[str, Any]:
+def _get_or_create_subscription(db: Any, org_id: str) -> dict[str, Any]:
     """Fetch subscription row for org; create a free one if missing."""
     row = db.execute(
         text("SELECT * FROM subscription WHERE org_id = :oid"),
@@ -181,7 +176,7 @@ def _get_or_create_subscription(db: Session, org_id: str) -> dict[str, Any]:
     return dict(row._mapping) if row else {}
 
 
-def _resolve_org_id_from_customer(db: Session, customer_id: str) -> str | None:
+def _resolve_org_id_from_customer(db: Any, customer_id: str) -> str | None:
     """Resolve org_id by stripe_customer_id (from subscription or organizations table)."""
     row = db.execute(
         text("SELECT org_id FROM subscription WHERE stripe_customer_id = :cid"),
@@ -213,7 +208,7 @@ def _plan_from_price(price_id: str | None) -> str:
 
 # ─── Webhook event handlers ────────────────────────────────────────────────────
 
-async def handle_checkout_completed(obj: dict[str, Any], db: Session) -> None:
+async def handle_checkout_completed(obj: dict[str, Any], db: Any) -> None:
     """checkout.session.completed — activate paid plan, persist stripe IDs."""
     session_mode = obj.get("mode", "")
     if session_mode != "subscription":
@@ -295,7 +290,7 @@ async def handle_checkout_completed(obj: dict[str, Any], db: Session) -> None:
     )
 
 
-async def handle_subscription_updated(obj: dict[str, Any], db: Session) -> None:
+async def handle_subscription_updated(obj: dict[str, Any], db: Any) -> None:
     """customer.subscription.updated — sync plan, status, trial/period dates."""
     customer_id = obj.get("customer", "")
     sub_id = obj.get("id", "")
@@ -370,7 +365,7 @@ async def handle_subscription_updated(obj: dict[str, Any], db: Session) -> None:
     )
 
 
-async def handle_subscription_deleted(obj: dict[str, Any], db: Session) -> None:
+async def handle_subscription_deleted(obj: dict[str, Any], db: Any) -> None:
     """customer.subscription.deleted — 3-day grace period, then downgrade to free."""
     customer_id = obj.get("customer", "")
     org_id = _resolve_org_id_from_customer(db, customer_id)
@@ -405,7 +400,7 @@ async def handle_subscription_deleted(obj: dict[str, Any], db: Session) -> None:
     db.commit()
 
 
-async def handle_payment_succeeded(obj: dict[str, Any], db: Session) -> None:
+async def handle_payment_succeeded(obj: dict[str, Any], db: Any) -> None:
     """invoice.payment_succeeded — clear payment_failed flag, extend period."""
     customer_id = obj.get("customer", "")
     period_end_unix = obj.get("lines", {}).get("data", [{}])[0].get(
@@ -435,7 +430,7 @@ async def handle_payment_succeeded(obj: dict[str, Any], db: Session) -> None:
     logger.info("invoice.payment_succeeded: org=%s period_end=%s", org_id, period_end)
 
 
-async def handle_payment_failed(obj: dict[str, Any], db: Session) -> None:
+async def handle_payment_failed(obj: dict[str, Any], db: Any) -> None:
     """invoice.payment_failed — flag payment failure, mock-send notification email."""
     customer_id = obj.get("customer", "")
     attempt = obj.get("attempt_count", 1)

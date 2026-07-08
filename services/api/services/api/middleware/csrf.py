@@ -19,7 +19,12 @@ class CSRFMiddleware(BaseHTTPMiddleware):
 
     SAFE_METHODS: frozenset[str] = frozenset({"GET", "HEAD", "OPTIONS"})
     # Paths exempted from CSRF (e.g. machine-to-machine webhook receivers)
-    EXEMPT_PATH_PREFIXES: tuple[str, ...] = ("/health",)
+    EXEMPT_PATH_PREFIXES: tuple[str, ...] = (
+        "/health",
+        "/api/v2/auth/login",
+        "/api/v2/auth/register",
+        "/api/v2/auth/refresh",
+    )
 
     async def dispatch(self, request: Request, call_next):
         # Safe HTTP methods → no check needed

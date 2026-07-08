@@ -7,6 +7,7 @@ import {
   Building2, Tag, Zap, TrendingUp, AlertCircle, CheckCircle2,
   Clock, FileText, BarChart3, ArrowUpDown, Filter, Target,
   DollarSign, Activity, Users, ChevronRight, RotateCw,
+  Download, Loader2, FolderOpen,
 } from 'lucide-react';
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis,
@@ -440,6 +441,148 @@ function EstimatesTab({
 
 // ─── Detail Panel ─────────────────────────────────────────────────────────────
 
+// ─── DocumentsTab ─────────────────────────────────────────────────────────────
+
+interface BzpDocument {
+  id: string;
+  doc_type: string;
+  filename: string;
+  download_url: string;
+  notice_id: string;
+  fetched_at: string | null;
+}
+
+const DOC_TYPE_LABELS: Record<string, { label: string; color: string }> = {
+  SWZ: { label: 'SWZ', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30' },
+  FORM: { label: 'Formularz', color: 'text-blue-400 bg-blue-500/10 border-blue-500/30' },
+  CONTRACT: { label: 'Umowa', color: 'text-amber-400 bg-amber-500/10 border-amber-500/30' },
+  DECLARATION: { label: 'Oświadczenie', color: 'text-purple-400 bg-purple-500/10 border-purple-500/30' },
+  LIST: { label: 'Wykaz', color: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/30' },
+  TECHNICAL: { label: 'Dokumentacja', color: 'text-rose-400 bg-rose-500/10 border-rose-500/30' },
+  AMENDMENT: { label: 'Zmiana', color: 'text-orange-400 bg-orange-500/10 border-orange-500/30' },
+  OTHER: { label: 'Inny', color: 'text-earth-400 bg-earth-700/30 border-earth-600/30' },
+};
+
+function DocumentsTab({ tenderId, authFetch }: { tenderId: string; authFetch: (url: string, opts?: RequestInit) => Promise<unknown> }) {
+  const [docs, setDocs] = useState<BzpDocument[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(false);
+  const [fetchTriggered, setFetchTriggered] = useState(false);
+
+  const loadDocs = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await authFetch(`/api/v1/bzp/documents/${tenderId}`) as { documents: BzpDocument[]; total: number };
+      setDocs(data.documents ?? []);
+    } catch { /* ignore */ }
+    setLoading(false);
+  }, [tenderId, authFetch]);
+
+  useEffect(() => { loadDocs(); }, [loadDocs]);
+
+  const handleFetch = async () => {
+    setFetching(true);
+    setFetchTriggered(true);
+    try {
+      await authFetch(`/api/v1/bzp/documents/${tenderId}/fetch`, { method: 'POST' });
+      // Poll for results after background fetch
+      setTimeout(() => loadDocs(), 3000);
+      setTimeout(() => { loadDocs(); setFetching(false); }, 8000);
+    } catch {
+      setFetching(false);
+    }
+  };
+
+  const handleDownload = (doc: BzpDocument) => {
+    window.open(doc.download_url, '_blank');
+  };
+
+  if (loading && docs.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-12 text-earth-500">
+        <Loader2 size={20} className="animate-spin mr-2" />
+        Ładowanie dokumentów...
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4 pt-4">
+      {/* Fetch button */}
+      <button
+        onClick={handleFetch}
+        disabled={fetching}
+        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-emerald-600/20 border border-emerald-500/30 text-sm font-medium text-emerald-300 hover:bg-emerald-600/30 hover:border-emerald-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {fetching ? (
+          <>
+            <Loader2 size={14} className="animate-spin" />
+            Pobieram z BZP...
+          </>
+        ) : (
+          <>
+            <Download size={14} />
+            {docs.length > 0 ? 'Odśwież dokumenty' : 'Pobierz dokumenty SWZ'}
+          </>
+        )}
+      </button>
+
+      {fetchTriggered && docs.length === 0 && !fetching && (
+        <p className="text-xs text-earth-500 text-center">
+          Dokumenty pobierają się w tle. Odśwież za chwilę.
+        </p>
+      )}
+
+      {/* Document list */}
+      {docs.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="text-[10px] text-earth-600 uppercase tracking-wide flex items-center gap-1.5">
+            <FolderOpen size={10} />
+            {docs.length} dokumentów
+          </p>
+          {docs.map(doc => {
+            const typeInfo = DOC_TYPE_LABELS[doc.doc_type] || DOC_TYPE_LABELS.OTHER;
+            const ext = doc.filename.split('.').pop()?.toUpperCase() ?? '';
+            return (
+              <button
+                key={doc.id}
+                onClick={() => handleDownload(doc)}
+                className="w-full flex items-start gap-3 p-3 rounded-lg bg-earth-900/50 border border-earth-800/60 hover:border-earth-700/80 hover:bg-earth-800/40 transition-all text-left group"
+              >
+                <div className="shrink-0 mt-0.5">
+                  <FileText size={14} className="text-earth-500 group-hover:text-earth-300 transition-colors" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-earth-200 font-medium truncate group-hover:text-earth-50 transition-colors">
+                    {doc.filename}
+                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded border font-medium ${typeInfo.color}`}>
+                      {typeInfo.label}
+                    </span>
+                    <span className="text-[9px] text-earth-600 font-mono">{ext}</span>
+                  </div>
+                </div>
+                <Download size={12} className="shrink-0 text-earth-600 group-hover:text-emerald-400 transition-colors mt-1" />
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {docs.length === 0 && !fetchTriggered && (
+        <div className="text-center py-8 text-earth-600">
+          <FolderOpen size={32} className="mx-auto mb-3 opacity-40" />
+          <p className="text-xs">Brak pobranych dokumentów</p>
+          <p className="text-[10px] mt-1 text-earth-700">Kliknij przycisk powyżej aby pobrać SWZ z BZP</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── DetailPanel ──────────────────────────────────────────────────────────────
+
 function DetailPanel({
   tender,
   onClose,
@@ -449,7 +592,7 @@ function DetailPanel({
   onClose: () => void;
   authFetch: (url: string, opts?: RequestInit) => Promise<unknown>;
 }) {
-  const [tab, setTab] = useState<'details' | 'estimate'>('details');
+  const [tab, setTab] = useState<'details' | 'estimate' | 'documents'>('details');
   const score = tender.match_score ?? 0;
   const pct = Math.round(score * 100);
   const { text: scoreText, bar: scoreBar, bg: scoreBg } = scoreColor(score);
@@ -523,6 +666,7 @@ function DetailPanel({
       <div className="flex gap-1 mx-5 mt-4 bg-earth-900 rounded-lg p-1 border border-earth-800 shrink-0">
         {([
           { key: 'details', label: 'Szczegóły', icon: FileText },
+          { key: 'documents', label: 'Dokumenty', icon: Download },
           { key: 'estimate', label: 'Kosztorys', icon: BarChart3 },
         ] as const).map(({ key, label, icon: Icon }) => (
           <button
@@ -626,7 +770,7 @@ function DetailPanel({
                 </a>
               )}
             </motion.div>
-          ) : (
+          ) : tab === 'estimate' ? (
             <motion.div
               key="estimate"
               initial={{ opacity: 0, y: 6 }}
@@ -635,6 +779,16 @@ function DetailPanel({
               transition={{ duration: 0.15 }}
             >
               <EstimatesTab tenderId={tender.id} authFetch={authFetch} />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="documents"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.15 }}
+            >
+              <DocumentsTab tenderId={tender.id} authFetch={authFetch} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -673,6 +827,10 @@ export function ZwiadPage() {
   // Filters
   const [filterStatus, setFilterStatus] = useState('');
   const [filterVoivodeship, setFilterVoivodeship] = useState('');
+  const [filterSource, setFilterSource] = useState('');
+  const [filterCpv, setFilterCpv] = useState('');
+  const [filterMinValue, setFilterMinValue] = useState('');
+  const [filterMaxValue, setFilterMaxValue] = useState('');
   const [sortBy, setSortBy] = useState('match_score');
   const [filtersExpanded, setFiltersExpanded] = useState(false);
 
@@ -721,6 +879,10 @@ export function ZwiadPage() {
         if (!reset && cursor) params.set('cursor', cursor);
         if (filterStatus) params.set('status', filterStatus);
         if (filterVoivodeship) params.set('voivodeship', filterVoivodeship);
+        if (filterSource) params.set('source', filterSource);
+        if (filterCpv) params.set('cpv', filterCpv);
+        if (filterMinValue) params.set('min_value', filterMinValue);
+        if (filterMaxValue) params.set('max_value', filterMaxValue);
         if (sortBy) params.set('sort', sortBy);
 
         const data = (await authFetch(`/api/v1/tenders?${params}`)) as TenderFeedResponse;
@@ -741,7 +903,7 @@ export function ZwiadPage() {
         setLoadingMore(false);
       }
     },
-    [authFetch, cursor, filterStatus, filterVoivodeship, sortBy],
+    [authFetch, cursor, filterStatus, filterVoivodeship, filterSource, filterCpv, filterMinValue, filterMaxValue, sortBy],
   );
 
   // Initial load
@@ -750,7 +912,7 @@ export function ZwiadPage() {
     fetchKPI();
     fetchSeasonality();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterStatus, filterVoivodeship, sortBy, accessToken]);
+  }, [filterStatus, filterVoivodeship, filterSource, filterCpv, filterMinValue, filterMaxValue, sortBy, accessToken]);
 
   // ── Auto-refresh polling (every 30s) ───────────────────────────────────────
   useEffect(() => {
@@ -759,14 +921,14 @@ export function ZwiadPage() {
     }, POLL_INTERVAL);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [POLL_INTERVAL, filterStatus, filterVoivodeship, sortBy, accessToken]);
+  }, [POLL_INTERVAL, filterStatus, filterVoivodeship, filterSource, filterCpv, filterMinValue, filterMaxValue, sortBy, accessToken]);
 
   // ── Ingest run ──────────────────────────────────────────────────────────────
 
   async function handleIngest() {
     setSyncing(true);
     try {
-      const result = (await authFetch('/api/v1/ingest/run', { method: 'POST' })) as IngestResult;
+      const result = (await authFetch('/api/v1/ingest/run?offline=false&days_back=14', { method: 'POST' })) as IngestResult;
       showToast(
         'success',
         `Pobrano ${result.fetched ?? 0} • Nowe: ${result.created ?? 0} • Zaktualizowane: ${result.updated ?? 0}`,
@@ -906,6 +1068,21 @@ export function ZwiadPage() {
       {/* ── Filters bar ─────────────────────────────────────────────────────── */}
       <div className="shrink-0 px-6 py-3 border-b border-earth-800/40 bg-earth-950/80">
         <div className="flex items-center gap-3 flex-wrap">
+          {/* Source filter */}
+          <div className="relative">
+            <select
+              value={filterSource}
+              onChange={e => setFilterSource(e.target.value)}
+              className="appearance-none bg-earth-800 border border-earth-700/60 rounded-xl pl-3 pr-8 py-2 text-xs text-earth-200 focus:outline-none focus:border-emerald-500/50 transition-colors cursor-pointer"
+            >
+              <option value="">Wszystkie źródła</option>
+              <option value="bzp">BZP</option>
+              <option value="ted">TED EU</option>
+              <option value="bip">BIP</option>
+            </select>
+            <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-earth-500 pointer-events-none" />
+          </div>
+
           {/* Status filter */}
           <div className="relative">
             <select
@@ -960,10 +1137,18 @@ export function ZwiadPage() {
             }`}
           >
             <Filter size={12} />
-            Filtry
+            Więcej
           </button>
 
           {/* Active filter chips */}
+          {filterSource && (
+            <span className="flex items-center gap-1 text-[11px] bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 px-2 py-1 rounded-full">
+              {filterSource.toUpperCase()}
+              <button onClick={() => setFilterSource('')} className="hover:text-white">
+                <X size={10} />
+              </button>
+            </span>
+          )}
           {filterStatus && (
             <span className="flex items-center gap-1 text-[11px] bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-2 py-1 rounded-full">
               Status: {STATUS_OPTS.find(s => s.value === filterStatus)?.label}
@@ -980,7 +1165,87 @@ export function ZwiadPage() {
               </button>
             </span>
           )}
+          {filterCpv && (
+            <span className="flex items-center gap-1 text-[11px] bg-purple-500/10 border border-purple-500/30 text-purple-400 px-2 py-1 rounded-full">
+              CPV: {filterCpv}
+              <button onClick={() => setFilterCpv('')} className="hover:text-white">
+                <X size={10} />
+              </button>
+            </span>
+          )}
+          {(filterMinValue || filterMaxValue) && (
+            <span className="flex items-center gap-1 text-[11px] bg-amber-500/10 border border-amber-500/30 text-amber-400 px-2 py-1 rounded-full">
+              {filterMinValue ? fmtPLN(Number(filterMinValue)) : '0'} - {filterMaxValue ? fmtPLN(Number(filterMaxValue)) : '∞'}
+              <button onClick={() => { setFilterMinValue(''); setFilterMaxValue(''); }} className="hover:text-white">
+                <X size={10} />
+              </button>
+            </span>
+          )}
         </div>
+
+        {/* Expanded filters row */}
+        <AnimatePresence>
+          {filtersExpanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden"
+            >
+              <div className="flex items-center gap-3 flex-wrap pt-3 mt-3 border-t border-earth-800/40">
+                {/* CPV input */}
+                <div className="flex items-center gap-1.5">
+                  <Tag size={12} className="text-earth-600" />
+                  <input
+                    type="text"
+                    value={filterCpv}
+                    onChange={e => setFilterCpv(e.target.value)}
+                    placeholder="CPV (np. 45 lub 45233142)"
+                    className="bg-earth-800 border border-earth-700/60 rounded-xl px-3 py-2 text-xs text-earth-200 placeholder:text-earth-600 focus:outline-none focus:border-emerald-500/50 w-48 transition-colors"
+                  />
+                </div>
+
+                {/* Value range */}
+                <div className="flex items-center gap-1.5">
+                  <DollarSign size={12} className="text-earth-600" />
+                  <input
+                    type="number"
+                    value={filterMinValue}
+                    onChange={e => setFilterMinValue(e.target.value)}
+                    placeholder="Min PLN"
+                    className="bg-earth-800 border border-earth-700/60 rounded-xl px-3 py-2 text-xs text-earth-200 placeholder:text-earth-600 focus:outline-none focus:border-emerald-500/50 w-28 transition-colors tabular-nums"
+                  />
+                  <span className="text-earth-600 text-xs">-</span>
+                  <input
+                    type="number"
+                    value={filterMaxValue}
+                    onChange={e => setFilterMaxValue(e.target.value)}
+                    placeholder="Max PLN"
+                    className="bg-earth-800 border border-earth-700/60 rounded-xl px-3 py-2 text-xs text-earth-200 placeholder:text-earth-600 focus:outline-none focus:border-emerald-500/50 w-28 transition-colors tabular-nums"
+                  />
+                </div>
+
+                {/* Clear all */}
+                <button
+                  onClick={() => {
+                    setFilterStatus('');
+                    setFilterVoivodeship('');
+                    setFilterSource('');
+                    setFilterCpv('');
+                    setFilterMinValue('');
+                    setFilterMaxValue('');
+                    setSortBy('match_score');
+                  }}
+                  className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs text-earth-500 hover:text-red-400 bg-earth-800 border border-earth-700/60 hover:border-red-500/30 transition-colors"
+                >
+                  <X size={11} />
+                  Wyczyść filtry
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* ── Body: Feed + Detail Panel ────────────────────────────────────────── */}
@@ -1021,11 +1286,11 @@ export function ZwiadPage() {
                 </div>
                 <h3 className="text-earth-200 font-semibold mb-2">Brak przetargów</h3>
                 <p className="text-earth-500 text-sm max-w-sm mb-1">
-                  {filterStatus || filterVoivodeship
+                  {filterStatus || filterVoivodeship || filterSource || filterCpv || filterMinValue || filterMaxValue
                     ? 'Zmień filtry aby zobaczyć więcej wyników'
                     : 'Baza przetargów jest pusta. Pobierz pierwsze przetargi z BZP.'}
                 </p>
-                {!filterStatus && !filterVoivodeship && (
+                {!filterStatus && !filterVoivodeship && !filterSource && !filterCpv && !filterMinValue && !filterMaxValue && (
                   <button
                     onClick={handleIngest}
                     disabled={syncing}

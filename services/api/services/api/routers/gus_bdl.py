@@ -1,8 +1,6 @@
 """Faza 43 — GUS BDL API: wskaźniki makroekonomiczne (ceny materiałów, inflacja)."""
 from __future__ import annotations
 
-import sys
-sys.path.insert(0, "/home/ubuntu/terra-os/packages/vendor")
 
 import uuid
 from typing import Any

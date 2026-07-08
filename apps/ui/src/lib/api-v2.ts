@@ -31,11 +31,13 @@ export function useAuthFetch() {
 
 export interface IntelSummary {
   cpv_prefix: string | null;
-  total_tenders: number;
-  total_value_mln: number;
-  avg_value_k: number;
-  avg_offers: number;
-  top_province: string | null;
+  kpi: {
+    n_tenders: number;
+    total_value_mln: number;
+    avg_value: number;       // raw PLN
+    avg_competition: number;
+  };
+  top_province: { province: string; n: number }[];  // backend returns objects
   last_quarter: string;
   quarterly_trend: 'up' | 'down' | 'stable';
 }
@@ -43,12 +45,11 @@ export interface IntelSummary {
 export interface TrendRow {
   quarter: string;
   cpv3: string;
-  province: string | null;
   n_tenders: number;
   n_completed: number;
-  total_value_mln: number;
-  avg_value_k: number;
-  avg_offers: number;
+  total_value: number;       // raw PLN from backend
+  avg_value: number;         // raw PLN from backend
+  avg_competition: number;   // backend field name
 }
 
 export interface TrendResponse {
@@ -76,30 +77,27 @@ export interface BenchmarkResponse {
 
 export interface ContractorTop {
   contractor_name: string;
-  contractor_nip: string;
-  province: string | null;
-  cpv3: string;
+  nip: string;               // backend field (not contractor_nip)
   wins: number;
-  total_value_mln: number;
-  avg_value_k: number;
-  win_rate: number;
-  avg_offers: number;
+  total_value: number;       // raw PLN from backend
+  avg_value: number;         // raw PLN from backend
+  win_rate_pct: number;      // backend field (not win_rate)
+  avg_competition: number;   // backend field (not avg_offers)
 }
 
 export interface BuyerTop {
-  buyer: string | null;
+  buyer_name: string | null; // backend field (not buyer)
   buyer_nip: string;
-  province: string | null;
-  total_tenders: number;
-  total_value_mln: number;
-  avg_value_k: number;
+  n_tenders: number;         // backend field (not total_tenders)
+  total_value: number;       // raw PLN from backend
+  avg_value: number;         // raw PLN from backend
   cpv_diversity: number;
 }
 
 export interface InflationRow {
-  year: number;
-  quarter: number;
-  quarter_label: string;
+  yr: number;                // backend field (not year)
+  q: number;                 // backend field (not quarter)
+  // quarter_label is derived in the hook: `Q{q} {yr}`
   category: string;
   typ_rms: string;
   avg_price: number;
@@ -111,7 +109,7 @@ export interface FTSResult {
   id: string;
   title: string;
   buyer_nip: string | null;
-  buyer_name: string | null;
+  buyer: string | null;      // backend field (not buyer_name)
   cpv_code: string | null;
   province: string | null;
   estimated_value: number | null;
@@ -336,7 +334,7 @@ export function useBuyersTop(cpv_prefix?: string, province?: string, limit = 15)
 
 export function useInflation(category?: string, typ_rms?: string) {
   const fetch = useAuthFetch();
-  const [data, setData] = useState<InflationRow[]>([]);
+  const [data, setData] = useState<(InflationRow & { quarter_label: string })[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -345,7 +343,13 @@ export function useInflation(category?: string, typ_rms?: string) {
     if (category) params.set('category', category);
     if (typ_rms) params.set('typ_rms', typ_rms);
     fetch(`/api/v2/intelligence/prices/inflation?${params}`)
-      .then((d: { data: InflationRow[] }) => { if (!cancelled) setData(d.data || []); })
+      .then((d: { data: InflationRow[] }) => {
+        if (!cancelled) {
+          // derive quarter_label from backend's yr/q fields
+          const rows = (d.data || []).map(r => ({ ...r, quarter_label: `Q${r.q} ${r.yr}` }));
+          setData(rows);
+        }
+      })
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };

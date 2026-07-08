@@ -1,22 +1,23 @@
 """M1 — /ingest/run and /tenders/* endpoints."""
 from __future__ import annotations
 
+import base64
+import json
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
 from terra_db.session import get_engine
-from services.ingestion.pipeline import run_ingest
-from services.ingestion.scorer import OwnerProfileSnap
+from ..auth.deps import get_current_user, AuthUser
 
 router = APIRouter(prefix="/api/v1", tags=["zwiad"])
 
 
-# ──────────────────────────────────────────────────────────────── #
-# Schemas
-# ──────────────────────────────────────────────────────────────── #
+# ---------------------------------------------------------------------------
+# Response models
+# ---------------------------------------------------------------------------
 
 class IngestRunResponse(BaseModel):
     agent_run_id: str
@@ -25,6 +26,8 @@ class IngestRunResponse(BaseModel):
     updated: int
     dropped: int
     errors: int
+    bip_stored: int
+    dedup_pairs: int
 
 
 class TenderListItem(BaseModel):
@@ -38,13 +41,13 @@ class TenderListItem(BaseModel):
     status: str
     match_score: float
     match_reason: str | None
+    source: str | None
+    external_id: str | None
+    published_at: str | None
+    url: str | None
 
 
 class TenderDetail(TenderListItem):
-    source: str
-    external_id: str
-    published_at: str | None
-    url: str | None
     raw: dict
 
 
@@ -54,23 +57,52 @@ class Page(BaseModel):
     cursor: str | None
 
 
-# ──────────────────────────────────────────────────────────────── #
-# POST /ingest/run
-# ──────────────────────────────────────────────────────────────── #
+class TenderPatch(BaseModel):
+    status: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# Cursor helpers
+# ---------------------------------------------------------------------------
+
+def _encode_cursor(created_at: Any, row_id: Any) -> str:
+    """Encode a (created_at, id) pair as a URL-safe base64 JSON cursor."""
+    payload = {"created_at": str(created_at) if created_at else None, "id": str(row_id)}
+    return base64.urlsafe_b64encode(json.dumps(payload).encode()).decode()
+
+
+def _decode_cursor(cursor: str) -> tuple[str, str] | None:
+    """Return (created_at_str, id_str) or None on malformed cursor."""
+    try:
+        data = json.loads(base64.urlsafe_b64decode(cursor.encode()).decode())
+        return data["created_at"], data["id"]
+    except Exception:
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Endpoints
+# ---------------------------------------------------------------------------
 
 @router.post("/ingest/run", response_model=IngestRunResponse, status_code=200)
 def ingest_run(
-    offline: bool = Query(default=True, description="Use fixtures instead of live BZP API"),
+    offline: bool = Query(default=True),
     days_back: int = Query(default=7, ge=1, le=90),
+    include_bip: bool = Query(default=False),
+    run_dedup: bool = Query(default=True),
 ) -> IngestRunResponse:
-    """Trigger ingestion pipeline: fetch → normalize → filter → score → upsert."""
+    """Trigger the ingestion pipeline."""
     from services.ingestion.pipeline import run_ingest
-
     engine = get_engine()
     run_id = str(uuid.uuid4())
-
-    result = run_ingest(engine, days_back=days_back, offline=offline)
-
+    result = run_ingest(
+        engine,
+        days_back=days_back,
+        offline=offline,
+        include_bip=include_bip,
+        run_dedup=run_dedup,
+        bip_workers=15,
+    )
     return IngestRunResponse(
         agent_run_id=run_id,
         fetched=result.raw_fetched,
@@ -78,69 +110,109 @@ def ingest_run(
         updated=result.updated,
         dropped=result.dropped_filter,
         errors=result.errors,
+        bip_stored=getattr(result, "bip_stored", 0) or 0,
+        dedup_pairs=getattr(result, "dedup_pairs", 0) or 0,
     )
 
 
-# ──────────────────────────────────────────────────────────────── #
-# GET /tenders
-# ──────────────────────────────────────────────────────────────── #
-
 @router.get("/tenders", response_model=Page)
 def list_tenders(
+    user: AuthUser,
     status: str | None = Query(default=None),
-    cpv: str | None = Query(default=None, description="Comma-separated CPV codes"),
-    voiv: str | None = Query(default=None, description="Voivodeship filter"),
+    cpv: str | None = Query(default=None),
+    voivodeship: str | None = Query(default=None),
+    source: str | None = Query(default=None),
+    min_value: float | None = Query(default=None),
+    max_value: float | None = Query(default=None),
+    hide_duplicates: bool = Query(default=False),
     cursor: str | None = Query(default=None),
     limit: int = Query(default=20, ge=1, le=100),
+    sort: str | None = Query(default=None),
 ) -> Page:
-    """List tenders ordered by match_score desc."""
     from sqlalchemy import text
     engine = get_engine()
+    tenant_id = str(user.org_id or "")
 
-    # Build WHERE clauses
-    conditions = ["1=1"]
-    params: dict[str, Any] = {"limit": limit, "offset": 0}
+    conditions: list[str] = ["t.tenant_id = :tenant_id"]
+    params: dict[str, Any] = {"limit": limit, "tenant_id": tenant_id}
 
+    # Cursor-based keyset pagination (published_at DESC, id DESC)
+    cursor_clause = ""
     if cursor:
-        try:
-            params["offset"] = int(cursor)
-        except ValueError:
-            pass
+        decoded = _decode_cursor(cursor)
+        if decoded:
+            c_at, c_id = decoded
+            # For DESC ordering: next page rows have (published_at, id) < (c_at, c_id)
+            cursor_clause = (
+                "AND (t.published_at < :cursor_at "
+                "OR (t.published_at = :cursor_at AND t.id < :cursor_id::uuid))"
+            )
+            params["cursor_at"] = c_at
+            params["cursor_id"] = c_id
 
     if status:
-        conditions.append("t.status = :status")
+        conditions.append("t.status = CAST(:status AS tender_status)")
         params["status"] = status
-    if voiv:
+
+    if voivodeship:
         conditions.append("t.voivodeship ILIKE :voiv")
-        params["voiv"] = f"%{voiv}%"
+        params["voiv"] = f"%{voivodeship}%"
+
+    if source:
+        conditions.append("t.source = CAST(:source AS source_kind)")
+        params["source"] = source.lower()
+
     if cpv:
         codes = [c.strip() for c in cpv.split(",")]
-        conditions.append("t.cpv && :cpv_arr")
-        params["cpv_arr"] = "{" + ",".join(codes) + "}"
+        if len(codes) == 1 and len(codes[0]) <= 2:
+            conditions.append(
+                "EXISTS (SELECT 1 FROM unnest(t.cpv) c WHERE c LIKE :cpv_prefix)"
+            )
+            params["cpv_prefix"] = codes[0] + "%"
+        else:
+            conditions.append("t.cpv && :cpv_arr")
+            params["cpv_arr"] = "{" + ",".join(codes) + "}"
+
+    if min_value is not None:
+        conditions.append("t.value_pln >= :min_value")
+        params["min_value"] = min_value
+
+    if max_value is not None:
+        conditions.append("t.value_pln <= :max_value")
+        params["max_value"] = max_value
+
+    if hide_duplicates:
+        conditions.append("t.duplicate_of IS NULL")
 
     where = " AND ".join(conditions)
 
+    sort_map = {
+        "match_score": "t.match_score DESC NULLS LAST, t.published_at DESC NULLS LAST, t.id DESC",
+        "deadline":    "t.deadline_at ASC NULLS LAST, t.id DESC",
+        "value":       "t.value_pln DESC NULLS LAST, t.id DESC",
+        "published":   "t.published_at DESC NULLS LAST, t.id DESC",
+    }
+    order_clause = sort_map.get(sort or "published", sort_map["published"])
+
+    # Count uses base WHERE without cursor so total is always the full filtered count
+    count_sql = f"SELECT COUNT(*) FROM tender t WHERE {where}"
+    list_sql = f"""
+        SELECT t.id, t.title, t.buyer, t.cpv, t.voivodeship,
+               t.value_pln, t.deadline_at, t.status,
+               t.match_score, t.match_reason,
+               t.source, t.external_id, t.published_at, t.url
+        FROM tender t
+        WHERE {where} {cursor_clause}
+        ORDER BY {order_clause}
+        LIMIT :limit
+    """
+
     with engine.connect() as conn:
-        total_row = conn.execute(
-            text(f"SELECT COUNT(*) FROM tender t WHERE {where}"), params
-        ).fetchone()
+        total_row = conn.execute(text(count_sql), params).fetchone()
         total = int(total_row[0]) if total_row else 0
+        rows = conn.execute(text(list_sql), params).fetchall()
 
-        rows = conn.execute(
-            text(f"""
-                SELECT t.id, t.title, t.buyer, t.cpv, t.voivodeship,
-                       t.value_pln, t.deadline_at, t.status,
-                       t.match_score, t.match_reason
-                FROM tender t
-                WHERE {where}
-                ORDER BY t.match_score DESC NULLS LAST, t.published_at DESC NULLS LAST
-                LIMIT :limit OFFSET :offset
-            """),
-            params,
-        ).fetchall()
-
-    next_offset = params["offset"] + limit
-    items = []
+    items: list[TenderListItem] = []
     for row in rows:
         items.append(TenderListItem(
             id=str(row[0]),
@@ -153,31 +225,37 @@ def list_tenders(
             status=row[7],
             match_score=float(row[8]) if row[8] is not None else 0.0,
             match_reason=row[9],
+            source=row[10],
+            external_id=row[11],
+            published_at=str(row[12]) if row[12] else None,
+            url=row[13],
         ))
 
-    return Page(
-        items=items,
-        total=total,
-        cursor=str(next_offset) if next_offset < total else None,
-    )
+    next_cursor: str | None = None
+    if len(items) == limit and items:
+        last = items[-1]
+        next_cursor = _encode_cursor(last.published_at, last.id)
 
+    return Page(items=items, total=total, cursor=next_cursor)
 
-# ──────────────────────────────────────────────────────────────── #
-# GET /tenders/{id}
-# ──────────────────────────────────────────────────────────────── #
 
 @router.get("/tenders/{tender_id}", response_model=TenderDetail)
-def get_tender(tender_id: str) -> TenderDetail:
-    """Get full tender details by ID."""
-    import uuid as _uuid
-    from sqlalchemy import text
-    # Validate UUID format early — invalid UUID causes PG syntax error → 500
+def get_tender(
+    tender_id: str,
+    user: AuthUser,
+) -> TenderDetail:
+    """Fetch a single tender — tenant-isolated."""
     try:
-        _uuid.UUID(tender_id)
+        uuid.UUID(tender_id)
     except ValueError:
-        raise HTTPException(status_code=404, detail="Tender not found")
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "not_found", "message": "Tender not found"},
+        )
 
+    from sqlalchemy import text
     engine = get_engine()
+    tenant_id = str(user.org_id or "")
 
     with engine.connect() as conn:
         row = conn.execute(
@@ -187,13 +265,16 @@ def get_tender(tender_id: str) -> TenderDetail:
                        t.match_score, t.match_reason,
                        t.source, t.external_id, t.published_at, t.url, t.raw
                 FROM tender t
-                WHERE t.id = :id
+                WHERE t.id = :id AND t.tenant_id = :tenant_id
             """),
-            {"id": tender_id},
+            {"id": tender_id, "tenant_id": tenant_id},
         ).fetchone()
 
     if not row:
-        raise HTTPException(status_code=404, detail="Tender not found")
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "not_found", "message": "Tender not found"},
+        )
 
     return TenderDetail(
         id=str(row[0]),
@@ -214,25 +295,44 @@ def get_tender(tender_id: str) -> TenderDetail:
     )
 
 
-# ─── PATCH /tenders/{id} — update status ──────────────────────────────────────
-
-class TenderPatch(BaseModel):
-    status: str | None = None
-
 @router.patch("/tenders/{tender_id}")
-def patch_tender(tender_id: str, body: TenderPatch) -> dict:
+def patch_tender(
+    tender_id: str,
+    body: TenderPatch,
+    user: AuthUser,
+) -> dict:
+    """Partial update of a tender — tenant-isolated, enum-safe status cast."""
+    try:
+        uuid.UUID(tender_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "not_found", "message": "Tender not found"},
+        )
+
+    if body.status is None:
+        raise HTTPException(
+            status_code=422,
+            detail={"error": "no_fields", "message": "No fields to update"},
+        )
+
     import sqlalchemy as sa
     engine = get_engine()
-    updates = {}
-    if body.status:
-        updates["status"] = body.status
-    if not updates:
-        raise HTTPException(status_code=400, detail="Nothing to update")
+    tenant_id = str(user.org_id or "")
+
     with engine.begin() as conn:
         result = conn.execute(
-            sa.text(f"UPDATE tender SET status = :status WHERE id = :id"),
-            {"status": body.status, "id": tender_id},
+            sa.text(
+                "UPDATE tender "
+                "SET status = CAST(:status AS tender_status) "
+                "WHERE id = :id AND tenant_id = :tenant_id"
+            ),
+            {"status": body.status, "id": tender_id, "tenant_id": tenant_id},
         )
         if result.rowcount == 0:
-            raise HTTPException(status_code=404, detail="Tender not found")
+            raise HTTPException(
+                status_code=404,
+                detail={"error": "not_found", "message": "Tender not found"},
+            )
+
     return {"ok": True, "id": tender_id, "status": body.status}

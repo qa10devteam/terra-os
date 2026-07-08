@@ -15,6 +15,13 @@ import { SystemPage } from '@/components/pages/SystemPage';
 import { SettingsPage } from '@/components/pages/SettingsPage';
 import { ImportPage } from '@/components/pages/ImportPage';
 import { PogodaPage } from '@/components/pages/PogodaPage';
+import { MarketIntelPage } from '@/components/pages/MarketIntelPage';
+import { CompetitorPage } from '@/components/pages/CompetitorPage';
+import { BookmarksBoardPage } from '@/components/pages/BookmarksBoardPage';
+import { BuyerCRMPage } from '@/components/pages/BuyerCRMPage';
+import { NotificationsPage } from '@/components/pages/NotificationsPage';
+import ExportPage from '@/components/pages/ExportPage';
+import { OfertaPage } from '@/components/pages/OfertaPage';
 import { Sidebar } from '@/components/Sidebar';
 import { MarketBar } from '@/components/widgets/MarketBar';
 import { ChatWidget } from '@/components/ChatWidget';
@@ -60,18 +67,26 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 function ActivePage() {
   const { currentModule } = useStore();
   switch (currentModule) {
-    case 'dashboard':  return <DashboardPage />;
-    case 'zwiad':      return <ZwiadPage />;
-    case 'kosztorys':  return <KosztorysPage />;
-    case 'silnik':     return <SilnikPage />;
-    case 'decyzja':    return <DecyzjaPage />;
-    case 'analytics':  return <AnalyticsPage />;
-    case 'logistyka':  return <LogistykaPage />;
-    case 'rfq':        return <RfqPage />;
-    case 'pipeline':   return <PipelinePage />;
-    case 'system':     return <SettingsPage />;
-    case 'pogoda':     return <PogodaPage />;
-    default:           return <DashboardPage />;
+    case 'dashboard':     return <DashboardPage />;
+    case 'zwiad':         return <ZwiadPage />;
+    case 'kosztorys':     return <KosztorysPage />;
+    case 'silnik':        return <SilnikPage />;
+    case 'decyzja':       return <DecyzjaPage />;
+    case 'analytics':     return <AnalyticsPage />;
+    case 'logistyka':     return <LogistykaPage />;
+    case 'rfq':           return <RfqPage />;
+    case 'pipeline':      return <PipelinePage />;
+    case 'system':        return <SystemPage />;
+    case 'settings':      return <SettingsPage />;
+    case 'pogoda':        return <PogodaPage />;
+    case 'market-intel':  return <MarketIntelPage />;
+    case 'competitors':   return <CompetitorPage />;
+    case 'bookmarks':     return <BookmarksBoardPage />;
+    case 'buyer-crm':     return <BuyerCRMPage />;
+    case 'notifications': return <NotificationsPage />;
+    case 'export':        return <ExportPage />;
+    case 'oferta':        return <OfertaPage />;
+    default:              return <DashboardPage />;
   }
 }
 

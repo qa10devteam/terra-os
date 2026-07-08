@@ -4,8 +4,6 @@ Provides seed demo data endpoints for showcasing Terra.OS without real data.
 """
 from __future__ import annotations
 
-import sys
-sys.path.insert(0, '/home/ubuntu/terra-os/packages/vendor')
 
 import os
 from typing import Any

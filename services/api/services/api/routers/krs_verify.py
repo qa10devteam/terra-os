@@ -1,8 +1,6 @@
 """Faza 44 — KRS/CEIDG Verification: weryfikacja podmiotów gospodarczych."""
 from __future__ import annotations
 
-import sys
-sys.path.insert(0, "/home/ubuntu/terra-os/packages/vendor")
 
 import uuid
 

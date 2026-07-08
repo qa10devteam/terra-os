@@ -1,0 +1,807 @@
+2026-07-08 09:40:15,559 [INFO] daily_ingest: Starting daily BZP ingest (days_back=2)
+2026-07-08 09:40:17,444 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-06T00%3A00%3A00&PublicationDateTo=2026-07-06T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:40:18,283 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-06T12%3A00%3A00&PublicationDateTo=2026-07-06T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:40:19,203 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-07T00%3A00%3A00&PublicationDateTo=2026-07-07T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:40:19,897 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-07T12%3A00%3A00&PublicationDateTo=2026-07-07T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:40:20,371 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-08T00%3A00%3A00&PublicationDateTo=2026-07-08T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:40:20,561 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-08T12%3A00%3A00&PublicationDateTo=2026-07-08T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:40:20,562 [INFO] ingestion.bzp_connector: BZP fetch complete: 1321 unique notices over 3 days
+2026-07-08 09:40:20,562 [INFO] ingestion.pipeline: Fetched 1321 raw notices
+2026-07-08 09:40:21,202 [INFO] ingestion.pipeline: Filter: 118 passed, 478 dropped
+2026-07-08 09:40:21,217 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00323782: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,230 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00323881: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,243 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00324131: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,254 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00324290: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,265 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00324313: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,277 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00324452: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,289 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00324466: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,300 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00324510: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,312 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00324627: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,324 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00324650: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,335 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00324805: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,346 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00324811: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,358 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00325012: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,369 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00325129: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,381 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00325136: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,392 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00325289: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,404 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00325324: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,415 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00325351: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,427 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00325353: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,438 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00325361: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,450 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00325426: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,461 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00325456: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,473 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00325546: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,484 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00325588: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,496 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00325608: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,508 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00325744: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,519 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00325798: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,530 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00325825: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,542 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00325827: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,553 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00325878: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,565 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00325902: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,576 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00325917: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,587 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00326080: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,598 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00326150: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,610 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00326179: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,621 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00326200: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,633 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00326257: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,645 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00326304: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,656 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00326308: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,667 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00326385: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,679 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00326391: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,690 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00326394: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,702 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00326400: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,713 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00326470: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,725 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00326473: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,736 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00326549: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,747 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00326555: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,759 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00326568: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,770 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00326592: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,781 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00326610: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,792 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00326615: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,804 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00326768: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,815 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00326904: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,827 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00326978: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,838 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00326999: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,849 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00327001: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,861 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00327013: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,872 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00327028: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,884 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00327035: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,895 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00327125: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,906 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00327195: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,918 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00327228: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,929 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00327236: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,941 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00327301: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,953 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00327329: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,964 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00327336: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,975 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00327383: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,987 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00327389: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:21,998 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00327410: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,010 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00327638: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,021 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00327681: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,032 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00327685: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,043 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00327704: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,054 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00327758: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,066 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00327799: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,077 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00327835: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,089 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00327864: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,100 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00327910: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,116 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00327941: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,127 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00327963: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,139 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00327971: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,150 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00327989: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,161 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00327992: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,173 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00328000: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,184 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00328082: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,196 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00328138: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,207 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00328164: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,218 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00328218: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,229 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00328243: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,241 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00328249: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,252 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00328367: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,264 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00328396: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,275 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00328417: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,286 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00328469: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,298 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00328480: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,309 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00328530: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,320 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00328569: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,332 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00328687: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,343 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00328730: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,355 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00328829: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,366 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00328852: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,378 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00328864: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,389 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00328954: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,401 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00329010: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,412 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00329038: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,423 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00329113: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,434 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00329119: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,445 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00329188: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,457 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00329192: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,468 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00329334: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,479 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00329363: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,491 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00329372: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,502 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00329380: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,514 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00329419: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,525 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00329471: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,536 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00329606: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,548 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00329616: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,559 [WARNING] ingestion.pipeline: Upsert error for 2026/BZP 00329623: (psycopg2.OperationalError) connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "terraos"
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-07-08 09:40:22,559 [INFO] ingestion.pipeline: Ingest done: IngestResult(fetched=1321, norm=596, passed=118, dropped=478, created=0, updated=0, errors=118)
+2026-07-08 09:40:22,559 [INFO] daily_ingest: Ingest complete: fetched=1321, created=0, updated=0, dropped=478, errors=118
+2026-07-08 09:47:16,241 [INFO] daily_ingest: Starting daily BZP ingest (days_back=2)
+2026-07-08 09:47:18,368 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-06T00%3A00%3A00&PublicationDateTo=2026-07-06T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:47:19,836 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-06T12%3A00%3A00&PublicationDateTo=2026-07-06T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:47:24,347 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-07T00%3A00%3A00&PublicationDateTo=2026-07-07T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:47:25,514 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-07T12%3A00%3A00&PublicationDateTo=2026-07-07T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:47:26,452 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-08T00%3A00%3A00&PublicationDateTo=2026-07-08T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:47:27,559 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-08T12%3A00%3A00&PublicationDateTo=2026-07-08T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:47:27,560 [INFO] ingestion.bzp_connector: BZP fetch complete: 1331 unique notices over 3 days
+2026-07-08 09:47:27,561 [INFO] ingestion.pipeline: Fetched 1331 raw notices
+2026-07-08 09:47:28,193 [INFO] ingestion.pipeline: Filter: 119 passed, 481 dropped
+2026-07-08 09:47:28,594 [INFO] ingestion.pipeline: Ingest done: IngestResult(fetched=1331, norm=600, passed=119, dropped=481, created=1, updated=118, errors=0)
+2026-07-08 09:47:28,596 [INFO] daily_ingest: Ingest complete: fetched=1331, created=1, updated=118, dropped=481, errors=0
+2026-07-08 09:56:32,258 [INFO] daily_ingest: Starting daily BZP ingest (days_back=2)
+2026-07-08 09:56:34,015 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-06T00%3A00%3A00&PublicationDateTo=2026-07-06T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:56:34,943 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-06T12%3A00%3A00&PublicationDateTo=2026-07-06T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:56:35,619 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-07T00%3A00%3A00&PublicationDateTo=2026-07-07T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:56:36,239 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-07T12%3A00%3A00&PublicationDateTo=2026-07-07T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:56:36,699 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-08T00%3A00%3A00&PublicationDateTo=2026-07-08T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:56:36,844 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-08T12%3A00%3A00&PublicationDateTo=2026-07-08T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:56:36,845 [INFO] ingestion.bzp_connector: BZP fetch complete: 1346 unique notices over 3 days
+2026-07-08 09:56:36,845 [INFO] ingestion.pipeline: BZP fetched 1346 raw notices
+2026-07-08 09:56:37,236 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 09:56:38,457 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 09:56:38,593 [INFO] ingestion.ted_connector: TED fetch complete: 128 unique notices (20260706 to 20260708)
+2026-07-08 09:56:38,593 [INFO] ingestion.pipeline: TED fetched 128 raw notices
+2026-07-08 09:56:39,238 [INFO] ingestion.pipeline: Filter: 241 passed, 492 dropped
+2026-07-08 09:56:39,798 [WARNING] ingestion.pipeline: Upsert error for TED/467396-2026: [<class 'decimal.DivisionByZero'>]
+2026-07-08 09:56:39,907 [INFO] ingestion.pipeline: Ingest done: IngestResult(fetched=1474, norm=733, passed=241, dropped=492, created=121, updated=119, errors=1)
+2026-07-08 09:56:39,910 [INFO] daily_ingest: Ingest complete: fetched=1474, created=121, updated=119, dropped=492, errors=1
+2026-07-08 09:56:51,954 [INFO] daily_ingest: Starting daily BZP ingest (days_back=30)
+2026-07-08 09:56:51,977 [INFO] daily_ingest: Starting daily BZP ingest (days_back=2)
+2026-07-08 09:56:54,033 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-06T00%3A00%3A00&PublicationDateTo=2026-07-06T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:56:55,019 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-06T12%3A00%3A00&PublicationDateTo=2026-07-06T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:56:55,700 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-07T00%3A00%3A00&PublicationDateTo=2026-07-07T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:56:56,394 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-07T12%3A00%3A00&PublicationDateTo=2026-07-07T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:56:56,843 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-08T00%3A00%3A00&PublicationDateTo=2026-07-08T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:56:56,974 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-08T12%3A00%3A00&PublicationDateTo=2026-07-08T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:56:56,975 [INFO] ingestion.bzp_connector: BZP fetch complete: 1347 unique notices over 3 days
+2026-07-08 09:56:56,975 [INFO] ingestion.pipeline: BZP fetched 1347 raw notices
+2026-07-08 09:56:57,478 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 09:56:57,851 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 09:56:57,926 [INFO] ingestion.ted_connector: TED fetch complete: 128 unique notices (20260706 to 20260708)
+2026-07-08 09:56:57,926 [INFO] ingestion.pipeline: TED fetched 128 raw notices
+2026-07-08 09:56:58,574 [INFO] ingestion.pipeline: Filter: 241 passed, 493 dropped
+2026-07-08 09:56:59,102 [WARNING] ingestion.pipeline: Upsert error for TED/467396-2026: [<class 'decimal.DivisionByZero'>]
+2026-07-08 09:56:59,208 [INFO] ingestion.pipeline: Ingest done: IngestResult(fetched=1475, norm=734, passed=241, dropped=493, created=0, updated=240, errors=1)
+2026-07-08 09:56:59,211 [INFO] daily_ingest: Ingest complete: fetched=1475, created=0, updated=240, dropped=493, errors=1
+2026-07-08 09:57:24,104 [INFO] daily_ingest: Starting daily ingest (days_back=30, ted=True)
+2026-07-08 09:57:26,526 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-08T00%3A00%3A00&PublicationDateTo=2026-06-08T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:27,430 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-08T12%3A00%3A00&PublicationDateTo=2026-06-08T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:28,406 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-09T00%3A00%3A00&PublicationDateTo=2026-06-09T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:29,112 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-09T12%3A00%3A00&PublicationDateTo=2026-06-09T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:29,794 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-10T00%3A00%3A00&PublicationDateTo=2026-06-10T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:30,997 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-10T12%3A00%3A00&PublicationDateTo=2026-06-10T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:31,652 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-11T00%3A00%3A00&PublicationDateTo=2026-06-11T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:32,291 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-11T12%3A00%3A00&PublicationDateTo=2026-06-11T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:32,970 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-12T00%3A00%3A00&PublicationDateTo=2026-06-12T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:33,940 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-12T12%3A00%3A00&PublicationDateTo=2026-06-12T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:35,021 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-13T00%3A00%3A00&PublicationDateTo=2026-06-13T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:35,062 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-13T12%3A00%3A00&PublicationDateTo=2026-06-13T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:35,488 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-14T00%3A00%3A00&PublicationDateTo=2026-06-14T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:36,007 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-14T12%3A00%3A00&PublicationDateTo=2026-06-14T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:36,650 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-15T00%3A00%3A00&PublicationDateTo=2026-06-15T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:39,247 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-15T12%3A00%3A00&PublicationDateTo=2026-06-15T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:40,554 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-16T00%3A00%3A00&PublicationDateTo=2026-06-16T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:41,812 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-16T12%3A00%3A00&PublicationDateTo=2026-06-16T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:43,596 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-17T00%3A00%3A00&PublicationDateTo=2026-06-17T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:44,523 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-17T12%3A00%3A00&PublicationDateTo=2026-06-17T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:45,266 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-18T00%3A00%3A00&PublicationDateTo=2026-06-18T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:46,030 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-18T12%3A00%3A00&PublicationDateTo=2026-06-18T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:46,724 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-19T00%3A00%3A00&PublicationDateTo=2026-06-19T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:47,177 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-19T12%3A00%3A00&PublicationDateTo=2026-06-19T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:47,307 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-20T00%3A00%3A00&PublicationDateTo=2026-06-20T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:47,346 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-20T12%3A00%3A00&PublicationDateTo=2026-06-20T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:47,599 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-21T00%3A00%3A00&PublicationDateTo=2026-06-21T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:48,130 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-21T12%3A00%3A00&PublicationDateTo=2026-06-21T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:48,795 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-22T00%3A00%3A00&PublicationDateTo=2026-06-22T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:50,534 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-22T12%3A00%3A00&PublicationDateTo=2026-06-22T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:51,333 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-23T00%3A00%3A00&PublicationDateTo=2026-06-23T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:52,091 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-23T12%3A00%3A00&PublicationDateTo=2026-06-23T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:52,831 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-24T00%3A00%3A00&PublicationDateTo=2026-06-24T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:54,647 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-24T12%3A00%3A00&PublicationDateTo=2026-06-24T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:55,426 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-25T00%3A00%3A00&PublicationDateTo=2026-06-25T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:56,184 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-25T12%3A00%3A00&PublicationDateTo=2026-06-25T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:57,116 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-26T00%3A00%3A00&PublicationDateTo=2026-06-26T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:57,568 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-26T12%3A00%3A00&PublicationDateTo=2026-06-26T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:57,668 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-27T00%3A00%3A00&PublicationDateTo=2026-06-27T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:57,720 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-27T12%3A00%3A00&PublicationDateTo=2026-06-27T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:57,959 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-28T00%3A00%3A00&PublicationDateTo=2026-06-28T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:58,582 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-28T12%3A00%3A00&PublicationDateTo=2026-06-28T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:57:59,290 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-29T00%3A00%3A00&PublicationDateTo=2026-06-29T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:58:00,698 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-29T12%3A00%3A00&PublicationDateTo=2026-06-29T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:58:01,507 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-30T00%3A00%3A00&PublicationDateTo=2026-06-30T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:58:02,206 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-30T12%3A00%3A00&PublicationDateTo=2026-06-30T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:58:02,931 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-01T00%3A00%3A00&PublicationDateTo=2026-07-01T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:58:03,722 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-01T12%3A00%3A00&PublicationDateTo=2026-07-01T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:58:04,622 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-02T00%3A00%3A00&PublicationDateTo=2026-07-02T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:58:05,394 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-02T12%3A00%3A00&PublicationDateTo=2026-07-02T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:58:06,214 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-03T00%3A00%3A00&PublicationDateTo=2026-07-03T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:58:06,737 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-03T12%3A00%3A00&PublicationDateTo=2026-07-03T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:58:06,877 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-04T00%3A00%3A00&PublicationDateTo=2026-07-04T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:58:06,920 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-04T12%3A00%3A00&PublicationDateTo=2026-07-04T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:58:07,210 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-05T00%3A00%3A00&PublicationDateTo=2026-07-05T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:58:07,932 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-05T12%3A00%3A00&PublicationDateTo=2026-07-05T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:58:09,019 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-06T00%3A00%3A00&PublicationDateTo=2026-07-06T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:58:09,784 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-06T12%3A00%3A00&PublicationDateTo=2026-07-06T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:58:10,694 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-07T00%3A00%3A00&PublicationDateTo=2026-07-07T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:58:11,435 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-07T12%3A00%3A00&PublicationDateTo=2026-07-07T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:58:12,061 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-08T00%3A00%3A00&PublicationDateTo=2026-07-08T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:58:12,308 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-08T12%3A00%3A00&PublicationDateTo=2026-07-08T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 09:58:12,309 [INFO] ingestion.bzp_connector: BZP fetch complete: 12318 unique notices over 31 days
+2026-07-08 09:58:12,309 [INFO] ingestion.pipeline: BZP fetched 12318 raw notices
+2026-07-08 09:58:13,298 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 09:58:14,539 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 09:58:16,617 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 09:58:17,003 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 09:58:18,551 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 09:58:19,247 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 09:58:20,971 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 09:58:21,635 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 09:58:23,379 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 09:58:25,414 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 09:58:27,358 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 09:58:27,542 [INFO] ingestion.ted_connector: TED fetch complete: 1039 unique notices (20260608 to 20260708)
+2026-07-08 09:58:27,542 [INFO] ingestion.pipeline: TED fetched 1039 raw notices
+2026-07-08 09:58:33,045 [INFO] ingestion.pipeline: Filter: 2104 passed, 4386 dropped
+2026-07-08 09:58:36,763 [WARNING] ingestion.pipeline: Upsert error for TED/404709-2026: [<class 'decimal.DivisionByZero'>]
+2026-07-08 09:58:36,994 [WARNING] ingestion.pipeline: Upsert error for TED/414395-2026: [<class 'decimal.DivisionByZero'>]
+2026-07-08 09:58:37,045 [WARNING] ingestion.pipeline: Upsert error for TED/415935-2026: [<class 'decimal.DivisionByZero'>]
+2026-07-08 09:58:37,236 [WARNING] ingestion.pipeline: Upsert error for TED/423857-2026: [<class 'decimal.DivisionByZero'>]
+2026-07-08 09:58:37,789 [WARNING] ingestion.pipeline: Upsert error for TED/442207-2026: [<class 'decimal.DivisionByZero'>]
+2026-07-08 09:58:38,481 [WARNING] ingestion.pipeline: Upsert error for TED/467396-2026: [<class 'decimal.DivisionByZero'>]
+2026-07-08 09:58:38,587 [INFO] ingestion.pipeline: Ingest done: IngestResult(fetched=13357, norm=6490, passed=2104, dropped=4386, created=1404, updated=694, errors=6)
+2026-07-08 09:58:38,614 [INFO] daily_ingest: Ingest complete: fetched=13357, created=1404, updated=694, dropped=4386, errors=6
+2026-07-08 10:08:10,834 [INFO] daily_ingest: Starting daily ingest (days_back=30, ted=True)
+2026-07-08 10:08:12,819 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-08T00%3A00%3A00&PublicationDateTo=2026-06-08T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:13,821 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-08T12%3A00%3A00&PublicationDateTo=2026-06-08T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:16,308 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-09T00%3A00%3A00&PublicationDateTo=2026-06-09T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:17,799 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-09T12%3A00%3A00&PublicationDateTo=2026-06-09T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:19,979 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-10T00%3A00%3A00&PublicationDateTo=2026-06-10T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:21,215 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-10T12%3A00%3A00&PublicationDateTo=2026-06-10T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:21,936 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-11T00%3A00%3A00&PublicationDateTo=2026-06-11T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:22,738 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-11T12%3A00%3A00&PublicationDateTo=2026-06-11T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:23,703 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-12T00%3A00%3A00&PublicationDateTo=2026-06-12T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:24,172 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-12T12%3A00%3A00&PublicationDateTo=2026-06-12T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:24,285 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-13T00%3A00%3A00&PublicationDateTo=2026-06-13T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:24,331 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-13T12%3A00%3A00&PublicationDateTo=2026-06-13T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:24,625 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-14T00%3A00%3A00&PublicationDateTo=2026-06-14T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:25,413 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-14T12%3A00%3A00&PublicationDateTo=2026-06-14T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:26,195 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-15T00%3A00%3A00&PublicationDateTo=2026-06-15T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:27,029 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-15T12%3A00%3A00&PublicationDateTo=2026-06-15T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:27,727 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-16T00%3A00%3A00&PublicationDateTo=2026-06-16T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:28,438 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-16T12%3A00%3A00&PublicationDateTo=2026-06-16T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:30,184 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-17T00%3A00%3A00&PublicationDateTo=2026-06-17T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:31,032 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-17T12%3A00%3A00&PublicationDateTo=2026-06-17T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:31,985 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-18T00%3A00%3A00&PublicationDateTo=2026-06-18T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:33,091 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-18T12%3A00%3A00&PublicationDateTo=2026-06-18T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:33,823 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-19T00%3A00%3A00&PublicationDateTo=2026-06-19T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:34,288 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-19T12%3A00%3A00&PublicationDateTo=2026-06-19T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:34,420 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-20T00%3A00%3A00&PublicationDateTo=2026-06-20T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:34,460 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-20T12%3A00%3A00&PublicationDateTo=2026-06-20T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:35,016 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-21T00%3A00%3A00&PublicationDateTo=2026-06-21T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:35,896 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-21T12%3A00%3A00&PublicationDateTo=2026-06-21T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:37,303 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-22T00%3A00%3A00&PublicationDateTo=2026-06-22T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:38,220 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-22T12%3A00%3A00&PublicationDateTo=2026-06-22T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:39,117 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-23T00%3A00%3A00&PublicationDateTo=2026-06-23T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:40,252 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-23T12%3A00%3A00&PublicationDateTo=2026-06-23T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:41,014 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-24T00%3A00%3A00&PublicationDateTo=2026-06-24T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:41,923 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-24T12%3A00%3A00&PublicationDateTo=2026-06-24T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:42,711 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-25T00%3A00%3A00&PublicationDateTo=2026-06-25T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:43,689 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-25T12%3A00%3A00&PublicationDateTo=2026-06-25T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:44,411 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-26T00%3A00%3A00&PublicationDateTo=2026-06-26T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:44,918 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-26T12%3A00%3A00&PublicationDateTo=2026-06-26T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:45,086 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-27T00%3A00%3A00&PublicationDateTo=2026-06-27T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:45,132 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-27T12%3A00%3A00&PublicationDateTo=2026-06-27T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:45,410 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-28T00%3A00%3A00&PublicationDateTo=2026-06-28T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:46,020 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-28T12%3A00%3A00&PublicationDateTo=2026-06-28T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:46,789 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-29T00%3A00%3A00&PublicationDateTo=2026-06-29T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:47,599 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-29T12%3A00%3A00&PublicationDateTo=2026-06-29T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:48,500 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-30T00%3A00%3A00&PublicationDateTo=2026-06-30T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:49,499 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-30T12%3A00%3A00&PublicationDateTo=2026-06-30T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:50,290 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-01T00%3A00%3A00&PublicationDateTo=2026-07-01T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:51,007 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-01T12%3A00%3A00&PublicationDateTo=2026-07-01T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:51,997 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-02T00%3A00%3A00&PublicationDateTo=2026-07-02T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:53,208 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-02T12%3A00%3A00&PublicationDateTo=2026-07-02T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:54,692 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-03T00%3A00%3A00&PublicationDateTo=2026-07-03T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:55,352 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-03T12%3A00%3A00&PublicationDateTo=2026-07-03T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:55,525 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-04T00%3A00%3A00&PublicationDateTo=2026-07-04T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:55,573 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-04T12%3A00%3A00&PublicationDateTo=2026-07-04T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:55,833 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-05T00%3A00%3A00&PublicationDateTo=2026-07-05T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:57,733 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-05T12%3A00%3A00&PublicationDateTo=2026-07-05T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:08:59,025 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-06T00%3A00%3A00&PublicationDateTo=2026-07-06T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:09:03,267 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-06T12%3A00%3A00&PublicationDateTo=2026-07-06T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:09:04,512 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-07T00%3A00%3A00&PublicationDateTo=2026-07-07T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:09:05,294 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-07T12%3A00%3A00&PublicationDateTo=2026-07-07T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:09:05,899 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-08T00%3A00%3A00&PublicationDateTo=2026-07-08T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:09:06,216 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-08T12%3A00%3A00&PublicationDateTo=2026-07-08T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:09:06,217 [INFO] ingestion.bzp_connector: BZP fetch complete: 12338 unique notices over 31 days
+2026-07-08 10:09:06,217 [INFO] ingestion.pipeline: BZP fetched 12338 raw notices
+2026-07-08 10:09:06,660 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 10:09:07,544 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 10:09:08,484 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 10:09:09,381 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 10:09:10,992 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 10:09:11,380 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 10:09:12,997 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 10:09:13,412 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 10:09:14,969 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 10:09:15,355 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 10:09:17,285 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 10:09:17,396 [INFO] ingestion.ted_connector: TED fetch complete: 1039 unique notices (20260608 to 20260708)
+2026-07-08 10:09:17,396 [INFO] ingestion.pipeline: TED fetched 1039 raw notices
+2026-07-08 10:09:22,953 [INFO] ingestion.pipeline: Filter: 2114 passed, 4386 dropped
+2026-07-08 10:09:27,791 [INFO] ingestion.pipeline: Ingest done: IngestResult(fetched=13377, norm=6500, passed=2114, dropped=4386, created=16, updated=2098, errors=0)
+2026-07-08 10:09:27,815 [INFO] daily_ingest: Ingest complete: fetched=13377, created=16, updated=2098, dropped=4386, errors=0
+2026-07-08 10:11:58,071 [INFO] daily_ingest: Starting daily ingest (days_back=30, ted=True)
+2026-07-08 10:11:59,832 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-08T00%3A00%3A00&PublicationDateTo=2026-06-08T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:01,001 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-08T12%3A00%3A00&PublicationDateTo=2026-06-08T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:01,636 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-09T00%3A00%3A00&PublicationDateTo=2026-06-09T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:02,307 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-09T12%3A00%3A00&PublicationDateTo=2026-06-09T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:03,914 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-10T00%3A00%3A00&PublicationDateTo=2026-06-10T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:04,810 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-10T12%3A00%3A00&PublicationDateTo=2026-06-10T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:05,650 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-11T00%3A00%3A00&PublicationDateTo=2026-06-11T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:06,711 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-11T12%3A00%3A00&PublicationDateTo=2026-06-11T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:07,747 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-12T00%3A00%3A00&PublicationDateTo=2026-06-12T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:08,302 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-12T12%3A00%3A00&PublicationDateTo=2026-06-12T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:08,448 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-13T00%3A00%3A00&PublicationDateTo=2026-06-13T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:08,494 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-13T12%3A00%3A00&PublicationDateTo=2026-06-13T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:08,809 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-14T00%3A00%3A00&PublicationDateTo=2026-06-14T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:09,607 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-14T12%3A00%3A00&PublicationDateTo=2026-06-14T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:10,664 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-15T00%3A00%3A00&PublicationDateTo=2026-06-15T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:12,083 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-15T12%3A00%3A00&PublicationDateTo=2026-06-15T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:13,619 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-16T00%3A00%3A00&PublicationDateTo=2026-06-16T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:14,972 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-16T12%3A00%3A00&PublicationDateTo=2026-06-16T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:16,401 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-17T00%3A00%3A00&PublicationDateTo=2026-06-17T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:17,859 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-17T12%3A00%3A00&PublicationDateTo=2026-06-17T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:21,636 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-18T00%3A00%3A00&PublicationDateTo=2026-06-18T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:22,594 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-18T12%3A00%3A00&PublicationDateTo=2026-06-18T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:25,666 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-19T00%3A00%3A00&PublicationDateTo=2026-06-19T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:26,737 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-19T12%3A00%3A00&PublicationDateTo=2026-06-19T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:26,916 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-20T00%3A00%3A00&PublicationDateTo=2026-06-20T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:26,954 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-20T12%3A00%3A00&PublicationDateTo=2026-06-20T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:27,223 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-21T00%3A00%3A00&PublicationDateTo=2026-06-21T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:28,224 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-21T12%3A00%3A00&PublicationDateTo=2026-06-21T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:30,688 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-22T00%3A00%3A00&PublicationDateTo=2026-06-22T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:32,225 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-22T12%3A00%3A00&PublicationDateTo=2026-06-22T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:33,521 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-23T00%3A00%3A00&PublicationDateTo=2026-06-23T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:35,398 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-23T12%3A00%3A00&PublicationDateTo=2026-06-23T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:36,825 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-24T00%3A00%3A00&PublicationDateTo=2026-06-24T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:37,855 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-24T12%3A00%3A00&PublicationDateTo=2026-06-24T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:39,307 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-25T00%3A00%3A00&PublicationDateTo=2026-06-25T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:40,918 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-25T12%3A00%3A00&PublicationDateTo=2026-06-25T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:41,912 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-26T00%3A00%3A00&PublicationDateTo=2026-06-26T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:42,376 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-26T12%3A00%3A00&PublicationDateTo=2026-06-26T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:42,901 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-27T00%3A00%3A00&PublicationDateTo=2026-06-27T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:42,944 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-27T12%3A00%3A00&PublicationDateTo=2026-06-27T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:43,209 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-28T00%3A00%3A00&PublicationDateTo=2026-06-28T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:44,512 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-28T12%3A00%3A00&PublicationDateTo=2026-06-28T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:45,319 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-29T00%3A00%3A00&PublicationDateTo=2026-06-29T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:46,031 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-29T12%3A00%3A00&PublicationDateTo=2026-06-29T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:46,716 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-30T00%3A00%3A00&PublicationDateTo=2026-06-30T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:48,215 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-06-30T12%3A00%3A00&PublicationDateTo=2026-06-30T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:49,109 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-01T00%3A00%3A00&PublicationDateTo=2026-07-01T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:49,838 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-01T12%3A00%3A00&PublicationDateTo=2026-07-01T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:50,550 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-02T00%3A00%3A00&PublicationDateTo=2026-07-02T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:51,336 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-02T12%3A00%3A00&PublicationDateTo=2026-07-02T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:52,142 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-03T00%3A00%3A00&PublicationDateTo=2026-07-03T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:52,610 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-03T12%3A00%3A00&PublicationDateTo=2026-07-03T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:52,761 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-04T00%3A00%3A00&PublicationDateTo=2026-07-04T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:52,806 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-04T12%3A00%3A00&PublicationDateTo=2026-07-04T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:53,092 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-05T00%3A00%3A00&PublicationDateTo=2026-07-05T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:53,815 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-05T12%3A00%3A00&PublicationDateTo=2026-07-05T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:54,543 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-06T00%3A00%3A00&PublicationDateTo=2026-07-06T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:55,246 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-06T12%3A00%3A00&PublicationDateTo=2026-07-06T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:55,952 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-07T00%3A00%3A00&PublicationDateTo=2026-07-07T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:56,639 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-07T12%3A00%3A00&PublicationDateTo=2026-07-07T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:57,198 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-08T00%3A00%3A00&PublicationDateTo=2026-07-08T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:57,427 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-08T12%3A00%3A00&PublicationDateTo=2026-07-08T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:12:57,428 [INFO] ingestion.bzp_connector: BZP fetch complete: 12345 unique notices over 31 days
+2026-07-08 10:12:57,429 [INFO] ingestion.pipeline: BZP fetched 12345 raw notices
+2026-07-08 10:12:57,804 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 10:12:59,679 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 10:13:00,076 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 10:13:02,091 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 10:13:02,643 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 10:13:04,486 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 10:13:04,900 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 10:13:06,452 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 10:13:06,838 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 10:13:08,483 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 10:13:08,803 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 10:13:08,868 [INFO] ingestion.ted_connector: TED fetch complete: 1039 unique notices (20260608 to 20260708)
+2026-07-08 10:13:08,869 [INFO] ingestion.pipeline: TED fetched 1039 raw notices
+2026-07-08 10:13:14,471 [INFO] ingestion.pipeline: Filter: 2115 passed, 4392 dropped
+2026-07-08 10:13:20,070 [INFO] ingestion.pipeline: Ingest done: IngestResult(fetched=13384, norm=6507, passed=2115, dropped=4392, created=1, updated=2114, errors=0)
+2026-07-08 10:13:20,094 [INFO] daily_ingest: Ingest complete: fetched=13384, created=1, updated=2114, dropped=4392, errors=0
+2026-07-08 10:19:56,527 [INFO] daily_ingest: Starting daily ingest (days_back=7, ted=True)
+2026-07-08 10:19:58,224 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-01T00%3A00%3A00&PublicationDateTo=2026-07-01T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:19:59,458 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-01T12%3A00%3A00&PublicationDateTo=2026-07-01T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:20:00,114 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-02T00%3A00%3A00&PublicationDateTo=2026-07-02T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:20:01,390 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-02T12%3A00%3A00&PublicationDateTo=2026-07-02T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:20:02,209 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-03T00%3A00%3A00&PublicationDateTo=2026-07-03T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:20:02,689 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-03T12%3A00%3A00&PublicationDateTo=2026-07-03T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:20:02,824 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-04T00%3A00%3A00&PublicationDateTo=2026-07-04T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:20:02,870 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-04T12%3A00%3A00&PublicationDateTo=2026-07-04T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:20:03,299 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-05T00%3A00%3A00&PublicationDateTo=2026-07-05T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:20:04,853 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-05T12%3A00%3A00&PublicationDateTo=2026-07-05T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:20:06,202 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-06T00%3A00%3A00&PublicationDateTo=2026-07-06T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:20:07,119 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-06T12%3A00%3A00&PublicationDateTo=2026-07-06T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:20:07,813 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-07T00%3A00%3A00&PublicationDateTo=2026-07-07T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:20:08,799 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-07T12%3A00%3A00&PublicationDateTo=2026-07-07T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:20:09,896 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-08T00%3A00%3A00&PublicationDateTo=2026-07-08T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:20:10,150 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-08T12%3A00%3A00&PublicationDateTo=2026-07-08T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-08 10:20:10,151 [INFO] ingestion.bzp_connector: BZP fetch complete: 3139 unique notices over 8 days
+2026-07-08 10:20:10,151 [INFO] ingestion.pipeline: BZP fetched 3139 raw notices
+2026-07-08 10:20:10,575 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 10:20:11,059 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 10:20:12,927 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-08 10:20:13,098 [INFO] ingestion.ted_connector: TED fetch complete: 278 unique notices (20260701 to 20260708)
+2026-07-08 10:20:13,098 [INFO] ingestion.pipeline: TED fetched 278 raw notices
+2026-07-08 10:20:14,520 [INFO] ingestion.pipeline: Filter: 548 passed, 1149 dropped
+2026-07-08 10:20:15,623 [INFO] ingestion.pipeline: Ingest done: IngestResult(fetched=3417, norm=1697, passed=548, dropped=1149, created=3, updated=545, errors=0)
+2026-07-08 10:20:15,629 [INFO] daily_ingest: Ingest complete: fetched=3417, created=3, updated=545, dropped=1149, errors=0

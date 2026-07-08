@@ -12,9 +12,6 @@ POST /api/v2/decisions/score
 """
 from __future__ import annotations
 
-import sys
-sys.path.insert(0, "/home/ubuntu/terra-os/packages/vendor")
-
 import re
 import json
 import random
@@ -24,7 +21,7 @@ from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
-from ..auth.deps import get_current_user
+from ..auth.deps import get_current_user, AuthUser
 
 router = APIRouter(prefix="/api/v2", tags=["ai", "decisions", "reports"])
 

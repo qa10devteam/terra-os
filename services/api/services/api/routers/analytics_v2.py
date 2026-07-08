@@ -4,28 +4,21 @@ Endpoints: /api/v2/analytics/*, /api/v2/ai/analyze-swz
 """
 from __future__ import annotations
 
-import sys
-sys.path.insert(0, "/home/ubuntu/terra-os/packages/vendor")
-
+import logging
 from typing import Any
-from fastapi import APIRouter, HTTPException, Depends
+
+import sqlalchemy as sa
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
 
-from terra_db.session import get_session
+from terra_db.session import get_engine
 from ..auth.deps import AuthUser
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v2/analytics", tags=["analytics"])
 ai_router = APIRouter(prefix="/api/v2/ai", tags=["ai"])
-
-
-def get_db():
-    SessionLocal = get_session()
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 # ─── Request/Response schemas ──────────────────────────────────────────────
@@ -81,23 +74,21 @@ class WinProbabilityRequest(BaseModel):
 def calc_optimal_markup(body: OptimalMarkupRequest, current_user: AuthUser):
     """Faza 28 — Friedman/Gates optimal bidding model."""
     from ..analytics import optimal_markup
-    result = optimal_markup(
+    return optimal_markup(
         cost_estimate=body.cost_estimate,
         n_competitors=body.n_competitors,
         historical_win_rates=body.historical_win_rates,
     )
-    return result
 
 
 @router.post("/ahp-score")
 def calc_ahp_score(body: AHPScoreRequest, current_user: AuthUser):
     """Faza 29 — AHP decision support."""
     from ..analytics import compute_ahp_score
-    result = compute_ahp_score(
+    return compute_ahp_score(
         scores=body.scores,
         criteria=body.custom_criteria,
     )
-    return result
 
 
 @router.get("/ahp-criteria")
@@ -150,16 +141,13 @@ def get_recommendation(body: RecommendationRequest, current_user: AuthUser):
     """Faza 37 — Full bid recommendation engine (GO/NO-GO)."""
     from ..analytics import generate_recommendation
 
-    # Optionally fetch red flags from DB if tender_id given
-    red_flags = []
+    red_flags: list[dict] = []
     if body.tender_id:
         try:
-            from terra_db.session import get_engine
-            from sqlalchemy import text as sql_text
             engine = get_engine()
             with engine.connect() as conn:
                 risks = conn.execute(
-                    sql_text("""
+                    text("""
                         SELECT kind, severity, message FROM discrepancy
                         WHERE tender_id = :tid ORDER BY severity
                     """),
@@ -167,7 +155,9 @@ def get_recommendation(body: RecommendationRequest, current_user: AuthUser):
                 ).fetchall()
                 red_flags = [{"message": r.message, "severity": r.severity} for r in risks]
         except Exception:
-            pass
+            logger.warning(
+                "Could not fetch red_flags for tender_id=%s", body.tender_id, exc_info=True
+            )
 
     return generate_recommendation(
         cost_estimate=body.cost_estimate,
@@ -181,75 +171,98 @@ def get_recommendation(body: RecommendationRequest, current_user: AuthUser):
 
 
 @router.get("/dashboard")
-def get_analytics_dashboard(
-    current_user: AuthUser,
-    db=Depends(get_db),
-):
-    """Faza 40 — Analytics dashboard KPIs."""
+def get_analytics_dashboard(current_user: AuthUser):
+    """Faza 40 — Analytics dashboard KPIs (tenant-scoped)."""
     org_id = current_user.org_id
+    if not org_id:
+        raise HTTPException(
+            status_code=403,
+            detail={"error": "no_org", "message": "Brak org_id"},
+        )
 
-    # Fallback to tenant data if no org_id
+    engine = get_engine()
     try:
-        # Pipeline value (sum of value_pln for active tenders)
-        pipeline_stats = db.execute(
-            text("""
-                SELECT
-                    COUNT(*) as active_bids,
-                    COALESCE(SUM(CAST(t.value_pln AS NUMERIC)), 0) as pipeline_value
-                FROM tender t
-                JOIN tenant tn ON tn.id = t.tenant_id
-                WHERE t.status NOT IN ('archived', 'decided_nogo')
-            """),
-        ).fetchone()
+        with engine.connect() as conn:
+            # Pipeline value (sum of value_pln for active tenders scoped to tenant)
+            pipeline_stats = conn.execute(
+                text("""
+                    SELECT
+                        COUNT(*) AS active_bids,
+                        COALESCE(SUM(CAST(t.value_pln AS NUMERIC)), 0) AS pipeline_value
+                    FROM tender t
+                    WHERE t.tenant_id = :tid
+                      AND t.status NOT IN ('archived', 'decided_nogo')
+                """),
+                {"tid": org_id},
+            ).fetchone()
 
-        # Win rate (decided_go / (decided_go + decided_nogo))
-        decision_stats = db.execute(
-            text("""
-                SELECT
-                    COUNT(*) FILTER (WHERE status = 'decided_go') as won,
-                    COUNT(*) FILTER (WHERE status IN ('decided_go', 'decided_nogo')) as total
-                FROM tender
-            """),
-        ).fetchone()
+            # Win rate (decided_go / total decided) — tenant-scoped
+            decision_stats = conn.execute(
+                text("""
+                    SELECT
+                        COUNT(*) FILTER (WHERE status = 'decided_go')  AS won,
+                        COUNT(*) FILTER (WHERE status IN ('decided_go', 'decided_nogo')) AS total
+                    FROM tender
+                    WHERE tenant_id = :tid
+                """),
+                {"tid": org_id},
+            ).fetchone()
 
-        # Pipeline funnel
-        funnel = db.execute(
-            text("""
-                SELECT status, COUNT(*) as count
-                FROM tender
-                GROUP BY status
-                ORDER BY count DESC
-            """),
-        ).fetchall()
+            # Pipeline funnel — tenant-scoped
+            funnel = conn.execute(
+                text("""
+                    SELECT status, COUNT(*) AS count
+                    FROM tender
+                    WHERE tenant_id = :tid
+                    GROUP BY status
+                    ORDER BY count DESC
+                """),
+                {"tid": org_id},
+            ).fetchall()
 
         win_rate = 0.0
         if decision_stats and decision_stats.total > 0:
             win_rate = round(decision_stats.won / decision_stats.total * 100, 1)
 
         return {
-            "pipeline_value": float(pipeline_stats.pipeline_value) if pipeline_stats else 0,
+            "pipeline_value": float(pipeline_stats.pipeline_value) if pipeline_stats else 0.0,
             "active_bids": int(pipeline_stats.active_bids) if pipeline_stats else 0,
             "win_rate_pct": win_rate,
-            "avg_margin_pct": 12.5,  # placeholder until historical_bids populated
+            "avg_margin_pct": 12.5,  # placeholder until historical_bids table is populated
             "funnel": [{"status": r.status, "count": r.count} for r in funnel],
         }
-    except Exception as e:
+    except Exception as exc:
+        logger.error("analytics/dashboard failed for org_id=%s: %s", org_id, exc, exc_info=True)
         return {
-            "pipeline_value": 0,
+            "pipeline_value": 0.0,
             "active_bids": 0,
-            "win_rate_pct": 0,
-            "avg_margin_pct": 0,
+            "win_rate_pct": 0.0,
+            "avg_margin_pct": 0.0,
             "funnel": [],
-            "error": str(e),
+            "error": str(exc),
         }
 
 
 @router.get("/pipeline-funnel")
-def get_pipeline_funnel(current_user: AuthUser, db=Depends(get_db)):
-    """Pipeline funnel — count per status."""
-    rows = db.execute(
-        text("SELECT status, COUNT(*) as count FROM tender GROUP BY status")
-    ).fetchall()
+def get_pipeline_funnel(current_user: AuthUser):
+    """Pipeline funnel — count per status (tenant-scoped)."""
+    org_id = current_user.org_id
+    if not org_id:
+        raise HTTPException(
+            status_code=403,
+            detail={"error": "no_org", "message": "Brak org_id"},
+        )
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(
+            text("""
+                SELECT status, COUNT(*) AS count
+                FROM tender
+                WHERE tenant_id = :tid
+                GROUP BY status
+            """),
+            {"tid": org_id},
+        ).fetchall()
     return {"funnel": [{"status": r.status, "count": r.count} for r in rows]}
 
 
@@ -265,17 +278,15 @@ async def analyze_swz(body: AnalyzeSWZRequest, current_user: AuthUser):
     else:
         result = extract_risks_from_text(body.text)
 
-    # If tender_id given, persist red flags to discrepancy table
+    # Persist red flags to discrepancy table when tender_id is provided
     if body.tender_id and result.get("red_flags"):
         try:
-            from terra_db.session import get_engine
-            from sqlalchemy import text as sql_text
             engine = get_engine()
+            severity_map = {"high": "block", "medium": "warn", "low": "info"}
             with engine.connect() as conn:
                 for flag in result["red_flags"][:10]:
-                    severity_map = {"high": "block", "medium": "warn", "low": "info"}
                     conn.execute(
-                        sql_text("""
+                        text("""
                             INSERT INTO discrepancy (tenant_id, tender_id, kind, severity, message, provenance)
                             SELECT t.tenant_id, :tid, 'swz_risk', :sev, :msg, :prov::jsonb
                             FROM tender t WHERE t.id = :tid
@@ -290,6 +301,9 @@ async def analyze_swz(body: AnalyzeSWZRequest, current_user: AuthUser):
                     )
                 conn.commit()
         except Exception:
-            pass  # Don't fail the request if DB write fails
+            # Non-fatal: log but don't fail the response
+            logger.warning(
+                "Failed to persist SWZ red_flags for tender_id=%s", body.tender_id, exc_info=True
+            )
 
     return result

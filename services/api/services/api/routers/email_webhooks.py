@@ -3,8 +3,6 @@ Faza 50 — Webhook System: outgoing webhooks przy zmianie statusu.
 """
 from __future__ import annotations
 
-import sys
-sys.path.insert(0, "/home/ubuntu/terra-os/packages/vendor")
 
 import hashlib
 import hmac

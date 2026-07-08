@@ -1,8 +1,6 @@
 """Faza 45 — Excel Import/Export: upload XLSX do tenderów, eksport pipeline."""
 from __future__ import annotations
 
-import sys
-sys.path.insert(0, "/home/ubuntu/terra-os/packages/vendor")
 
 import io
 import json

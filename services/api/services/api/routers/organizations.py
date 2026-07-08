@@ -13,8 +13,6 @@ Endpoints:
 """
 from __future__ import annotations
 
-import sys
-sys.path.insert(0, "/home/ubuntu/terra-os/packages/vendor")
 
 import json
 import logging
@@ -25,11 +23,10 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr, field_validator
 from sqlalchemy import text
-from sqlalchemy.orm import Session
 
 from ..auth.deps import AuthUser
 from ..services.email_service import send_invite_email
-from terra_db.session import get_session
+from terra_db.session import get_engine
 
 logger = logging.getLogger(__name__)
 
@@ -37,15 +34,13 @@ router = APIRouter(prefix="/api/v2/organizations", tags=["organizations"])
 
 
 def get_db():
-    SessionLocal = get_session()
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    engine = get_engine()
+    with engine.connect() as conn:
+        yield conn
+        conn.commit()
 
 
-DB = Annotated[Session, Depends(get_db)]
+DB = Annotated[Any, Depends(get_db)]
 
 VALID_ROLES = {"owner", "admin", "estimator", "viewer"}
 
@@ -59,7 +54,7 @@ def _require_org(user: Any) -> str:
     return user.org_id
 
 
-def _get_org(db: Session, org_id: str) -> dict:
+def _get_org(db: Any, org_id: str) -> dict:
     row = db.execute(
         text("SELECT id, name, nip, plan, settings, created_at FROM organizations WHERE id = :oid"),
         {"oid": org_id},

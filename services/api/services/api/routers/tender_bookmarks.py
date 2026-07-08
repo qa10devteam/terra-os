@@ -24,10 +24,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import text
-from sqlalchemy.orm import Session
 
 from ..auth.deps import AuthUser
-from terra_db.session import get_session
+from terra_db.session import get_engine
 
 logger = logging.getLogger(__name__)
 
@@ -38,15 +37,13 @@ VALID_SORT = {"priority", "created_at", "updated_at", "due_date", "ht_date"}
 
 
 def get_db():
-    SessionLocal = get_session()
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    engine = get_engine()
+    with engine.connect() as conn:
+        yield conn
+        conn.commit()
 
 
-DB = Annotated[Session, Depends(get_db)]
+DB = Annotated[Any, Depends(get_db)]
 
 
 def _require_org(user: Any) -> str:

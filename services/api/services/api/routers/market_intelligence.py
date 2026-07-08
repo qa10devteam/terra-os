@@ -19,30 +19,16 @@ Endpoints:
 from __future__ import annotations
 
 import logging
-from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import text
-from sqlalchemy.orm import Session
 
 from ..auth.deps import AuthUser
-from terra_db.session import get_session
+from terra_db.session import get_engine
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v2/intelligence", tags=["market-intelligence"])
-
-
-def get_db():
-    SessionLocal = get_session()
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-DB = Annotated[Session, Depends(get_db)]
 
 
 # ─── Benchmark cen ────────────────────────────────────────────────────────────
@@ -50,7 +36,6 @@ DB = Annotated[Session, Depends(get_db)]
 @router.get("/benchmark", summary="Benchmark cen przetargów per CPV/region/kwartał")
 def benchmark(
     user: AuthUser,
-    db: DB,
     cpv_prefix: str = Query(..., min_length=2, description="CPV prefix np. '4523' lub '45'"),
     province: str | None = Query(None, description="Kod NUTS województwa np. 'PL22'"),
     quarters: int = Query(8, ge=1, le=20, description="Ile ostatnich kwartałów"),
@@ -69,25 +54,27 @@ def benchmark(
 
     where = " AND ".join(conditions)
 
-    rows = db.execute(text(f"""
-        SELECT left(cpv_code, 5) AS cpv5, province,
-               date_trunc('quarter', date::timestamp)::date AS quarter,
-               count(*) AS n_tenders,
-               round(avg(estimated_value)::numeric) AS avg_value,
-               round(percentile_cont(0.5) WITHIN GROUP (ORDER BY estimated_value)::numeric) AS median_value,
-               round(min(estimated_value)::numeric) AS min_value,
-               round(max(estimated_value)::numeric) AS max_value,
-               round(avg(offers_count)::numeric, 1) AS avg_competition,
-               count(*) FILTER (WHERE procedure_result = 'zawarcieUmowy') AS n_won
-        FROM historical_tenders
-        WHERE {where}
-          AND estimated_value IS NOT NULL AND estimated_value > 0
-          AND date IS NOT NULL
-          AND date >= (SELECT max(date) FROM historical_tenders) - (:quarters * INTERVAL '3 months')
-        GROUP BY 1, 2, 3
-        ORDER BY 3 DESC, 1
-        LIMIT 200
-    """), params).mappings().all()
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(text(f"""
+            SELECT left(cpv_code, 5) AS cpv5, province,
+                   date_trunc('quarter', date::timestamp)::date AS quarter,
+                   count(*) AS n_tenders,
+                   round(avg(estimated_value)::numeric) AS avg_value,
+                   round(percentile_cont(0.5) WITHIN GROUP (ORDER BY estimated_value)::numeric) AS median_value,
+                   round(min(estimated_value)::numeric) AS min_value,
+                   round(max(estimated_value)::numeric) AS max_value,
+                   round(avg(offers_count)::numeric, 1) AS avg_competition,
+                   count(*) FILTER (WHERE procedure_result = 'zawarcieUmowy') AS n_won
+            FROM historical_tenders
+            WHERE {where}
+              AND estimated_value IS NOT NULL AND estimated_value > 0
+              AND date IS NOT NULL
+              AND date >= (SELECT max(date) FROM historical_tenders) - (:quarters * INTERVAL '3 months')
+            GROUP BY 1, 2, 3
+            ORDER BY 3 DESC, 1
+            LIMIT 200
+        """), params).mappings().all()
 
     if not rows:
         return {"cpv_prefix": cpv_prefix, "province": province, "data": [], "total": 0}
@@ -105,7 +92,6 @@ def benchmark(
 @router.get("/trends", summary="Trendy rynkowe kwartalnie (mv_market_trend)")
 def market_trends(
     user: AuthUser,
-    db: DB,
     cpv_prefix: str | None = Query(None, description="CPV prefix np. '45'"),
     province: str | None = Query(None),
     quarters: int = Query(12, ge=1, le=24),
@@ -125,19 +111,21 @@ def market_trends(
 
     where = " AND ".join(conditions)
 
-    rows = db.execute(text(f"""
-        SELECT cpv3, quarter,
-               sum(n_tenders)::int AS n_tenders,
-               round(sum(total_value_mln) * 1000000) AS total_value,
-               round((sum(total_value_mln) * 1000000 / NULLIF(sum(n_tenders), 0))::numeric) AS avg_value,
-               round(avg(avg_offers)::numeric, 1) AS avg_competition,
-               sum(n_completed)::int AS n_completed
-        FROM mv_market_trend
-        WHERE {where}
-        GROUP BY cpv3, quarter
-        ORDER BY quarter DESC, cpv3
-        LIMIT 300
-    """), params).mappings().all()
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(text(f"""
+            SELECT cpv3, quarter,
+                   sum(n_tenders)::int AS n_tenders,
+                   round(sum(total_value_mln) * 1000000) AS total_value,
+                   round((sum(total_value_mln) * 1000000 / NULLIF(sum(n_tenders), 0))::numeric) AS avg_value,
+                   round(avg(avg_offers)::numeric, 1) AS avg_competition,
+                   sum(n_completed)::int AS n_completed
+            FROM mv_market_trend
+            WHERE {where}
+            GROUP BY cpv3, quarter
+            ORDER BY quarter DESC, cpv3
+            LIMIT 300
+        """), params).mappings().all()
 
     return {"data": [dict(r) for r in rows], "total": len(rows)}
 
@@ -147,7 +135,6 @@ def market_trends(
 @router.get("/competitors/top", summary="Top wykonawcy per CPV/region (mv_contractor_ranking)")
 def top_competitors(
     user: AuthUser,
-    db: DB,
     cpv_prefix: str | None = Query(None),
     province: str | None = Query(None),
     limit: int = Query(20, le=100),
@@ -165,19 +152,22 @@ def top_competitors(
         params["province"] = province
 
     where = " AND ".join(conditions)
-    rows = db.execute(text(f"""
-        SELECT contractor_nip AS nip, contractor_name,
-               sum(won_tenders)::int AS wins,
-               round(sum(won_value_mln) * 1000000) AS total_value,
-               round((sum(won_value_mln) * 1000000 / NULLIF(sum(won_tenders), 0))::numeric) AS avg_value,
-               round(avg(avg_competition)::numeric, 1) AS avg_competition,
-               round(avg(win_rate_pct)::numeric, 1) AS win_rate_pct
-        FROM mv_contractor_ranking
-        WHERE {where}
-        GROUP BY contractor_nip, contractor_name
-        ORDER BY wins DESC
-        LIMIT :limit
-    """), params).mappings().all()
+
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(text(f"""
+            SELECT contractor_nip AS nip, contractor_name,
+                   sum(won_tenders)::int AS wins,
+                   round(sum(won_value_mln) * 1000000) AS total_value,
+                   round((sum(won_value_mln) * 1000000 / NULLIF(sum(won_tenders), 0))::numeric) AS avg_value,
+                   round(avg(avg_competition)::numeric, 1) AS avg_competition,
+                   round(avg(win_rate_pct)::numeric, 1) AS win_rate_pct
+            FROM mv_contractor_ranking
+            WHERE {where}
+            GROUP BY contractor_nip, contractor_name
+            ORDER BY wins DESC
+            LIMIT :limit
+        """), params).mappings().all()
 
     return {"data": [dict(r) for r in rows], "total": len(rows)}
 
@@ -187,7 +177,6 @@ def top_competitors(
 @router.get("/buyers/top", summary="Top zamawiający per CPV/region (mv_buyer_ranking)")
 def top_buyers(
     user: AuthUser,
-    db: DB,
     cpv_prefix: str | None = Query(None),
     province: str | None = Query(None),
     limit: int = Query(20, le=100),
@@ -200,17 +189,20 @@ def top_buyers(
         params["province"] = province
 
     where = " AND ".join(conditions)
-    rows = db.execute(text(f"""
-        SELECT buyer_nip, buyer AS buyer_name, province,
-               total_tenders AS n_tenders,
-               round(total_value_mln * 1000000) AS total_value,
-               round(avg_value_k * 1000) AS avg_value,
-               cpv_diversity
-        FROM mv_buyer_ranking
-        WHERE {where}
-        ORDER BY total_value_mln DESC NULLS LAST
-        LIMIT :limit
-    """), params).mappings().all()
+
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(text(f"""
+            SELECT buyer_nip, buyer AS buyer_name, province,
+                   total_tenders AS n_tenders,
+                   round(total_value_mln * 1000000) AS total_value,
+                   round(avg_value_k * 1000) AS avg_value,
+                   cpv_diversity
+            FROM mv_buyer_ranking
+            WHERE {where}
+            ORDER BY total_value_mln DESC NULLS LAST
+            LIMIT :limit
+        """), params).mappings().all()
 
     return {"data": [dict(r) for r in rows], "total": len(rows)}
 
@@ -220,7 +212,6 @@ def top_buyers(
 @router.get("/prices/icb", summary="Ceny Intercenbud per kategoria/kwartał")
 def icb_prices(
     user: AuthUser,
-    db: DB,
     category: str | None = Query(None, description="np. beton_cement, robocizna"),
     typ_rms: str | None = Query(None, description="R=robocizna, M=materiał, S=sprzęt"),
     year: int | None = Query(None, ge=2010, le=2030),
@@ -250,14 +241,17 @@ def icb_prices(
         params["symbol"] = f"{symbol}%"
 
     where = " AND ".join(conditions)
-    rows = db.execute(text(f"""
-        SELECT symbol, indeks_eto, nazwa, typ_rms, category,
-               cena_netto, cena_narzut, kwartalrok, kwartalnr
-        FROM icb_ceny_srednie
-        WHERE {where}
-        ORDER BY kwartalrok DESC, kwartalnr DESC, symbol
-        LIMIT :limit
-    """), params).mappings().all()
+
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(text(f"""
+            SELECT symbol, indeks_eto, nazwa, typ_rms, category,
+                   cena_netto, cena_narzut, kwartalrok, kwartalnr
+            FROM icb_ceny_srednie
+            WHERE {where}
+            ORDER BY kwartalrok DESC, kwartalnr DESC, symbol
+            LIMIT :limit
+        """), params).mappings().all()
 
     return {"data": [dict(r) for r in rows], "total": len(rows)}
 
@@ -267,7 +261,6 @@ def icb_prices(
 @router.get("/prices/inflation", summary="Indeks inflacji cen materiałów/robocizny ICB")
 def price_inflation(
     user: AuthUser,
-    db: DB,
     category: str | None = Query(None),
     typ_rms: str | None = Query(None, description="R|M|S"),
 ):
@@ -286,15 +279,18 @@ def price_inflation(
         params["typ_rms"] = typ_rms.upper()
 
     where = " AND ".join(conditions)
-    rows = db.execute(text(f"""
-        SELECT yr, q, typ_rms, category,
-               avg_price, avg_price_markup, n_items,
-               yoy_pct, qoq_pct
-        FROM mv_labor_inflation_index
-        WHERE {where}
-        ORDER BY yr DESC, q DESC, typ_rms, category
-        LIMIT 500
-    """), params).mappings().all()
+
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(text(f"""
+            SELECT yr, q, typ_rms, category,
+                   avg_price, avg_price_markup, n_items,
+                   yoy_pct, qoq_pct
+            FROM mv_labor_inflation_index
+            WHERE {where}
+            ORDER BY yr DESC, q DESC, typ_rms, category
+            LIMIT 500
+        """), params).mappings().all()
 
     return {"data": [dict(r) for r in rows], "total": len(rows)}
 
@@ -304,7 +300,6 @@ def price_inflation(
 @router.get("/regional", summary="Mapa cen regionalnych per CPV/województwo (ICB koeficjent)")
 def regional_prices(
     user: AuthUser,
-    db: DB,
     cpv_prefix: str | None = Query(None, min_length=2),
     quarter: str | None = Query(None, description="Kwartał ISO np. '2025-01-01'"),
     nuts2_code: str | None = Query(None, description="Kod NUTS2 np. 'PL22'"),
@@ -323,14 +318,17 @@ def regional_prices(
         params["nuts2_code"] = nuts2_code
 
     where = " AND ".join(conditions)
-    rows = db.execute(text(f"""
-        SELECT nuts2_code, voivodeship_pl, cpv5, quarter,
-               n_tenders, avg_value, median_value, avg_competition, icb_labor_coeff
-        FROM mv_regional_price_level
-        WHERE {where}
-        ORDER BY quarter DESC, nuts2_code, cpv5
-        LIMIT 500
-    """), params).mappings().all()
+
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(text(f"""
+            SELECT nuts2_code, voivodeship_pl, cpv5, quarter,
+                   n_tenders, avg_value, median_value, avg_competition, icb_labor_coeff
+            FROM mv_regional_price_level
+            WHERE {where}
+            ORDER BY quarter DESC, nuts2_code, cpv5
+            LIMIT 500
+        """), params).mappings().all()
 
     return {"data": [dict(r) for r in rows], "total": len(rows)}
 
@@ -340,7 +338,6 @@ def regional_prices(
 @router.get("/seasonality", summary="Sezonowość przetargów per miesiąc roku")
 def seasonality(
     user: AuthUser,
-    db: DB,
     cpv_prefix: str | None = Query(None),
     province: str | None = Query(None),
 ):
@@ -357,16 +354,19 @@ def seasonality(
         params["province"] = province
 
     where = " AND ".join(conditions)
-    rows = db.execute(text(f"""
-        SELECT EXTRACT(MONTH FROM date::date)::int AS month,
-               count(*) AS n_tenders,
-               round(avg(estimated_value)::numeric) AS avg_value,
-               round(sum(estimated_value)::numeric) AS total_value,
-               round(avg(offers_count)::numeric, 1) AS avg_competition
-        FROM historical_tenders
-        WHERE {where}
-        GROUP BY 1 ORDER BY 1
-    """), params).mappings().all()
+
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(text(f"""
+            SELECT EXTRACT(MONTH FROM date::date)::int AS month,
+                   count(*) AS n_tenders,
+                   round(avg(estimated_value)::numeric) AS avg_value,
+                   round(sum(estimated_value)::numeric) AS total_value,
+                   round(avg(offers_count)::numeric, 1) AS avg_competition
+            FROM historical_tenders
+            WHERE {where}
+            GROUP BY 1 ORDER BY 1
+        """), params).mappings().all()
 
     return {"data": [dict(r) for r in rows]}
 
@@ -376,7 +376,6 @@ def seasonality(
 @router.get("/fts", summary="Full-text search w 1.4M przetargów (GIN index)")
 def fts_search(
     user: AuthUser,
-    db: DB,
     q: str = Query(..., min_length=2, description="Zapytanie FTS np. 'remont drogi'"),
     cpv_prefix: str | None = Query(None),
     province: str | None = Query(None),
@@ -408,20 +407,22 @@ def fts_search(
 
     where = " AND ".join(conditions)
 
-    rows = db.execute(text(f"""
-        SELECT id, title, buyer, buyer_nip, province, cpv_code,
-               estimated_value, date, notice_type, procedure_result,
-               offers_count, contractor_name,
-               ts_rank(title_tsv, plainto_tsquery('simple', :q)) AS rank
-        FROM historical_tenders
-        WHERE {where}
-        ORDER BY rank DESC, date DESC
-        LIMIT :limit OFFSET :offset
-    """), params).mappings().all()
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(text(f"""
+            SELECT id, title, buyer, buyer_nip, province, cpv_code,
+                   estimated_value, date, notice_type, procedure_result,
+                   offers_count, contractor_name,
+                   ts_rank(title_tsv, plainto_tsquery('simple', :q)) AS rank
+            FROM historical_tenders
+            WHERE {where}
+            ORDER BY rank DESC, date DESC
+            LIMIT :limit OFFSET :offset
+        """), params).mappings().all()
 
-    total = db.execute(text(
-        f"SELECT count(*) FROM historical_tenders WHERE {where}"
-    ), params).scalar()
+        total = conn.execute(text(
+            f"SELECT count(*) FROM historical_tenders WHERE {where}"
+        ), params).scalar()
 
     return {
         "query": q,
@@ -437,7 +438,6 @@ def fts_search(
 @router.get("/summary", summary="Agregowane KPI rynkowe dla dashboardu")
 def market_summary(
     user: AuthUser,
-    db: DB,
     cpv_prefix: str | None = Query(None, description="CPV prefix np. '45'"),
     province: str | None = Query(None),
 ):
@@ -455,33 +455,35 @@ def market_summary(
 
     where = " AND ".join(conditions)
 
-    kpi = db.execute(text(f"""
-        SELECT
-            count(*) AS n_tenders,
-            count(*) FILTER (WHERE estimated_value IS NOT NULL) AS n_with_value,
-            round(sum(estimated_value)::numeric / 1e6, 1) AS total_value_mln,
-            round(avg(estimated_value)::numeric) AS avg_value,
-            round(avg(offers_count)::numeric, 1) AS avg_competition,
-            count(DISTINCT buyer_nip) AS n_buyers,
-            count(DISTINCT contractor_national_id)
-              FILTER (WHERE procedure_result = 'zawarcieUmowy') AS n_contractors
-        FROM historical_tenders
-        WHERE {where}
-    """), params).mappings().one()
+    engine = get_engine()
+    with engine.connect() as conn:
+        kpi = conn.execute(text(f"""
+            SELECT
+                count(*) AS n_tenders,
+                count(*) FILTER (WHERE estimated_value IS NOT NULL) AS n_with_value,
+                round(sum(estimated_value)::numeric / 1e6, 1) AS total_value_mln,
+                round(avg(estimated_value)::numeric) AS avg_value,
+                round(avg(offers_count)::numeric, 1) AS avg_competition,
+                count(DISTINCT buyer_nip) AS n_buyers,
+                count(DISTINCT contractor_national_id)
+                  FILTER (WHERE procedure_result = 'zawarcieUmowy') AS n_contractors
+            FROM historical_tenders
+            WHERE {where}
+        """), params).mappings().one()
 
-    top_cpv = db.execute(text(f"""
-        SELECT left(cpv_code, 2) AS cpv2, count(*) AS n
-        FROM historical_tenders
-        WHERE {where} AND cpv_code IS NOT NULL
-        GROUP BY 1 ORDER BY 2 DESC LIMIT 5
-    """), params).mappings().all()
+        top_cpv = conn.execute(text(f"""
+            SELECT left(cpv_code, 2) AS cpv2, count(*) AS n
+            FROM historical_tenders
+            WHERE {where} AND cpv_code IS NOT NULL
+            GROUP BY 1 ORDER BY 2 DESC LIMIT 5
+        """), params).mappings().all()
 
-    top_province = db.execute(text(f"""
-        SELECT province, count(*) AS n
-        FROM historical_tenders
-        WHERE {where} AND province IS NOT NULL
-        GROUP BY 1 ORDER BY 2 DESC LIMIT 5
-    """), params).mappings().all()
+        top_province = conn.execute(text(f"""
+            SELECT province, count(*) AS n
+            FROM historical_tenders
+            WHERE {where} AND province IS NOT NULL
+            GROUP BY 1 ORDER BY 2 DESC LIMIT 5
+        """), params).mappings().all()
 
     return {
         "kpi": dict(kpi),
@@ -496,15 +498,12 @@ def market_summary(
 @router.get("/sekocenbud", summary="Wyszukiwanie w bazie SEKOCENBUD (23 725 pozycji)")
 def sekocenbud_search(
     user: AuthUser,
-    db: DB,
     q: str = Query("", description="Fraza wyszukiwania w opisie lub symbolu"),
     chapter: str | None = Query(None, description="Filtr po chapter_name"),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
 ) -> dict:
     """Full-text search w bazie SEKOCENBUD. Zwraca pozycje z ceną, jednostką i symbolem."""
-    from sqlalchemy.sql import text
-
     params: dict = {"limit": limit, "offset": offset}
     where_parts = []
 
@@ -517,17 +516,19 @@ def sekocenbud_search(
 
     where = ("WHERE " + " AND ".join(where_parts)) if where_parts else ""
 
-    rows = db.execute(text(f"""
-        SELECT id, symbol, katalog_code, chapter_name, opis, jm, cena, rg, m, s
-        FROM sekocenbud_items
-        {where}
-        ORDER BY symbol
-        LIMIT :limit OFFSET :offset
-    """), params).mappings().all()
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(text(f"""
+            SELECT id, symbol, katalog_code, chapter_name, opis, jm, cena, rg, m, s
+            FROM sekocenbud_items
+            {where}
+            ORDER BY symbol
+            LIMIT :limit OFFSET :offset
+        """), params).mappings().all()
 
-    total = db.execute(text(f"""
-        SELECT COUNT(*) FROM sekocenbud_items {where}
-    """), params).scalar()
+        total = conn.execute(text(f"""
+            SELECT COUNT(*) FROM sekocenbud_items {where}
+        """), params).scalar()
 
     return {
         "total": total,

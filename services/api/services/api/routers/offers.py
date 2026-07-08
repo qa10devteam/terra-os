@@ -1,16 +1,18 @@
 """Faza 7 — Oferty: pełny CRUD + generowanie PDF (reportlab).
 
 Endpoints:
-  GET    /api/v1/offers                   → {total, items}
+  GET    /api/v1/offers                   → {next_cursor, items}
   POST   /api/v1/offers                   → nowa oferta
   GET    /api/v1/offers/{id}              → szczegóły oferty
-  PATCH  /api/v1/offers/{id}              → aktualizacja
-  DELETE /api/v1/offers/{id}              → usunięcie
+  PATCH  /api/v1/offers/{id}             → aktualizacja
+  DELETE /api/v1/offers/{id}             → usunięcie
   GET    /api/v1/offers/{id}/pdf          → StreamingResponse (application/pdf)
 """
 from __future__ import annotations
 
+import base64
 import io
+import json
 import uuid
 from datetime import date, datetime
 from typing import Any, Optional
@@ -42,6 +44,7 @@ class OfferCreate(BaseModel):
     price_gross_pln: Optional[float] = None
     vat_pct: float = 23.0
     metadata: dict = {}
+    source: Optional[str] = None  # bzp / ted / bip
 
 
 class OfferUpdate(BaseModel):
@@ -59,11 +62,13 @@ class OfferUpdate(BaseModel):
     price_gross_pln: Optional[float] = None
     vat_pct: Optional[float] = None
     metadata: Optional[dict] = None
+    source: Optional[str] = None
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
 VALID_STATUSES = {"draft", "ready", "submitted", "won", "lost"}
+VALID_SOURCES = {"bzp", "ted", "bip"}
 
 
 def _row_to_dict(row: Any) -> dict:
@@ -74,6 +79,7 @@ def _row_to_dict(row: Any) -> dict:
         "estimate_id": str(row.estimate_id) if row.estimate_id else None,
         "title": row.title,
         "status": row.status,
+        "source": row.source if hasattr(row, "source") else None,
         "contractor_name": row.contractor_name,
         "contractor_nip": row.contractor_nip,
         "contractor_address": row.contractor_address,
@@ -89,6 +95,24 @@ def _row_to_dict(row: Any) -> dict:
     }
 
 
+# ─── Cursor pagination helpers ────────────────────────────────────────────────
+
+def _encode_cursor(created_at: Any, row_id: Any) -> str:
+    """Encode (created_at, id) into a base64 cursor string."""
+    ts = created_at.isoformat() if hasattr(created_at, "isoformat") else str(created_at)
+    payload = json.dumps({"created_at": ts, "id": str(row_id)})
+    return base64.urlsafe_b64encode(payload.encode()).decode()
+
+
+def _decode_cursor(cursor: str) -> tuple[str, str]:
+    """Decode cursor string → (created_at_iso, id_str). Raises HTTPException on bad input."""
+    try:
+        payload = json.loads(base64.urlsafe_b64decode(cursor.encode()).decode())
+        return payload["created_at"], payload["id"]
+    except Exception:
+        raise HTTPException(status_code=400, detail={"error": "invalid_cursor", "message": "Nieprawidłowy cursor paginacji"})
+
+
 # ─── CRUD endpoints ───────────────────────────────────────────────────────────
 
 @router.get("")
@@ -96,16 +120,22 @@ def list_offers(
     user: AuthUser,
     status: Optional[str] = Query(None, description="Filtr statusu (draft/ready/submitted/won/lost)"),
     tender_id: Optional[str] = Query(None),
+    source: Optional[str] = Query(None, description="Źródło przetargu: bzp / ted / bip"),
     limit: int = Query(50, ge=1, le=200),
-    offset: int = Query(0, ge=0),
+    cursor: Optional[str] = Query(None, description="Cursor paginacji (next_cursor z poprzedniego zapytania)"),
 ) -> dict:
-    """Lista ofert z opcjonalnym filtrowaniem."""
+    """Lista ofert z cursor paginacją i opcjonalnym filtrowaniem."""
     tenant_id = user.org_id
     if not tenant_id:
-        raise HTTPException(status_code=400, detail="Brak tenant_id w tokenie")
+        raise HTTPException(status_code=403, detail={"error": "no_tenant", "message": "Brak tenant_id w tokenie"})
+
+    if status and status not in VALID_STATUSES:
+        raise HTTPException(status_code=422, detail={"error": "invalid_status", "message": f"Dozwolone statusy: {sorted(VALID_STATUSES)}"})
+    if source and source not in VALID_SOURCES:
+        raise HTTPException(status_code=422, detail={"error": "invalid_source", "message": f"Dozwolone źródła: {sorted(VALID_SOURCES)}"})
 
     conditions = ["tenant_id = :tid"]
-    params: dict[str, Any] = {"tid": tenant_id, "limit": limit, "offset": offset}
+    params: dict[str, Any] = {"tid": tenant_id, "limit": limit}
 
     if status:
         conditions.append("status = :status")
@@ -113,23 +143,37 @@ def list_offers(
     if tender_id:
         conditions.append("tender_id = :tender_id")
         params["tender_id"] = tender_id
+    if source:
+        conditions.append("source = :source")
+        params["source"] = source
+
+    # Cursor-based pagination: rows strictly before (created_at, id) tuple
+    if cursor:
+        cur_ts, cur_id = _decode_cursor(cursor)
+        conditions.append(
+            "(created_at < :cur_ts OR (created_at = :cur_ts AND id < :cur_id::uuid))"
+        )
+        params["cur_ts"] = cur_ts
+        params["cur_id"] = cur_id
 
     where = " AND ".join(conditions)
 
     engine = get_engine()
     with engine.connect() as conn:
-        total_row = conn.execute(
-            sa.text(f"SELECT COUNT(*) FROM offers WHERE {where}"),
-            params,
-        ).scalar()
         rows = conn.execute(
             sa.text(
-                f"SELECT * FROM offers WHERE {where} ORDER BY created_at DESC LIMIT :limit OFFSET :offset"
+                f"SELECT * FROM offers WHERE {where} ORDER BY created_at DESC, id DESC LIMIT :limit"
             ),
             params,
         ).fetchall()
 
-    return {"total": total_row or 0, "items": [_row_to_dict(r) for r in rows]}
+    items = [_row_to_dict(r) for r in rows]
+    next_cursor = None
+    if len(rows) == limit:
+        last = rows[-1]
+        next_cursor = _encode_cursor(last.created_at, last.id)
+
+    return {"next_cursor": next_cursor, "items": items}
 
 
 @router.post("", status_code=201)
@@ -137,22 +181,24 @@ def create_offer(body: OfferCreate, user: AuthUser) -> dict:
     """Utwórz nową ofertę."""
     tenant_id = user.org_id
     if not tenant_id:
-        raise HTTPException(status_code=400, detail="Brak tenant_id w tokenie")
+        raise HTTPException(status_code=403, detail={"error": "no_tenant", "message": "Brak tenant_id w tokenie"})
 
     if body.status not in VALID_STATUSES:
-        raise HTTPException(status_code=422, detail=f"Nieprawidłowy status: {body.status}. Dozwolone: {VALID_STATUSES}")
+        raise HTTPException(status_code=422, detail={"error": "invalid_status", "message": f"Nieprawidłowy status: {body.status}. Dozwolone: {sorted(VALID_STATUSES)}"})
+    if body.source and body.source not in VALID_SOURCES:
+        raise HTTPException(status_code=422, detail={"error": "invalid_source", "message": f"Nieprawidłowe źródło: {body.source}. Dozwolone: {sorted(VALID_SOURCES)}"})
 
     engine = get_engine()
     with engine.begin() as conn:
         row = conn.execute(
             sa.text("""
                 INSERT INTO offers (
-                    tenant_id, tender_id, estimate_id, title, status,
+                    tenant_id, tender_id, estimate_id, title, status, source,
                     contractor_name, contractor_nip, contractor_address,
                     delivery_days, warranty_months, payment_terms, notes,
                     price_gross_pln, vat_pct, metadata
                 ) VALUES (
-                    :tenant_id, :tender_id, :estimate_id, :title, :status,
+                    :tenant_id, :tender_id, :estimate_id, :title, :status, :source,
                     :contractor_name, :contractor_nip, :contractor_address,
                     :delivery_days, :warranty_months, :payment_terms, :notes,
                     :price_gross_pln, :vat_pct, CAST(:metadata AS jsonb)
@@ -165,6 +211,7 @@ def create_offer(body: OfferCreate, user: AuthUser) -> dict:
                 "estimate_id": body.estimate_id,
                 "title": body.title,
                 "status": body.status,
+                "source": body.source,
                 "contractor_name": body.contractor_name,
                 "contractor_nip": body.contractor_nip,
                 "contractor_address": body.contractor_address,
@@ -174,7 +221,7 @@ def create_offer(body: OfferCreate, user: AuthUser) -> dict:
                 "notes": body.notes,
                 "price_gross_pln": body.price_gross_pln,
                 "vat_pct": body.vat_pct,
-                "metadata": __import__("json").dumps(body.metadata),
+                "metadata": json.dumps(body.metadata),
             },
         ).fetchone()
 
@@ -186,7 +233,7 @@ def get_offer(offer_id: str, user: AuthUser) -> dict:
     """Pobierz szczegóły oferty."""
     tenant_id = user.org_id
     if not tenant_id:
-        raise HTTPException(status_code=400, detail="Brak tenant_id w tokenie")
+        raise HTTPException(status_code=403, detail={"error": "no_tenant", "message": "Brak tenant_id w tokenie"})
 
     engine = get_engine()
     with engine.connect() as conn:
@@ -196,7 +243,7 @@ def get_offer(offer_id: str, user: AuthUser) -> dict:
         ).fetchone()
 
     if not row:
-        raise HTTPException(status_code=404, detail="Oferta nie znaleziona")
+        raise HTTPException(status_code=404, detail={"error": "not_found", "message": "Oferta nie znaleziona"})
 
     return _row_to_dict(row)
 
@@ -206,14 +253,16 @@ def update_offer(offer_id: str, body: OfferUpdate, user: AuthUser) -> dict:
     """Zaktualizuj ofertę (częściowa aktualizacja)."""
     tenant_id = user.org_id
     if not tenant_id:
-        raise HTTPException(status_code=400, detail="Brak tenant_id w tokenie")
+        raise HTTPException(status_code=403, detail={"error": "no_tenant", "message": "Brak tenant_id w tokenie"})
 
     if body.status and body.status not in VALID_STATUSES:
-        raise HTTPException(status_code=422, detail=f"Nieprawidłowy status: {body.status}")
+        raise HTTPException(status_code=422, detail={"error": "invalid_status", "message": f"Nieprawidłowy status: {body.status}"})
+    if body.source and body.source not in VALID_SOURCES:
+        raise HTTPException(status_code=422, detail={"error": "invalid_source", "message": f"Nieprawidłowe źródło: {body.source}"})
 
     updates = body.model_dump(exclude_none=True)
     if not updates:
-        raise HTTPException(status_code=422, detail="Brak pól do aktualizacji")
+        raise HTTPException(status_code=422, detail={"error": "no_fields", "message": "Brak pól do aktualizacji"})
 
     set_parts = []
     params: dict[str, Any] = {"id": offer_id, "tid": tenant_id}
@@ -221,7 +270,7 @@ def update_offer(offer_id: str, body: OfferUpdate, user: AuthUser) -> dict:
     for key, val in updates.items():
         if key == "metadata":
             set_parts.append(f"{key} = CAST(:{key} AS jsonb)")
-            params[key] = __import__("json").dumps(val)
+            params[key] = json.dumps(val)
         else:
             set_parts.append(f"{key} = :{key}")
             params[key] = val
@@ -237,7 +286,7 @@ def update_offer(offer_id: str, body: OfferUpdate, user: AuthUser) -> dict:
         ).fetchone()
 
     if not row:
-        raise HTTPException(status_code=404, detail="Oferta nie znaleziona")
+        raise HTTPException(status_code=404, detail={"error": "not_found", "message": "Oferta nie znaleziona"})
 
     return _row_to_dict(row)
 
@@ -247,7 +296,7 @@ def delete_offer(offer_id: str, user: AuthUser) -> None:
     """Usuń ofertę."""
     tenant_id = user.org_id
     if not tenant_id:
-        raise HTTPException(status_code=400, detail="Brak tenant_id w tokenie")
+        raise HTTPException(status_code=403, detail={"error": "no_tenant", "message": "Brak tenant_id w tokenie"})
 
     engine = get_engine()
     with engine.begin() as conn:
@@ -257,22 +306,28 @@ def delete_offer(offer_id: str, user: AuthUser) -> None:
         ).fetchone()
 
     if not result:
-        raise HTTPException(status_code=404, detail="Oferta nie znaleziona")
+        raise HTTPException(status_code=404, detail={"error": "not_found", "message": "Oferta nie znaleziona"})
 
 
 # ─── PDF Generation ───────────────────────────────────────────────────────────
 
 def _build_pdf(offer: dict, lines: list[dict]) -> bytes:
     """Buduje profesjonalny PDF oferty (3 strony) z reportlab."""
-    from reportlab.lib import colors
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-    from reportlab.lib.units import mm, cm
-    from reportlab.platypus import (
-        SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle,
-        PageBreak, HRFlowable,
-    )
-    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+    try:
+        from reportlab.lib import colors
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import mm, cm
+        from reportlab.platypus import (
+            SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle,
+            PageBreak, HRFlowable,
+        )
+        from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+    except ImportError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={"error": "pdf_unavailable", "message": f"Biblioteka reportlab nie jest zainstalowana: {exc}"},
+        )
 
     # ── Kolory brandowe ──────────────────────────────────────────────────────
     NAVY    = colors.HexColor("#1a1a6c")
@@ -361,11 +416,14 @@ def _build_pdf(offer: dict, lines: list[dict]) -> bytes:
         "draft": "Roboczy", "ready": "Gotowy do złożenia",
         "submitted": "Złożony", "won": "Wygrany", "lost": "Przegrany",
     }
+    source_pl = {"bzp": "BZP", "ted": "TED", "bip": "BIP"}
     info_data = [
         ["Status oferty", status_pl.get(offer.get("status", "draft"), offer.get("status", ""))],
         ["Data sporządzenia", date.today().strftime("%d.%m.%Y")],
         ["Numer oferty", str(offer["id"])[:8].upper()],
     ]
+    if offer.get("source"):
+        info_data.append(["Źródło", source_pl.get(offer["source"], offer["source"].upper())])
     if offer.get("tender_id"):
         info_data.append(["ID przetargu", str(offer["tender_id"])[:40]])
     if offer.get("price_gross_pln"):
@@ -614,7 +672,7 @@ def get_offer_pdf(offer_id: str, user: AuthUser) -> StreamingResponse:
     """Generuj PDF oferty."""
     tenant_id = user.org_id
     if not tenant_id:
-        raise HTTPException(status_code=400, detail="Brak tenant_id w tokenie")
+        raise HTTPException(status_code=403, detail={"error": "no_tenant", "message": "Brak tenant_id w tokenie"})
 
     engine = get_engine()
     with engine.connect() as conn:
@@ -624,7 +682,7 @@ def get_offer_pdf(offer_id: str, user: AuthUser) -> StreamingResponse:
         ).fetchone()
 
     if not offer_row:
-        raise HTTPException(status_code=404, detail="Oferta nie znaleziona")
+        raise HTTPException(status_code=404, detail={"error": "not_found", "message": "Oferta nie znaleziona"})
 
     offer = _row_to_dict(offer_row)
 

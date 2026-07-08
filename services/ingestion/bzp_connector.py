@@ -80,7 +80,7 @@ class BZPConnector:
         *,
         timeout: float = 30.0,
         page_size: int = 50,
-        max_pages: int = 20,
+        max_pages: int = 100,
     ) -> None:
         self._timeout = timeout
         self._page_size = page_size
@@ -100,51 +100,61 @@ class BZPConnector:
         voivodeship: str | None = None,
         order_type: str = "RC",  # RC = roboty budowlane
     ) -> list[BZPRawNotice]:
-        """Fetch raw notices from BZP API with optional filters.
+        """Fetch raw notices from BZP API.
 
-        Returns all matching notices (paginated internally).
+        BZP API does NOT support true pagination — pageNumber always returns the same set.
+        We work around this by iterating in half-day windows (AM/PM) within the date range.
+        pageSize=500 is the effective BZP max. Each half-day window returns up to 500 results.
+        Results are deduplicated by bzpNumber.
         """
-        cpv_codes = cpv_codes or EARTHWORKS_CPV  # fallback to earthworks for backward compat
-        results: list[BZPRawNotice] = []
-        page = 0
+        from datetime import timedelta
+
+        today = date.today()
+        d_from = date_from or (today - timedelta(days=7))
+        d_to = date_to or today
+
+        seen: dict[str, BZPRawNotice] = {}  # bzpNumber → notice (dedup)
+        page_size = 500  # BZP effective max (1000 breaks, 500 works)
 
         with self._get_client() as client:
-            while page < self._max_pages:
-                params = self._build_params(
-                    date_from=date_from,
-                    date_to=date_to,
-                    cpv_codes=cpv_codes,
-                    voivodeship=voivodeship,
-                    order_type=order_type,
-                    page=page,
-                    size=self._page_size,
-                )
-                try:
-                    resp = client.get(_NOTICE_EP, params=params, timeout=self._timeout)
-                    resp.raise_for_status()
-                    data = resp.json()
-                except httpx.HTTPError as exc:
-                    logger.warning("BZP API error (page=%d): %s", page, exc)
-                    break
+            current = d_from
+            while current <= d_to:
+                # Split each day into 2 windows (AM: 00-12, PM: 12-24) to stay under 500 limit
+                windows = [
+                    (f"{current}T00:00:00", f"{current}T11:59:59"),
+                    (f"{current}T12:00:00", f"{current}T23:59:59"),
+                ]
+                for win_from, win_to in windows:
+                    params: dict[str, Any] = {
+                        "pageSize": page_size,
+                        "pageNumber": 0,
+                        "NoticeType": "ContractNotice",
+                        "PublicationDateFrom": win_from,
+                        "PublicationDateTo": win_to,
+                    }
+                    try:
+                        resp = client.get(_NOTICE_EP, params=params, timeout=self._timeout)
+                        resp.raise_for_status()
+                        data = resp.json()
+                    except httpx.HTTPError as exc:
+                        logger.warning("BZP API error (%s): %s", win_from, exc)
+                        continue
 
-                notices = data if isinstance(data, list) else data.get("notices", data.get("content", []))
-                if not notices:
-                    break
+                    notices = data if isinstance(data, list) else data.get("notices", data.get("content", []))
+                    win_count = 0
+                    for n in notices:
+                        raw = BZPRawNotice(n)
+                        key = raw.get("bzpNumber") or raw.get("noticeNumber") or raw.get("id")
+                        if key and key not in seen:
+                            seen[key] = raw
+                            win_count += 1
+                    if win_count:
+                        logger.debug("BZP %s: %d new (total %d)", win_from[:10], win_count, len(seen))
 
-                results.extend(BZPRawNotice(n) for n in notices)
-                logger.debug("BZP page=%d got %d notices", page, len(notices))
+                current += timedelta(days=1)
 
-                # Check if last page
-                if isinstance(data, dict):
-                    total_pages = data.get("totalPages", data.get("total_pages", 1))
-                    if page + 1 >= int(total_pages):
-                        break
-                elif len(notices) < self._page_size:
-                    break
-
-                page += 1
-
-        logger.info("BZP fetch complete: %d raw notices", len(results))
+        results = list(seen.values())
+        logger.info("BZP fetch complete: %d unique notices over %d days", len(results), (d_to - d_from).days + 1)
         return results
 
     # ------------------------------------------------------------------ #
@@ -162,21 +172,18 @@ class BZPConnector:
         page: int,
         size: int,
     ) -> dict[str, Any]:
+        # BZP API (ezamowienia.gov.pl) expects these exact parameter names
         params: dict[str, Any] = {
-            "orderType": order_type,
-            "page": page,
-            "size": size,
-            "sort": "noticePublicationDate,desc",
+            "pageSize": size,
+            "pageNumber": page,
+            "NoticeType": "ContractNotice",
         }
         if date_from:
-            params["dateFrom"] = date_from.isoformat()
+            params["PublicationDateFrom"] = date_from.strftime("%Y-%m-%dT00:00:00")
         if date_to:
-            params["dateTo"] = date_to.isoformat()
-        if cpv_codes:
-            # API accepts comma-separated or repeated param
-            params["cpvCodes"] = ",".join(cpv_codes[:10])  # API limit
-        if voivodeship:
-            params["executionPlace"] = voivodeship
+            params["PublicationDateTo"] = date_to.strftime("%Y-%m-%dT23:59:59")
+        # NOTE: BZP API does NOT support cpvCodes or voivodeship filters in list endpoint.
+        # CPV/scope filtering is done in normalize_bzp_notice() after fetching.
         return params
 
     def _get_client(self) -> httpx.Client:

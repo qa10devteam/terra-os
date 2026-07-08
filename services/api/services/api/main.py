@@ -67,6 +67,10 @@ except ImportError as e:
 # Fazy 41-60 — optional routers (graceful import)
 _optional_routers = []
 try:
+    from .routers import sources_health
+    _optional_routers.append(('sources_health', sources_health))
+except ImportError: pass
+try:
     from .routers import bzp_documents
     _optional_routers.append(('bzp_documents', bzp_documents))
 except ImportError: pass
@@ -262,6 +266,8 @@ app.include_router(advanced_analytics.router)
 # Fazy 41-60 — optional routers registered if available
 _opt_map = {name: mod for name, mod in _optional_routers}
 
+if 'sources_health' in _opt_map:
+    app.include_router(_opt_map['sources_health'].router)
 if 'bzp_documents' in _opt_map:
     app.include_router(_opt_map['bzp_documents'].router)
 if 'ted_integration' in _opt_map:

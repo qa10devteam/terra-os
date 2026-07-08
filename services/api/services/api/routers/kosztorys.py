@@ -3,8 +3,6 @@ Faza 47 — Kosztorys Editor: CRUD pozycji kosztorysu.
 """
 from __future__ import annotations
 
-import sys
-sys.path.insert(0, "/home/ubuntu/terra-os/packages/vendor")
 
 import io
 import uuid

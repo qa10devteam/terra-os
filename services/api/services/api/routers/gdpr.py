@@ -9,8 +9,6 @@ Endpoints:
 """
 from __future__ import annotations
 
-import sys
-sys.path.insert(0, '/home/ubuntu/terra-os/packages/vendor')
 
 from datetime import datetime, timezone
 from typing import Annotated, Any
@@ -18,24 +16,21 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
-from sqlalchemy.orm import Session
 
 from ..auth.deps import AuthUser
-from terra_db.session import get_session
+from terra_db.session import get_engine
 
 router = APIRouter(prefix="/api/v2/gdpr", tags=["gdpr"])
 
 
 def get_db():
-    SessionLocal = get_session()
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    engine = get_engine()
+    with engine.connect() as conn:
+        yield conn
+        conn.commit()
 
 
-DB = Annotated[Session, Depends(get_db)]
+DB = Annotated[Any, Depends(get_db)]
 
 
 # ─── Schemas ───────────────────────────────────────────────────────────────────

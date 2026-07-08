@@ -6,8 +6,6 @@ GET /api/v2/competitors/search?cpv=45000000&region=PL91
 """
 from __future__ import annotations
 
-import sys
-sys.path.insert(0, "/home/ubuntu/terra-os/packages/vendor")
 
 import random
 import hashlib

@@ -62,8 +62,8 @@ function TrendChart({ data, loading }: { data: TrendRow[]; loading: boolean }) {
       const label = formatQuarter(q);
       const ex = map.get(label) || { quarter: label, n_tenders: 0, total_value_mln: 0, avg_offers: 0, count: 0 };
       ex.n_tenders += row.n_tenders;
-      ex.total_value_mln += row.total_value_mln;
-      ex.avg_offers += row.avg_offers;
+      ex.total_value_mln += row.total_value / 1_000_000;
+      ex.avg_offers += row.avg_competition;
       ex.count += 1;
       map.set(label, ex);
     }
@@ -110,7 +110,7 @@ function CompetitorsTable({ data, loading }: { data: ContractorTop[]; loading: b
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-earth-700">
-            {['#', 'Firma', 'Prowincja', 'Wygrane', 'Win rate', 'Wartość'].map(h => (
+            {['#', 'Firma', 'Wygrane', 'Win rate', 'Wartość'].map(h => (
               <th key={h} className="text-left py-2 px-3 text-earth-400 font-medium text-xs uppercase tracking-wide">{h}</th>
             ))}
           </tr>
@@ -118,7 +118,7 @@ function CompetitorsTable({ data, loading }: { data: ContractorTop[]; loading: b
         <tbody>
           {data.slice(0, 10).map((c, i) => (
             <motion.tr
-              key={`${c.contractor_nip}-${i}`}
+              key={`${c.nip}-${i}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: i * 0.03 }}
@@ -126,20 +126,19 @@ function CompetitorsTable({ data, loading }: { data: ContractorTop[]; loading: b
             >
               <td className="py-2 px-3 text-earth-500 font-mono text-xs">{i + 1}</td>
               <td className="py-2 px-3">
-                <div className="font-medium text-earth-100 truncate max-w-[200px]">{c.contractor_name || c.contractor_nip}</div>
-                <div className="text-xs text-earth-500 font-mono">{c.contractor_nip}</div>
+                <div className="font-medium text-earth-100 truncate max-w-[200px]">{c.contractor_name || c.nip}</div>
+                <div className="text-xs text-earth-500 font-mono">{c.nip}</div>
               </td>
-              <td className="py-2 px-3 text-earth-400 text-xs">{c.province ? (PROVINCE_MAP[c.province] || c.province) : '—'}</td>
               <td className="py-2 px-3 text-earth-200 font-mono">{c.wins}</td>
               <td className="py-2 px-3">
                 <div className="flex items-center gap-2">
                   <div className="h-1.5 w-16 bg-earth-700 rounded-full overflow-hidden">
-                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(100, c.win_rate * 100)}%` }} />
+                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${Math.min(100, c.win_rate_pct)}%` }} />
                   </div>
-                  <span className="text-earth-300 text-xs">{(c.win_rate * 100).toFixed(0)}%</span>
+                  <span className="text-earth-300 text-xs">{c.win_rate_pct.toFixed(0)}%</span>
                 </div>
               </td>
-              <td className="py-2 px-3 text-emerald-400 font-mono text-xs">{fmtMln(c.total_value_mln)}</td>
+              <td className="py-2 px-3 text-emerald-400 font-mono text-xs">{fmtMln(c.total_value / 1_000_000)}</td>
             </motion.tr>
           ))}
         </tbody>
@@ -152,9 +151,9 @@ function CompetitorsTable({ data, loading }: { data: ContractorTop[]; loading: b
 function BuyersChart({ data, loading }: { data: BuyerTop[]; loading: boolean }) {
   if (loading) return <div className="h-48 animate-pulse bg-earth-800 rounded-xl" />;
   const top8 = data.slice(0, 8).map(b => ({
-    name: (b.buyer || b.buyer_nip).replace(/Gmina|Miasto|Urząd/gi, '').trim().slice(0, 28),
-    value: +b.total_value_mln.toFixed(1),
-    tenders: b.total_tenders,
+    name: (b.buyer_name || b.buyer_nip).replace(/Gmina|Miasto|Urząd/gi, '').trim().slice(0, 28),
+    value: +(b.total_value / 1_000_000).toFixed(1),
+    tenders: b.n_tenders,
   }));
   return (
     <ResponsiveContainer width="100%" height={220}>
@@ -225,7 +224,7 @@ function FTSSearch() {
               <div key={r.id} className="p-3 bg-earth-800 rounded-lg border border-earth-700 hover:border-earth-600 transition-colors">
                 <div className="text-sm text-earth-100 line-clamp-1">{r.title}</div>
                 <div className="flex items-center gap-3 mt-1">
-                  <span className="text-xs text-earth-500">{r.buyer_name || r.buyer_nip}</span>
+                  <span className="text-xs text-earth-500">{r.buyer || r.buyer_nip}</span>
                   {r.estimated_value && <span className="text-xs text-emerald-400">{fmtMln(r.estimated_value / 1_000_000)}</span>}
                   {r.date && <span className="text-xs text-earth-600">{r.date.slice(0, 10)}</span>}
                 </div>
@@ -341,29 +340,29 @@ export function MarketIntelPage() {
             <>
               <KPICard
                 label="Łączna liczba"
-                value={summary.total_tenders.toLocaleString('pl-PL')}
-                sub={`Ostatni kwartał: ${formatQuarter(summary.last_quarter.slice(0, 7))}`}
+                value={summary.kpi.n_tenders.toLocaleString('pl-PL')}
+                sub={summary.last_quarter ? `Ostatni kwartał: ${formatQuarter(summary.last_quarter.slice(0, 7))}` : 'Dane historyczne'}
                 icon={BarChart3}
-                trend={summary.quarterly_trend}
+                trend={summary.quarterly_trend ?? 'stable'}
                 color="#10b981"
               />
               <KPICard
                 label="Wartość rynku"
-                value={fmtMln(summary.total_value_mln)}
-                sub={`Śr. ${fmtMln(summary.avg_value_k / 1000)} / przetarg`}
+                value={fmtMln(summary.kpi.total_value_mln)}
+                sub={`Śr. ${fmtMln(summary.kpi.avg_value / 1_000_000)} / przetarg`}
                 icon={TrendingUp}
                 color="#3b82f6"
               />
               <KPICard
                 label="Śr. oferty"
-                value={summary.avg_offers.toFixed(1)}
+                value={summary.kpi.avg_competition.toFixed(1)}
                 sub="ofert na przetarg"
                 icon={Users}
                 color="#8b5cf6"
               />
               <KPICard
                 label="Top region"
-                value={summary.top_province ? (PROVINCE_MAP[summary.top_province] || summary.top_province) : '—'}
+                value={summary.top_province.length > 0 ? (PROVINCE_MAP[summary.top_province[0].province] || summary.top_province[0].province) : '—'}
                 sub={cpv ? (CPV_LABELS[cpv] || `CPV ${cpv}`) : 'Wszystkie CPV'}
                 icon={Building2}
                 color="#f59e0b"
@@ -422,8 +421,8 @@ export function MarketIntelPage() {
                   <div className="mt-4 grid grid-cols-3 gap-3">
                     {[
                       { label: 'Łącznie przetargów', value: trends.reduce((s, r) => s + r.n_tenders, 0).toLocaleString('pl-PL') },
-                      { label: 'Łączna wartość', value: fmtMln(trends.reduce((s, r) => s + r.total_value_mln, 0)) },
-                      { label: 'Śr. ofert/przetarg', value: (trends.reduce((s, r) => s + r.avg_offers, 0) / Math.max(1, trends.length)).toFixed(1) },
+                      { label: 'Łączna wartość', value: fmtMln(trends.reduce((s, r) => s + r.total_value / 1_000_000, 0)) },
+                      { label: 'Śr. ofert/przetarg', value: (trends.reduce((s, r) => s + r.avg_competition, 0) / Math.max(1, trends.length)).toFixed(1) },
                     ].map(({ label, value }) => (
                       <div key={label} className="p-3 bg-earth-800 rounded-lg">
                         <div className="text-xs text-earth-500">{label}</div>

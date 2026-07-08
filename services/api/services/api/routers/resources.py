@@ -5,8 +5,6 @@ Faza 59 — Kalendarz terminów: events i deadline'y przetargów.
 """
 from __future__ import annotations
 
-import sys
-sys.path.insert(0, "/home/ubuntu/terra-os/packages/vendor")
 
 import uuid
 from datetime import date, datetime

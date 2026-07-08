@@ -23,10 +23,9 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import text
-from sqlalchemy.orm import Session
 
 from ..auth.deps import AuthUser
-from terra_db.session import get_session
+from terra_db.session import get_engine
 
 logger = logging.getLogger(__name__)
 
@@ -36,15 +35,13 @@ _NIP_RE = _re.compile(r'^[0-9]{8,12}$')
 
 
 def get_db():
-    SessionLocal = get_session()
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+    engine = get_engine()
+    with engine.connect() as conn:
+        yield conn
+        conn.commit()
 
 
-DB = Annotated[Session, Depends(get_db)]
+DB = Annotated[Any, Depends(get_db)]
 
 
 def _require_org(user: Any) -> str:

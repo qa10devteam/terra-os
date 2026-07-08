@@ -1,8 +1,6 @@
 """Faza 42 — TED Integration: EU tenders from TED API (stub)."""
 from __future__ import annotations
 
-import sys
-sys.path.insert(0, "/home/ubuntu/terra-os/packages/vendor")
 
 import uuid
 from datetime import datetime, date
