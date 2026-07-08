@@ -471,11 +471,12 @@ const DOC_TYPE_LABELS: Record<string, { label: string; color: string }> = {
   OTHER: { label: 'Inny', color: 'text-earth-400 bg-earth-700/30 border-earth-600/30' },
 };
 
-function DocumentsTab({ tenderId, authFetch }: { tenderId: string; authFetch: (url: string, opts?: RequestInit) => Promise<unknown> }) {
+function DocumentsTab({ tenderId, authFetch, source }: { tenderId: string; authFetch: (url: string, opts?: RequestInit) => Promise<unknown>; source?: string | null }) {
   const [docs, setDocs] = useState<BzpDocument[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [fetchTriggered, setFetchTriggered] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const loadDocs = useCallback(async () => {
     setLoading(true);
@@ -491,12 +492,14 @@ function DocumentsTab({ tenderId, authFetch }: { tenderId: string; authFetch: (u
   const handleFetch = async () => {
     setFetching(true);
     setFetchTriggered(true);
+    setFetchError(null);
     try {
       await authFetch(`/api/v1/bzp/documents/${tenderId}/fetch`, { method: 'POST' });
       // Poll for results after background fetch
       setTimeout(() => loadDocs(), 3000);
       setTimeout(() => { loadDocs(); setFetching(false); }, 8000);
-    } catch {
+    } catch (e: unknown) {
+      setFetchError((e as Error).message);
       setFetching(false);
     }
   };
@@ -504,6 +507,15 @@ function DocumentsTab({ tenderId, authFetch }: { tenderId: string; authFetch: (u
   const handleDownload = (doc: BzpDocument) => {
     window.open(doc.download_url, '_blank');
   };
+
+  if (source && source !== 'bzp') {
+    return (
+      <div className="py-8 text-center">
+        <p className="text-earth-400 text-sm">Dokumenty SWZ dostępne tylko dla przetargów z BZP</p>
+        <p className="text-earth-600 text-xs mt-1">To ogłoszenie pochodzi z {source.toUpperCase()}</p>
+      </div>
+    );
+  }
 
   if (loading && docs.length === 0) {
     return (
@@ -539,6 +551,10 @@ function DocumentsTab({ tenderId, authFetch }: { tenderId: string; authFetch: (u
         <p className="text-xs text-earth-500 text-center">
           Dokumenty pobierają się w tle. Odśwież za chwilę.
         </p>
+      )}
+
+      {fetchError && (
+        <p className="text-xs text-red-400 text-center py-1">{fetchError}</p>
       )}
 
       {/* Document list */}
@@ -796,7 +812,7 @@ function DetailPanel({
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.15 }}
             >
-              <DocumentsTab tenderId={tender.id} authFetch={authFetch} />
+              <DocumentsTab tenderId={tender.id} authFetch={authFetch} source={tender.source} />
             </motion.div>
           )}
         </AnimatePresence>

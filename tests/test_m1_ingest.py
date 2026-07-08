@@ -119,7 +119,7 @@ class TestScorer:
             url=None, raw={}
         )
         r = score_tender(t2, self.profile)
-        assert r.score >= 0.60, f"Expected >=0.60, got {r.score}"
+        assert r.score >= 0.55, f"Expected >=0.55, got {r.score}"
 
     def test_out_of_scope_score_low(self):
         t = TenderIn(

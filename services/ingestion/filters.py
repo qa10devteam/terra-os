@@ -3,7 +3,14 @@ from __future__ import annotations
 
 from .bzp_connector import _cpv_matches, EARTHWORKS_CPV_PREFIXES, is_construction_scope
 from .normalize import TenderIn
-from services.engine.l2_stochastic.sector_profiles import detect_sector
+try:
+    from services.engine.l2_stochastic.sector_profiles import detect_sector
+except ImportError:
+    import sys, os as _os
+    _root = _os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+    if _root not in sys.path:
+        sys.path.insert(0, _root)
+    from services.engine.l2_stochastic.sector_profiles import detect_sector
 
 # Target voivodeships for the Dzierżoniów-based firm
 # Primary: dolnośląskie + neighbours

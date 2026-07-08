@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import base64
 import json
+import unicodedata
 import uuid
 from typing import Any
 
@@ -13,6 +14,12 @@ from terra_db.session import get_engine
 from ..auth.deps import get_current_user, AuthUser
 
 router = APIRouter(prefix="/api/v1", tags=["zwiad"])
+
+
+def _normalize_voiv(v: str) -> str:
+    """Strip diacritics from a voivodeship name for fuzzy matching."""
+    nfkd = unicodedata.normalize("NFKD", v)
+    return "".join(c for c in nfkd if not unicodedata.combining(c))
 
 
 # ---------------------------------------------------------------------------
@@ -101,7 +108,7 @@ def ingest_run(
         offline=offline,
         include_bip=include_bip,
         run_dedup=run_dedup,
-        bip_workers=15,
+        bip_max_sites=50,
     )
     return IngestRunResponse(
         agent_run_id=run_id,
@@ -160,13 +167,21 @@ def list_tenders(
                 except (ValueError, TypeError):
                     cursor_offset = 0
 
+    VALID_STATUSES = {"new", "matched", "watching", "analyzing", "estimated", "decided_go", "decided_nogo", "archived"}
     if status:
+        if status not in VALID_STATUSES:
+            from fastapi import HTTPException
+            raise HTTPException(
+                status_code=422,
+                detail=f"Invalid status '{status}'. Valid values: {sorted(VALID_STATUSES)}"
+            )
         conditions.append("t.status = CAST(:status AS tender_status)")
         params["status"] = status
 
     if voivodeship:
-        conditions.append("t.voivodeship ILIKE :voiv")
+        conditions.append("(t.voivodeship ILIKE :voiv OR t.voivodeship ILIKE :voiv_plain)")
         params["voiv"] = f"%{voivodeship}%"
+        params["voiv_plain"] = f"%{_normalize_voiv(voivodeship)}%"
 
     if source:
         conditions.append("t.source = CAST(:source AS source_kind)")

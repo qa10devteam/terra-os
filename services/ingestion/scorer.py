@@ -55,6 +55,35 @@ class ScoringWeights:
 
 _DEFAULT_WEIGHTS = ScoringWeights()
 
+
+# ─── OwnerProfileSnap ──────────────────────────────────────────────────────────
+
+@dataclass
+class OwnerProfileSnap(ScoringWeights):
+    """Snapshot of owner preferences used by the ingestion pipeline.
+
+    Default presets for a construction-industry firm in Dolnośląskie.
+    Extends ScoringWeights with voivodeships for geo pre-filtering.
+    """
+    preferred_cpvs:    list[str]    = field(default_factory=lambda: ["45", "45100000", "45111200", "45200000", "45300000", "45400000"])
+    preferred_regions: list[str]    = field(default_factory=lambda: ["dolnośląskie", "śląskie", "opolskie"])
+    min_value_pln:     float | None = 100_000
+    max_value_pln:     float | None = 10_000_000
+    voivodeships:      list[str]    = field(default_factory=lambda: ["dolnośląskie", "śląskie", "opolskie"])
+    cpv_weight:        float        = 0.40
+    region_weight:     float        = 0.20
+
+
+
+# ─── ScoreResult ───────────────────────────────────────────────────────────────
+
+@dataclass
+class ScoreResult:
+    """Result returned by score_tender()."""
+    score: float
+    reason: str | None = None
+
+
 # ─── DB helpers ────────────────────────────────────────────────────────────────
 
 def load_scoring_config(tenant_id: str) -> ScoringWeights:
@@ -172,7 +201,7 @@ def _deadline_score(deadline: date | datetime | str | None) -> float:
     brak    → 0.0
     """
     if deadline is None:
-        return 0.0
+        return 0.5  # neutral — brak danych o deadline
     if isinstance(deadline, str):
         try:
             deadline = datetime.fromisoformat(deadline.replace("Z", "+00:00"))
@@ -207,16 +236,31 @@ def score_tender(
     tender: dict[str, Any],
     weights: ScoringWeights,
     win_rates: dict[str, float] | None = None,
-) -> float:
+) -> "ScoreResult":
     """
     Oblicza match_score (0.0–1.0) dla jednego przetargu.
     tender dict musi mieć: cpv_main, value_pln, voivodeship, deadline
+    Zwraca ScoreResult z polami .score i .reason.
     """
     w = weights.normalize()
-    cpv   = tender.get("cpv_main") or tender.get("cpv")
-    value = tender.get("value_pln") or tender.get("estimated_value_pln")
-    region = tender.get("voivodeship") or tender.get("region")
-    deadline = tender.get("deadline") or tender.get("submission_deadline")
+    # Support both dict and dataclass (TenderIn)
+    if hasattr(tender, "__dict__") and not isinstance(tender, dict):
+        _t = tender.__dict__
+    else:
+        _t = tender  # type: ignore[assignment]
+    def _g(key: str, *alt: str):
+        for k in (key,) + alt:
+            v = _t.get(k) if isinstance(_t, dict) else getattr(_t, k, None)
+            if v is not None:
+                # unwrap single-item list (e.g. cpv=['45111200-0'])
+                if isinstance(v, list):
+                    return v[0] if v else None
+                return v
+        return None
+    cpv   = _g("cpv_main", "cpv")
+    value = _g("value_pln", "estimated_value_pln")
+    region = _g("voivodeship", "region")
+    deadline = _g("deadline", "submission_deadline")
 
     if value is not None:
         try:
@@ -232,8 +276,21 @@ def score_tender(
         "win_rate": (w.historical_win_weight, _cpv_win_rate_score(cpv, win_rates or {})),
     }
 
-    score = sum(wt * sc for wt, sc in components.values())
-    return round(min(1.0, max(0.0, score)), 4)
+    score = round(min(1.0, max(0.0, sum(wt * sc for wt, sc in components.values()))), 4)
+
+    # Build human-readable reason string
+    reason_parts = []
+    if components["cpv"][1] >= 0.8:
+        reason_parts.append(f"CPV match ({cpv})")
+    if components["region"][1] >= 0.8:
+        reason_parts.append(f"region {region}")
+    if components["deadline"][1] >= 0.7:
+        reason_parts.append("pilny deadline")
+    if components["win_rate"][1] >= 0.5:
+        reason_parts.append("wysoki win-rate")
+    reason = "; ".join(reason_parts) if reason_parts else None
+
+    return ScoreResult(score=score, reason=reason)
 
 
 # ─── Batch rescore ─────────────────────────────────────────────────────────────
@@ -282,8 +339,8 @@ def rescore_tenant(tenant_id: str, batch_size: int = 500) -> dict:
                 new_score = score_tender(tender_dict, weights, win_rates)
                 conn.execute(text(
                     "UPDATE tender SET match_score = :score WHERE id = :id"
-                ), {"score": new_score, "id": str(row[0])})
-                avg_after += new_score
+                ), {"score": new_score.score, "id": str(row[0])})
+                avg_after += new_score.score
                 processed += 1
 
             offset += batch_size
