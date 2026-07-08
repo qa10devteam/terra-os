@@ -757,6 +757,12 @@ def get_kosztorys_summary(kid: str, user: AuthUser) -> dict:
 def create_from_tender(tender_id: str, user: AuthUser) -> dict:
     """Utwórz kosztorys powiązany z przetargiem — pobiera dane z ZWIAD."""
     tenant_id = _require_tenant(user)
+    # Validate UUID before hitting DB
+    try:
+        import uuid as _uuid_mod
+        _uuid_mod.UUID(tender_id)
+    except (ValueError, AttributeError):
+        raise HTTPException(422, f"Nieprawidłowy UUID przetargu: {tender_id}")
     with get_engine().connect() as conn:
         # Pobierz dane z tenders (ZWIAD)
         tender = conn.execute(sa.text("""
