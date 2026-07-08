@@ -117,6 +117,11 @@ try:
     _optional_routers.append(('scoring_config', scoring_config))
 except Exception as e:
     logging.getLogger(__name__).warning("scoring_config import error: %s", e)
+try:
+    from .routers import intelligence
+    _optional_routers.append(('intelligence', intelligence))
+except Exception as e:
+    logging.getLogger(__name__).warning("intelligence router import error: %s", e)
 from .auth import router as auth_router
 
 # ─── Middleware helpers ────────────────────────────────────────────────────────
