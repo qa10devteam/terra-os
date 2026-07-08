@@ -11,6 +11,8 @@ Endpoints:
   GET /api/v2/intelligence/seasonality      — sezonowość przetargów per miesiąc
   GET /api/v2/intelligence/fts              — full-text search w historical_tenders (FTS)
   GET /api/v2/intelligence/summary          — agregowane KPI rynkowe dla dashboardu
+  GET /api/v2/intelligence/win-rates        — historyczne win-rates wykonawców per CPV
+  GET /api/v2/intelligence/top-buyers-cpv   — top zamawiający per CPV (z historical_tenders)
 
 Źródła: mv_tender_benchmark (6.6k), mv_market_trend, mv_contractor_ranking,
         mv_buyer_ranking, icb_ceny_srednie (784k), mv_labor_inflation_index,

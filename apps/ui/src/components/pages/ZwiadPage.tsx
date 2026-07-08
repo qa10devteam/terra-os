@@ -99,11 +99,13 @@ const VOIVODESHIPS = [
 const STATUS_OPTS = [
   { value: '', label: 'Wszystkie statusy' },
   { value: 'new', label: 'Nowy' },
-  { value: 'interesting', label: 'Interesujący' },
-  { value: 'archived', label: 'Archiwum' },
   { value: 'matched', label: 'Dopasowany' },
   { value: 'watching', label: 'Obserwowany' },
+  { value: 'analyzing', label: 'W analizie' },
   { value: 'estimated', label: 'Wyceniony' },
+  { value: 'decided_go', label: 'GO ✓' },
+  { value: 'decided_nogo', label: 'NO-GO ✗' },
+  { value: 'archived', label: 'Archiwum' },
 ];
 
 const SORT_OPTS = [

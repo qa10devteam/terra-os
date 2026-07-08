@@ -819,3 +819,34 @@ export interface EquipmentResource {
   reg_no: string | null;
   active: boolean;
 }
+
+// ─── Scoring Config ──────────────────────────────────────────────────────────
+
+export interface ScoringConfig {
+  tenant_id: string;
+  cpv_weight: number;
+  value_weight: number;
+  region_weight: number;
+  deadline_weight: number;
+  historical_win_weight: number;
+  min_value_pln: number | null;
+  max_value_pln: number | null;
+  preferred_cpvs: string[];
+  preferred_regions: string[];
+  is_default: boolean;
+}
+
+export interface RescoreResult {
+  total: number;
+  processed: number;
+  avg_score_before: number;
+  avg_score_after: number;
+  message: string;
+}
+
+export interface WinRateItem {
+  cpv_prefix: string;
+  wins: number;
+  win_rate: number;
+  top_contractors: string[];
+}

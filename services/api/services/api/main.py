@@ -110,6 +110,12 @@ try:
     from .routers import resources
     _optional_routers.append(('resources', resources))
 except ImportError: pass
+
+try:
+    from .routers import scoring_config
+    _optional_routers.append(('scoring_config', scoring_config))
+except Exception as e:
+    logging.getLogger(__name__).warning("scoring_config import error: %s", e)
 from .auth import router as auth_router
 
 # ─── Middleware helpers ────────────────────────────────────────────────────────
