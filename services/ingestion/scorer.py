@@ -1,296 +1,316 @@
-"""M1 — Matcher/scorer: computes match_score for each tender vs owner profile.
+"""Scorer v3 — konfigurowalny per-tenant, z deadline bonus + CPV win rate.
 
-Score ∈ [0.0, 1.0] — higher = better match.
-
-Scoring factors (v2 — configurable weights per tenant):
-  1. CPV overlap with owner preferred CPVs        (0–W_CPV pts)
-  2. Voivodeship match                             (0–W_GEO pts)
-  3. Value range fit                               (0–W_VAL pts)
-  4. Deadline proximity bonus                      (0–W_DDL pts)   ← F17
-  5. Keyword match in title                        (0–W_KW pts)
-  6. Historical win rate CPV boost (market_results)(0–W_WIN pts)   ← F18
-  ──────────────────────────────────────────────────────────────
-  Total: sum(weights) pts → normalized to 0.0–1.0
-
-Weights are configurable per tenant via ScoringWeights dataclass (F16).
-Default weights sum to 100.
+Zmiany względem v2:
+- load_scoring_config() → ScoringWeights z DB (scoring_config table)
+- _deadline_score(): <14d→1.0, <30d→0.7, <60d→0.4, else→0.1
+- _cpv_win_rate_score(): bazuje na bzp_results (kto wygrywał w CPV)
+- score_tender() uwzględnia historical_win_weight z konfigu
 """
 from __future__ import annotations
 
 import logging
+import math
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from decimal import Decimal
-from typing import NamedTuple
+from datetime import date, datetime
+from typing import Any
 
-from .normalize import TenderIn
+from sqlalchemy import text
+from terra_db.session import get_engine
 
 logger = logging.getLogger(__name__)
 
-
-# ─────────────────────────────── Weights ──────────────────────────────── #
+# ─── ScoringWeights ────────────────────────────────────────────────────────────
 
 @dataclass
 class ScoringWeights:
-    """Configurable scoring weights per tenant (F16).
+    cpv_weight:            float = 0.35
+    value_weight:          float = 0.20
+    region_weight:         float = 0.15
+    deadline_weight:       float = 0.10
+    historical_win_weight: float = 0.20
+    min_value_pln:         float | None = None
+    max_value_pln:         float | None = None
+    preferred_cpvs:        list[str] = field(default_factory=list)
+    preferred_regions:     list[str] = field(default_factory=list)
 
-    All values are in points (not fractions). The scorer normalizes by
-    the sum of weights, so you can add/remove factors freely.
-    """
-    cpv: int = 35       # CPV match
-    geo: int = 25       # Voivodeship match
-    value: int = 20     # Value range fit
-    deadline: int = 10  # Deadline proximity bonus (F17)
-    keywords: int = 10  # Keyword match in title
-
-    # F18 — historical win rate CPV boost
-    # Points added on top when CPV has high historical win rate.
-    # The win_boost value is added to cpv score when win_rate >= win_threshold.
-    win_boost: int = 10     # extra pts on high win-rate CPV
-    win_threshold: float = 0.20  # min win rate fraction to trigger boost
-
-    @property
-    def total(self) -> int:
-        return self.cpv + self.geo + self.value + self.deadline + self.keywords
-
-    def max_score(self) -> int:
-        """Max achievable score (total + win_boost)."""
-        return self.total + self.win_boost
-
-
-# ─────────────────────────────── Profile ──────────────────────────────── #
-
-class OwnerProfileSnap:
-    """Minimal snapshot of owner profile for scoring (no DB dep)."""
-
-    def __init__(
-        self,
-        *,
-        cpv_preferred: list[str] | None = None,
-        voivodeships: list[str] | None = None,
-        value_min_pln: float = 100_000,
-        value_max_pln: float = 5_000_000,
-        keywords: list[str] | None = None,
-        weights: ScoringWeights | None = None,
-        # F18: CPV win rates from market_results {cpv5_prefix: win_rate}
-        cpv_win_rates: dict[str, float] | None = None,
-    ) -> None:
-        self.cpv_preferred: set[str] = set(cpv_preferred or [
-            "45111200-0",
-            "45233120-6",
-            "45112000-5",
-            "45112700-2",
-            "45232410-9",
-        ])
-        self.voivodeships: set[str] = set(v.lower() for v in (voivodeships or []))
-        self.value_min = Decimal(str(value_min_pln))
-        self.value_max = Decimal(str(value_max_pln))
-        self.keywords: list[str] = keywords or [
-            "roboty budowlane", "roboty ziemne", "budowa", "przebudowa", "remont",
-            "instalacja", "sieć", "wodociąg", "kanalizacja", "droga", "most",
-            "kubatura", "hala", "budynek", "rozbiórka", "modernizacja",
-        ]
-        self.weights: ScoringWeights = weights or ScoringWeights()
-        # F18: historical win rate per CPV 5-char prefix
-        self.cpv_win_rates: dict[str, float] = cpv_win_rates or {}
+    def normalize(self) -> "ScoringWeights":
+        """Normalizuje wagi do sumy 1.0."""
+        total = self.cpv_weight + self.value_weight + self.region_weight + \
+                self.deadline_weight + self.historical_win_weight
+        if total <= 0:
+            return ScoringWeights()
+        factor = 1.0 / total
+        return ScoringWeights(
+            cpv_weight=self.cpv_weight * factor,
+            value_weight=self.value_weight * factor,
+            region_weight=self.region_weight * factor,
+            deadline_weight=self.deadline_weight * factor,
+            historical_win_weight=self.historical_win_weight * factor,
+            min_value_pln=self.min_value_pln,
+            max_value_pln=self.max_value_pln,
+            preferred_cpvs=self.preferred_cpvs,
+            preferred_regions=self.preferred_regions,
+        )
 
 
-# ─────────────────────────────── Result ───────────────────────────────── #
+_DEFAULT_WEIGHTS = ScoringWeights()
 
-class ScoreResult(NamedTuple):
-    score: float          # 0.0–1.0
-    reason: str           # human-readable explanation
+# ─── DB helpers ────────────────────────────────────────────────────────────────
 
-
-# ─────────────────────────────── Factors ──────────────────────────────── #
-
-def _cpv_score(tender_cpv: list[str], preferred: set[str], weight: int) -> int:
-    """0–weight pts: exact match = weight, prefix match = weight//2, no match = 0."""
-    if not tender_cpv:
-        return 0
-    for code in tender_cpv:
-        if code in preferred:
-            return weight
-    # prefix match (first 5 chars = CPV division+group)
-    for code in tender_cpv:
-        for pref in preferred:
-            if code[:5] == pref[:5]:
-                return weight // 2
-    return 0
-
-
-def _geo_score(voivodeship: str | None, target: set[str], weight: int) -> int:
-    """0–weight pts."""
-    if not voivodeship or not target:
-        return weight // 4  # unknown — partial credit
-    if voivodeship.lower() in target:
-        return weight
-    return 0
-
-
-def _value_score(value_pln: Decimal | None, vmin: Decimal, vmax: Decimal, weight: int) -> int:
-    """0–weight pts: in range = weight, within 2× = weight//2, outside = 0."""
-    if value_pln is None or value_pln <= Decimal("0"):
-        return 0
-    if vmin <= value_pln <= vmax:
-        return weight
-    if value_pln < vmin and vmin / value_pln <= Decimal("2"):
-        return weight // 2
-    if value_pln > vmax and value_pln / vmax <= Decimal("2"):
-        return weight // 2
-    return 0
-
-
-def _deadline_score(deadline_at: datetime | None, weight: int) -> int:
-    """F17 — Deadline proximity bonus.
-
-    More points when the deadline is closer (urgency matters).
-    None/past → 0. >60 days → minimal. 7–21 days → sweet spot.
-    """
-    if not deadline_at:
-        return weight // 2  # unknown deadline — neutral
-    now = datetime.now(timezone.utc)
-    if deadline_at.tzinfo is None:
-        deadline_at = deadline_at.replace(tzinfo=timezone.utc)
-    days = (deadline_at - now).days
-    if days < 0:
-        return 0          # already past
-    if days <= 7:
-        return weight // 5  # too tight — low priority
-    if days <= 14:
-        return weight     # sweet spot: 1–2 weeks
-    if days <= 21:
-        return int(weight * 0.8)  # still good
-    if days <= 45:
-        return int(weight * 0.5)  # comfortable
-    return int(weight * 0.2)      # plenty of time — lower urgency
-
-
-def _keyword_score(title: str, keywords: list[str], weight: int) -> int:
-    """0–weight pts: any keyword match = weight."""
-    title_lower = title.lower()
-    for kw in keywords:
-        if kw.lower() in title_lower:
-            return weight
-    return 0
-
-
-def _win_rate_boost(
-    tender_cpv: list[str],
-    cpv_win_rates: dict[str, float],
-    win_boost: int,
-    win_threshold: float,
-) -> int:
-    """F18 — Historical win rate CPV boost.
-
-    Returns win_boost pts if any of the tender's CPV 5-prefixes has a
-    historical win rate >= win_threshold in the owner's market_results.
-    Rewards CPVs where the company has proven track record.
-    """
-    if not cpv_win_rates or not tender_cpv:
-        return 0
-    for code in tender_cpv:
-        prefix = code[:5]
-        rate = cpv_win_rates.get(prefix, 0.0)
-        if rate >= win_threshold:
-            return win_boost
-    return 0
-
-
-# ─────────────────────────────── Main ─────────────────────────────────── #
-
-def score_tender(tender: TenderIn, profile: OwnerProfileSnap) -> ScoreResult:
-    """Compute deterministic match score (v2) for a tender vs owner profile."""
-    w = profile.weights
-
-    pts_cpv = _cpv_score(tender.cpv, profile.cpv_preferred, w.cpv)
-    pts_geo = _geo_score(tender.voivodeship, profile.voivodeships, w.geo)
-    pts_val = _value_score(tender.value_pln, profile.value_min, profile.value_max, w.value)
-    pts_ddl = _deadline_score(tender.deadline_at, w.deadline)    # F17
-    pts_kw  = _keyword_score(tender.title, profile.keywords, w.keywords)
-    pts_win = _win_rate_boost(                                     # F18
-        tender.cpv,
-        profile.cpv_win_rates,
-        w.win_boost,
-        w.win_threshold,
-    )
-
-    total = pts_cpv + pts_geo + pts_val + pts_ddl + pts_kw + pts_win
-    max_pts = w.max_score()
-    score = round(total / max_pts, 4) if max_pts > 0 else 0.0
-
-    reasons: list[str] = []
-    if pts_cpv >= w.cpv:
-        reasons.append("CPV dokładny")
-    elif pts_cpv >= w.cpv // 2:
-        reasons.append("CPV zbliżony")
-    else:
-        reasons.append("CPV nie pasuje")
-    if pts_geo == w.geo:
-        reasons.append("region docelowy")
-    elif pts_geo == 0:
-        reasons.append("inny region")
-    if pts_val == w.value:
-        reasons.append("wartość w zakresie")
-    elif pts_val > 0:
-        reasons.append("wartość blisko zakresu")
-    else:
-        reasons.append("wartość poza zakresem")
-    if pts_ddl >= w.deadline:
-        reasons.append("deadline optymalny")
-    elif pts_ddl == 0:
-        reasons.append("deadline minął")
-    if pts_kw > 0:
-        reasons.append("słowa kluczowe")
-    if pts_win > 0:
-        reasons.append("wygrane CPV historycznie")
-
-    return ScoreResult(score=score, reason="; ".join(reasons))
-
-
-# ─────────────────────────────── Helpers ──────────────────────────────── #
-
-def load_cpv_win_rates(
-    db_dsn: str = "host=127.0.0.1 dbname=terraos user=terraos",
-    tenant_id: str | None = None,
-    days_back: int = 90,
-) -> dict[str, float]:
-    """F18 — Load CPV win rates from market_results.
-
-    Returns dict {cpv5_prefix: win_rate} where win_rate = contracts/total_bids
-    for TenderResultNotice with procedure_result='zawarcieUmowy'.
-    """
+def load_scoring_config(tenant_id: str) -> ScoringWeights:
+    """Ładuje konfigurację scoringu z DB dla tenanta. Fallback → defaults."""
+    engine = get_engine()
     try:
-        import psycopg2
-        conn = psycopg2.connect(db_dsn)
+        with engine.connect() as conn:
+            row = conn.execute(text("""
+                SELECT cpv_weight, value_weight, region_weight,
+                       deadline_weight, historical_win_weight,
+                       min_value_pln, max_value_pln,
+                       preferred_cpvs, preferred_regions
+                FROM scoring_config
+                WHERE tenant_id = :tid
+                LIMIT 1
+            """), {"tid": tenant_id}).fetchone()
+        if row:
+            return ScoringWeights(
+                cpv_weight=float(row[0] or 0.35),
+                value_weight=float(row[1] or 0.20),
+                region_weight=float(row[2] or 0.15),
+                deadline_weight=float(row[3] or 0.10),
+                historical_win_weight=float(row[4] or 0.20),
+                min_value_pln=float(row[5]) if row[5] else None,
+                max_value_pln=float(row[6]) if row[6] else None,
+                preferred_cpvs=list(row[7] or []),
+                preferred_regions=list(row[8] or []),
+            ).normalize()
+    except Exception as e:
+        logger.warning(f"load_scoring_config failed: {e}")
+    return _DEFAULT_WEIGHTS
+
+
+def load_cpv_win_rates(tenant_id: str | None = None) -> dict[str, float]:
+    """
+    Ładuje win-rates per CPV prefix (5 cyfr) z bzp_results.
+    Zwraca {cpv_prefix: 0.0–1.0}.
+    """
+    engine = get_engine()
+    win_rates: dict[str, float] = {}
+    try:
+        with engine.connect() as conn:
+            # Global win rates z bzp_results (kto często wygrywał)
+            rows = conn.execute(text("""
+                SELECT LEFT(cpv_main, 5) as prefix, COUNT(*) as wins
+                FROM bzp_results
+                WHERE cpv_main IS NOT NULL AND length(cpv_main) >= 5
+                GROUP BY prefix
+                ORDER BY wins DESC
+                LIMIT 500
+            """)).fetchall()
+
+        if rows:
+            max_wins = max(r[1] for r in rows) or 1
+            for prefix, wins in rows:
+                win_rates[prefix] = min(1.0, wins / max_wins)
+    except Exception as e:
+        logger.warning(f"load_cpv_win_rates failed: {e}")
+
+    return win_rates
+
+
+# ─── Scoring components ────────────────────────────────────────────────────────
+
+def _cpv_score(tender_cpv: str | None, preferred_cpvs: list[str]) -> float:
+    """CPV match: exact prefix match → 1.0, partial → 0.5, brak konfiguracji → 0.5 (neutral)."""
+    if not preferred_cpvs:
+        return 0.5  # neutral — tenant nie skonfigurował preferencji
+    if not tender_cpv:
+        return 0.0
+    cpv = str(tender_cpv).strip()
+    for pref in preferred_cpvs:
+        p = str(pref).strip()
+        if cpv.startswith(p) or p.startswith(cpv[:len(p)]):
+            if len(p) >= 5:
+                return 1.0
+            return 0.5
+    return 0.0
+
+
+def _value_score(value_pln: float | None, weights: ScoringWeights) -> float:
+    """Wartość w preferowanym przedziale → 1.0, brak konfiguracji → 0.5 (neutral)."""
+    if weights.min_value_pln is None and weights.max_value_pln is None:
+        return 0.5  # neutral
+    if value_pln is None or value_pln <= 0:
+        return 0.0
+    lo = weights.min_value_pln or 0
+    hi = weights.max_value_pln or float("inf")
+    if lo <= value_pln <= hi:
+        return 1.0
+    if value_pln < lo:
+        return max(0.0, 1.0 - (lo - value_pln) / max(lo, 1))
+    return max(0.0, 1.0 - (value_pln - hi) / max(hi, 1))
+
+
+def _region_score(voivodeship: str | None, preferred_regions: list[str]) -> float:
+    if not preferred_regions:
+        return 0.5  # neutral
+    if not voivodeship:
+        return 0.0
+    v = voivodeship.lower().strip()
+    for r in preferred_regions:
+        if r.lower().strip() in v or v in r.lower().strip():
+            return 1.0
+    return 0.0
+
+
+def _deadline_score(deadline: date | datetime | str | None) -> float:
+    """
+    Deadline proximity bonus:
+    <14 dni → 1.0 (pilne, działaj teraz)
+    <30 dni → 0.7
+    <60 dni → 0.4
+    ≥60 dni → 0.1
+    brak    → 0.0
+    """
+    if deadline is None:
+        return 0.0
+    if isinstance(deadline, str):
         try:
-            with conn.cursor() as cur:
-                q = """
-                    SELECT
-                        left(cpv_codes[1], 5) AS cpv5,
-                        count(*) FILTER (WHERE procedure_result = 'zawarcieUmowy') AS wins,
-                        count(*) AS total
-                    FROM market_results
-                    WHERE
-                        cpv_codes IS NOT NULL
-                        AND array_length(cpv_codes, 1) > 0
-                        AND published_at >= now() - interval '%s days'
-                        %s
-                    GROUP BY cpv5
-                    HAVING count(*) >= 3
-                """ % (
-                    days_back,
-                    f"AND tenant_id = '{tenant_id}'" if tenant_id else "",
-                )
-                cur.execute(q)
-                rows = cur.fetchall()
-                rates = {}
-                for cpv5, wins, total in rows:
-                    if cpv5 and total > 0:
-                        rates[cpv5] = wins / total
-                return rates
-        finally:
-            conn.close()
-    except Exception as exc:
-        logger.warning("load_cpv_win_rates failed: %s", exc)
-        return {}
+            deadline = datetime.fromisoformat(deadline.replace("Z", "+00:00"))
+        except ValueError:
+            return 0.0
+    if isinstance(deadline, datetime):
+        deadline = deadline.date()
+    today = date.today()
+    delta = (deadline - today).days
+    if delta < 0:
+        return 0.0  # Minął
+    if delta < 14:
+        return 1.0
+    if delta < 30:
+        return 0.7
+    if delta < 60:
+        return 0.4
+    return 0.1
+
+
+def _cpv_win_rate_score(tender_cpv: str | None, win_rates: dict[str, float]) -> float:
+    """CPV win rate z historycznych wygranych."""
+    if not tender_cpv or not win_rates:
+        return 0.0
+    prefix5 = str(tender_cpv)[:5]
+    return win_rates.get(prefix5, 0.0)
+
+
+# ─── Main scoring function ──────────────────────────────────────────────────────
+
+def score_tender(
+    tender: dict[str, Any],
+    weights: ScoringWeights,
+    win_rates: dict[str, float] | None = None,
+) -> float:
+    """
+    Oblicza match_score (0.0–1.0) dla jednego przetargu.
+    tender dict musi mieć: cpv_main, value_pln, voivodeship, deadline
+    """
+    w = weights.normalize()
+    cpv   = tender.get("cpv_main") or tender.get("cpv")
+    value = tender.get("value_pln") or tender.get("estimated_value_pln")
+    region = tender.get("voivodeship") or tender.get("region")
+    deadline = tender.get("deadline") or tender.get("submission_deadline")
+
+    if value is not None:
+        try:
+            value = float(value)
+        except (ValueError, TypeError):
+            value = None
+
+    components = {
+        "cpv":    (w.cpv_weight,            _cpv_score(cpv, w.preferred_cpvs)),
+        "value":  (w.value_weight,           _value_score(value, w)),
+        "region": (w.region_weight,          _region_score(region, w.preferred_regions)),
+        "deadline": (w.deadline_weight,      _deadline_score(deadline)),
+        "win_rate": (w.historical_win_weight, _cpv_win_rate_score(cpv, win_rates or {})),
+    }
+
+    score = sum(wt * sc for wt, sc in components.values())
+    return round(min(1.0, max(0.0, score)), 4)
+
+
+# ─── Batch rescore ─────────────────────────────────────────────────────────────
+
+def rescore_tenant(tenant_id: str, batch_size: int = 500) -> dict:
+    """Rescoruje wszystkie przetargi tenanta. Zwraca statystyki."""
+    weights = load_scoring_config(tenant_id)
+    win_rates = load_cpv_win_rates(tenant_id)
+
+    engine = get_engine()
+    total = 0
+    avg_before = 0.0
+    avg_after = 0.0
+
+    with engine.connect() as conn:
+        count_row = conn.execute(text(
+            "SELECT COUNT(*), AVG(match_score) FROM tender WHERE tenant_id = :tid"
+        ), {"tid": tenant_id}).fetchone()
+        if count_row:
+            total = count_row[0]
+            avg_before = float(count_row[1] or 0)
+
+    offset = 0
+    processed = 0
+    with engine.begin() as conn:
+        while True:
+            rows = conn.execute(text("""
+                SELECT id, cpv, value_pln, voivodeship, deadline_at, match_score
+                FROM tender
+                WHERE tenant_id = :tid
+                ORDER BY created_at DESC
+                LIMIT :lim OFFSET :off
+            """), {"tid": tenant_id, "lim": batch_size, "off": offset}).fetchall()
+
+            if not rows:
+                break
+
+            for row in rows:
+                tender_dict = {
+                    "id": str(row[0]),
+                    "cpv_main": row[1],
+                    "value_pln": row[2],
+                    "voivodeship": row[3],
+                    "deadline": row[4],
+                }
+                new_score = score_tender(tender_dict, weights, win_rates)
+                conn.execute(text(
+                    "UPDATE tender SET match_score = :score WHERE id = :id"
+                ), {"score": new_score, "id": str(row[0])})
+                avg_after += new_score
+                processed += 1
+
+            offset += batch_size
+            if len(rows) < batch_size:
+                break
+
+    if processed > 0:
+        avg_after /= processed
+
+    logger.info(
+        f"Rescore tenant={tenant_id}: {processed} tenders, "
+        f"avg {avg_before:.3f} → {avg_after:.3f}"
+    )
+    return {
+        "total": total,
+        "processed": processed,
+        "avg_score_before": round(avg_before, 4),
+        "avg_score_after": round(avg_after, 4),
+    }
+
+
+if __name__ == "__main__":
+    import argparse
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--tenant-id", required=True)
+    ap.add_argument("--batch-size", type=int, default=500)
+    args = ap.parse_args()
+    result = rescore_tenant(args.tenant_id, batch_size=args.batch_size)
+    print(f"Done: {result}")

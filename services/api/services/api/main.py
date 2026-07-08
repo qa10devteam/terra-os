@@ -297,3 +297,7 @@ if 'resources' in _opt_map:
     for attr in ['sub_router', 'equip_router', 'gantt_router', 'calendar_router']:
         if hasattr(mod, attr):
             app.include_router(getattr(mod, attr))
+
+# F12: Scoring config
+if 'scoring_config' in _opt_map:
+    app.include_router(_opt_map['scoring_config'].router)
