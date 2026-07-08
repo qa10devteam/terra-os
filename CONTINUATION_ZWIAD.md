@@ -130,12 +130,12 @@ NUTS w: <cbc:CountrySubentityCode listName="nuts">PL911</cbc:CountrySubentityCod
 4. **Faza 4** — BZP ResultNotice: `NoticeType=ResultNotice`, zapisz winner/value do `historical_bids`
 5. **Faza 5** — `scripts/migrate_historical_to_tender.py`: SELECT z `historical_tenders` WHERE Works AND date >= 90d → upsert do `tender`
 6. **Faza 8** — BIP: znaleźć publiczne BIP API przetargów budowlanych
-7. **Faza 9** — Deduplicator: matching po buyer+title+deadline (fuzzy) cross BZP/TED
+7. **Faza 9** — Deduplicator: matching po buyer+title+deadline (fuzzy) cross BZP/TED ✅
 
 ### Fazy scoring (16-18)
-8. Konfigurowalne wagi scorera per tenant (tabela `scoring_config`)
-9. Deadline proximity bonus
-10. Historical win rate boost
+8. Konfigurowalne wagi scorera per tenant (tabela `scoring_config`) ✅
+9. Deadline proximity bonus ✅ — <14d→1.0, <30d→0.7, <60d→0.4
+10. Historical win rate boost ✅ — historical_bids, win rates 45111=75%; avg score 0.25→0.40
 
 ### Faza 19 — Email alert
 11. Dispatch email (himalaya/SMTP) gdy nowy przetarg match_score > threshold
