@@ -516,19 +516,19 @@ function IntelligencePanel({
                   <div
                     className="absolute top-0 h-full bg-blue-500/20"
                     style={{
-                      left: `${Math.min(100, (benchmark.p25_value / benchmark.max_value) * 100)}%`,
-                      width: `${Math.min(100, ((benchmark.p75_value - benchmark.p25_value) / benchmark.max_value) * 100)}%`,
+                      left: `${Math.min(100, (benchmark.p25_value / (benchmark.p75_value * 1.5)) * 100)}%`,
+                      width: `${Math.min(100, ((benchmark.p75_value - benchmark.p25_value) / (benchmark.p75_value * 1.5)) * 100)}%`,
                     }}
                   />
                   {/* Median line */}
                   <div
                     className="absolute top-0 bottom-0 w-0.5 bg-blue-400/60"
-                    style={{ left: `${Math.min(100, (benchmark.median_value / benchmark.max_value) * 100)}%` }}
+                    style={{ left: `${Math.min(100, (benchmark.median_value / (benchmark.p75_value * 1.5)) * 100)}%` }}
                   />
                   {/* Our price needle */}
                   <div
                     className="absolute top-0 bottom-0 w-1 bg-emerald-400 rounded-full"
-                    style={{ left: `${Math.min(98, (sumaNet / benchmark.max_value) * 100)}%` }}
+                    style={{ left: `${Math.min(98, (sumaNet / (benchmark.p75_value * 1.5)) * 100)}%` }}
                   />
                 </div>
                 <div className="flex justify-between text-[10px] text-earth-700 mt-0.5">

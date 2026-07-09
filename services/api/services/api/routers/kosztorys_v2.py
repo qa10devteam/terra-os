@@ -898,3 +898,230 @@ def _current_quarter() -> tuple[int, int]:
     from datetime import date
     today = date.today()
     return (today.month - 1) // 3 + 1, today.year
+
+
+# ─── Cost Estimation endpoints ───────────────────────────────────────────────
+
+class CostEstimateRequest(BaseModel):
+    method: str = Field(default="icb", pattern="^(swz|icb|user_rates|all)$")
+    tender_id: str | None = None
+    area_m2: float = Field(default=0.0, ge=0)
+    cpv: str | None = None
+    region: str | None = None
+    swz_text: str | None = None
+    kwartalnr: int | None = None
+    kwartalrok: int | None = None
+    notes: str | None = None
+
+
+class UserRateCreate(BaseModel):
+    symbol: str
+    nazwa: str | None = None
+    jednostka: str = "m²"
+    typ_rms: str = Field(pattern="^[RMS]$")
+    cena_netto: float = Field(gt=0)
+
+
+@router.post("/estimate", status_code=201)
+def create_estimate(req: CostEstimateRequest, user: AuthUser) -> dict:
+    """Szacuje koszt przetargu jedną lub wszystkimi metodami i zapisuje wynik."""
+    from ..analytics.cost_estimation import (
+        estimate_all, estimate_from_icb, estimate_from_swz, estimate_from_user_rates,
+    )
+    import json as _json
+
+    tenant_id = user.org_id or ""
+    engine = get_engine()
+
+    if req.method == "all":
+        estimates = estimate_all(
+            tenant_id=tenant_id,
+            cpv=req.cpv,
+            area_m2=req.area_m2,
+            region=req.region,
+            swz_text=req.swz_text,
+            kwartalnr=req.kwartalnr,
+            kwartalrok=req.kwartalrok,
+            engine=engine,
+        )
+    elif req.method == "swz":
+        if not req.swz_text:
+            raise HTTPException(400, "swz_text wymagany dla metody 'swz'")
+        estimates = [estimate_from_swz(req.swz_text, region=req.region).to_dict()]
+    elif req.method == "icb":
+        if req.area_m2 <= 0:
+            raise HTTPException(400, "area_m2 > 0 wymagane dla metody 'icb'")
+        estimates = [estimate_from_icb(
+            cpv=req.cpv, area_m2=req.area_m2, region=req.region,
+            kwartalnr=req.kwartalnr, kwartalrok=req.kwartalrok, engine=engine,
+        ).to_dict()]
+    elif req.method == "user_rates":
+        if req.area_m2 <= 0:
+            raise HTTPException(400, "area_m2 > 0 wymagane dla metody 'user_rates'")
+        estimates = [estimate_from_user_rates(
+            tenant_id=tenant_id, area_m2=req.area_m2,
+            cpv=req.cpv, region=req.region, engine=engine,
+        ).to_dict()]
+    else:
+        raise HTTPException(400, f"Nieznana metoda: {req.method}")
+
+    # Zapisz każdy wynik do cost_estimate
+    saved_ids: list[str] = []
+    with engine.begin() as conn:
+        for est in estimates:
+            eid = str(uuid.uuid4())
+            conn.execute(sa.text("""
+                INSERT INTO cost_estimate
+                    (id, tenant_id, tender_id, method, variant,
+                     area_m2, cpv_prefix, region,
+                     total_net_pln, confidence_low, confidence_high,
+                     lines, params, notes)
+                VALUES
+                    (:id, :tid, :tender_id, :method, :variant,
+                     :area_m2, :cpv, :region,
+                     :total, :low, :high,
+                     :lines::jsonb, :params::jsonb, :notes)
+            """), {
+                "id": eid,
+                "tid": tenant_id,
+                "tender_id": req.tender_id,
+                "method": est["method"],
+                "variant": est["variant"],
+                "area_m2": req.area_m2,
+                "cpv": req.cpv,
+                "region": req.region,
+                "total": est["total_net_pln"],
+                "low": est["confidence_low"],
+                "high": est["confidence_high"],
+                "lines": _json.dumps(est["lines"], ensure_ascii=False),
+                "params": _json.dumps(est["params"], ensure_ascii=False),
+                "notes": est.get("notes", ""),
+            })
+            saved_ids.append(eid)
+
+    return {"ids": saved_ids, "estimates": estimates, "count": len(estimates)}
+
+
+@router.get("/estimate")
+def list_estimates(user: AuthUser, tender_id: str | None = None) -> dict:
+    """Zwraca zapisane szacowania kosztów dla tenanta (opcjonalnie filtr po przetargu)."""
+    tenant_id = user.org_id
+    engine = get_engine()
+
+    with engine.connect() as conn:
+        q = """
+            SELECT id, method, variant, tender_id,
+                   area_m2, cpv_prefix, region,
+                   total_net_pln, confidence_low, confidence_high,
+                   lines, params, notes, created_at
+            FROM cost_estimate
+            WHERE tenant_id = :tid
+        """
+        params: dict = {"tid": tenant_id}
+        if tender_id:
+            q += " AND tender_id = :tender_id"
+            params["tender_id"] = tender_id
+        q += " ORDER BY created_at DESC LIMIT 50"
+
+        rows = conn.execute(sa.text(q), params).fetchall()
+
+    items = []
+    for r in rows:
+        items.append({
+            "id": str(r[0]),
+            "method": r[1],
+            "variant": r[2],
+            "tender_id": str(r[3]) if r[3] else None,
+            "area_m2": float(r[4]) if r[4] else None,
+            "cpv_prefix": r[5],
+            "region": r[6],
+            "total_net_pln": float(r[7]) if r[7] else 0,
+            "confidence_low": float(r[8]) if r[8] else 0,
+            "confidence_high": float(r[9]) if r[9] else 0,
+            "lines": r[10] if isinstance(r[10], list) else [],
+            "params": r[11] if isinstance(r[11], dict) else {},
+            "notes": r[12],
+            "created_at": r[13].isoformat() if r[13] else None,
+        })
+
+    return {"items": items, "total": len(items)}
+
+
+@router.delete("/estimate/{estimate_id}", status_code=204)
+def delete_estimate(estimate_id: str, user: AuthUser) -> None:
+    tenant_id = user.org_id
+    engine = get_engine()
+    with engine.begin() as conn:
+        result = conn.execute(sa.text(
+            "DELETE FROM cost_estimate WHERE id=:id AND tenant_id=:tid"
+        ), {"id": estimate_id, "tid": tenant_id})
+    if result.rowcount == 0:
+        raise HTTPException(404, "Szacowanie nie znalezione")
+
+
+# ─── User Rates (stawki własne) endpoints ────────────────────────────────────
+
+@router.get("/user-rates")
+def list_user_rates(user: AuthUser) -> dict:
+    """Zwraca cennik własny tenanta."""
+    tenant_id = user.org_id
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(sa.text("""
+            SELECT id, symbol, nazwa, jednostka, typ_rms, cena_netto, updated_at
+            FROM user_rates WHERE tenant_id=:tid ORDER BY typ_rms, symbol
+        """), {"tid": tenant_id}).fetchall()
+
+    return {
+        "items": [
+            {
+                "id": str(r[0]),
+                "symbol": r[1],
+                "nazwa": r[2],
+                "jednostka": r[3],
+                "typ_rms": r[4].strip(),
+                "cena_netto": float(r[5]),
+                "updated_at": r[6].isoformat() if r[6] else None,
+            }
+            for r in rows
+        ],
+        "total": len(rows),
+    }
+
+
+@router.post("/user-rates", status_code=201)
+def create_user_rate(rate: UserRateCreate, user: AuthUser) -> dict:
+    """Dodaje lub aktualizuje pozycję cennika własnego."""
+    tenant_id = user.org_id
+    engine = get_engine()
+    rid = str(uuid.uuid4())
+    with engine.begin() as conn:
+        conn.execute(sa.text("""
+            INSERT INTO user_rates (id, tenant_id, symbol, nazwa, jednostka, typ_rms, cena_netto)
+            VALUES (:id, :tid, :symbol, :nazwa, :jednostka, :typ_rms, :cena)
+            ON CONFLICT (tenant_id, symbol, typ_rms)
+            DO UPDATE SET nazwa=EXCLUDED.nazwa, jednostka=EXCLUDED.jednostka,
+                          cena_netto=EXCLUDED.cena_netto, updated_at=now()
+            RETURNING id
+        """), {
+            "id": rid,
+            "tid": tenant_id,
+            "symbol": rate.symbol,
+            "nazwa": rate.nazwa or rate.symbol,
+            "jednostka": rate.jednostka,
+            "typ_rms": rate.typ_rms,
+            "cena": rate.cena_netto,
+        })
+    return {"id": rid, "symbol": rate.symbol, "typ_rms": rate.typ_rms}
+
+
+@router.delete("/user-rates/{rate_id}", status_code=204)
+def delete_user_rate(rate_id: str, user: AuthUser) -> None:
+    tenant_id = user.org_id
+    engine = get_engine()
+    with engine.begin() as conn:
+        result = conn.execute(sa.text(
+            "DELETE FROM user_rates WHERE id=:id AND tenant_id=:tid"
+        ), {"id": rate_id, "tid": tenant_id})
+    if result.rowcount == 0:
+        raise HTTPException(404, "Stawka nie znaleziona")

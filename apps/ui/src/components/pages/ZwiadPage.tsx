@@ -71,12 +71,40 @@ interface SeasonalityRow {
   avg_competition: number;
 }
 
+interface EstimateLine {
+  name: string;
+  symbol: string | null;
+  unit: string;
+  qty: number;
+  unit_price: number;
+  total: number;
+  source: string;
+}
+
 interface EstimateItem {
   id: string;
+  method: string;
   variant: string;
   total_net_pln: number;
-  lines: Array<{ name: string; amount: number; unit: string; unit_price: number; total: number }>;
+  confidence_low: number;
+  confidence_high: number;
+  lines: EstimateLine[];
   params: Record<string, unknown>;
+  notes?: string;
+  tender_id?: string | null;
+  area_m2?: number | null;
+  cpv_prefix?: string | null;
+  region?: string | null;
+  created_at?: string | null;
+}
+
+interface UserRate {
+  id: string;
+  symbol: string;
+  nazwa: string;
+  jednostka: string;
+  typ_rms: 'R' | 'M' | 'S';
+  cena_netto: number;
 }
 
 interface IngestResult {
@@ -340,113 +368,404 @@ function TenderCard({
 
 // ─── EstimatesTab ─────────────────────────────────────────────────────────────
 
+const METHOD_META: Record<string, { label: string; icon: string; color: string; desc: string }> = {
+  swz:        { label: 'Dokumentacja SWZ',  icon: '📄', color: 'text-blue-400 border-blue-500/30 bg-blue-500/10',     desc: 'Parsowanie przedmiaru z dokumentacji przetargowej' },
+  icb:        { label: 'Intercenbud',       icon: '📊', color: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10', desc: 'Baza cen średnich ICB + CPV + region' },
+  user_rates: { label: 'Stawki własne',     icon: '🏷️', color: 'text-amber-400 border-amber-500/30 bg-amber-500/10',  desc: 'Własny cennik firmy' },
+  benchmark:  { label: 'Benchmark CPV',     icon: '📐', color: 'text-purple-400 border-purple-500/30 bg-purple-500/10', desc: 'Benchmark statystyczny dla CPV' },
+};
+
+
 function EstimatesTab({
   tenderId,
+  tender,
   authFetch,
 }: {
   tenderId: string;
+  tender: TenderItem;
   authFetch: (url: string, opts?: RequestInit) => Promise<unknown>;
 }) {
   const [estimates, setEstimates] = useState<EstimateItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
+  const [running, setRunning] = useState(false);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  // Form state
+  const [method, setMethod] = useState<'swz' | 'icb' | 'user_rates' | 'all'>('all');
+  const [areaM2, setAreaM2] = useState<string>('');
+  const [region, setRegion] = useState<string>(tender.voivodeship || '');
+  const [swzText, setSwzText] = useState<string>('');
+  const [showForm, setShowForm] = useState(false);
+
+  // User rates state
+  const [userRates, setUserRates] = useState<UserRate[]>([]);
+  const [showRates, setShowRates] = useState(false);
+  const [newRate, setNewRate] = useState({ symbol: '', nazwa: '', jednostka: 'm²', typ_rms: 'R' as 'R'|'M'|'S', cena_netto: '' });
+  const [savingRate, setSavingRate] = useState(false);
+
+  const loadEstimates = useCallback(async () => {
     setLoading(true);
     try {
-      const raw = await authFetch(`/api/v2/estimates?tender_id=${tenderId}`) as unknown;
-      if (Array.isArray(raw)) {
-        setEstimates(raw as EstimateItem[]);
-      } else if (raw && typeof raw === 'object' && 'items' in raw) {
-        setEstimates((raw as { items: EstimateItem[] }).items ?? []);
-      } else {
-        setEstimates([]);
-      }
-    } catch {
-      // silently fail
-    } finally {
-      setLoading(false);
-    }
+      const raw = await authFetch(`/api/v2/kosztorys/estimate?tender_id=${tenderId}`) as unknown;
+      const items = (raw as { items?: EstimateItem[] })?.items ?? (Array.isArray(raw) ? raw : []);
+      setEstimates(items as EstimateItem[]);
+    } catch { /* ignore */ } finally { setLoading(false); }
   }, [tenderId, authFetch]);
 
-  useEffect(() => { load(); }, [load]);
-
-  async function handleCreate() {
-    setCreating(true);
+  const loadUserRates = useCallback(async () => {
     try {
-      await authFetch(`/api/v1/tenders/${tenderId}/estimate`, { method: 'POST' });
-      showToast('success', 'Kosztorys utworzony — otwierasz w module Kosztorys');
-      await load();
-    } catch (e: unknown) {
-      showToast('error', 'Błąd tworzenia kosztorysu: ' + (e as Error).message);
-    } finally {
-      setCreating(false);
+      const raw = await authFetch('/api/v2/kosztorys/user-rates') as { items?: UserRate[] };
+      setUserRates(raw?.items ?? []);
+    } catch { /* ignore */ }
+  }, [authFetch]);
+
+  useEffect(() => { loadEstimates(); loadUserRates(); }, [loadEstimates, loadUserRates]);
+
+  async function handleEstimate() {
+    const area = parseFloat(areaM2);
+    if ((method === 'icb' || method === 'user_rates' || method === 'all') && (!area || area <= 0)) {
+      showToast('error', 'Podaj powierzchnię (m²)');
+      return;
     }
+    if (method === 'swz' && !swzText.trim()) {
+      showToast('error', 'Wklej tekst przedmiaru robót');
+      return;
+    }
+    setRunning(true);
+    try {
+      await authFetch('/api/v2/kosztorys/estimate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          method,
+          tender_id: tenderId,
+          area_m2: area || 0,
+          cpv: tender.cpv?.[0] ?? null,
+          region: region || null,
+          swz_text: swzText || null,
+        }),
+      });
+      showToast('success', 'Szacowanie zakończone');
+      setShowForm(false);
+      await loadEstimates();
+    } catch (e: unknown) {
+      showToast('error', 'Błąd szacowania: ' + (e as Error).message);
+    } finally { setRunning(false); }
   }
 
-  if (loading) {
-    return (
-      <div className="space-y-3 py-4">
-        {Array.from({ length: 2 }).map((_, i) => (
-          <div key={i} className="h-20 bg-earth-800/50 rounded-xl animate-pulse" />
-        ))}
-      </div>
-    );
+  async function handleDeleteEstimate(id: string) {
+    try {
+      await authFetch(`/api/v2/kosztorys/estimate/${id}`, { method: 'DELETE' });
+      setEstimates(prev => prev.filter(e => e.id !== id));
+    } catch { showToast('error', 'Błąd usuwania'); }
   }
+
+  async function handleSaveRate() {
+    if (!newRate.symbol || !newRate.cena_netto) return;
+    setSavingRate(true);
+    try {
+      await authFetch('/api/v2/kosztorys/user-rates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...newRate, cena_netto: parseFloat(newRate.cena_netto) }),
+      });
+      showToast('success', 'Stawka zapisana');
+      setNewRate({ symbol: '', nazwa: '', jednostka: 'm²', typ_rms: 'R', cena_netto: '' });
+      await loadUserRates();
+    } catch { showToast('error', 'Błąd zapisu stawki'); } finally { setSavingRate(false); }
+  }
+
+  async function handleDeleteRate(id: string) {
+    try {
+      await authFetch(`/api/v2/kosztorys/user-rates/${id}`, { method: 'DELETE' });
+      setUserRates(prev => prev.filter(r => r.id !== id));
+    } catch { showToast('error', 'Błąd usuwania'); }
+  }
+
+  if (loading) return (
+    <div className="space-y-3 py-4">
+      {[0,1,2].map(i => <div key={i} className="h-16 bg-earth-800/50 rounded-xl animate-pulse" />)}
+    </div>
+  );
 
   return (
     <div className="space-y-4 py-2">
-      <button
-        onClick={handleCreate}
-        disabled={creating}
-        className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 text-earth-950 rounded-xl text-sm font-semibold hover:bg-emerald-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {creating ? (
-          <RefreshCw size={14} className="animate-spin" />
-        ) : (
-          <BarChart3 size={14} />
-        )}
-        Utwórz kosztorys
-      </button>
 
-      {estimates.length === 0 ? (
-        <div className="py-8 text-center">
-          <BarChart3 size={28} className="text-earth-700 mx-auto mb-2" />
-          <p className="text-earth-500 text-sm">Brak kosztorysów</p>
-          <p className="text-earth-700 text-xs mt-1">Kliknij powyżej aby wygenerować pierwszy</p>
+      {/* ── Action bar ── */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <button
+          onClick={() => setShowForm(v => !v)}
+          className="flex items-center gap-2 px-3.5 py-2 bg-emerald-500 text-earth-950 rounded-xl text-xs font-semibold hover:bg-emerald-400 transition-colors"
+        >
+          <BarChart3 size={13} />
+          {showForm ? 'Ukryj formularz' : 'Szacuj koszt'}
+        </button>
+        <button
+          onClick={() => setShowRates(v => !v)}
+          className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium border border-earth-700 text-earth-300 hover:border-earth-500 transition-colors"
+        >
+          <Tag size={13} />
+          Stawki własne {userRates.length > 0 && <span className="text-earth-500">({userRates.length})</span>}
+        </button>
+        <button onClick={loadEstimates} className="ml-auto p-2 rounded-lg text-earth-500 hover:text-earth-300 transition-colors">
+          <RefreshCw size={13} />
+        </button>
+      </div>
+
+      {/* ── Formularz szacowania ── */}
+      {showForm && (
+        <div className="rounded-xl border border-earth-700/60 bg-earth-900/40 p-4 space-y-4">
+          <p className="text-xs font-semibold text-earth-300 uppercase tracking-wide">Parametry szacowania</p>
+
+          {/* Metoda */}
+          <div className="grid grid-cols-2 gap-2">
+            {(['all','icb','swz','user_rates'] as const).map(m => {
+              const meta = m === 'all'
+                ? { label: 'Wszystkie metody', icon: '⚡', color: 'text-white border-earth-500 bg-earth-700/40' }
+                : METHOD_META[m];
+              return (
+                <button
+                  key={m}
+                  onClick={() => setMethod(m)}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
+                    method === m ? meta.color + ' ring-1 ring-current' : 'border-earth-700 text-earth-400 hover:border-earth-600'
+                  }`}
+                >
+                  <span>{meta.icon}</span>
+                  <span className="truncate">{meta.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Powierzchnia + Region */}
+          {(method === 'icb' || method === 'user_rates' || method === 'all') && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[10px] text-earth-500 uppercase tracking-wide block mb-1">Powierzchnia (m²)</label>
+                <input
+                  type="number"
+                  value={areaM2}
+                  onChange={e => setAreaM2(e.target.value)}
+                  placeholder="np. 500"
+                  className="w-full bg-earth-800/60 border border-earth-700 rounded-lg px-3 py-2 text-sm text-earth-100 placeholder-earth-600 focus:outline-none focus:border-emerald-500/60"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-earth-500 uppercase tracking-wide block mb-1">Region</label>
+                <select
+                  value={region}
+                  onChange={e => setRegion(e.target.value)}
+                  className="w-full bg-earth-800/60 border border-earth-700 rounded-lg px-3 py-2 text-sm text-earth-100 focus:outline-none focus:border-emerald-500/60"
+                >
+                  <option value="">— brak —</option>
+                  {VOIVODESHIPS.map(v => <option key={v} value={v}>{v}</option>)}
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* SWZ textarea */}
+          {(method === 'swz' || method === 'all') && (
+            <div>
+              <label className="text-[10px] text-earth-500 uppercase tracking-wide block mb-1">
+                Tekst przedmiaru robót (ze SWZ/PDF)
+              </label>
+              <textarea
+                value={swzText}
+                onChange={e => setSwzText(e.target.value)}
+                rows={5}
+                placeholder={"Wklej treść przedmiaru robót z dokumentacji...\n\n1. Roboty ziemne  m³  120,00  45.00\n2. Fundamenty    m³   45,00  380.00"}
+                className="w-full bg-earth-800/60 border border-earth-700 rounded-lg px-3 py-2 text-xs text-earth-100 placeholder-earth-600 focus:outline-none focus:border-emerald-500/60 font-mono resize-none"
+              />
+            </div>
+          )}
+
+          {/* CPV info */}
+          {tender.cpv?.[0] && (
+            <p className="text-[10px] text-earth-600">
+              CPV: <span className="text-earth-400 font-mono">{tender.cpv[0]}</span> — używany do mapowania kategorii ICB
+            </p>
+          )}
+
+          <button
+            onClick={handleEstimate}
+            disabled={running}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-500 transition-colors disabled:opacity-50"
+          >
+            {running ? <><Loader2 size={14} className="animate-spin" />Szacuję…</> : <><BarChart3 size={14} />Generuj szacowanie</>}
+          </button>
+        </div>
+      )}
+
+      {/* ── Stawki własne ── */}
+      {showRates && (
+        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 space-y-3">
+          <p className="text-xs font-semibold text-amber-300 uppercase tracking-wide">Cennik własny firmy</p>
+
+          {/* Dodaj stawkę */}
+          <div className="grid grid-cols-5 gap-2 text-xs">
+            <input
+              placeholder="Symbol (np. KNR 2-01 0101)"
+              value={newRate.symbol}
+              onChange={e => setNewRate(p => ({...p, symbol: e.target.value}))}
+              className="col-span-2 bg-earth-800/60 border border-earth-700 rounded-lg px-2 py-1.5 text-earth-100 placeholder-earth-600 focus:outline-none focus:border-amber-500/60"
+            />
+            <input
+              placeholder="Nazwa"
+              value={newRate.nazwa}
+              onChange={e => setNewRate(p => ({...p, nazwa: e.target.value}))}
+              className="col-span-2 bg-earth-800/60 border border-earth-700 rounded-lg px-2 py-1.5 text-earth-100 placeholder-earth-600 focus:outline-none focus:border-amber-500/60"
+            />
+            <select value={newRate.typ_rms} onChange={e => setNewRate(p => ({...p, typ_rms: e.target.value as 'R'|'M'|'S'}))}
+              className="bg-earth-800/60 border border-earth-700 rounded-lg px-2 py-1.5 text-earth-100 focus:outline-none">
+              <option value="R">R — Robocizna</option>
+              <option value="M">M — Materiał</option>
+              <option value="S">S — Sprzęt</option>
+            </select>
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            <input
+              placeholder="Cena netto (PLN)"
+              type="number"
+              value={newRate.cena_netto}
+              onChange={e => setNewRate(p => ({...p, cena_netto: e.target.value}))}
+              className="bg-earth-800/60 border border-earth-700 rounded-lg px-2 py-1.5 text-earth-100 placeholder-earth-600 focus:outline-none focus:border-amber-500/60"
+            />
+            <input
+              placeholder="Jednostka"
+              value={newRate.jednostka}
+              onChange={e => setNewRate(p => ({...p, jednostka: e.target.value}))}
+              className="bg-earth-800/60 border border-earth-700 rounded-lg px-2 py-1.5 text-earth-100 placeholder-earth-600 focus:outline-none"
+            />
+            <button
+              onClick={handleSaveRate}
+              disabled={savingRate || !newRate.symbol || !newRate.cena_netto}
+              className="flex items-center justify-center gap-1 bg-amber-500/20 border border-amber-500/40 text-amber-300 rounded-lg px-3 hover:bg-amber-500/30 transition-colors disabled:opacity-40"
+            >
+              {savingRate ? <Loader2 size={12} className="animate-spin" /> : <span>+ Dodaj</span>}
+            </button>
+          </div>
+
+          {userRates.length > 0 && (
+            <div className="space-y-1 max-h-40 overflow-y-auto">
+              {userRates.map(r => (
+                <div key={r.id} className="flex items-center justify-between text-xs px-2 py-1 rounded-lg bg-earth-800/40 hover:bg-earth-800/60">
+                  <span className="font-mono text-earth-400 w-16 shrink-0 truncate">{r.symbol}</span>
+                  <span className="text-earth-300 flex-1 px-2 truncate">{r.nazwa}</span>
+                  <span className="text-[10px] text-earth-500 w-6">{r.typ_rms}</span>
+                  <span className="text-amber-300 tabular-nums w-20 text-right">{fmtPLN(r.cena_netto)}/{r.jednostka}</span>
+                  <button onClick={() => handleDeleteRate(r.id)} className="ml-2 text-earth-600 hover:text-red-400 transition-colors">
+                    <X size={10} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {userRates.length === 0 && (
+            <p className="text-[11px] text-earth-600 text-center py-2">
+              Brak stawek własnych. Dodaj pozycje powyżej.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* ── Lista szacowań ── */}
+      {estimates.length === 0 && !showForm ? (
+        <div className="py-10 text-center">
+          <BarChart3 size={32} className="text-earth-700 mx-auto mb-3" />
+          <p className="text-earth-500 text-sm">Brak szacowań dla tego przetargu</p>
+          <p className="text-earth-700 text-xs mt-1">Kliknij „Szacuj koszt" aby wygenerować</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {estimates.map((est) => (
-            <GlassCard key={est.id} className="p-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-earth-300 uppercase tracking-wide">
-                  {est.variant || 'Wariant podstawowy'}
-                </span>
-                <span className="text-sm font-bold text-emerald-400 tabular-nums">
-                  {fmtPLN(est.total_net_pln)}
-                </span>
-              </div>
-              {est.lines && est.lines.length > 0 && (
-                <div className="space-y-1 pt-1 border-t border-earth-800/60">
-                  {est.lines.slice(0, 4).map((line, i) => (
-                    <div key={i} className="flex items-center justify-between text-xs">
-                      <span className="text-earth-400 truncate max-w-[200px]">{line.name}</span>
-                      <span className="text-earth-300 tabular-nums">{fmtPLN(line.total)}</span>
+          {estimates.map(est => {
+            const meta = METHOD_META[est.method] ?? METHOD_META['icb'];
+            const isOpen = expanded === est.id;
+            const range = est.confidence_high > 0
+              ? `${fmtPLN(est.confidence_low)} – ${fmtPLN(est.confidence_high)}`
+              : null;
+            return (
+              <GlassCard key={est.id} className="overflow-hidden">
+                {/* Header */}
+                <div
+                  className="flex items-center gap-3 p-4 cursor-pointer hover:bg-earth-800/20 transition-colors"
+                  onClick={() => setExpanded(isOpen ? null : est.id)}
+                >
+                  <span className="text-xl">{meta.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`text-[10px] px-2 py-0.5 rounded border font-medium ${meta.color}`}>
+                        {meta.label}
+                      </span>
+                      <span className="text-xs text-earth-400 truncate">{est.variant}</span>
                     </div>
-                  ))}
-                  {est.lines.length > 4 && (
-                    <p className="text-[10px] text-earth-600">+{est.lines.length - 4} pozycji…</p>
-                  )}
+                    {range && <p className="text-[10px] text-earth-600 mt-0.5">Przedział: {range}</p>}
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-bold text-emerald-400 tabular-nums">{fmtPLN(est.total_net_pln)}</p>
+                    <p className="text-[10px] text-earth-600">netto</p>
+                  </div>
+                  <ChevronDown size={14} className={`text-earth-600 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                 </div>
-              )}
-            </GlassCard>
-          ))}
+
+                {/* Expanded detail */}
+                {isOpen && (
+                  <div className="border-t border-earth-800/60 px-4 pb-4 pt-3 space-y-3">
+                    {est.notes && (
+                      <p className="text-[11px] text-earth-500 italic">{est.notes}</p>
+                    )}
+
+                    {/* Params pills */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {est.area_m2 && <span className="text-[10px] px-2 py-0.5 rounded bg-earth-700/40 text-earth-400">{est.area_m2} m²</span>}
+                      {est.region && <span className="text-[10px] px-2 py-0.5 rounded bg-earth-700/40 text-earth-400">{est.region}</span>}
+                      {est.cpv_prefix && <span className="text-[10px] px-2 py-0.5 rounded bg-earth-700/40 text-earth-400 font-mono">CPV {est.cpv_prefix}</span>}
+                      {est.created_at && <span className="text-[10px] px-2 py-0.5 rounded bg-earth-700/40 text-earth-400">{new Date(est.created_at).toLocaleDateString('pl-PL')}</span>}
+                    </div>
+
+                    {/* Lines table */}
+                    {est.lines.length > 0 && (
+                      <div className="space-y-1">
+                        <p className="text-[10px] text-earth-600 uppercase tracking-wide">{est.lines.length} pozycji</p>
+                        <div className="max-h-52 overflow-y-auto space-y-px">
+                          {est.lines.map((ln, i) => (
+                            <div key={i} className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-baseline text-xs px-2 py-1 rounded hover:bg-earth-800/30">
+                              <span className="text-earth-300 truncate" title={ln.name}>{ln.name}</span>
+                              <span className="text-earth-600 tabular-nums text-right">{ln.qty} {ln.unit}</span>
+                              <span className="text-earth-500 tabular-nums text-right">{fmtPLN(ln.unit_price)}</span>
+                              <span className="text-emerald-400 tabular-nums text-right font-medium">{fmtPLN(ln.total)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between pt-1">
+                      <p className="text-[10px] text-earth-600">
+                        Suma netto: <span className="text-emerald-400 font-semibold">{fmtPLN(est.total_net_pln)}</span>
+                        {' · '}VAT 23%: <span className="text-earth-400">{fmtPLN(est.total_net_pln * 0.23)}</span>
+                        {' · '}Brutto: <span className="text-earth-300 font-semibold">{fmtPLN(est.total_net_pln * 1.23)}</span>
+                      </p>
+                      <button
+                        onClick={() => handleDeleteEstimate(est.id)}
+                        className="text-earth-600 hover:text-red-400 transition-colors text-[10px] flex items-center gap-1"
+                      >
+                        <X size={11} /> Usuń
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </GlassCard>
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
+
 
 // ─── Detail Panel ─────────────────────────────────────────────────────────────
 
@@ -804,7 +1123,7 @@ function DetailPanel({
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.15 }}
             >
-              <EstimatesTab tenderId={tender.id} authFetch={authFetch} />
+              <EstimatesTab tenderId={tender.id} tender={tender} authFetch={authFetch} />
             </motion.div>
           ) : tab === 'automation' ? (
             <motion.div
