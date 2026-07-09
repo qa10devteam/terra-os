@@ -553,6 +553,14 @@ def add_pozycja(kid: str, body: PozycjaCreate, user: AuthUser) -> dict:
             "uwagi": body.uwagi,
         })
 
+    # Trigger material risk check asynchronicznie (nie blokuje odpowiedzi)
+    if body.icb_id_m:
+        try:
+            from ..intelligence.material_risk import check_material_risks
+            check_material_risks(kosztorys_id=kid, tenant_id=tenant_id)
+        except Exception as _e:
+            logger.warning("material_risk trigger failed after add_pozycja: %s", _e)
+
     return {"id": pid, "status": "created"}
 
 
@@ -602,6 +610,14 @@ def update_pozycja(kid: str, pid: str, body: PozycjaUpdate, user: AuthUser) -> d
         """), {"pid": pid, "kid": kid, "tid": tenant_id, **updates})
         if r.rowcount == 0:
             raise HTTPException(404)
+
+    # Trigger material risk check jeśli zmieniono cenę materiału
+    if "m_jcena" in updates or "icb_id_m" in updates:
+        try:
+            from ..intelligence.material_risk import check_material_risks
+            check_material_risks(kosztorys_id=kid, tenant_id=tenant_id)
+        except Exception as _e:
+            logger.warning("material_risk trigger failed after update_pozycja: %s", _e)
 
     return {"id": pid, "updated": list(updates.keys())}
 
