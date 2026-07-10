@@ -252,4 +252,34 @@ async def health_system() -> dict:
     except Exception as exc:
         result["subsystems"]["alert_dispatcher"] = {"status": "unknown", "detail": str(exc)}
 
+    # 5. S127-S129 — ingest_lag check (>6h → notification)
+    try:
+        from terra_db.session import get_engine as _get_engine_lag
+        from sqlalchemy import text as _text_lag
+        _engine_lag = _get_engine_lag()
+        with _engine_lag.connect() as _conn_lag:
+            _last = _conn_lag.execute(
+                _text_lag("SELECT max(updated_at) FROM ingest_task WHERE status='done'")
+            ).scalar()
+            if _last is None or (_last and (
+                __import__('datetime').datetime.now(__import__('datetime').timezone.utc) - _last
+            ).total_seconds() > 6 * 3600):
+                try:
+                    _conn_lag.execute(
+                        _text_lag(
+                            "INSERT INTO notifications(id, type, message, created_at) "
+                            "VALUES(gen_random_uuid(), 'ingest_lag', 'No ingest done in 6h', now()) "
+                            "ON CONFLICT DO NOTHING"
+                        )
+                    )
+                    _conn_lag.commit()
+                except Exception:
+                    pass
+            result["subsystems"]["ingest_lag"] = {
+                "status": "ok" if _last else "warning",
+                "last_done": _last.isoformat() if _last else None,
+            }
+    except Exception as _exc_lag:
+        result["subsystems"]["ingest_lag"] = {"status": "unavailable", "detail": str(_exc_lag)}
+
     return result
