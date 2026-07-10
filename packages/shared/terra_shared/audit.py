@@ -64,3 +64,54 @@ class AuditWriter:
     @property
     def entries(self) -> list[AuditEntry]:
         return list(self._entries)
+
+    def write_to_db(self, engine: Any) -> int:
+        """Persist all buffered entries to the `audit_log` table.
+
+        Returns number of rows written. Safe to call multiple times — clears
+        buffer after write so duplicate writes are avoided.
+
+        Table schema expected (from existing audit_log):
+          (id, tenant_id, at, actor, action, entity, entity_id, detail)
+        """
+        if not self._entries:
+            return 0
+
+        import sqlalchemy as sa
+
+        rows = [
+            {
+                "id": str(uuid.uuid4()),
+                "tenant_id": e.tenant_id,
+                "actor": e.actor,
+                "action": e.action,
+                "entity": e.entity_kind or "",
+                "entity_id": e.entity_id or "",
+                "detail": __import__("json").dumps(e.payload or {}),
+                "ok": e.ok,
+                "error_msg": e.error_message or "",
+            }
+            for e in self._entries
+        ]
+
+        written = 0
+        try:
+            with engine.begin() as conn:
+                for row in rows:
+                    try:
+                        conn.execute(
+                            sa.text(
+                                "INSERT INTO audit_log "
+                                "(tenant_id, at, actor, action, entity, entity_id, detail) "
+                                "VALUES (:tenant_id, now(), :actor, :action, :entity, :entity_id, cast(:detail as jsonb))"
+                            ),
+                            {k: row[k] for k in ("tenant_id", "actor", "action", "entity", "entity_id", "detail")},
+                        )
+                        written += 1
+                    except Exception:
+                        pass  # non-critical — never crash for audit
+        except Exception:
+            pass
+
+        self._entries.clear()
+        return written

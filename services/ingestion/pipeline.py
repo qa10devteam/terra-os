@@ -15,6 +15,12 @@ from .repository import get_or_create_default_tenant, upsert_tender
 from .scorer import OwnerProfileSnap, ScoringWeights, load_scoring_config, score_tender
 from .ted_connector import TEDConnector
 
+try:
+    from terra_shared.audit import AuditWriter
+    _AUDIT_AVAILABLE = True
+except ImportError:
+    _AUDIT_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 
 TERRA_OFFLINE = os.getenv("TERRA_OFFLINE", "0") == "1"
@@ -240,5 +246,28 @@ def run_ingest(
                 logger.info("Auto-fetch SWZ done: %d/%d OK", fetched_ok, len(rows))
         except Exception as exc:
             logger.warning("Auto-fetch SWZ failed (non-fatal): %s", exc)
+
+    # Sprint 9: Audit log — ingest.complete
+    if _AUDIT_AVAILABLE:
+        try:
+            from terra_shared.audit import AuditWriter as _AW
+            _audit = _AW()
+            _audit.log(
+                tenant_id=str(tenant_id),
+                actor="pipeline",
+                action="ingest.complete",
+                entity_kind="ingest_result",
+                payload={
+                    "raw_fetched": result.raw_fetched,
+                    "normalized": result.normalized,
+                    "created": result.created,
+                    "updated": result.updated,
+                    "errors": result.errors,
+                },
+                ok=result.errors == 0,
+            )
+            _audit.write_to_db(engine)
+        except Exception as exc:
+            logger.debug("Audit log failed (non-critical): %s", exc)
 
     return result
