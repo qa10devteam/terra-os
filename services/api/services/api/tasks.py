@@ -34,6 +34,15 @@ def sync_bzp_task(self, days_back: int = 7, offline: bool = False):
             "BZP sync complete: fetched=%d created=%d updated=%d",
             result.raw_fetched, result.created, result.updated,
         )
+
+        # S87 — Invalidate cache for all tenants after ingest
+        try:
+            from . import cache as _api_cache
+            _api_cache.invalidate()
+            logger.info("Cache invalidated after BZP sync")
+        except Exception as _ce:
+            logger.warning("Cache invalidation failed: %s", _ce)
+
         return {
             "status": "ok",
             "fetched": result.raw_fetched,

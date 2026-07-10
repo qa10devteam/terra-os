@@ -21,6 +21,9 @@ from pydantic import BaseModel, Field
 
 from terra_db.session import get_engine
 
+from .. import cache as _cache
+from ..auth.deps import AuthUser
+
 logger = logging.getLogger(__name__)
 
 # S116 — Allowed fields for sparse fieldset (mobile)
@@ -416,6 +419,13 @@ def get_tender(tender_id: str, user: AuthUser) -> TenderDetail:
     org_id = user.org_id
     if not org_id:
         raise HTTPException(status_code=403, detail={"error": "no_org"})
+
+    # S86 — Check cache first
+    _cache_key = f"tender:{tender_id}:{org_id}"
+    _cached = _cache.get(_cache_key)
+    if _cached is not None:
+        return _cached
+
     engine = get_engine()
     tenant_id = _resolve_tenant_id(engine, org_id)
 
@@ -477,7 +487,7 @@ def get_tender(tender_id: str, user: AuthUser) -> TenderDetail:
 
     duplicates = [_dup_row(r) for r in dup_refs_raw] + [_dup_row(r) for r in sibling_refs_raw]
 
-    return TenderDetail(
+    result = TenderDetail(
         id=str(row.id),
         title=row.title or "",
         buyer=row.buyer,
@@ -498,6 +508,10 @@ def get_tender(tender_id: str, user: AuthUser) -> TenderDetail:
         raw=row.raw if isinstance(row.raw, dict) else {},
         duplicates=duplicates,
     )
+
+    # S86 — Store in cache
+    _cache.set(_cache_key, result, ttl=120)
+    return result
 
 
 @router.patch("/{tender_id}", summary="Zmień status przetargu")
