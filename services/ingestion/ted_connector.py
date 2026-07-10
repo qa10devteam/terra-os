@@ -42,7 +42,11 @@ TED_FIELDS = [
 ]
 
 # TED page size max = 100
+import random
+
 _PAGE_SIZE = 100
+_MAX_RETRIES = 4
+_RETRY_BASE_DELAY = 2.0  # seconds (exponential: 2, 4, 8, 16)
 
 
 class TEDConnector:
@@ -50,6 +54,58 @@ class TEDConnector:
 
     def __init__(self, timeout: int = 30) -> None:
         self._client = httpx.Client(timeout=timeout)
+
+    def _fetch_page(self, query: str, page: int) -> dict | None:
+        """Fetch single page with exponential backoff + jitter on 429/5xx."""
+        for attempt in range(1, _MAX_RETRIES + 1):
+            try:
+                resp = self._client.post(
+                    TED_SEARCH_URL,
+                    json={
+                        "query": query,
+                        "fields": TED_FIELDS,
+                        "limit": _PAGE_SIZE,
+                        "page": page,
+                    },
+                )
+                if resp.status_code == 429:
+                    # Honour Retry-After header if present
+                    retry_after = float(resp.headers.get("Retry-After", 0))
+                    wait = max(retry_after, _RETRY_BASE_DELAY * (2 ** (attempt - 1)))
+                    wait += random.uniform(0, wait * 0.2)  # jitter ±20%
+                    logger.warning(
+                        "TED 429 (page %d, attempt %d/%d) — sleep %.1fs",
+                        page, attempt, _MAX_RETRIES, wait,
+                    )
+                    if attempt < _MAX_RETRIES:
+                        import time as _t; _t.sleep(wait)
+                        continue
+                    logger.error("TED 429: exceeded max retries on page %d", page)
+                    return None
+                if resp.status_code >= 500:
+                    wait = _RETRY_BASE_DELAY * (2 ** (attempt - 1)) + random.uniform(0, 1)
+                    logger.warning(
+                        "TED %d (page %d, attempt %d/%d) — sleep %.1fs",
+                        resp.status_code, page, attempt, _MAX_RETRIES, wait,
+                    )
+                    if attempt < _MAX_RETRIES:
+                        import time as _t; _t.sleep(wait)
+                        continue
+                    return None
+                resp.raise_for_status()
+                return resp.json()
+            except httpx.TimeoutException as exc:
+                wait = _RETRY_BASE_DELAY * (2 ** (attempt - 1))
+                logger.warning("TED timeout (page %d, attempt %d): %s — retry in %.1fs", page, attempt, exc, wait)
+                if attempt < _MAX_RETRIES:
+                    import time as _t; _t.sleep(wait)
+                    continue
+                logger.error("TED timeout: exceeded max retries on page %d", page)
+                return None
+            except Exception as exc:
+                logger.error("TED API error (page %d): %s", page, exc)
+                return None
+        return None
 
     def fetch_notices(
         self,
@@ -81,20 +137,8 @@ class TEDConnector:
         page = 1
 
         while True:
-            try:
-                resp = self._client.post(
-                    TED_SEARCH_URL,
-                    json={
-                        "query": query,
-                        "fields": TED_FIELDS,
-                        "limit": _PAGE_SIZE,
-                        "page": page,
-                    },
-                )
-                resp.raise_for_status()
-                data = resp.json()
-            except Exception as exc:
-                logger.error("TED API error (page %d): %s", page, exc)
+            data = self._fetch_page(query, page)
+            if data is None:
                 break
 
             notices = data.get("notices", [])
