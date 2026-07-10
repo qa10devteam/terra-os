@@ -21,6 +21,10 @@ sub_router = APIRouter(prefix="/api/v1/subcontractors", tags=["subcontractors"])
 equip_router = APIRouter(prefix="/api/v1/equipment", tags=["equipment"])
 gantt_router = APIRouter(prefix="/api/v1/gantt", tags=["gantt"])
 calendar_router = APIRouter(prefix="/api/v1/calendar", tags=["calendar"])
+employees_router = APIRouter(prefix="/api/v1/resources/employees", tags=["employees"])
+res_equip_router = APIRouter(prefix="/api/v1/resources/equipment", tags=["resources-equipment"])
+logistics_router = APIRouter(prefix="/api/v1/logistics", tags=["logistics"])
+contracts_router = APIRouter(prefix="/api/v1/contracts", tags=["contracts"])
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -555,3 +559,160 @@ def sync_calendar_from_tenders(user: AuthUser) -> dict:
         conn.commit()
 
     return {"synced": added, "message": f"Dodano {added} terminów do kalendarza"}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# EMPLOYEES (Pracownicy)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class EmployeeCreate(BaseModel):
+    name: str
+    role: str = "pracownik"
+    phone: str | None = None
+    hourly_rate: float | None = None
+
+
+@employees_router.get("")
+def list_employees(user: AuthUser) -> dict:
+    """Lista pracowników firmy."""
+    org_id = user.org_id or "default"
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(
+            sa.text("SELECT * FROM employees WHERE org_id = :org ORDER BY name"),
+            {"org": org_id},
+        ).mappings().all()
+    return {"items": [dict(r) for r in rows], "total": len(rows)}
+
+
+@employees_router.post("", status_code=201)
+def create_employee(body: EmployeeCreate, user: AuthUser) -> dict:
+    """Dodaj pracownika."""
+    org_id = user.org_id or "default"
+    emp_id = str(uuid.uuid4())
+    engine = get_engine()
+    with engine.begin() as conn:
+        conn.execute(
+            sa.text("""
+                INSERT INTO employees (id, org_id, name, role, phone, hourly_rate)
+                VALUES (:id, :org, :name, :role, :phone, :rate)
+            """),
+            {"id": emp_id, "org": org_id, "name": body.name,
+             "role": body.role, "phone": body.phone, "rate": body.hourly_rate},
+        )
+    return {"id": emp_id, "name": body.name, "role": body.role}
+
+
+@employees_router.delete("/{emp_id}", status_code=204)
+def delete_employee(emp_id: str, user: AuthUser) -> None:
+    """Usuń pracownika."""
+    org_id = user.org_id or "default"
+    engine = get_engine()
+    with engine.begin() as conn:
+        conn.execute(
+            sa.text("DELETE FROM employees WHERE id = :id AND org_id = :org"),
+            {"id": emp_id, "org": org_id},
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# RESOURCES/EQUIPMENT (alias proxy to /api/v1/equipment logic)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@res_equip_router.get("")
+def list_res_equipment(user: AuthUser, limit: int = Query(100)) -> dict:
+    """Lista sprzętu (alias /api/v1/resources/equipment → equipment table)."""
+    org_id = user.org_id or "default"
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(
+            sa.text("SELECT * FROM equipment WHERE org_id = :org ORDER BY name LIMIT :lim"),
+            {"org": org_id, "lim": limit},
+        ).mappings().all()
+    return {"items": [dict(r) for r in rows], "total": len(rows)}
+
+
+@res_equip_router.post("", status_code=201)
+def create_res_equipment(body: EquipmentCreate, user: AuthUser) -> dict:
+    """Dodaj sprzęt (via /api/v1/resources/equipment)."""
+    org_id = user.org_id or "default"
+    eq_id = str(uuid.uuid4())
+    engine = get_engine()
+    with engine.begin() as conn:
+        conn.execute(
+            sa.text("""
+                INSERT INTO equipment (id, org_id, name, category, status, daily_cost)
+                VALUES (:id, :org, :name, :cat, :st, :cost)
+            """),
+            {"id": eq_id, "org": org_id, "name": body.name,
+             "cat": body.category, "st": body.status or "available", "cost": body.daily_cost},
+        )
+    return {"id": eq_id, "name": body.name}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LOGISTICS OPTIMIZE (Optymalizacja tras)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+class OptimizeRequest(BaseModel):
+    sites: list[dict] = []
+    depot: dict | None = None
+    max_distance_km: float = 200
+
+
+@logistics_router.post("/optimize")
+def optimize_routes(body: OptimizeRequest, user: AuthUser) -> dict:
+    """Optymalizacja tras — prosty greedy nearest-neighbor."""
+    if not body.sites:
+        return {"routes": [], "total_km": 0, "message": "Brak lokalizacji do optymalizacji"}
+
+    # Simple nearest-neighbor heuristic
+    sites = body.sites[:]
+    route = []
+    current = body.depot or {"lat": 52.23, "lng": 21.01}  # Default: Warsaw
+    total_km = 0.0
+
+    while sites:
+        # Find nearest
+        nearest_idx = 0
+        nearest_dist = float("inf")
+        for i, s in enumerate(sites):
+            dlat = abs(s.get("lat", 52) - current.get("lat", 52))
+            dlng = abs(s.get("lng", 21) - current.get("lng", 21))
+            dist = (dlat**2 + dlng**2) ** 0.5 * 111  # rough km
+            if dist < nearest_dist:
+                nearest_dist = dist
+                nearest_idx = i
+        site = sites.pop(nearest_idx)
+        route.append({**site, "distance_km": round(nearest_dist, 1)})
+        total_km += nearest_dist
+        current = site
+
+    return {
+        "routes": [{"stops": route, "total_km": round(total_km, 1)}],
+        "total_km": round(total_km, 1),
+        "vehicles_needed": max(1, len(route) // 8),
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CONTRACTS (Kontrakty/umowy)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@contracts_router.get("")
+def list_contracts(user: AuthUser) -> dict:
+    """Lista kontraktów z przetargów (status=won lub signed)."""
+    org_id = user.org_id or "default"
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(
+            sa.text("""
+                SELECT t.id, t.title, t.buyer, t.value_pln, t.status, t.updated_at
+                FROM tender t
+                WHERE t.org_id = :org AND t.status IN ('won', 'signed', 'contract', 'realized')
+                ORDER BY t.updated_at DESC
+                LIMIT 50
+            """),
+            {"org": org_id},
+        ).mappings().all()
+    return {"items": [dict(r) for r in rows], "total": len(rows)}
