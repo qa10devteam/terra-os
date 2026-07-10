@@ -76,6 +76,8 @@ export interface DashboardStats {
   redFlags: number;
   pipelineCounts: Record<string, number>;
   recentTenders: TenderItem[];
+  weeklyActivity: { day: string; count: number }[];
+  newThisWeek: number;
 }
 
 export interface ActivityItem {
@@ -122,6 +124,8 @@ export function useDashboardStats() {
             redFlags: json.high_score_count ?? 0,
             pipelineCounts: json.by_source ?? {},
             recentTenders,
+            weeklyActivity: json.weekly_activity ?? [],
+            newThisWeek: json.new_this_week ?? 0,
           });
         }
       } catch (e: unknown) {

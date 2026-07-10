@@ -21,9 +21,7 @@ import {
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 
 // ── Spark data ────────────────────────────────────────────────────────────────
-const sparkData = [
-  { v: 3 }, { v: 5 }, { v: 4 }, { v: 7 }, { v: 6 }, { v: 8 }, { v: 9 },
-];
+// sparkData now comes from API (weekly_activity)
 
 // ── Animation variants ────────────────────────────────────────────────────────
 const container = {
@@ -131,6 +129,10 @@ export function DashboardPage() {
   const pipelineCounts = stats?.pipelineCounts || {};
   const totalPipeline = Object.values(pipelineCounts).reduce((s, v) => s + v, 0) || 1;
 
+  // Real spark data from API (7 days of activity)
+  const sparkData = (stats?.weeklyActivity ?? []).map(d => ({ v: d.count }));
+  const newThisWeek = stats?.newThisWeek ?? 0;
+
   const statCards = [
     {
       label:   'Aktywne przetargi',
@@ -140,7 +142,7 @@ export function DashboardPage() {
       icon:    FileText,
       color:   'text-accent-primary',
       sparkColor: '#10b981',
-      trend:   '+3 w tym tygodniu',
+      trend:   newThisWeek > 0 ? `+${newThisWeek} w tym tygodniu` : 'brak nowych',
     },
     {
       label:   'Wartość pipeline',
@@ -150,7 +152,7 @@ export function DashboardPage() {
       icon:    TrendingUp,
       color:   'text-accent-warning',
       sparkColor: '#F59E0B',
-      trend:   'łączna wartość',
+      trend:   stats?.totalValue ? `${(stats.totalValue / 1_000_000).toFixed(1)}M PLN` : 'brak danych',
     },
     {
       label:   'Średni score',
@@ -160,7 +162,7 @@ export function DashboardPage() {
       icon:    Target,
       color:   'text-accent-info',
       sparkColor: '#3B82F6',
-      trend:   'dopasowanie profilu',
+      trend:   `top-5 > ${stats?.avgScore ?? 0}%`,
     },
     {
       label:   'Czerwone flagi',
@@ -170,7 +172,7 @@ export function DashboardPage() {
       icon:    AlertTriangle,
       color:   'text-accent-danger',
       sparkColor: '#EF4444',
-      trend:   'decyzje NO-GO',
+      trend:   (stats?.redFlags ?? 0) > 0 ? `${stats!.redFlags} wymagają uwagi` : 'brak alertów',
     },
   ];
 

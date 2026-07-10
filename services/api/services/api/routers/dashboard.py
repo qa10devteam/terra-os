@@ -56,6 +56,23 @@ def _get_dashboard_data(tenant_id: str) -> dict:
         """), {"tid": tenant_id}).fetchall()
         by_source = {r[0]: int(r[1]) for r in source_rows if r[0]}
 
+        # ── weekly_activity (last 7 days, count per day) ─────────────────────
+        activity_rows = conn.execute(sa.text("""
+            SELECT d.day, COALESCE(sub.c, 0) AS cnt
+            FROM (SELECT generate_series(CURRENT_DATE - 6, CURRENT_DATE, '1 day'::interval)::date AS day) d
+            LEFT JOIN (
+                SELECT DATE(created_at) AS dt, COUNT(*) AS c
+                FROM tender
+                WHERE duplicate_of IS NULL
+                  AND tenant_id = :tid
+                  AND created_at >= CURRENT_DATE - 6
+                GROUP BY DATE(created_at)
+            ) sub ON sub.dt = d.day
+            ORDER BY d.day
+        """), {"tid": tenant_id}).fetchall()
+        weekly_activity = [{"day": str(r.day), "count": int(r.cnt)} for r in activity_rows]
+        new_this_week = sum(r.cnt for r in activity_rows)
+
         # ── top-5 by match_score ───────────────────────────────────────────────
         top_rows = conn.execute(sa.text("""
             SELECT id, title, source::text, value_pln, match_score, status::text
@@ -81,12 +98,14 @@ def _get_dashboard_data(tenant_id: str) -> dict:
     return {
         "total_tenders": total_tenders,
         "new_today": new_today,
+        "new_this_week": new_this_week,
         "high_score_count": high_score_count,
         "by_source": by_source,
         "top_tenders": top_tenders,
         "avg_score": avg_score,
         "pipeline_value": pipeline_value,
         "unique_buyers": unique_buyers,
+        "weekly_activity": weekly_activity,
     }
 
 

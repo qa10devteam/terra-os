@@ -671,7 +671,14 @@ function PozycjaRow({
             className="w-full px-2 py-0.5 rounded bg-earth-800 border border-blue-500/40 text-earth-200 text-xs focus:outline-none"
           />
         ) : (
-          <span className={poz.is_anomaly ? 'text-red-300' : ''}>{poz.opis}</span>
+          <span className={poz.is_anomaly ? 'text-red-300' : ''}>
+            {poz.is_anomaly && (
+              <span className="inline-flex items-center mr-1.5" title="Anomalia cenowa - wartość odbiega od bazy rynkowej">
+                <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse inline-block" />
+              </span>
+            )}
+            {poz.opis}
+          </span>
         )}
       </td>
       <td className="px-2 py-1.5 text-earth-600 text-xs w-12 text-center">{poz.jednostka}</td>
