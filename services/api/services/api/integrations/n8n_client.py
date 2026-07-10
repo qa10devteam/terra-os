@@ -164,3 +164,20 @@ def get_n8n_client() -> N8nClient:
     if _client is None:
         _client = N8nClient()
     return _client
+
+
+def trigger_webhook(event_type: str, payload: dict, tenant_id: str) -> bool:
+    """Send event to N8N_WEBHOOK_URL; if not configured — log only. S91."""
+    url = N8N_WEBHOOK_URL
+    if not url:
+        logger.info("n8n trigger_webhook skip (N8N_WEBHOOK_URL not set): event=%s tenant=%s", event_type, tenant_id)
+        return False
+    data = {"event_type": event_type, "tenant_id": tenant_id, **payload}
+    try:
+        with httpx.Client(timeout=5.0) as c:
+            r = c.post(url, json=data)
+            logger.info("n8n trigger_webhook %s → %d", event_type, r.status_code)
+            return r.status_code < 300
+    except Exception as e:
+        logger.warning("n8n trigger_webhook error event=%s: %s", event_type, e)
+        return False

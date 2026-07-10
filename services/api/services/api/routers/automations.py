@@ -503,3 +503,22 @@ def n8n_provision_webhook(
     except Exception as e:
         raise HTTPException(500, f"n8n provisioning failed: {e}")
 
+
+
+# ─── S92: n8n webhook test endpoint ──────────────────────────────────────────
+
+class N8nTestPayload(BaseModel):
+    event_type: str = "TenderCreated"
+    payload: dict = Field(default_factory=dict)
+
+
+@router.post("/n8n/webhook-test")
+def n8n_webhook_test(
+    body: N8nTestPayload,
+    user: CurrentUser = Depends(get_current_user),
+) -> dict:
+    """S92: Wysyła test event do n8n przez N8N_WEBHOOK_URL."""
+    from ..integrations.n8n_client import trigger_webhook
+    tenant_id = str(user.org_id) if hasattr(user, "org_id") else "test"
+    ok = trigger_webhook(body.event_type, body.payload or {"test": True}, tenant_id)
+    return {"sent": ok, "event_type": body.event_type, "tenant_id": tenant_id}

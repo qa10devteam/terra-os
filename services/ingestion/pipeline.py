@@ -270,4 +270,15 @@ def run_ingest(
         except Exception as exc:
             logger.debug("Audit log failed (non-critical): %s", exc)
 
+    # S91: n8n trigger_webhook on ingest complete
+    try:
+        from services.api.services.api.integrations.n8n_client import trigger_webhook
+        trigger_webhook(
+            "TenderCreated",
+            {"count": result.created, "normalized": result.normalized},
+            str(tenant_id),
+        )
+    except Exception as exc:
+        logger.debug("n8n trigger_webhook non-critical: %s", exc)
+
     return result
