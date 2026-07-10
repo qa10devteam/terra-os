@@ -344,6 +344,13 @@ try:
     app.include_router(_import_offer_history_mod.router)
 except ImportError as _e:
     logging.getLogger(__name__).warning("import_offer_history router error: %s", _e)
+
+# S54 — market share analytics
+try:
+    from .routers.competitor_watch import market_share_router as _market_share_router
+    app.include_router(_market_share_router)
+except ImportError as _e:
+    logging.getLogger(__name__).warning("market_share router error: %s", _e)
 # S13: Alert config UI
 if 'alert_config' in _opt_map:
     app.include_router(_opt_map['alert_config'].router)

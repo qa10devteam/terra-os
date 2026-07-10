@@ -24,7 +24,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import text
 
-from ..auth.deps import AuthUser
+from ..auth.deps import AuthUser, get_current_user
 from terra_db.session import get_engine
 
 logger = logging.getLogger(__name__)
@@ -315,4 +315,88 @@ def competitor_intel(
         "cpv_breakdown": [dict(r) for r in cpv_breakdown],
         "region_breakdown": [dict(r) for r in region_breakdown],
         "recent_wins": [dict(r) for r in recent_wins],
+    }
+
+
+# ─── S52/S53/S54 extensions ────────────────────────────────────────────────────
+
+@router.get("/last-checked")
+def get_competitor_watch_list(user: AuthUser = Depends(get_current_user), db: DB = None) -> dict:
+    """S52: Lista obserwowanych konkurentów z last_checked_at."""
+    org_id = _require_org(user)
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(
+            text("""
+                SELECT id, competitor_nip, competitor_name, notes, tags,
+                       notify_on_win, created_at,
+                       COALESCE(last_checked_at::text, 'never') AS last_checked_at
+                FROM competitor_watch
+                WHERE tenant_id = :tenant_id
+                ORDER BY created_at DESC
+            """),
+            {"tenant_id": org_id},
+        ).fetchall()
+    return {
+        "items": [
+            {
+                "id": str(r[0]),
+                "competitor_nip": r[1],
+                "competitor_name": r[2],
+                "notes": r[3],
+                "tags": r[4] or [],
+                "notify_on_win": r[5],
+                "created_at": str(r[6]),
+                "last_checked_at": r[7],
+            }
+            for r in rows
+        ]
+    }
+
+
+market_share_router = APIRouter(prefix="/api/v2/analytics", tags=["market-share"])
+
+
+@market_share_router.get("/market-share")
+def get_market_share(user: AuthUser = Depends(get_current_user)) -> dict:
+    """S54: Market share — win count per competitor vs own wins."""
+    org_id = _require_org(user) if user else None
+    engine = get_engine()
+    with engine.connect() as conn:
+        # Own wins
+        own_wins = conn.execute(
+            text("""
+                SELECT COUNT(*) FROM offer_result
+                WHERE tenant_id = :tenant_id AND status = 'won'
+            """),
+            {"tenant_id": org_id},
+        ).scalar() or 0
+
+        # Competitor wins from bzp_results
+        rows = conn.execute(
+            text("""
+                SELECT contractor_name, contractor_nip, COUNT(*) AS win_count,
+                       ROUND(AVG(awarded_value), 2) AS avg_value
+                FROM bzp_results
+                WHERE contractor_nip IN (
+                    SELECT competitor_nip FROM competitor_watch WHERE tenant_id = :tenant_id
+                )
+                GROUP BY 1, 2
+                ORDER BY win_count DESC
+                LIMIT 20
+            """),
+            {"tenant_id": org_id},
+        ).fetchall()
+
+    return {
+        "own_wins": own_wins,
+        "competitors": [
+            {
+                "name": r[0],
+                "nip": r[1],
+                "win_count": r[2],
+                "avg_value_pln": float(r[3]) if r[3] else None,
+            }
+            for r in rows
+        ],
     }
