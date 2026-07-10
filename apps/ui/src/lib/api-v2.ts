@@ -6,24 +6,55 @@ import { useStore } from '@/store/useStore';
 // ── Base fetch ────────────────────────────────────────────────────────────────
 
 export function useAuthFetch() {
-  const { accessToken } = useStore();
+  const { accessToken, refreshToken, setAuth, clearAuth } = useStore();
   return useCallback(
     async (url: string, opts: RequestInit = {}) => {
-      const res = await fetch(url, {
-        ...opts,
-        headers: {
-          'Content-Type': 'application/json',
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-          ...(opts.headers || {}),
-        },
-      });
+      const doFetch = async (token: string | null) => {
+        return fetch(url, {
+          ...opts,
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...(opts.headers || {}),
+          },
+        });
+      };
+
+      let res = await doFetch(accessToken);
+
+      // Auto-refresh on 401
+      if (res.status === 401 && refreshToken) {
+        try {
+          const refreshRes = await fetch('/api/v2/auth/refresh', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refresh_token: refreshToken }),
+          });
+          if (refreshRes.ok) {
+            const data = await refreshRes.json();
+            const { useStore: getStore } = await import('@/store/useStore');
+            const state = getStore.getState();
+            state.setAuth(state.user!, data.access_token, data.refresh_token);
+            // Retry with new token
+            res = await doFetch(data.access_token);
+          } else {
+            clearAuth();
+            throw new Error('Session expired. Please login again.');
+          }
+        } catch (e: any) {
+          if (e.message?.includes('Session expired')) throw e;
+          clearAuth();
+          throw new Error('Session expired. Please login again.');
+        }
+      }
+
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err?.detail || `HTTP ${res.status}`);
       }
       return res.json();
     },
-    [accessToken],
+    [accessToken, refreshToken, setAuth, clearAuth],
   );
 }
 
