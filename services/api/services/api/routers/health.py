@@ -153,3 +153,96 @@ async def health_detailed() -> DetailedResponse:
         redis_status=redis_status,
         env=env,
     )
+
+
+# ─── BPMN Sprint 6 — System health ─────────────────────────────────────────
+
+@router.get("/health/system")
+async def health_system() -> dict:
+    """BPMN Faza 1 Sprint 6 — Full system health: DB, cache, ingest, alerts.
+
+    Returns per-subsystem status + recent ingest task stats.
+    HTTP 200 = all OK | 206 = degraded | 503 = critical failure.
+    """
+    from fastapi import Response
+    result: dict = {
+        "status": "ok",
+        "uptime_s": round(time.monotonic() - _START_TIME, 2),
+        "version": "0.1.0",
+        "subsystems": {},
+    }
+
+    # 1. DB
+    try:
+        from terra_db.session import get_engine
+        from sqlalchemy import text
+        engine = get_engine()
+        with engine.connect() as conn:
+            row = conn.execute(text(
+                "SELECT COUNT(*) FROM information_schema.tables "
+                "WHERE table_schema = 'public' AND table_type = 'BASE TABLE'"
+            )).fetchone()
+            tables = int(row[0]) if row else 0
+        result["subsystems"]["db"] = {"status": "ok", "tables": tables}
+    except Exception as exc:
+        result["subsystems"]["db"] = {"status": "error", "detail": str(exc)}
+        result["status"] = "critical"
+
+    # 2. Ingest tasks (last 10 min)
+    try:
+        from terra_db.session import get_engine
+        from sqlalchemy import text
+        engine = get_engine()
+        with engine.connect() as conn:
+            row = conn.execute(text("""
+                SELECT
+                    COUNT(*) FILTER (WHERE status = 'done')   AS done,
+                    COUNT(*) FILTER (WHERE status = 'running') AS running,
+                    COUNT(*) FILTER (WHERE status = 'failed')  AS failed,
+                    MAX(finished_at) AS last_finished
+                FROM ingest_task
+                WHERE created_at > NOW() - INTERVAL '10 minutes'
+            """)).fetchone()
+        result["subsystems"]["ingest"] = {
+            "status": "ok",
+            "last_10min": {
+                "done": int(row[0]) if row else 0,
+                "running": int(row[1]) if row else 0,
+                "failed": int(row[2]) if row else 0,
+            },
+            "last_finished": row[3].isoformat() if row and row[3] else None,
+        }
+        if row and row[2] > 0:
+            result["subsystems"]["ingest"]["status"] = "degraded"
+            if result["status"] == "ok":
+                result["status"] = "degraded"
+    except Exception as exc:
+        result["subsystems"]["ingest"] = {"status": "unavailable", "detail": str(exc)}
+
+    # 3. In-process cache
+    try:
+        from ..cache import _STORE, _LOCK
+        with _LOCK:
+            cache_size = len(_STORE)
+        result["subsystems"]["cache"] = {"status": "ok", "entries": cache_size}
+    except Exception:
+        result["subsystems"]["cache"] = {"status": "ok", "entries": 0}
+
+    # 4. Alert dispatcher (systemd)
+    try:
+        import subprocess
+        proc = subprocess.run(
+            ["systemctl", "is-active", "terra-alert-dispatcher"],
+            capture_output=True, text=True, timeout=2,
+        )
+        svc_status = proc.stdout.strip()
+        result["subsystems"]["alert_dispatcher"] = {
+            "status": "ok" if svc_status == "active" else "degraded",
+            "systemd_state": svc_status,
+        }
+        if svc_status != "active" and result["status"] == "ok":
+            result["status"] = "degraded"
+    except Exception as exc:
+        result["subsystems"]["alert_dispatcher"] = {"status": "unknown", "detail": str(exc)}
+
+    return result
