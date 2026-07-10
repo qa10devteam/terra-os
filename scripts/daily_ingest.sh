@@ -9,7 +9,7 @@
 set -euo pipefail
 
 LOG=/var/log/terra-ingest.log
-PYTHONPATH_INGEST="/home/ubuntu/terra-os:/home/ubuntu/terra-os/services:/home/ubuntu/terra-os/packages/db:/home/ubuntu/terra-os/packages/vendor:/home/ubuntu/terra-os/packages/shared"
+PYTHONPATH_INGEST="/home/ubuntu/terra-os/services/api:/home/ubuntu/terra-os:/home/ubuntu/terra-os/packages/db:/home/ubuntu/terra-os/packages/vendor:/home/ubuntu/terra-os/packages/shared"
 BIP_DIR="/home/ubuntu/terra-os/services/ingestion"
 PYTHON="/home/ubuntu/terra-os/.venv/bin/python3"
 TENANT_ID="ec3d1e16-2139-48c2-93b5-ffe0defd606d"
