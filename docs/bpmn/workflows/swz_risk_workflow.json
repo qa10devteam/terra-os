@@ -1,0 +1,30 @@
+{
+  "id": "swz_risk_workflow",
+  "name": "SWZ Risk Assessment Workflow",
+  "version": "1.0",
+  "description": "After SWZ auto-fetch: calls risk_extractor, if high risk → flags tender risk_level=high",
+  "trigger": {
+    "type": "TENDER_CREATED",
+    "filters": {"has_swz": true}
+  },
+  "conditions": [
+    {"field": "match_score", "operator": "gt", "value": 0.0}
+  ],
+  "condition_logic": "AND",
+  "actions": [
+    {
+      "type": "WEBHOOK",
+      "params": {
+        "url": "${RISK_EXTRACTOR_URL}",
+        "payload": {"action": "extract_risk"}
+      },
+      "order": 1
+    },
+    {
+      "type": "NOTIFICATION",
+      "params": {"message": "Ryzyko SWZ wykryte — przetarg oznaczony jako high risk"},
+      "order": 2
+    }
+  ],
+  "is_active": true
+}

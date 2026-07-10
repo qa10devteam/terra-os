@@ -1,0 +1,30 @@
+{
+  "id": "offer_won_workflow",
+  "name": "Offer Won Workflow",
+  "version": "1.0",
+  "description": "When offer status=won → auto-create 3 default GANTT phases",
+  "trigger": {"type": "DECISION_MADE"},
+  "conditions": [
+    {"field": "offer_status", "operator": "eq", "value": "won"}
+  ],
+  "condition_logic": "AND",
+  "actions": [
+    {
+      "type": "WEBHOOK",
+      "params": {
+        "url": "${INTERNAL_API}/api/v2/gantt/auto-create",
+        "payload": {
+          "phases": ["Przygotowanie dokumentacji", "Realizacja", "Odbiór"],
+          "source": "offer_won_workflow"
+        }
+      },
+      "order": 1
+    },
+    {
+      "type": "NOTIFICATION",
+      "params": {"message": "Oferta wygrana! Automatycznie utworzono 3 fazy projektu GANTT."},
+      "order": 2
+    }
+  ],
+  "is_active": true
+}

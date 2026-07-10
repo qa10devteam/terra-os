@@ -1,0 +1,27 @@
+{
+  "id": "high_score_auto_bookmark",
+  "name": "High Score Auto Bookmark",
+  "version": "1.0",
+  "description": "Automatically bookmarks tenders with match_score >= 0.7",
+  "trigger": {
+    "type": "TENDER_CREATED",
+    "filters": {"min_score": 0.7}
+  },
+  "conditions": [
+    {"field": "match_score", "operator": "gt", "value": 0.69}
+  ],
+  "condition_logic": "AND",
+  "actions": [
+    {
+      "type": "BOOKMARK",
+      "params": {},
+      "order": 1
+    },
+    {
+      "type": "NOTIFICATION",
+      "params": {"message": "Przetarg z wysokim dopasowaniem (>=0.7) został automatycznie zakładkowany."},
+      "order": 2
+    }
+  ],
+  "is_active": true
+}

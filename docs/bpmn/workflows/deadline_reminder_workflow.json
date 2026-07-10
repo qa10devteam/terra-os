@@ -1,0 +1,31 @@
+{
+  "id": "deadline_reminder_workflow",
+  "name": "Deadline Reminder Workflow",
+  "version": "1.0",
+  "description": "Sends notifications at -7d, -3d, -1d before tender deadline",
+  "trigger": {
+    "type": "DEADLINE_7D",
+    "also_fires": ["DEADLINE_3D", "DEADLINE_1D"]
+  },
+  "conditions": [
+    {"field": "decision", "operator": "eq", "value": "bid"}
+  ],
+  "condition_logic": "AND",
+  "actions": [
+    {
+      "type": "NOTIFICATION",
+      "params": {"message": "Termin składania ofert zbliża się! Sprawdź przetarg."},
+      "order": 1
+    },
+    {
+      "type": "EMAIL",
+      "params": {
+        "to": "${USER_EMAIL}",
+        "subject": "Terra-OS: Termin przetargu",
+        "body": "Termin składania ofert dla przetargu ${tender_title} upływa wkrótce."
+      },
+      "order": 2
+    }
+  ],
+  "is_active": true
+}

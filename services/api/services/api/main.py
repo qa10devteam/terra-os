@@ -331,6 +331,13 @@ if 'resources' in _opt_map:
 if 'scoring_config' in _opt_map:
     app.include_router(_opt_map['scoring_config'].router)
 
+# S50 + S51 — CPV win rates + competitor win rates
+try:
+    from .routers import cpv_win_rates as _cpv_win_rates_mod
+    app.include_router(_cpv_win_rates_mod.router)
+except ImportError as _e:
+    logging.getLogger(__name__).warning("cpv_win_rates router error: %s", _e)
+
 # S47 — offer history import
 try:
     from .routers import import_offer_history as _import_offer_history_mod

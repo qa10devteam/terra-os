@@ -1,0 +1,27 @@
+{
+  "id": "bid_decision_workflow",
+  "name": "Bid Decision Workflow",
+  "version": "1.0",
+  "description": "When decision=bid is made → auto-create kosztorys draft",
+  "trigger": {"type": "DECISION_MADE"},
+  "conditions": [
+    {"field": "decision", "operator": "eq", "value": "bid"}
+  ],
+  "condition_logic": "AND",
+  "actions": [
+    {
+      "type": "WEBHOOK",
+      "params": {
+        "url": "${INTERNAL_API}/api/v2/kosztorys/auto-create",
+        "payload": {"source": "bid_decision_workflow"}
+      },
+      "order": 1
+    },
+    {
+      "type": "NOTIFICATION",
+      "params": {"message": "Decyzja BID — automatycznie utworzono szkic kosztorysu."},
+      "order": 2
+    }
+  ],
+  "is_active": true
+}
