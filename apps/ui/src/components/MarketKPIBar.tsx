@@ -1,0 +1,118 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { motion } from 'motion/react';
+import { Activity, TrendingUp, TrendingDown, DollarSign, Users, FileText, Zap } from 'lucide-react';
+import { useAuthFetch } from '@/lib/api-v2';
+
+interface MarketKPI {
+  total_tenders: number;
+  total_value_pln: number;
+  avg_value_pln: number;
+  tenders_this_month: number;
+  tenders_last_month: number;
+  month_change_pct: number;
+  active_buyers: number;
+  active_contractors: number;
+  top_cpv_code: string | null;
+  top_cpv_count: number;
+}
+
+function fmtPLN(v: number): string {
+  if (v >= 1_000_000_000) return `${(v / 1_000_000_000).toFixed(1)}B PLN`;
+  if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}M PLN`;
+  if (v >= 1_000) return `${(v / 1_000).toFixed(0)}k PLN`;
+  return `${v.toFixed(0)} PLN`;
+}
+
+export default function MarketKPIBar() {
+  const authFetch = useAuthFetch();
+  const [kpi, setKpi] = useState<MarketKPI | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    try {
+      const data = await authFetch('/api/v2/intelligence/summary');
+      setKpi(data);
+    } catch { }
+    setLoading(false);
+  }, [authFetch]);
+
+  useEffect(() => { load(); }, [load]);
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-3 animate-pulse">
+        {[...Array(6)].map((_, i) => <div key={i} className="h-20 bg-zinc-900/50 rounded-xl border border-zinc-800" />)}
+      </div>
+    );
+  }
+
+  if (!kpi) return null;
+
+  const cards = [
+    {
+      icon: FileText,
+      label: 'Przetargów w bazie',
+      value: kpi.total_tenders?.toLocaleString() || '—',
+      sub: `${kpi.tenders_this_month || 0} w tym miesiącu`,
+      color: 'text-emerald-400',
+    },
+    {
+      icon: DollarSign,
+      label: 'Łączna wartość',
+      value: fmtPLN(kpi.total_value_pln || 0),
+      sub: `Śr. ${fmtPLN(kpi.avg_value_pln || 0)}`,
+      color: 'text-emerald-400',
+    },
+    {
+      icon: kpi.month_change_pct >= 0 ? TrendingUp : TrendingDown,
+      label: 'Zmiana m/m',
+      value: `${kpi.month_change_pct >= 0 ? '+' : ''}${kpi.month_change_pct?.toFixed(1) || 0}%`,
+      sub: `vs poprzedni miesiąc`,
+      color: kpi.month_change_pct >= 0 ? 'text-emerald-400' : 'text-red-400',
+    },
+    {
+      icon: Users,
+      label: 'Zamawiający',
+      value: kpi.active_buyers?.toLocaleString() || '—',
+      sub: 'aktywnych',
+      color: 'text-blue-400',
+    },
+    {
+      icon: Activity,
+      label: 'Wykonawcy',
+      value: kpi.active_contractors?.toLocaleString() || '—',
+      sub: 'aktywnych',
+      color: 'text-purple-400',
+    },
+    {
+      icon: Zap,
+      label: 'Top CPV',
+      value: kpi.top_cpv_code || '—',
+      sub: `${kpi.top_cpv_count || 0} przetargów`,
+      color: 'text-amber-400',
+    },
+  ];
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+      {cards.map((card, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: i * 0.05 }}
+          className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-3"
+        >
+          <div className="flex items-center gap-1.5 mb-1">
+            <card.icon className={`w-3.5 h-3.5 ${card.color}`} />
+            <span className="text-xs text-zinc-500 truncate">{card.label}</span>
+          </div>
+          <p className={`text-lg font-bold ${card.color}`}>{card.value}</p>
+          <p className="text-xs text-zinc-600 mt-0.5">{card.sub}</p>
+        </motion.div>
+      ))}
+    </div>
+  );
+}

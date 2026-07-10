@@ -3,6 +3,7 @@
 import { motion } from 'motion/react';
 import { useStore } from '@/store/useStore';
 import { useDashboardStats, useTenders } from '@/lib/api';
+import MarketKPIBar from '@/components/MarketKPIBar';
 import {
   TrendingUp,
   FileText,
@@ -211,6 +212,11 @@ export function DashboardPage() {
           <BarChart3 className="w-3.5 h-3.5 text-accent-primary" />
           <span className="text-xs text-earth-400">{stats?.activeTenders ?? 0} aktywnych przetargów</span>
         </div>
+      </motion.div>
+
+      {/* ── Market Intelligence KPI ────────────────────────────── */}
+      <motion.div variants={item}>
+        <MarketKPIBar />
       </motion.div>
 
       {/* ── Stat Cards ─────────────────────────────────────────── */}

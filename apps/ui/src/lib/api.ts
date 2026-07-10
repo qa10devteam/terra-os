@@ -6,6 +6,31 @@ import { useStore } from '@/store/useStore';
 // ── API Base — uses relative path so it works through any proxy ──────────────
 const API_BASE = '';
 
+// ── Auth-aware fetch helper (auto-refresh on 401) ────────────────────────────
+async function authFetchRaw(url: string, accessToken: string | null, refreshToken: string | null, setAuth: any, clearAuth: any): Promise<Response> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+  
+  let res = await fetch(`${API_BASE}${url}`, { headers });
+  
+  if (res.status === 401 && refreshToken) {
+    const refreshRes = await fetch(`${API_BASE}/api/v2/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+    if (refreshRes.ok) {
+      const tokens = await refreshRes.json();
+      setAuth(tokens.access_token, tokens.refresh_token || refreshToken);
+      headers['Authorization'] = `Bearer ${tokens.access_token}`;
+      res = await fetch(`${API_BASE}${url}`, { headers });
+    } else {
+      clearAuth();
+    }
+  }
+  return res;
+}
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export interface TenderItem {
@@ -46,19 +71,14 @@ export function useDashboardStats() {
   const [data, setData] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const accessToken = useStore((s) => s.accessToken);
+  const { accessToken, refreshToken, setAuth, clearAuth } = useStore();
 
   useEffect(() => {
     let cancelled = false;
     async function fetchStats() {
       setIsLoading(true);
       try {
-        const res = await fetch(`${API_BASE}/api/v1/tenders?limit=50`, {
-          headers: {
-            'Content-Type': 'application/json',
-            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-          },
-        });
+        const res = await authFetchRaw('/api/v1/tenders?limit=50', accessToken, refreshToken, setAuth, clearAuth);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
         const tenders: TenderItem[] = json.items || [];
