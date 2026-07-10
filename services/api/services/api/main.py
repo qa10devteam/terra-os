@@ -142,6 +142,7 @@ from .auth import router as auth_router
 # ─── Middleware helpers ────────────────────────────────────────────────────────
 from .middleware.validation import validate_request
 from .middleware.rate_limit import limiter
+from .middleware.rate_limiter import rate_limit_middleware
 from .middleware.tenant import TenantMiddleware, install_rls_on_engine
 from .middleware.csrf import CSRFMiddleware
 from .middleware.error_boundary import error_boundary_handler
@@ -227,6 +228,9 @@ app.add_middleware(
 
 # Faza 62: body size validation (functional middleware)
 app.middleware("http")(validate_request)
+
+# S34: per-user/IP sliding-window rate limiter (100 req/min)
+app.middleware("http")(rate_limit_middleware)
 
 
 # ─── Exception handlers ────────────────────────────────────────────────────────
@@ -431,3 +435,10 @@ try:
     app.include_router(_kaizen_mod.router)
 except ImportError as _e:
     logging.getLogger(__name__).warning("kaizen router error: %s", _e)
+
+# S81/S82 — GANTT v2
+try:
+    from .routers import gantt as _gantt_mod
+    app.include_router(_gantt_mod.router)
+except ImportError as _e:
+    logging.getLogger(__name__).warning("gantt v2 router error: %s", _e)
