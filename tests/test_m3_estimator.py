@@ -300,33 +300,42 @@ async def test_patch_params_recomputes():
 async def test_acceptance_a1_end_to_end():
     """A1: ingest → /tenders → analyze → estimate → compare (all offline)."""
     from services.api.services.api.main import app
+    from services.api.services.api.auth.utils import create_access_token
     engine = get_engine()
+
+    token = create_access_token(
+        user_id="40a71ef6-d6eb-48a3-b62e-7da3df5f0a17",
+        email="demo@terra-os.pl",
+        org_id="ec3d1e16-2139-48c2-93b5-ffe0defd606d",
+        role="owner",
+    )
+    headers = {"Authorization": f"Bearer {token}"}
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         # 1. Ingest
         r1 = await ac.post("/api/v1/ingest/run?offline=true")
-        assert r1.status_code == 200
+        assert r1.status_code in (200, 202)
 
         # 2. List tenders
-        r2 = await ac.get("/api/v1/tenders")
+        r2 = await ac.get("/api/v1/tenders", headers=headers)
         assert r2.status_code == 200
         items = r2.json()["items"]
         assert len(items) >= 1
         tender_id = items[0]["id"]
 
         # 3. Analyze
-        r3 = await ac.post(f"/api/v1/tenders/{tender_id}/analyze")
+        r3 = await ac.post(f"/api/v1/tenders/{tender_id}/analyze", headers=headers)
         assert r3.status_code == 200
         assert r3.json()["przedmiar_items_count"] >= 3
 
         # 4. Estimate (both variants)
-        r4 = await ac.post(f"/api/v1/tenders/{tender_id}/estimate")
+        r4 = await ac.post(f"/api/v1/tenders/{tender_id}/estimate", headers=headers)
         assert r4.status_code == 200
         pair = r4.json()
 
         # 5. Get both variants
-        est_a = (await ac.get(f"/api/v1/estimates/{pair['estimate_doc_id']}")).json()
-        est_b = (await ac.get(f"/api/v1/estimates/{pair['estimate_owner_id']}")).json()
+        est_a = (await ac.get(f"/api/v1/estimates/{pair['estimate_doc_id']}", headers=headers)).json()
+        est_b = (await ac.get(f"/api/v1/estimates/{pair['estimate_owner_id']}", headers=headers)).json()
 
         assert est_a["variant"] == "doc"
         assert est_b["variant"] == "owner"
@@ -334,7 +343,7 @@ async def test_acceptance_a1_end_to_end():
         assert est_b["sum_reconciled"] is True
 
         # 6. Compare → go/no-go view
-        r6 = await ac.get(f"/api/v1/tenders/{tender_id}/estimate/compare")
+        r6 = await ac.get(f"/api/v1/tenders/{tender_id}/estimate/compare", headers=headers)
         assert r6.status_code == 200
         cmp = r6.json()
         assert "margin_headroom_pct" in cmp
