@@ -94,9 +94,10 @@ def _decode_cursor(cursor: str) -> tuple[str, str] | None:
 
 @router.post("/ingest/run", response_model=IngestRunResponse, status_code=200)
 def ingest_run(
-    offline: bool = Query(default=True),
+    offline: bool = Query(default=False),
     days_back: int = Query(default=7, ge=1, le=90),
     include_bip: bool = Query(default=False),
+    include_ted: bool = Query(default=True),
     run_dedup: bool = Query(default=True),
 ) -> IngestRunResponse:
     """Trigger the ingestion pipeline."""
@@ -108,6 +109,7 @@ def ingest_run(
         days_back=days_back,
         offline=offline,
         include_bip=include_bip,
+        include_ted=include_ted,
         run_dedup=run_dedup,
         bip_max_sites=50,
     )
