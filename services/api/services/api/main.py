@@ -429,6 +429,12 @@ try:
 except ImportError as _e:
     logging.getLogger(__name__).warning("feature_flags router error: %s", _e)
 
+try:
+    from .routers import ab_testing as _ab_mod
+    app.include_router(_ab_mod.router)
+except ImportError as _e:
+    logging.getLogger(__name__).warning("ab_testing router error: %s", _e)
+
 # S135 — Kaizen Faza3 summary
 try:
     from .routers import kaizen as _kaizen_mod
