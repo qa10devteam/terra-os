@@ -199,4 +199,43 @@ def run_ingest(
         except Exception as exc:
             logger.error("Cross-source dedup failed: %s", exc)
 
+    # Step 8 (optional): Auto-fetch SWZ documents for high-score new tenders
+    if not use_fixtures and result.created > 0:
+        try:
+            from services.ingestion.bzp_document_scraper import BZPDocumentScraper
+            import sqlalchemy as sa
+
+            # Fetch top matched new tenders (BZP only, score >= 0.5)
+            with engine.connect() as conn:
+                rows = conn.execute(sa.text("""
+                    SELECT t.id, t.external_id
+                    FROM tender t
+                    LEFT JOIN bzp_documents bd ON bd.tender_id = t.id
+                    WHERE t.source = 'bzp'
+                      AND t.match_score >= 0.5
+                      AND t.tenant_id = :tid
+                      AND bd.id IS NULL
+                    ORDER BY t.match_score DESC, t.created_at DESC
+                    LIMIT 10
+                """), {"tid": str(tenant_id)}).fetchall()
+
+            if rows:
+                logger.info("Auto-fetch SWZ: %d high-score tenders", len(rows))
+                with BZPDocumentScraper(db_engine=engine) as scraper:
+                    fetched_ok = 0
+                    for row in rows:
+                        try:
+                            fr = scraper.fetch_all(
+                                tender_id=str(row[0]),
+                                bzp_number=row[1],
+                                download_files=False,  # nie pobieraj plików, tylko metadane
+                            )
+                            if fr.documents:
+                                fetched_ok += 1
+                        except Exception as e:
+                            logger.debug("Auto-fetch SWZ skip %s: %s", row[0], e)
+                logger.info("Auto-fetch SWZ done: %d/%d OK", fetched_ok, len(rows))
+        except Exception as exc:
+            logger.warning("Auto-fetch SWZ failed (non-fatal): %s", exc)
+
     return result
