@@ -233,7 +233,7 @@ def list_tenders(
         conditions.append("t.status != 'archived'")
 
     if source:
-        conditions.append("t.source = :source::source_kind")
+        conditions.append("t.source = CAST(:source AS source_kind)")
         params["source"] = source
 
     if cpv:
@@ -552,7 +552,7 @@ def patch_tender(tender_id: str, body: TenderPatch, user: AuthUser) -> dict:
     with engine.begin() as conn:
         result = conn.execute(sa.text("""
             UPDATE tender
-            SET status = :status::tender_status
+            SET status = CAST(:status AS tender_status)
             WHERE id = CAST(:id AS UUID) AND tenant_id = :tid
             RETURNING id::text, status::text
         """), {"status": body.status, "id": tender_id, "tid": tenant_id}).fetchone()

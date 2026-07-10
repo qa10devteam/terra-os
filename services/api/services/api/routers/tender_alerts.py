@@ -29,7 +29,7 @@ from terra_db.session import get_engine
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/v2/alerts", tags=["tender-alerts"])
+router = APIRouter(prefix="/api/v2/tender-alerts", tags=["tender-alerts"])
 
 
 def get_db():
