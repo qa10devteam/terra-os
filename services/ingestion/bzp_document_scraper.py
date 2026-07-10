@@ -62,6 +62,11 @@ STORAGE_DIR   = Path(os.environ.get("TERRA_DOCUMENTS_DIR", "/var/lib/terra-os/do
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
 TIMEOUT       = 30  # sekundy
 MAX_PDF_VERSIONS = 5   # próbujemy /01 → /02 → … → /05
+
+
+def _is_pdf(data: bytes) -> bool:
+    """Sprawdza magic bytes PDF (%PDF-)."""
+    return data[:4] == b"%PDF"
 RETRY_ATTEMPTS   = 3
 RETRY_DELAY      = 1.5  # sekundy (backoff × attempt)
 
@@ -74,27 +79,36 @@ _UA = (
 # Tylko ContractNotice zwraca 200 — inne typy → 400
 _VALID_NOTICE_TYPES = ("ContractNotice",)
 
-# Znane platformy zakupowe — URL z sekcji 3.1 ogłoszenia
-_KNOWN_PLATFORMS = (
+# Znane platformy zakupowe — matchowanie po domain suffix (obsługuje subdomeny)
+# np. "*.ezamawiajacy.pl", "*.logintrade.net", "*.eb2b.com.pl"
+_PLATFORM_SUFFIXES = (
+    # Największe platformy
     "platformazakupowa.pl",
-    "przetargi.pl",
-    "josephine.pl",
+    "ezamawiajacy.pl",        # obejmuje *.ezamawiajacy.pl
+    "logintrade.net",         # obejmuje *.logintrade.net (.pl też istnieje)
     "logintrade.pl",
+    "eb2b.com.pl",            # obejmuje *.eb2b.com.pl
+    "smartpzp.pl",
+    "josephine.pl",
+    "e-propublico.pl",
+    "epropublico.pl",
+    "sidaspzp.pl",
+    "przetargi.pl",
     "openplatform.pl",
     "miniportal.uzp.gov.pl",
     "e-zp.com",
     "zp.pzp.pl",
-    "epropublico.pl",
-    "e-propublico.pl",
     "proebiz.com",
     "soldea.pl",
-    "eb2b.com.pl",
-    "smartpzp.pl",
-    "ezamawiajacy.pl",
-    "auctions.coig.pl",
     "comarq.pl",
+    "auctions.coig.pl",
     "biznes-polska.pl",
     "orion.pl",
+    "ezp.gkbkzp.pl",
+    "josephine.no",
+    # Subdomeny e-zp.*.pl (np. e-zp.miedzyrzecz.pl)
+    # Matchowane przez hostname startujący od "e-zp."
+    "ezamowienia.qov.pl",  # literówka w danych BZP (qov zamiast gov)
 )
 
 # ─────────────────────────────────────────────────────────────────────
@@ -364,43 +378,68 @@ class BZPDocumentScraper:
         return None
 
     def _get_swz_platform_url(self, bzp_number: str) -> str | None:
-        """Wyciąga URL zewnętrznej platformy SWZ z htmlBody (sekcja 3.1).
+        """Wyciąga URL zewnętrznej platformy SWZ z htmlBody ogłoszenia.
 
         Algorytm:
-        1. Pobierz datę publikacji z DB (published_at)
-        2. Wyszukaj ogłoszenie w API po tej dacie (ContractNotice)
-        3. Matchuj po numerze BZP (bez suffixu /01)
-        4. Wyciągnij URL platformy z htmlBody
+        1. Bezpośrednie zapytanie po noticeNumber (1 request!)
+        2. Fallback: szukaj po dacie publikacji ± 1 dzień (jeśli direct query zwraca 0)
         """
-        pub_date = self._get_publication_date(bzp_number)
-        if not pub_date:
-            # Fallback: skanuj ostatnie 14 dni (od najnowszego do najstarszego)
-            today = datetime.now(timezone.utc).date()
-            dates_to_try = [str(today - timedelta(days=i)) for i in range(14)]
-        else:
-            # Znana data: skanuj dzień ± 1 (UTC offset może przesunąć datę)
-            d = datetime.strptime(pub_date, "%Y-%m-%d").date()
-            dates_to_try = [pub_date, str(d - timedelta(days=1)), str(d + timedelta(days=1))]
-
         bzp_base = re.sub(r"/\d+$", "", bzp_number)  # strip /01
+        client   = self._get_client()
 
-        for date_str in dates_to_try:
+        # ── Strategia 1: noticeNumber (bezpośredni filtr API) ─────────────────
+        pub_date = self._get_publication_date(bzp_number)
+        today    = datetime.now(timezone.utc).date()
+        date_str = pub_date or str(today)
+        try:
+            resp = client.get(
+                NOTICE_LIST_API,
+                params={
+                    "NoticeType":          "ContractNotice",
+                    "PublicationDateFrom": f"{date_str}T00:00:00",
+                    "PublicationDateTo":   f"{date_str}T23:59:59",
+                    "noticeNumber":        bzp_base,
+                    "pageSize":            1,
+                    "pageNumber":          0,
+                },
+                timeout=15,
+            )
+            items = resp.json() if resp.status_code == 200 and isinstance(resp.json(), list) else []
+            if items:
+                html = items[0].get("htmlBody") or ""
+                url  = _extract_platform_url(html) if html else None
+                if url:
+                    logger.info("SWZ URL dla %s: %s", bzp_base, url)
+                else:
+                    logger.debug("Znaleziono ogłoszenie %s, brak URL platformy SWZ", bzp_base)
+                return url
+        except httpx.HTTPError as exc:
+            logger.debug("noticeNumber query failed: %s", exc)
+
+        # ── Strategia 2: fallback — skanuj ± 1 dzień wokół daty publikacji ────
+        if pub_date:
+            d = datetime.strptime(pub_date, "%Y-%m-%d").date()
+            fallback_dates = [pub_date, str(d - timedelta(days=1)), str(d + timedelta(days=1))]
+        else:
+            fallback_dates = [str(today - timedelta(days=i)) for i in range(3)]
+
+        for date_str in fallback_dates:
             url = self._search_html_body_for_date(bzp_base, date_str)
-            if url is not None:  # None = nie znaleziono ogłoszenia; "" = brak URL w ogłoszeniu
+            if url is not None:
                 return url or None
 
-        logger.debug("Brak SWZ URL dla %s (przeszukano %d dat)", bzp_number, len(dates_to_try))
+        logger.debug("Brak SWZ URL dla %s", bzp_number)
         return None
 
-    def _search_html_body_for_date(self, bzp_base: str, date_str: str) -> str | None | str:
-        """Przeszukuje ogłoszenia z danego dnia w poszukiwaniu numeru BZP.
+    def _search_html_body_for_date(self, bzp_base: str, date_str: str) -> str | None:
+        """Skanuje ogłoszenia z danego dnia szukając numeru BZP (fallback).
 
         Returns:
             str  — znaleziono URL platformy
-            ""   — znaleziono ogłoszenie, ale bez URL platformy
+            ""   — znaleziono ogłoszenie, ale bez URL platformy (caller powinien zwrócić None)
             None — ogłoszenie nie znalezione w tym dniu
         """
-        client = self._get_client()
+        client    = self._get_client()
         date_from = f"{date_str}T00:00:00"
         date_to   = f"{date_str}T23:59:59"
 
@@ -423,21 +462,15 @@ class BZPDocumentScraper:
 
             if resp.status_code != 200:
                 break
-
             items = resp.json() if isinstance(resp.json(), list) else []
             if not items:
-                break  # Koniec wyników
+                break
 
             for notice in items:
                 n_bzp = re.sub(r"/\d+$", "", (notice.get("bzpNumber") or "").strip())
                 if n_bzp == bzp_base:
                     html = notice.get("htmlBody") or ""
-                    platform_url = _extract_platform_url(html) if html else None
-                    if platform_url:
-                        logger.info("SWZ URL dla %s: %s", bzp_base, platform_url)
-                    else:
-                        logger.debug("Ogłoszenie %s znalezione, brak URL platformy SWZ", bzp_base)
-                    return platform_url or ""
+                    return _extract_platform_url(html) or ""
 
         return None
 
@@ -612,41 +645,51 @@ class BZPDocumentScraper:
 # Helpers
 # ─────────────────────────────────────────────────────────────────────
 
-def _is_pdf(data: bytes) -> bool:
-    """Sprawdza magic bytes PDF (%PDF-)."""
-    return data[:4] == b"%PDF"
+def _is_platform_url(url: str) -> bool:
+    """Sprawdza czy URL należy do znanych platform zakupowych (obsługuje subdomeny)."""
+    try:
+        m = re.match(r'https?://([^/?\s]+)', url)
+        if not m:
+            return False
+        host = m.group(1).lower().rstrip(".")
+        # Suffix matching: *.ezamawiajacy.pl, *.logintrade.net, *.eb2b.com.pl itd.
+        if any(host == suffix or host.endswith("." + suffix) for suffix in _PLATFORM_SUFFIXES):
+            return True
+        # Wzorzec e-zp.<subdomain>.pl (np. e-zp.miedzyrzecz.pl)
+        if re.match(r'^e-zp\.[a-z0-9-]+\.pl$', host):
+            return True
+        return False
+    except Exception:
+        return False
 
 
 def _extract_platform_url(html_body: str) -> str | None:
     """Wyciąga URL zewnętrznej platformy SWZ z sekcji 3.1 htmlBody ogłoszenia.
 
-    Sekcja 3.1 ma nagłówek:
-      'Adres strony internetowej prowadzonego postępowania'
-    Po nim (najczęściej w <p> lub <span>) jest URL do platformy.
+    Sekcja 3.1: 'Adres strony internetowej prowadzonego postępowania'
+    Po nagłówku jest URL do platformy zakupowej.
 
-    Strategia dwuetapowa:
-    1. Szukaj sekcji 3.1 i pobierz URL w promieniu ~500 znaków
-    2. Jeśli brak sekcji: szukaj wszystkich URL z listy znanych platform
+    Strategia:
+    1. Znajdź sekcję 3.1 i pobierz URL w promieniu ~600 znaków (precyzyjnie)
+    2. Fallback: szukaj wszystkich URL z znanych platform w całym dokumencie
     """
-    # Strategia 1: sekcja 3.1 (precyzyjna)
-    section_match = re.search(
-        r"3\.1\.[^<]{0,200}(?:Adres|adres)[^<]{0,100}(?:post[eę]powania|zamówienia)",
-        html_body,
+    # Strategia 1: sekcja 3.1 (precyzyjna, unika fałszywych trafień)
+    section_re = re.compile(
+        r"3\.1[.\)][^<]{0,200}(?:Adres|adres)[^<]{0,150}(?:post[eę]powania|zamówienia|zamowienia)",
         re.IGNORECASE | re.DOTALL,
     )
-    if section_match:
-        window = html_body[section_match.start() : section_match.start() + 600]
-        urls = re.findall(r'https?://[^\s<"\'\\]+', window)
-        for url in urls:
-            url = url.rstrip(".,;)")
+    m = section_re.search(html_body)
+    if m:
+        window = html_body[m.start() : m.start() + 600]
+        for raw_url in re.findall(r'https?://[^\s<"\'\\]+', window):
+            url = raw_url.rstrip(".,;)<>")
             if _is_platform_url(url):
                 return url
 
-    # Strategia 2: szukaj wszystkich URL z znanych platform w całym dokumencie
-    all_urls = re.findall(r'https?://[^\s<"\'\\]+', html_body)
+    # Strategia 2: dowolny URL z listy platform w całym dokumencie
     seen: set[str] = set()
-    for url in all_urls:
-        url = url.rstrip(".,;)")
+    for raw_url in re.findall(r'https?://[^\s<"\'\\]+', html_body):
+        url = raw_url.rstrip(".,;)<>")
         if url in seen:
             continue
         seen.add(url)
@@ -654,11 +697,6 @@ def _extract_platform_url(html_body: str) -> str | None:
             return url
 
     return None
-
-
-def _is_platform_url(url: str) -> bool:
-    """Sprawdza czy URL należy do znanych platform zakupowych."""
-    return any(p in url for p in _KNOWN_PLATFORMS)
 
 
 def _classify_document(filename: str) -> str:
