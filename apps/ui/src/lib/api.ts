@@ -84,7 +84,7 @@ export function useDashboardStats() {
         const json = await res.json();
 
         // Pobierz ostatnie przetargi osobno
-        const tendersRes = await authFetchRaw('/api/v1/tenders?limit=5', accessToken, refreshToken, setAuth, clearAuth);
+        const tendersRes = await authFetchRaw('/api/v2/tenders?limit=5&sort=created_at', accessToken, refreshToken, setAuth, clearAuth);
         const tendersJson = tendersRes.ok ? await tendersRes.json() : { items: json.top_tenders ?? [] };
         const recentTenders: TenderItem[] = tendersJson.items ?? json.top_tenders ?? [];
 
@@ -127,7 +127,7 @@ export function useTenders(statusFilter?: string) {
       try {
         const params = new URLSearchParams({ limit: '50' });
         if (statusFilter) params.set('status', statusFilter);
-        const res = await fetch(`${API_BASE}/api/v1/tenders?${params}`, {
+        const res = await fetch(`${API_BASE}/api/v2/tenders?${params}`, {
           headers: {
             'Content-Type': 'application/json',
             ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),

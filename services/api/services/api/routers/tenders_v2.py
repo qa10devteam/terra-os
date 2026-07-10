@@ -175,10 +175,14 @@ def list_tenders(
     voivodeship: str | None = Query(None, description="Województwo (częściowe dopasowanie)"),
     value_min: float | None = Query(None, ge=0),
     value_max: float | None = Query(None, ge=0),
+    # aliases used by frontend
+    min_value: float | None = Query(None, ge=0, description="Alias for value_min"),
+    max_value: float | None = Query(None, ge=0, description="Alias for value_max"),
     deadline_before: str | None = Query(None, description="ISO date, np. 2026-08-01"),
     hide_duplicates: bool = Query(False, description="Ukryj rekordy zduplikowane (pozostaw master)"),
     q: str | None = Query(None, min_length=2, description="Full-text search"),
     fields: str | None = Query(None, description="Sparse fieldset: id,title,match_score,... (mobile)"),
+    sort: str | None = Query(None, description="Sort field: match_score|deadline_at|value_pln|created_at"),
 ) -> TenderListResponse:
     """
     Lista przetargów z cursor-based pagination.
@@ -208,6 +212,19 @@ def list_tenders(
     conditions: list[str] = ["t.tenant_id = :tenant_id"]
     params: dict = {"tenant_id": tenant_id, "limit": limit + 1}
 
+    # Resolve aliases
+    effective_min = value_min if value_min is not None else min_value
+    effective_max = value_max if value_max is not None else max_value
+
+    # Resolve sort → ORDER BY clause
+    SORT_MAP = {
+        "match_score":  "t.match_score DESC NULLS LAST, t.created_at DESC, t.id DESC",
+        "deadline_at":  "t.deadline_at ASC NULLS LAST, t.created_at DESC, t.id DESC",
+        "value_pln":    "t.value_pln DESC NULLS LAST, t.created_at DESC, t.id DESC",
+        "created_at":   "t.created_at DESC, t.id DESC",
+    }
+    order_clause = SORT_MAP.get(sort or "match_score", SORT_MAP["match_score"])
+
     # Default: hide archived unless explicitly requested
     if status:
         conditions.append("t.status = :status")
@@ -227,13 +244,13 @@ def list_tenders(
         conditions.append("t.voivodeship ILIKE :voivodeship")
         params["voivodeship"] = f"%{voivodeship}%"
 
-    if value_min is not None:
+    if effective_min is not None:
         conditions.append("t.value_pln >= :value_min")
-        params["value_min"] = value_min
+        params["value_min"] = effective_min
 
-    if value_max is not None:
+    if effective_max is not None:
         conditions.append("t.value_pln <= :value_max")
-        params["value_max"] = value_max
+        params["value_max"] = effective_max
 
     if deadline_before:
         conditions.append("t.deadline_at <= :deadline_before::timestamptz")
@@ -283,7 +300,7 @@ def list_tenders(
                        t.match_score, t.created_at
                 FROM tender t
                 WHERE {where} {cursor_sql}
-                ORDER BY t.created_at DESC, t.id DESC
+                ORDER BY {order_clause}
                 LIMIT :limit
             """),
             params,

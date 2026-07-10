@@ -190,7 +190,7 @@ export function PipelinePage() {
 
   const fetchTenders = useCallback(async () => {
     try {
-      const data = await authFetch('/api/v1/tenders?limit=100');
+      const data = await authFetch('/api/v2/tenders?limit=100');
       const items: TenderItem[] = data.items ?? [];
       const byStage: Record<string, TenderItem[]> = {};
       for (const st of PIPELINE_STAGES) byStage[st.key] = [];
@@ -254,7 +254,7 @@ export function PipelinePage() {
     });
 
     try {
-      await authFetch('/api/v1/tenders/' + tenderId, {
+      await authFetch('/api/v2/tenders/' + tenderId, {
         method: 'PATCH',
         body: JSON.stringify({ status: toStage }),
       });
