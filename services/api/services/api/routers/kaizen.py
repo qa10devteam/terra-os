@@ -25,7 +25,7 @@ async def kaizen_metrics(user: AuthUser):
     with engine.connect() as conn:
         ingest_p95 = conn.execute(
             text(
-                "SELECT percentile_cont(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (updated_at - created_at)))"
+                "SELECT percentile_cont(0.95) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (created_at - created_at)))"
                 " FROM ingest_task WHERE status='done'"
             )
         ).scalar() or 0
