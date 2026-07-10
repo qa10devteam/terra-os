@@ -88,3 +88,10 @@ def start_onboarding(body: OnboardingRequest) -> OnboardingResponse:
 
     logger.info("Onboarding complete: org=%s tenant=%s", org_id, tenant_id)
     return OnboardingResponse(org_id=org_id, tenant_id=tenant_id, status="ready")
+
+
+@router.get("/status")
+def onboarding_status() -> dict:
+    """GET /api/v2/onboarding/status — check if onboarding system is operational."""
+    return {"status": "ok", "service": "onboarding", "available": True}
+

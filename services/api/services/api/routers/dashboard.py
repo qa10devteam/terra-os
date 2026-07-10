@@ -75,6 +75,18 @@ def _get_dashboard_data() -> dict:
         )).fetchone()
         avg_score = round(float(avg_row[0]), 4) if avg_row and avg_row[0] is not None else None
 
+        # Łączna wartość pipeline (PLN)
+        value_row = conn.execute(sa.text(
+            "SELECT COALESCE(SUM(value_pln), 0) FROM tender WHERE duplicate_of IS NULL AND value_pln IS NOT NULL"
+        )).fetchone()
+        pipeline_value = float(value_row[0]) if value_row else 0.0
+
+        # Liczba unikalnych zamawiających
+        buyers_row = conn.execute(sa.text(
+            "SELECT COUNT(DISTINCT buyer_name) FROM tender WHERE duplicate_of IS NULL AND buyer_name IS NOT NULL"
+        )).fetchone()
+        unique_buyers = int(buyers_row[0]) if buyers_row else 0
+
     return {
         "total_tenders": total_tenders,
         "new_today": new_today,
@@ -82,6 +94,8 @@ def _get_dashboard_data() -> dict:
         "by_source": by_source,
         "top_tenders": top_tenders,
         "avg_score": avg_score,
+        "pipeline_value": pipeline_value,
+        "unique_buyers": unique_buyers,
     }
 
 

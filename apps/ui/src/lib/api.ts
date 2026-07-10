@@ -78,26 +78,24 @@ export function useDashboardStats() {
     async function fetchStats() {
       setIsLoading(true);
       try {
-        const res = await authFetchRaw('/api/v1/tenders?limit=50', accessToken, refreshToken, setAuth, clearAuth);
+        // Pobierz zagregowane statystyki z dedykowanego endpointu
+        const res = await authFetchRaw('/api/v2/dashboard/stats', accessToken, refreshToken, setAuth, clearAuth);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
-        const tenders: TenderItem[] = json.items || [];
-        const totalTenders: number = json.total ?? tenders.length;
+
+        // Pobierz ostatnie przetargi osobno
+        const tendersRes = await authFetchRaw('/api/v1/tenders?limit=5', accessToken, refreshToken, setAuth, clearAuth);
+        const tendersJson = tendersRes.ok ? await tendersRes.json() : { items: json.top_tenders ?? [] };
+        const recentTenders: TenderItem[] = tendersJson.items ?? json.top_tenders ?? [];
+
         if (!cancelled) {
-          const pipelineCounts = tenders.reduce((acc, t) => {
-            acc[t.status] = (acc[t.status] || 0) + 1;
-            return acc;
-          }, {} as Record<string, number>);
-          
           setData({
-            activeTenders: totalTenders,
-            totalValue: tenders.reduce((s, t) => s + (t.value_pln || 0), 0),
-            avgScore: tenders.length > 0
-              ? Math.round(tenders.reduce((s, t) => s + (t.match_score || 0), 0) / tenders.length * 100)
-              : 0,
-            redFlags: pipelineCounts['decided_nogo'] || 0,
-            pipelineCounts,
-            recentTenders: tenders.slice(0, 5),
+            activeTenders: json.total_tenders ?? 0,
+            totalValue: json.pipeline_value ?? 0,
+            avgScore: json.avg_score != null ? Math.round(json.avg_score * 100) : 0,
+            redFlags: json.high_score_count ?? 0,
+            pipelineCounts: json.by_source ?? {},
+            recentTenders,
           });
         }
       } catch (e: unknown) {

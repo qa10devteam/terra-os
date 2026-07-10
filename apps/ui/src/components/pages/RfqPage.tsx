@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useAuthFetch } from '@/lib/api-v2';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   CheckCircle2, XCircle, Loader2, AlertTriangle,
@@ -144,22 +145,24 @@ export function RfqPage() {
   const [confirming, setConfirming] = useState(false);
   const [justDecided, setJustDecided] = useState<Record<string, Decision>>({});
 
-  const fetchTenders = () => {
+  const authFetch = useAuthFetch();
+
+  const fetchTenders = useCallback(() => {
     setLoading(true);
     setError(null);
-    fetch('/api/v1/tenders?status=analyzing&limit=20')
+    authFetch('/api/v1/tenders?status=analyzing&limit=20')
       .then(r => { if (!r.ok) throw new Error(`Błąd ${r.status}`); return r.json(); })
       .then(data => { setTenders(data.items ?? []); setLoading(false); })
       .catch(e => { setError(e.message); setLoading(false); });
-  };
+  }, [authFetch]);
 
-  useEffect(() => { fetchTenders(); }, []);
+  useEffect(() => { fetchTenders(); }, [fetchTenders]);
 
   const handleConfirm = async () => {
     if (!confirm) return;
     setConfirming(true);
     try {
-      await fetch(`/api/v1/tenders/${confirm.tender.id}`, {
+      await authFetch(`/api/v1/tenders/${confirm.tender.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: confirm.decision }),

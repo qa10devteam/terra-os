@@ -22,6 +22,7 @@ import { BuyerCRMPage } from '@/components/pages/BuyerCRMPage';
 import { NotificationsPage } from '@/components/pages/NotificationsPage';
 import ExportPage from '@/components/pages/ExportPage';
 import { OfertaPage } from '@/components/pages/OfertaPage';
+import AutomationPage from '@/components/pages/AutomationPage';
 import { Sidebar } from '@/components/Sidebar';
 import { MarketBar } from '@/components/widgets/MarketBar';
 import { ChatWidget } from '@/components/ChatWidget';
@@ -86,6 +87,7 @@ function ActivePage() {
     case 'notifications': return <NotificationsPage />;
     case 'export':        return <ExportPage />;
     case 'oferta':        return <OfertaPage />;
+    case 'automations':   return <AutomationPage />;
     default:              return <DashboardPage />;
   }
 }

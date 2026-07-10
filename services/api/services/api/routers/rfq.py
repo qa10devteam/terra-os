@@ -28,6 +28,42 @@ from ..auth.deps import AuthUser, TenantDep, get_current_user
 
 router = APIRouter(prefix="/api/v1", tags=["rfq", "approvals"])
 
+# ──────────────────────────────────────────────────────────────────────────────
+# v2 router alias — provides GET /api/v2/rfq
+# ──────────────────────────────────────────────────────────────────────────────
+router_v2 = APIRouter(prefix="/api/v2", tags=["rfq"])
+
+
+@router_v2.get("/rfq")
+def list_rfq_v2(user: AuthUser) -> dict:
+    """GET /api/v2/rfq — list RFQ records for current tenant."""
+    from terra_db.session import get_engine
+    import sqlalchemy as sa
+    engine = get_engine()
+    tid = str(user.org_id)
+    with engine.connect() as conn:
+        rows = conn.execute(
+            sa.text(
+                "SELECT id, tender_id, status, scope_desc, created_at "
+                "FROM rfq WHERE tenant_id = :tid ORDER BY created_at DESC LIMIT 50"
+            ),
+            {"tid": tid},
+        ).fetchall()
+    return {
+        "total": len(rows),
+        "items": [
+            {
+                "id": str(r.id),
+                "tender_id": str(r.tender_id) if r.tender_id else None,
+                "status": r.status,
+                "scope_desc": r.scope_desc,
+                "created_at": str(r.created_at),
+            }
+            for r in rows
+        ],
+    }
+
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Schemas

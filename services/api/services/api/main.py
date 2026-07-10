@@ -405,8 +405,17 @@ except ImportError as _e:
 try:
     from .routers import chat_ai as _chat_ai_mod
     app.include_router(_chat_ai_mod.router)
+    if hasattr(_chat_ai_mod, 'ai_chat_router'):
+        app.include_router(_chat_ai_mod.ai_chat_router)
 except ImportError as _e:
     logging.getLogger(__name__).warning("chat_ai router error: %s", _e)
+
+# S55-S57 — Market Materials
+try:
+    from .routers import market_materials as _market_materials_mod
+    app.include_router(_market_materials_mod.router)
+except ImportError as _e:
+    logging.getLogger(__name__).warning("market_materials router error: %s", _e)
 
 # S125-S126 — Data Quality
 try:
@@ -441,6 +450,21 @@ try:
     app.include_router(_kaizen_mod.router)
 except ImportError as _e:
     logging.getLogger(__name__).warning("kaizen router error: %s", _e)
+
+# Escalation log
+try:
+    from .routers import escalation as _escalation_mod
+    app.include_router(_escalation_mod.router)
+except ImportError as _e:
+    logging.getLogger(__name__).warning("escalation router error: %s", _e)
+
+# RFQ v2 router (GET /api/v2/rfq)
+try:
+    from .routers import rfq as _rfq_mod
+    if hasattr(_rfq_mod, 'router_v2'):
+        app.include_router(_rfq_mod.router_v2)
+except ImportError as _e:
+    logging.getLogger(__name__).warning("rfq_v2 router error: %s", _e)
 
 # S81/S82 — GANTT v2
 try:

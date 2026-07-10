@@ -17,6 +17,28 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix='/api/v2/chat', tags=['chat_ai'])
 
+# Alias router for /api/v2/ai-chat paths
+ai_chat_router = APIRouter(prefix='/api/v2/ai-chat', tags=['ai_chat'])
+
+
+@ai_chat_router.get('/history')
+def ai_chat_history(user: AuthUser, db: DB, limit: int = 50) -> dict:
+    """GET /api/v2/ai-chat/history — return recent AI chat interactions for current user."""
+    tid = str(user.org_id)
+    try:
+        rows = db.execute(
+            text(
+                'SELECT id, content, created_at FROM notifications '
+                'WHERE tenant_id=:tid AND type=\'ai_chat\' ORDER BY created_at DESC LIMIT :limit'
+            ),
+            {'tid': tid, 'limit': limit}
+        ).fetchall()
+        items = [{'id': str(r.id), 'content': r.content, 'created_at': str(r.created_at)} for r in rows]
+    except Exception:
+        items = []
+    return {'total': len(items), 'items': items}
+
+
 
 def get_db():
     engine = get_engine()

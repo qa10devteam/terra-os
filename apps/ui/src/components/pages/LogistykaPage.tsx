@@ -128,7 +128,10 @@ function PracownicyTab() {
     setLoading(true);
     authFetch('/api/v1/resources/employees')
       .then((d: EmployeeResource[] | { items?: EmployeeResource[] }) => {
-        setEmployees(Array.isArray(d) ? d : (d.items ?? []));
+        const raw = Array.isArray(d) ? d : (d.items ?? []);
+        const seen = new Set<string>();
+        const unique = raw.filter(e => { if (seen.has(e.id)) return false; seen.add(e.id); return true; });
+        setEmployees(unique);
       })
       .catch((e: Error) => showToast('error', e.message || 'Błąd pobierania pracowników'))
       .finally(() => setLoading(false));
