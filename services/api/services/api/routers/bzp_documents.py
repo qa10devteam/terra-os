@@ -1,15 +1,13 @@
 """BZP Documents API Router — Terra-OS.
 
 Endpoints:
-  POST /api/v1/bzp/documents/{tender_id}/fetch          — trigger document scraping
-  GET  /api/v1/bzp/documents/{tender_id}                — list fetched documents
-  GET  /api/v1/bzp/documents/{tender_id}/download/{doc_id} — proxy/redirect download
+  POST /api/v1/bzp/documents/{tender_id}/fetch              — uruchamia scraping (background)
+  GET  /api/v1/bzp/documents/{tender_id}                    — lista pobranych dokumentów
+  GET  /api/v1/bzp/documents/{tender_id}/download/{doc_id}  — proxy/redirect do pliku
 """
 from __future__ import annotations
 
 import logging
-import re
-import uuid
 from pathlib import Path
 
 import httpx
@@ -24,70 +22,73 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/bzp/documents", tags=["bzp-documents"])
 
-# Import scraper components
-from bzp_document_scraper import (
+# Import z namespace services.ingestion (działa dzięki namespace package)
+from services.ingestion.bzp_document_scraper import (
     BZPDocumentScraper,
+    STORAGE_DIR,
     extract_tender_id_from_url,
-    BZP_BASE,
-    NOTICE_PDF_API,
     _classify_document,
 )
 
 
-# ────────────────────────────────────────────────────────────────────
-# Background fetch task
-# ────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────
+# Background task
+# ─────────────────────────────────────────────────────────────────────
 
-def _run_fetch(internal_tender_id: str, bzp_number: str | None, ocds_id: str | None):
-    """Background task: pobiera dokumenty SWZ dla przetargu i zapisuje do DB.
+def _run_fetch(internal_tender_id: str, bzp_number: str | None, ocds_id: str | None) -> None:
+    """Background task: pobiera dokumenty SWZ i zapisuje do DB.
 
-    Strategia (bez auth):
-    1. Notice PDF z GetNoticePdf (zawsze działa)
-    2. URL zewnętrznej platformy SWZ z htmlBody (sekcja 3.1)
+    Nie rzuca wyjątków — błędy loguje, żeby FastAPI BackgroundTasks
+    nie crashował cicho.
     """
-    engine = get_engine()
-    storage = Path("/var/lib/terra-os/documents")
-    storage.mkdir(parents=True, exist_ok=True)
+    try:
+        engine  = get_engine()
+        storage = STORAGE_DIR
+        storage.mkdir(parents=True, exist_ok=True)
 
-    scraper = BZPDocumentScraper(storage_dir=storage, db_engine=engine)
-    with scraper:
-        # Determine what to pass as tender_id for list_documents
-        # Priority: BZP number > OCDS id > internal UUID
-        doc_key = bzp_number or ocds_id or internal_tender_id
+        with BZPDocumentScraper(storage_dir=storage, db_engine=engine) as scraper:
+            result = scraper.fetch_all(
+                tender_id=internal_tender_id,
+                bzp_number=bzp_number,
+                download_files=True,
+            )
 
-        result = scraper.fetch_all(
-            tender_id=internal_tender_id,
-            bzp_number=bzp_number,
-            download_files=True,
+        logger.info(
+            "BZP fetch: tender=%s bzp=%s docs=%d downloaded=%d errors=%d swz=%s",
+            internal_tender_id,
+            bzp_number or ocds_id or "—",
+            len(result.documents),
+            result.downloaded,
+            len(result.errors),
+            result.swz_platform_url or "—",
         )
+        if result.errors:
+            for err in result.errors:
+                logger.warning("BZP fetch error: %s", err)
 
-    logger.info(
-        "BZP fetch done: tender=%s bzp=%s docs=%d downloaded=%d errors=%d swz_url=%s",
-        internal_tender_id,
-        bzp_number,
-        len(result.documents),
-        result.downloaded,
-        len(result.errors),
-        result.swz_platform_url or "—",
-    )
+    except Exception as exc:
+        logger.exception("Nieoczekiwany błąd w _run_fetch dla %s: %s", internal_tender_id, exc)
 
 
-# ────────────────────────────────────────────────────────────────────
-# Endpoints
-# ────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────
+# Endpointy
+# ─────────────────────────────────────────────────────────────────────
 
 @router.post("/{tender_id}/fetch")
 def fetch_tender_documents(
-    tender_id: str,
+    tender_id:        str,
     background_tasks: BackgroundTasks,
-    user: AuthUser,
-    tenant_id: TenantDep,
+    user:             AuthUser,
+    tenant_id:        TenantDep,
 ) -> dict:
-    """Wyzwól pobieranie dokumentów SWZ z BZP dla danego przetargu.
+    """Wyzwól pobieranie dokumentów SWZ z BZP dla przetargu.
 
-    Scraper używa publicznego API ezamowienia.gov.pl (nie wymaga logowania):
-    - Pobiera PDF ogłoszenia (GetNoticePdf)
-    - Wyciąga link do zewnętrznej platformy SWZ z treści ogłoszenia
+    Scraper używa publicznego API ezamowienia.gov.pl (bez logowania):
+    - PDF ogłoszenia z GetNoticePdf (wersje /01–/05)
+    - Link do zewnętrznej platformy SWZ z treści ogłoszenia (sekcja 3.1)
+
+    Pobieranie jest asynchroniczne (background task).
+    Wynik sprawdź przez GET /{tender_id}.
     """
     engine = get_engine()
     with engine.connect() as conn:
@@ -102,29 +103,27 @@ def fetch_tender_documents(
     if not row:
         raise HTTPException(status_code=404, detail="Przetarg nie istnieje")
 
-    # BZP number (external_id) is what drives the scraper
-    bzp_number = row.external_id  # e.g. "2026/BZP 00331648"
-    ocds_id = extract_tender_id_from_url(row.url)  # e.g. "ocds-148610-xxx"
+    bzp_number = row.external_id   # np. "2026/BZP 00331648"
+    ocds_id    = extract_tender_id_from_url(row.url or "")
 
-    # Validate we have something useful
     if not bzp_number and not ocds_id:
         raise HTTPException(
-            status_code=400,
+            status_code=422,
             detail={
-                "error": "cannot_resolve_documents",
-                "message": "Przetarg nie ma numeru BZP ani linku ezamowienia.gov.pl — brak dokumentów SWZ.",
-                "source": row.source,
+                "error":   "cannot_resolve_documents",
+                "message": "Przetarg nie ma numeru BZP ani linku ezamowienia.gov.pl.",
+                "source":  row.source,
             },
         )
 
     background_tasks.add_task(_run_fetch, tender_id, bzp_number, ocds_id)
 
     return {
-        "status": "queued",
-        "tender_id": tender_id,
+        "status":     "queued",
+        "tender_id":  tender_id,
         "bzp_number": bzp_number,
-        "ocds_id": ocds_id,
-        "message": "Pobieranie dokumentów SWZ z ezamowienia.gov.pl w tle",
+        "ocds_id":    ocds_id,
+        "message":    "Pobieranie dokumentów SWZ w tle. Sprawdź wynik za kilka sekund.",
     }
 
 
@@ -135,8 +134,8 @@ def list_tender_documents(tender_id: str, user: AuthUser) -> dict:
     with engine.connect() as conn:
         rows = conn.execute(
             sa.text("""
-                SELECT id, bzp_notice_id, doc_type, filename, url, fetched_at,
-                       LENGTH(content) AS content_length
+                SELECT id, bzp_notice_id, doc_type, filename, url,
+                       content, fetched_at
                 FROM bzp_documents
                 WHERE tender_id = :tid
                 ORDER BY doc_type, fetched_at DESC
@@ -144,30 +143,45 @@ def list_tender_documents(tender_id: str, user: AuthUser) -> dict:
             {"tid": tender_id},
         ).fetchall()
 
+    documents = []
+    for r in rows:
+        # Rozmiar pliku z dysku (jeśli dostępny)
+        size_kb: int | None = None
+        content_val = r.content or ""
+        if content_val.startswith("[file:"):
+            try:
+                path = Path(content_val[6:].rstrip("]"))
+                if path.exists():
+                    size_kb = path.stat().st_size // 1024
+            except Exception:
+                pass
+
+        documents.append({
+            "id":           str(r.id),
+            "notice_id":    r.bzp_notice_id,
+            "doc_type":     r.doc_type,
+            "filename":     r.filename,
+            "download_url": r.url,
+            "size_kb":      size_kb,
+            "fetched_at":   r.fetched_at.isoformat() if r.fetched_at else None,
+            "is_local":     content_val.startswith("[file:"),
+        })
+
     return {
         "tender_id": tender_id,
-        "total": len(rows),
-        "documents": [
-            {
-                "id": str(r.id),
-                "notice_id": r.bzp_notice_id,
-                "doc_type": r.doc_type,
-                "filename": r.filename,
-                "download_url": r.url,
-                "fetched_at": r.fetched_at.isoformat() if r.fetched_at else None,
-            }
-            for r in rows
-        ],
+        "total":     len(documents),
+        "documents": documents,
     }
 
 
 @router.get("/{tender_id}/download/{doc_id}")
 async def download_document(tender_id: str, doc_id: str, user: AuthUser):
-    """Proxy download dokumentu z ezamowienia.gov.pl lub lokalnego cache.
+    """Serwuje dokument z lokalnego cache lub proxy ze zdalnego URL.
 
-    - Jeśli plik jest już na dysku: stream z dysku
-    - Jeśli URL zaczyna się http: proxy stream z ezamowienia.gov.pl
-    - Jeśli to link SWZ (platformazakupowa itp.): redirect 302
+    Logika:
+    - Plik na dysku → stream z dysku (szybko, bez wychodzenia na zewnątrz)
+    - Notice PDF bez lokalnego cache → proxy stream z ezamowienia.gov.pl
+    - SWZ link (platformazakupowa itp.) → redirect 302 do zewnętrznej platformy
     """
     engine = get_engine()
     with engine.connect() as conn:
@@ -182,43 +196,39 @@ async def download_document(tender_id: str, doc_id: str, user: AuthUser):
     if not row:
         raise HTTPException(status_code=404, detail="Dokument nie istnieje")
 
-    # Check if downloaded locally
-    content_val = row.content or ""
+    content_val  = row.content or ""
     local_path: Path | None = None
+
     if content_val.startswith("[file:"):
-        path_str = content_val[6:].rstrip("]")
-        p = Path(path_str)
+        p = Path(content_val[6:].rstrip("]"))
         if p.exists():
             local_path = p
 
-    # 1. Serve from local disk
+    # 1. Serwuj z dysku
     if local_path:
+        media_type = "application/pdf" if local_path.suffix == ".pdf" else "application/octet-stream"
+
         def _iter_local():
             with open(local_path, "rb") as f:
                 while chunk := f.read(65536):
                     yield chunk
 
-        media_type = (
-            "application/pdf" if local_path.suffix == ".pdf"
-            else "application/octet-stream"
-        )
         return StreamingResponse(
             _iter_local(),
             media_type=media_type,
             headers={"Content-Disposition": f'attachment; filename="{row.filename}"'},
         )
 
-    # 2. Proxy from remote URL (Notice PDF)
     url = row.url or ""
     if not url.startswith("http"):
         raise HTTPException(status_code=404, detail="URL dokumentu niedostępny")
 
-    # SWZ links (platformazakupowa etc.) → redirect
-    if row.doc_type == "SWZ" and "ezamowienia.gov.pl" not in url:
+    # 2. SWZ link → redirect
+    if row.doc_type == "SWZ":
         from fastapi.responses import RedirectResponse
-        return RedirectResponse(url=url)
+        return RedirectResponse(url=url, status_code=302)
 
-    # Stream PDF from ezamowienia.gov.pl
+    # 3. Proxy PDF z ezamowienia.gov.pl
     async def _stream_remote():
         async with httpx.AsyncClient(
             timeout=120,
