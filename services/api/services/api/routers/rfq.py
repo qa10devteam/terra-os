@@ -460,3 +460,51 @@ def _execute_gated_action(
 
     else:
         return {"action": action, "status": "executed"}
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# S76/S77 — Send RFQ to subcontractors (dry-run)
+# ──────────────────────────────────────────────────────────────────────────────
+
+import logging as _logging
+
+_logger = _logging.getLogger(__name__)
+
+
+class RFQSendToSubcontractors(BaseModel):
+    emails: list[str]
+    message: str = ""
+
+
+@router.post("/api/v2/rfq/{rfq_id}/send-to-subcontractors", tags=["rfq"])
+def send_rfq_to_subcontractors(
+    rfq_id: str,
+    body: RFQSendToSubcontractors,
+    tenant_id: TenantDep,
+    user: AuthUser,
+) -> dict:
+    """S76/S77 — Wyślij RFQ do podwykonawców (dry-run: log + update status)."""
+    engine = get_engine()
+    with engine.connect() as conn:
+        rfq = conn.execute(
+            sa.text("SELECT id, status, scope_desc FROM rfq WHERE id = :id AND tenant_id = :tid"),
+            {"id": rfq_id, "tid": tenant_id},
+        ).fetchone()
+    if not rfq:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail={"error": "rfq_not_found"})
+
+    # Dry-run — log each email
+    for email in body.emails:
+        _logger.info(
+            "[S76-RFQ] Sending RFQ %s to %s | scope: %s | msg: %s",
+            rfq_id, email, rfq.scope_desc, body.message[:100],
+        )
+
+    with engine.begin() as conn:
+        conn.execute(
+            sa.text("UPDATE rfq SET status = 'sent' WHERE id = :id"),
+            {"id": rfq_id},
+        )
+
+    return {"sent_to": body.emails, "status": "queued"}
