@@ -22,7 +22,7 @@ router = APIRouter(prefix="/api/v2/intelligence", tags=["intelligence-cpv"])
 
 
 @router.get("/cpv-win-rates")
-def get_cpv_win_rates(user: AuthUser = Depends(get_current_user)) -> dict:
+def get_cpv_win_rates(user: AuthUser) -> dict:
     """S50: Win rates per CPV 2-digit prefix from offer_result."""
     if not user or not user.org_id:
         raise HTTPException(status_code=403, detail="Brak org_id")
@@ -67,8 +67,8 @@ def get_cpv_win_rates(user: AuthUser = Depends(get_current_user)) -> dict:
 
 @router.get("/competitor-win-rates")
 def get_competitor_win_rates(
+    user: AuthUser,
     nip: str = Query(..., description="NIP konkurenta"),
-    user: AuthUser = Depends(get_current_user),
 ) -> dict:
     """S51: Competitor wins from bzp_results by contractor NIP."""
     engine = get_engine()

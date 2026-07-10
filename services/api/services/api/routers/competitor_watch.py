@@ -321,7 +321,7 @@ def competitor_intel(
 # ─── S52/S53/S54 extensions ────────────────────────────────────────────────────
 
 @router.get("/last-checked")
-def get_competitor_watch_list(user: AuthUser = Depends(get_current_user), db: DB = None) -> dict:
+def get_competitor_watch_list(user: AuthUser) -> dict:
     """S52: Lista obserwowanych konkurentów z last_checked_at."""
     org_id = _require_org(user)
     engine = get_engine()
@@ -358,7 +358,7 @@ market_share_router = APIRouter(prefix="/api/v2/analytics", tags=["market-share"
 
 
 @market_share_router.get("/market-share")
-def get_market_share(user: AuthUser = Depends(get_current_user)) -> dict:
+def get_market_share(user: AuthUser) -> dict:
     """S54: Market share — win count per competitor vs own wins."""
     org_id = _require_org(user) if user else None
     engine = get_engine()

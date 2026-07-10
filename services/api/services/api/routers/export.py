@@ -302,3 +302,107 @@ def export_preview(
         "template": req.template,
         "watermark": req.watermark,
     }
+
+
+# ─── S43/S44 — Tender list export (CSV + XLSX) ──────────────────────────────
+from fastapi import Depends  # noqa: E402 (already imported above but ensure available)
+from sqlalchemy import text as _text  # noqa: E402
+try:
+    from ..auth.deps import AuthUser, get_current_user
+    from terra_db.session import get_engine as _get_export_engine
+
+    def _export_engine():
+        return _get_export_engine()
+
+except Exception:
+    AuthUser = None  # type: ignore
+    get_current_user = None  # type: ignore
+
+
+@router.get("/tenders/csv", tags=["export"])
+def export_tenders_csv(
+    user: AuthUser,
+):
+    """S43: Eksport przetargów tenant do CSV."""
+    import csv, io
+    from fastapi.responses import StreamingResponse
+    from terra_db.session import get_engine as _eng
+    from sqlalchemy import text as _t
+
+    org_id = str(user.org_id)
+    with _eng().connect() as conn:
+        rows = conn.execute(
+            _t(
+                "SELECT id, title, source, value_pln, match_score, deadline_at, created_at "
+                "FROM tender WHERE tenant_id=:tid ORDER BY created_at DESC LIMIT 1000"
+            ),
+            {"tid": org_id},
+        ).fetchall()
+
+    buf = io.StringIO()
+    w = csv.DictWriter(
+        buf,
+        fieldnames=["id", "title", "source", "value_pln", "match_score", "deadline_at", "created_at"],
+    )
+    w.writeheader()
+    for r in rows:
+        w.writerow({k: str(v) if v is not None else "" for k, v in dict(r._mapping).items()})
+
+    return StreamingResponse(
+        io.BytesIO(buf.getvalue().encode("utf-8-sig")),
+        media_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="tenders.csv"'},
+    )
+
+
+@router.get("/tenders/xlsx", tags=["export"])
+def export_tenders_xlsx(
+    user: AuthUser,
+):
+    """S44: Eksport przetargów tenant do XLSX (openpyxl)."""
+    import io
+    from fastapi.responses import Response
+    from terra_db.session import get_engine as _eng
+    from sqlalchemy import text as _t
+
+    org_id = str(user.org_id)
+    with _eng().connect() as conn:
+        rows = conn.execute(
+            _t(
+                "SELECT id, title, source, value_pln, match_score, deadline_at "
+                "FROM tender WHERE tenant_id=:tid ORDER BY match_score DESC LIMIT 1000"
+            ),
+            {"tid": org_id},
+        ).fetchall()
+
+    try:
+        import openpyxl
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Przetargi"
+        ws.append(["ID", "Tytuł", "Source", "Wartość PLN", "Score", "Termin"])
+        for r in rows:
+            ws.append([str(v) if v is not None else "" for v in r])
+        buf = io.BytesIO()
+        wb.save(buf)
+        buf.seek(0)
+        content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        return Response(
+            content=buf.read(),
+            media_type=content_type,
+            headers={"Content-Disposition": 'attachment; filename="tenders.xlsx"'},
+        )
+    except ImportError:
+        # Fallback: CSV z nagłówkiem xlsx
+        import csv
+        buf2 = io.StringIO()
+        w = csv.DictWriter(buf2, fieldnames=["id", "title", "source", "value_pln", "match_score", "deadline_at"])
+        w.writeheader()
+        for r in rows:
+            w.writerow(dict(r._mapping))
+        from fastapi.responses import StreamingResponse
+        return StreamingResponse(
+            io.BytesIO(buf2.getvalue().encode("utf-8-sig")),
+            media_type="text/csv",
+            headers={"Content-Disposition": 'attachment; filename="tenders.csv"'},
+        )

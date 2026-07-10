@@ -347,7 +347,7 @@ from terra_db.session import get_engine as _get_engine
 
 
 @router.get("/win-prob/{tender_id}")
-def get_win_prob_ml(tender_id: str, user: AuthUser = Depends(_get_current_user)) -> dict:
+def get_win_prob_ml(tender_id: str, user: AuthUser) -> dict:
     """S48: Probabilistyczna ocena szansy wygranej dla przetargu (ML model)."""
     tenant_id = user.org_id if user else None
     try:

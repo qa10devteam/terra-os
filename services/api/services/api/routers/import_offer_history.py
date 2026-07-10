@@ -57,7 +57,7 @@ def _parse_float(val: Any) -> float | None:
 
 
 @router.post("/import-history")
-def import_offer_history(file: UploadFile = File(...), user: AuthUser = Depends(get_current_user)) -> dict:
+def import_offer_history(user: AuthUser, file: UploadFile = File(...)) -> dict:
     """Import historii wyników ofert z pliku XLSX."""
     if not user or not user.org_id:
         raise HTTPException(status_code=403, detail="Brak org_id")
