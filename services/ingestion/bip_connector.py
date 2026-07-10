@@ -20,6 +20,8 @@ import hashlib
 import json
 from concurrent.futures import ThreadPoolExecutor
 import logging
+
+SITE_INDEX_TTL_DAYS = 7
 import re
 import time
 import xml.etree.ElementTree as ET
@@ -779,14 +781,47 @@ def run_bip_scraper(
     """Main entry point for BIP scraping pipeline."""
     client = _make_client()
     stats = {"sites_checked": 0, "rss_found": 0, "html_scraped": 0, "tenders_found": 0, "tenders_stored": 0}
-    
+
+    # S17: Check site_index_built_at from tenant table (TTL = SITE_INDEX_TTL_DAYS days)
+    force_rebuild = False
+    if engine and tenant_id:
+        try:
+            from sqlalchemy import text as _st
+            with engine.connect() as _c:
+                row = _c.execute(
+                    _st("SELECT site_index_built_at FROM tenant WHERE id = :tid"),
+                    {"tid": tenant_id},
+                ).fetchone()
+            if row is None or row[0] is None:
+                force_rebuild = True
+            else:
+                age_days = (datetime.now() - row[0].replace(tzinfo=None)).days
+                if age_days >= SITE_INDEX_TTL_DAYS:
+                    force_rebuild = True
+                    logger.info("BIP site index expired (age=%d days >= TTL=%d), forcing rebuild", age_days, SITE_INDEX_TTL_DAYS)
+        except Exception as e:
+            logger.warning("Could not check site_index_built_at: %s", e)
+            force_rebuild = False
+
     # Load or build site index
     sites = load_site_index()
-    if not sites:
-        logger.info("No site index found, building from API...")
+    if not sites or force_rebuild:
+        logger.info("Building BIP site index from API (force_rebuild=%s)...", force_rebuild)
         sites = build_site_index(client, GROUP_GMINY, region_filter=region, max_sites=max_sites)
         powiaty = build_site_index(client, GROUP_POWIATY, region_filter=region, max_sites=max_sites)
         sites.extend(powiaty)
+        # S17: Update site_index_built_at in tenant table after rebuild
+        if engine and tenant_id:
+            try:
+                from sqlalchemy import text as _st2
+                with engine.begin() as _c2:
+                    _c2.execute(
+                        _st2("UPDATE tenant SET site_index_built_at = now() WHERE id = :tid"),
+                        {"tid": tenant_id},
+                    )
+                logger.info("Updated site_index_built_at for tenant %s", tenant_id)
+            except Exception as e:
+                logger.warning("Could not update site_index_built_at: %s", e)
     elif region:
         sites = [s for s in sites if s.region == region]
     
