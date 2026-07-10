@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import logging
 import math
+import threading
+import time
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Any
@@ -18,6 +20,37 @@ from sqlalchemy import text
 from terra_db.session import get_engine
 
 logger = logging.getLogger(__name__)
+
+# ─── Simple TTL cache (thread-safe, no external deps) ──────────────────────────
+
+_CACHE_TTL = 300  # 5 minutes
+_cache_lock = threading.Lock()
+_cache: dict[str, tuple[float, Any]] = {}  # key → (expires_at, value)
+
+
+def _cache_get(key: str) -> Any:
+    with _cache_lock:
+        entry = _cache.get(key)
+        if entry and time.monotonic() < entry[0]:
+            return entry[1]
+    return None
+
+
+def _cache_set(key: str, value: Any, ttl: int = _CACHE_TTL) -> None:
+    with _cache_lock:
+        _cache[key] = (time.monotonic() + ttl, value)
+
+
+def invalidate_scorer_cache(tenant_id: str | None = None) -> None:
+    """Czyści cache scorera — wywołaj po zmianie scoring_config."""
+    with _cache_lock:
+        if tenant_id:
+            keys = [k for k in _cache if tenant_id in k]
+            for k in keys:
+                del _cache[k]
+        else:
+            _cache.clear()
+    logger.info("Scorer cache invalidated (tenant=%s)", tenant_id or "all")
 
 # ─── ScoringWeights ────────────────────────────────────────────────────────────
 
@@ -87,7 +120,12 @@ class ScoreResult:
 # ─── DB helpers ────────────────────────────────────────────────────────────────
 
 def load_scoring_config(tenant_id: str) -> ScoringWeights:
-    """Ładuje konfigurację scoringu z DB dla tenanta. Fallback → defaults."""
+    """Ładuje konfigurację scoringu z DB dla tenanta. Cache TTL=5min. Fallback → defaults."""
+    cache_key = f"scoring_config:{tenant_id}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
+
     engine = get_engine()
     try:
         with engine.connect() as conn:
@@ -101,7 +139,7 @@ def load_scoring_config(tenant_id: str) -> ScoringWeights:
                 LIMIT 1
             """), {"tid": tenant_id}).fetchone()
         if row:
-            return ScoringWeights(
+            result = ScoringWeights(
                 cpv_weight=float(row[0] or 0.35),
                 value_weight=float(row[1] or 0.20),
                 region_weight=float(row[2] or 0.15),
@@ -112,17 +150,25 @@ def load_scoring_config(tenant_id: str) -> ScoringWeights:
                 preferred_cpvs=list(row[7] or []),
                 preferred_regions=list(row[8] or []),
             ).normalize()
+            _cache_set(cache_key, result)
+            return result
     except Exception as e:
         logger.warning(f"load_scoring_config failed: {e}")
+    _cache_set(cache_key, _DEFAULT_WEIGHTS)
     return _DEFAULT_WEIGHTS
 
 
 def load_cpv_win_rates(tenant_id: str | None = None) -> dict[str, float]:
     """
-    Ładuje win-rates per CPV prefix (5 cyfr) z historical_bids.
+    Ładuje win-rates per CPV prefix (5 cyfr) z historical_bids. Cache TTL=5min.
     Zwraca {cpv_prefix: 0.0–1.0} — ratio won/total dla każdego CPV.
     Fallback: jeśli brak danych per-tenant, użyj globalnych.
     """
+    cache_key = f"cpv_win_rates:{tenant_id or 'global'}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
+
     engine = get_engine()
     win_rates: dict[str, float] = {}
     try:
@@ -164,6 +210,7 @@ def load_cpv_win_rates(tenant_id: str | None = None) -> dict[str, float]:
     except Exception as e:
         logger.warning(f"load_cpv_win_rates failed: {e}")
 
+    _cache_set(cache_key, win_rates)
     return win_rates
 
 

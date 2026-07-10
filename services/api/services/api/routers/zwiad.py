@@ -354,7 +354,16 @@ async def stream_ingest_task(task_id: str, request: Request) -> StreamingRespons
     )
 
 
-@router.get("/tenders", response_model=Page)
+@router.post("/ingest/cache/invalidate")
+def invalidate_ingest_cache(user: AuthUser) -> dict:
+    """Inwaliduje cache scorera dla tenanta (po zmianie scoring_config)."""
+    from services.ingestion.scorer import invalidate_scorer_cache
+    tenant_id = str(user.org_id or "")
+    invalidate_scorer_cache(tenant_id)
+    return {"ok": True, "invalidated_for": tenant_id}
+
+
+
 def list_tenders(
     user: AuthUser,
     status: str | None = Query(default=None),
