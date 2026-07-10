@@ -270,6 +270,15 @@ def run_ingest(
         except Exception as exc:
             logger.debug("Audit log failed (non-critical): %s", exc)
 
+    # S15: Auto-refresh mv_dashboard_stats after ingest complete
+    try:
+        from sqlalchemy import text as _t
+        with engine.connect() as _c:
+            _c.execute(_t('REFRESH MATERIALIZED VIEW CONCURRENTLY mv_dashboard_stats'))
+            _c.commit()
+    except Exception as e:
+        logger.warning('MV refresh failed: %s', e)
+
     # S91: n8n trigger_webhook on ingest complete
     try:
         from services.api.services.api.integrations.n8n_client import trigger_webhook
