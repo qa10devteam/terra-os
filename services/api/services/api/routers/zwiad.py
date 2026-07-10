@@ -1,19 +1,26 @@
-"""M1 — /ingest/run and /tenders/* endpoints."""
+"""M1 — /ingest/run (async) and /tenders/* endpoints."""
 from __future__ import annotations
 
+import asyncio
 import base64
 import json
+import logging
 import re
+import threading
 import unicodedata
 import uuid
+from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+import sqlalchemy as sa
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from terra_db.session import get_engine
 from ..auth.deps import get_current_user, AuthUser
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1", tags=["zwiad"])
 
 
@@ -28,6 +35,7 @@ def _normalize_voiv(v: str) -> str:
 # ---------------------------------------------------------------------------
 
 class IngestRunResponse(BaseModel):
+    """Legacy sync response — kept for backward compat."""
     agent_run_id: str
     fetched: int
     created: int
@@ -36,6 +44,31 @@ class IngestRunResponse(BaseModel):
     errors: int
     bip_stored: int
     dedup_pairs: int
+
+
+class IngestTaskResponse(BaseModel):
+    """Async task envelope — returned immediately on POST /ingest/run."""
+    task_id: str
+    status: str          # pending | running | done | failed
+    progress: dict | None = None   # {step, pct, message}
+    result: dict | None = None
+    error: str | None = None
+    created_at: str | None = None
+    started_at: str | None = None
+    finished_at: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# In-process progress store  (task_id → latest progress dict)
+# Shared between background thread and SSE generator.
+# ---------------------------------------------------------------------------
+_PROGRESS: dict[str, dict] = {}
+_PROGRESS_LOCK = threading.Lock()
+
+
+def _set_progress(task_id: str, step: str, pct: int, message: str = "") -> None:
+    with _PROGRESS_LOCK:
+        _PROGRESS[task_id] = {"step": step, "pct": pct, "message": message}
 
 
 class TenderListItem(BaseModel):
@@ -92,36 +125,232 @@ def _decode_cursor(cursor: str) -> tuple[str, str] | None:
 # Endpoints
 # ---------------------------------------------------------------------------
 
-@router.post("/ingest/run", response_model=IngestRunResponse, status_code=200)
+# ---------------------------------------------------------------------------
+# Ingest — Async (BPMN Sprint 1)
+# ---------------------------------------------------------------------------
+
+def _run_ingest_worker(task_id: str, tenant_id: str, params: dict) -> None:
+    """Background thread — runs full pipeline and updates ingest_task row."""
+    from services.ingestion.pipeline import run_ingest
+
+    engine = get_engine()
+    now = lambda: datetime.now(timezone.utc)  # noqa: E731
+
+    def _update_task(**kw):
+        sets = ", ".join(f"{k} = :{k}" for k in kw)
+        with engine.begin() as conn:
+            conn.execute(
+                sa.text(f"UPDATE ingest_task SET {sets} WHERE id = :task_id"),
+                {"task_id": task_id, **kw},
+            )
+
+    try:
+        _update_task(status="running", started_at=now())
+        _set_progress(task_id, "starting", 5, "Inicjalizacja pipeline...")
+
+        _set_progress(task_id, "fetching", 15, "Pobieranie ogloszen BZP/TED...")
+        result = run_ingest(
+            engine,
+            days_back=params.get("days_back", 7),
+            offline=params.get("offline", False),
+            include_bip=params.get("include_bip", False),
+            include_ted=params.get("include_ted", True),
+            run_dedup=params.get("run_dedup", True),
+            bip_max_sites=50,
+        )
+
+        _set_progress(task_id, "done", 100, f"Zakonczone: +{result.created} nowych")
+        result_dict = {
+            "fetched": result.raw_fetched,
+            "created": result.created,
+            "updated": result.updated,
+            "dropped": result.dropped_filter,
+            "errors": result.errors,
+            "bip_stored": getattr(result, "bip_stored", 0) or 0,
+            "dedup_pairs": getattr(result, "dedup_pairs", 0) or 0,
+        }
+        _update_task(
+            status="done",
+            finished_at=now(),
+            result=json.dumps(result_dict),
+            progress=json.dumps({"step": "done", "pct": 100,
+                                  "message": f"Zakonczone: +{result.created} nowych"}),
+        )
+        logger.info("Ingest task %s done: %s", task_id, result_dict)
+
+    except Exception as exc:
+        err = str(exc)
+        logger.exception("Ingest task %s failed: %s", task_id, err)
+        _set_progress(task_id, "failed", 0, err)
+        _update_task(status="failed", finished_at=now(), error=err)
+
+
+@router.post("/ingest/run", response_model=IngestTaskResponse, status_code=202)
 def ingest_run(
+    background_tasks: BackgroundTasks,
     offline: bool = Query(default=False),
     days_back: int = Query(default=7, ge=1, le=90),
     include_bip: bool = Query(default=False),
     include_ted: bool = Query(default=True),
     run_dedup: bool = Query(default=True),
-) -> IngestRunResponse:
-    """Trigger the ingestion pipeline."""
-    from services.ingestion.pipeline import run_ingest
+) -> IngestTaskResponse:
+    """Async ingestion trigger — returns 202 + task_id immediately.
+
+    Poll:       GET /api/v1/ingest/tasks/{task_id}
+    Live SSE:   GET /api/v1/ingest/stream/{task_id}
+    """
     engine = get_engine()
-    run_id = str(uuid.uuid4())
-    result = run_ingest(
-        engine,
-        days_back=days_back,
-        offline=offline,
-        include_bip=include_bip,
-        include_ted=include_ted,
-        run_dedup=run_dedup,
-        bip_max_sites=50,
+    task_id = str(uuid.uuid4())
+    params = {
+        "offline": offline, "days_back": days_back,
+        "include_bip": include_bip, "include_ted": include_ted,
+        "run_dedup": run_dedup,
+    }
+
+    from services.ingestion.repository import get_or_create_default_tenant
+    tenant_id = get_or_create_default_tenant(engine)
+
+    created_at = datetime.now(timezone.utc)
+    with engine.begin() as conn:
+        conn.execute(
+            sa.text("""
+                INSERT INTO ingest_task (id, tenant_id, status, params, created_at)
+                VALUES (:id, :tenant_id, 'pending', :params, :created_at)
+            """),
+            {"id": task_id, "tenant_id": tenant_id,
+             "params": json.dumps(params), "created_at": created_at},
+        )
+
+    _set_progress(task_id, "pending", 0, "Oczekiwanie na start...")
+    t = threading.Thread(
+        target=_run_ingest_worker, args=(task_id, tenant_id, params),
+        daemon=True, name=f"ingest-{task_id[:8]}",
     )
-    return IngestRunResponse(
-        agent_run_id=run_id,
-        fetched=result.raw_fetched,
-        created=result.created,
-        updated=result.updated,
-        dropped=result.dropped_filter,
-        errors=result.errors,
-        bip_stored=getattr(result, "bip_stored", 0) or 0,
-        dedup_pairs=getattr(result, "dedup_pairs", 0) or 0,
+    t.start()
+    logger.info("Ingest task %s started (thread %s)", task_id, t.name)
+
+    return IngestTaskResponse(
+        task_id=task_id, status="pending",
+        progress={"step": "pending", "pct": 0, "message": "Oczekiwanie na start..."},
+        created_at=created_at.isoformat(),
+    )
+
+
+def _jsonb(val) -> dict | None:
+    """Parse JSONB column — Postgres returns dict directly, not string."""
+    if val is None:
+        return None
+    if isinstance(val, (dict, list)):
+        return val
+    if isinstance(val, str):
+        return json.loads(val)
+    return None
+
+
+@router.get("/ingest/tasks/{task_id}", response_model=IngestTaskResponse)
+def get_ingest_task(task_id: str) -> IngestTaskResponse:
+    """Poll single ingest task status."""
+    engine = get_engine()
+    with engine.connect() as conn:
+        row = conn.execute(
+            sa.text("""
+                SELECT id, status, progress, result, error,
+                       created_at, started_at, finished_at
+                FROM ingest_task WHERE id = :task_id
+            """),
+            {"task_id": task_id},
+        ).fetchone()
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    with _PROGRESS_LOCK:
+        live = _PROGRESS.get(task_id)
+
+    progress = live or _jsonb(row[2])
+    return IngestTaskResponse(
+        task_id=str(row[0]), status=row[1], progress=progress,
+        result=_jsonb(row[3]),
+        error=row[4],
+        created_at=row[5].isoformat() if row[5] else None,
+        started_at=row[6].isoformat() if row[6] else None,
+        finished_at=row[7].isoformat() if row[7] else None,
+    )
+
+
+@router.get("/ingest/tasks", response_model=list[IngestTaskResponse])
+def list_ingest_tasks(limit: int = Query(default=20, ge=1, le=100)) -> list[IngestTaskResponse]:
+    """List recent ingest tasks, newest first."""
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(
+            sa.text("""
+                SELECT id, status, progress, result, error,
+                       created_at, started_at, finished_at
+                FROM ingest_task ORDER BY created_at DESC LIMIT :limit
+            """),
+            {"limit": limit},
+        ).fetchall()
+
+    return [
+        IngestTaskResponse(
+            task_id=str(r[0]), status=r[1],
+            progress=_jsonb(r[2]),
+            result=_jsonb(r[3]),
+            error=r[4],
+            created_at=r[5].isoformat() if r[5] else None,
+            started_at=r[6].isoformat() if r[6] else None,
+            finished_at=r[7].isoformat() if r[7] else None,
+        )
+        for r in rows
+    ]
+
+
+@router.get("/ingest/stream/{task_id}")
+async def stream_ingest_task(task_id: str, request: Request) -> StreamingResponse:
+    """SSE stream — real-time progress events for an ingest task.
+
+    Event format:  data: {step, pct, message, status}\\n\\n
+    Stream closes when status becomes done or failed.
+    """
+    engine = get_engine()
+
+    async def _generator():
+        prev_pct = -1
+        ticks = 0
+
+        yield f"data: {json.dumps({'step': 'connected', 'pct': 0, 'message': 'Podlaczono...'})}\n\n"
+
+        while ticks < 300:
+            if await request.is_disconnected():
+                break
+
+            with _PROGRESS_LOCK:
+                prog = dict(_PROGRESS.get(task_id, {}))
+
+            with engine.connect() as conn:
+                row = conn.execute(
+                    sa.text("SELECT status FROM ingest_task WHERE id = :tid"),
+                    {"tid": task_id},
+                ).fetchone()
+
+            db_status = row[0] if row else "unknown"
+            pct = prog.get("pct", 0)
+
+            if pct != prev_pct or db_status in ("done", "failed"):
+                yield f"data: {json.dumps({'step': prog.get('step', 'running'), 'pct': pct, 'message': prog.get('message', ''), 'status': db_status})}\n\n"
+                prev_pct = pct
+
+            if db_status in ("done", "failed"):
+                break
+
+            await asyncio.sleep(1)
+            ticks += 1
+
+    return StreamingResponse(
+        _generator(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no", "Connection": "keep-alive"},
     )
 
 
