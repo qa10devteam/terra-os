@@ -73,3 +73,43 @@ def kaizen_faza2_summary(user: AuthUser) -> dict:
         "risk_assessments_done": risk,
         "ml_scorer_active": True,
     }
+
+
+@router.get("/faza3/summary")
+def kaizen_faza3_summary(user: AuthUser) -> dict:
+    """S135 — Phase Gate: metryki sukcesu Fazy 3 (S113-S135)."""
+    engine = get_engine()
+    tid = str(user.org_id) if user.org_id else ""
+
+    with engine.connect() as conn:
+        workflows = conn.execute(
+            text("SELECT count(*) FROM workflow_definition WHERE tenant_id=:t AND is_active=true"),
+            {"t": tid},
+        ).scalar() or 0
+
+        wh_7d = conn.execute(
+            text("SELECT count(*) FROM webhook_deliveries WHERE created_at > now()-interval '7 days'"),
+        ).scalar() or 0
+
+        api_keys = conn.execute(
+            text("SELECT count(*) FROM api_keys WHERE org_id=:t"),
+            {"t": tid},
+        ).scalar() or 0
+
+        flags = conn.execute(
+            text("SELECT count(*) FROM feature_flags WHERE tenant_id=:t AND enabled=true"),
+            {"t": tid},
+        ).scalar() or 0
+
+        ab_exp = conn.execute(
+            text("SELECT count(*) FROM ab_experiments WHERE tenant_id=:t"),
+            {"t": tid},
+        ).scalar() or 0
+
+    return {
+        "workflows_active": workflows,
+        "webhook_deliveries_7d": wh_7d,
+        "api_keys_count": api_keys,
+        "feature_flags_active": flags,
+        "ab_experiments": ab_exp,
+    }
