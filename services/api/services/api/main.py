@@ -327,7 +327,8 @@ if 'sse_mcp_chat' in _opt_map:
 if 'resources' in _opt_map:
     mod = _opt_map['resources']
     for attr in ['sub_router', 'equip_router', 'gantt_router', 'calendar_router',
-                 'employees_router', 'res_equip_router', 'logistics_router', 'contracts_router']:
+                 'employees_router', 'res_equip_router', 'logistics_router', 'contracts_router',
+                 'res_v2_router']:
         if hasattr(mod, attr):
             app.include_router(getattr(mod, attr))
 

@@ -716,3 +716,76 @@ def list_contracts(user: AuthUser) -> dict:
             {"org": org_id},
         ).mappings().all()
     return {"items": [dict(r) for r in rows], "total": len(rows)}
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# S78/S79/S80 — Resources availability + collision check (v2)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+res_v2_router = APIRouter(prefix="/api/v2/resources", tags=["resources-v2"])
+
+
+class CollisionCheckRequest(BaseModel):
+    resource_id: str
+    from_date: str
+    to_date: str
+
+
+@res_v2_router.get("/availability")
+def get_resource_availability(
+    from_date: str = Query(..., description="Format: YYYY-MM-DD"),
+    to_date: str = Query(..., description="Format: YYYY-MM-DD"),
+    user: AuthUser = None,
+) -> dict:
+    """S78 — Dostępność zasobów w przedziale dat (tabela availability)."""
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(
+            sa.text(
+                """SELECT id, employee_id, equipment_id, day, available, note
+                   FROM availability
+                   WHERE tenant_id = :tid
+                     AND day >= :from_date::date
+                     AND day <= :to_date::date
+                   ORDER BY day"""
+            ),
+            {
+                "tid": str(user.org_id) if user else "",
+                "from_date": from_date,
+                "to_date": to_date,
+            },
+        ).mappings().fetchall()
+    return {
+        "from_date": from_date,
+        "to_date": to_date,
+        "items": [dict(r) for r in rows],
+        "total": len(rows),
+    }
+
+
+@res_v2_router.post("/check-collision")
+def check_resource_collision(body: CollisionCheckRequest, user: AuthUser = None) -> dict:
+    """S79/S80 — Sprawdź kolizję zasobu w przedziale dat."""
+    engine = get_engine()
+    with engine.connect() as conn:
+        count = conn.execute(
+            sa.text(
+                """SELECT count(*) FROM availability
+                   WHERE (employee_id = :rid OR equipment_id = :rid)
+                     AND available = false
+                     AND day >= :from_date::date
+                     AND day <= :to_date::date"""
+            ),
+            {
+                "rid": body.resource_id,
+                "from_date": body.from_date,
+                "to_date": body.to_date,
+            },
+        ).scalar() or 0
+    return {
+        "resource_id": body.resource_id,
+        "from_date": body.from_date,
+        "to_date": body.to_date,
+        "collision": count > 0,
+        "conflict_days": count,
+    }
