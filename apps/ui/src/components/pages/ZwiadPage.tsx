@@ -141,9 +141,9 @@ const STATUS_OPTS = [
 
 const SORT_OPTS = [
   { value: 'match_score', label: 'Score dopasowania' },
-  { value: 'deadline', label: 'Deadline' },
-  { value: 'value', label: 'Wartość' },
-  { value: 'published', label: 'Data publikacji' },
+  { value: 'deadline_at', label: 'Deadline' },
+  { value: 'value_pln', label: 'Wartość' },
+  { value: 'created_at', label: 'Data publikacji' },
 ];
 
 const CHART_COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4'];
