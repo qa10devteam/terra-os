@@ -41,7 +41,7 @@ const STATUS_LABELS: Record<string, string> = {
 type ToastState = { type: 'success' | 'error'; message: string } | null;
 
 export function DecyzjaPage() {
-  const { selectedTender, setCurrentModule } = useStore();
+  const { selectedTender, setCurrentModule, accessToken } = useStore();
   const tender = selectedTender as any;
 
   const [engine, setEngine] = useState<EngineResult | null>(null);
@@ -52,18 +52,19 @@ export function DecyzjaPage() {
   const [toast, setToast] = useState<ToastState>(null);
 
   useEffect(() => {
-    if (!tender?.id) return;
+    if (!tender?.id || !accessToken) return;
     setLoading(true);
     setError(null);
+    const h = { Authorization: 'Bearer ' + accessToken };
     Promise.all([
-      fetch(`/api/v1/tenders/${tender.id}/engine`).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch(`/api/v1/tenders/${tender.id}/estimate/compare`).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(`/api/v1/tenders/${tender.id}/engine`, { headers: h }).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(`/api/v1/tenders/${tender.id}/estimate/compare`, { headers: h }).then(r => r.ok ? r.json() : null).catch(() => null),
     ]).then(([eng, cmp]) => {
       setEngine(eng);
       setCompare(cmp);
       setLoading(false);
     });
-  }, [tender?.id]);
+  }, [tender?.id, accessToken]);
 
   // Toast auto-dismiss
   useEffect(() => {
@@ -77,7 +78,10 @@ export function DecyzjaPage() {
     setActionStatus('loading');
     fetch(`/api/v1/tenders/${tender.id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken ? { Authorization: 'Bearer ' + accessToken } : {}),
+      },
       body: JSON.stringify({ status }),
     })
       .then(r => { if (!r.ok) throw new Error(`Błąd ${r.status}`); return r.json(); })

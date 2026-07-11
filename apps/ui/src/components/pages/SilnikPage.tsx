@@ -132,7 +132,7 @@ function SimpleMarkdown({ text }: { text: string }) {
 }
 
 export function SilnikPage() {
-  const { selectedTender, setCurrentModule } = useStore();
+  const { selectedTender, setCurrentModule, accessToken } = useStore();
   const tender = selectedTender as any;
 
   const [result, setResult] = useState<EngineResult | null>(null);
@@ -150,7 +150,9 @@ export function SilnikPage() {
 
     setLoading(true);
     setError(null);
-    fetch(`/api/v1/tenders/${id}/engine`, { signal: ctrl.signal })
+    const headers: Record<string, string> = {};
+    if (accessToken) headers['Authorization'] = 'Bearer ' + accessToken;
+    fetch(`/api/v1/tenders/${id}/engine`, { signal: ctrl.signal, headers })
       .then(r => {
         if (r.status === 404) return null;
         if (!r.ok) throw new Error(`Błąd ${r.status}`);
@@ -166,13 +168,15 @@ export function SilnikPage() {
   useEffect(() => {
     if (tender?.id) fetchResult(tender.id);
     return () => { abortRef.current?.abort(); };
-  }, [tender?.id]);
+  }, [tender?.id, accessToken]);
 
   const runEngine = () => {
     if (!tender?.id) return;
     setRunning(true);
     setError(null);
-    fetch(`/api/v1/tenders/${tender.id}/engine/run`, { method: 'POST' })
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (accessToken) headers['Authorization'] = 'Bearer ' + accessToken;
+    fetch(`/api/v1/tenders/${tender.id}/engine/run`, { method: 'POST', headers })
       .then(r => { if (!r.ok) throw new Error(`Błąd ${r.status}`); return r.json(); })
       .then(data => { setResult(data); setRunning(false); })
       .catch(e => { setError(e.message); setRunning(false); });

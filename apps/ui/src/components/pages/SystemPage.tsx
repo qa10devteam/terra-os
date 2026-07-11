@@ -8,6 +8,7 @@ import {
   Clock, FileText,
 } from 'lucide-react';
 import { SkeletonBlock, SkeletonCard } from '@/components/ui/SkeletonLoader';
+import { useStore } from '@/store/useStore';
 
 interface ApiStatus {
   ok: boolean;
@@ -22,6 +23,7 @@ interface SystemStats {
 }
 
 export function SystemPage() {
+  const { accessToken } = useStore();
   const [apiStatus, setApiStatus] = useState<ApiStatus>({ ok: false, tenderCount: null, error: null, checkedAt: null });
   const [checking, setChecking] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -31,7 +33,8 @@ export function SystemPage() {
   const checkApi = async () => {
     setChecking(true);
     try {
-      const res = await fetch('/api/v1/tenders?limit=1');
+      const authH: Record<string, string> = accessToken ? { Authorization: 'Bearer ' + accessToken } : {};
+      const res = await fetch('/api/v1/tenders?limit=1', { headers: authH });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       const count = Array.isArray(data) ? data.length : (data?.total ?? null);
@@ -47,7 +50,7 @@ export function SystemPage() {
   const fetchStats = async () => {
     try {
       const [tendersRes] = await Promise.all([
-        fetch('/api/v1/tenders?limit=1000').catch(() => null),
+        fetch('/api/v1/tenders?limit=1000', { headers: (accessToken ? { Authorization: 'Bearer ' + accessToken } : {}) as Record<string,string> }).catch(() => null),
       ]);
       if (tendersRes?.ok) {
         const data = await tendersRes.json();
