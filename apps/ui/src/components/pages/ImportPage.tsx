@@ -93,11 +93,13 @@ export function ImportPage() {
     setLoading(true);
     try {
       await new Promise(r => setTimeout(r, 1500));
-      if (accessToken) {
-        await fetch('/api/v2/import', {
+      if (accessToken && file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        await fetch('/api/v1/excel/import/tenders', {
           method: 'POST',
-          headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filename: file?.name, mapping, row_count: csvData?.rows.length ?? 0 }),
+          headers: { Authorization: 'Bearer ' + accessToken },
+          body: formData,
         }).catch(() => {});
       }
       setDone(true);

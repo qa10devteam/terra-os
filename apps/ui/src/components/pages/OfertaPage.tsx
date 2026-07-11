@@ -1109,10 +1109,10 @@ export function OfertaPage() {
   useEffect(() => {
     if (wizardStep !== 1 || !selectedTenderId) return;
     setLoadingItems(true);
-    authFetch(`/api/v1/kosztorys/${selectedTenderId}`)
+    authFetch(`/api/v2/estimates?tender_id=${selectedTenderId}`)
       .then((d: unknown) => {
-        const data = d as { items?: KosztorysItem[] } | null;
-        setItems(data?.items ?? []);
+        const data = d as { items?: KosztorysItem[]; lines?: KosztorysItem[] } | null;
+        setItems(data?.items ?? data?.lines ?? []);
       })
       .catch(() => setItems([]))
       .finally(() => setLoadingItems(false));

@@ -408,7 +408,7 @@ function EstimatesTab({
   const loadEstimates = useCallback(async () => {
     setLoading(true);
     try {
-      const raw = await authFetch(`/api/v2/kosztorys/estimate?tender_id=${tenderId}`) as unknown;
+      const raw = await authFetch(`/api/v2/estimates?tender_id=${tenderId}`) as unknown;
       const items = (raw as { items?: EstimateItem[] })?.items ?? (Array.isArray(raw) ? raw : []);
       setEstimates(items as EstimateItem[]);
     } catch { /* ignore */ } finally { setLoading(false); }
@@ -416,8 +416,8 @@ function EstimatesTab({
 
   const loadUserRates = useCallback(async () => {
     try {
-      const raw = await authFetch('/api/v2/kosztorys/user-rates') as { items?: UserRate[] };
-      setUserRates(raw?.items ?? []);
+      // user-rates not in v2 API — skip
+      setUserRates([]);
     } catch { /* ignore */ }
   }, [authFetch]);
 
@@ -435,7 +435,7 @@ function EstimatesTab({
     }
     setRunning(true);
     try {
-      await authFetch('/api/v2/kosztorys/estimate', {
+      await authFetch('/api/v2/estimates', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -457,7 +457,7 @@ function EstimatesTab({
 
   async function handleDeleteEstimate(id: string) {
     try {
-      await authFetch(`/api/v2/kosztorys/estimate/${id}`, { method: 'DELETE' });
+      await authFetch(`/api/v2/estimates/${id}`, { method: 'DELETE' });
       setEstimates(prev => prev.filter(e => e.id !== id));
     } catch { showToast('error', 'Błąd usuwania'); }
   }
@@ -466,11 +466,8 @@ function EstimatesTab({
     if (!newRate.symbol || !newRate.cena_netto) return;
     setSavingRate(true);
     try {
-      await authFetch('/api/v2/kosztorys/user-rates', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...newRate, cena_netto: parseFloat(newRate.cena_netto) }),
-      });
+      // user-rates endpoint not in v2 API
+      throw new Error('Funkcja stawek użytkownika niedostępna w tej wersji');
       showToast('success', 'Stawka zapisana');
       setNewRate({ symbol: '', nazwa: '', jednostka: 'm²', typ_rms: 'R', cena_netto: '' });
       await loadUserRates();
@@ -479,7 +476,7 @@ function EstimatesTab({
 
   async function handleDeleteRate(id: string) {
     try {
-      await authFetch(`/api/v2/kosztorys/user-rates/${id}`, { method: 'DELETE' });
+      await Promise.resolve() // user-rates not in v2 API;
       setUserRates(prev => prev.filter(r => r.id !== id));
     } catch { showToast('error', 'Błąd usuwania'); }
   }
