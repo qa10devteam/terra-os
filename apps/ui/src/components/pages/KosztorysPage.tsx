@@ -864,19 +864,34 @@ export function KosztorysPage() {
     const d = await authFetch(`/api/v2/estimates/${kid}`);
     const raw = (d as { lines?: Array<Record<string, unknown>> }).lines ?? [];
     // Map backend fields → KPozycja (backend: description/unit/labor_pln → opis/jednostka/r_jcena)
-    const items: KPozycja[] = raw.map((it, idx) => ({
-      id: it.id as string,
-      lp: idx + 1,
-      kst_code: (it.kst_code as string) ?? '',
-      opis: (it.description as string) ?? '',
-      jednostka: (it.unit as string) ?? 'szt',
-      ilosc: (it.quantity as number) ?? 1,
-      r_jcena: (it.labor_pln as number) ?? 0,
-      m_jcena: (it.material_pln as number) ?? 0,
-      s_jcena: (it.equipment_pln as number) ?? 0,
-      jcena_netto: (it.unit_price as number) ?? ((it.labor_pln as number ?? 0) + (it.material_pln as number ?? 0) + (it.equipment_pln as number ?? 0)),
-      wartosc_netto: (it.line_total_pln as number) ?? ((it.unit_price as number ?? 0) * (it.quantity as number ?? 1)),
-    }));
+    const items: KPozycja[] = raw.map((it, idx) => {
+      const r = (it.labor_pln as number) ?? 0;
+      const m = (it.material_pln as number) ?? 0;
+      const s = (it.equipment_pln as number) ?? 0;
+      const jcena = (it.unit_price as number) ?? (r + m + s);
+      const ilosc = (it.quantity as number) ?? 1;
+      const narzuty_local = narzuty;
+      const ko = r * narzuty_local.ko_r_pct / 100 + s * narzuty_local.ko_s_pct / 100;
+      const kz = m * narzuty_local.kz_pct / 100;
+      const z  = (r + m + s + ko + kz) * narzuty_local.z_pct / 100;
+      return {
+        id: it.id as string,
+        lp: idx + 1,
+        kst_code: (it.kst_code as string) ?? '',
+        opis: (it.description as string) ?? '',
+        jednostka: (it.unit as string) ?? 'szt',
+        ilosc,
+        r_jcena: r, m_jcena: m, s_jcena: s,
+        jcena_netto: (it.line_total_pln as number) ? ((it.line_total_pln as number) / ilosc) : jcena,
+        wartosc_netto: (it.line_total_pln as number) ?? (jcena * ilosc),
+        r_total: r * ilosc,
+        m_total: m * ilosc,
+        s_total: s * ilosc,
+        ko_total: ko * ilosc,
+        z_total: z * ilosc,
+        kz_total: kz * ilosc,
+      };
+    });
     setPozycje(items);
   }
 
