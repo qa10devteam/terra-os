@@ -80,7 +80,336 @@
     "messages": [
       {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
       {"role": "user", "content": "Jak zmienić parametry scoringu?"},
-      {"role": "assistant", "content": "Parametry scoringu konfigururjesz w module **Ustawienia** → zakładka **Scoring**.\n\n**Dostępne parametry:**\n- **Wagi CPV** — priorytet kodów CPV (np. 45233 = drogi: waga 1.0, 45310 = elektryka: waga 0.3)\n- **Promień lokalizacji** — max odległość od bazy [km]\n- **Przedział wartości** — min/max wartość kontraktu [PLN]\n- **Min. match_score** — próg wyświetlania w Zwiadzie (domyślnie 0.3)\n\nZmiany zapisujesz przyciskiem 'Zapisz konfigurację' — nowe przetargi zostaną automatycznie przescorowane w ciągu 5 minut.\n\nEndpoint API: `PATCH /api/v2/scoring/config`"}
+      {"role": "assistant", "content": "Parametry scoringu konfigurujesz w module **Ustawienia** → zakładka **Scoring**.\n\n**Dostępne parametry:**\n- **Wagi CPV** — priorytet kodów CPV (np. 45233 = drogi: waga 1.0, 45310 = elektryka: waga 0.3)\n- **Promień lokalizacji** — max odległość od bazy [km]\n- **Przedział wartości** — min/max wartość kontraktu [PLN]\n- **Min. match_score** — próg wyświetlania w Zwiadzie (domyślnie 0.3)\n\nZmiany zapisujesz przyciskiem 'Zapisz konfigurację' — nowe przetargi zostaną automatycznie przescorowane w ciągu 5 minut.\n\nEndpoint API: `PATCH /api/v2/scoring/config`"}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Przeanalizuj klauzule umowne: 'Zabezpieczenie należytego wykonania umowy wynosi 10% ceny ofertowej brutto. Zamawiający przewiduje możliwość naliczenia kary umownej w wysokości 2% wartości kontraktu za każdy dzień opóźnienia, nie więcej jednak niż 30% wartości kontraktu.'"},
+      {"role": "assistant", "content": "**Analiza klauzul umownych:**\n\n1. **HIGH** — Kara 2%/dzień to ekstremalnie wysoka stawka. Przy kontrakcie 5M PLN to 100 000 PLN/dzień. Standard rynkowy: 0.1-0.3%/dzień. Ta klauzula jest 7-20x wyższa od normy.\n\n2. **MEDIUM** — Cap 30% wartości kontraktu to standard, ale przy stawce 2%/dzień osiągniesz go w 15 dni. To de facto kara za 2 tygodnie opóźnienia = utrata 1/3 kontraktu.\n\n3. **LOW** — Zabezpieczenie 10% to górna granica dopuszczalna przez PZP (art. 452). Standardowe, ale zamraża kapitał obrotowy.\n\n**Kalkulacja ryzyka (kontrakt 5M PLN):**\n- Zabezpieczenie: 500 000 PLN zamrożone\n- 5 dni opóźnienia: 500 000 PLN kary\n- 15 dni opóźnienia: 1 500 000 PLN (cap)\n\n**Rekomendacja:** NO-GO w obecnej formie. Negocjuj karę do max 0.3%/dzień. Jeśli zamawiający odmawia — kalkuluj bufor terminowy min. 20% i włącz koszt ryzyka w cenę oferty."}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Zmniejsz calibration_coeff do 0.95"},
+      {"role": "assistant", "content": "{\"op\": \"set_param\", \"target\": \"calibration_coeff\", \"value\": \"0.95\"}"}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Jaka jest różnica między BZP a TED?"},
+      {"role": "assistant", "content": "**BZP vs TED — źródła przetargów:**\n\n| Cecha | BZP | TED |\n|-------|-----|-----|\n| Zakres | Polska (krajowe) | UE/EOG (transgraniczne) |\n| Próg wartości | Poniżej progów unijnych | Powyżej progów unijnych |\n| Próg roboty budowlane | < 5 382 000 EUR | >= 5 382 000 EUR |\n| Próg dostawy/usługi | < 221 000 EUR | >= 221 000 EUR |\n| Język | Polski | Wszystkie języki UE (PL tłumaczenie) |\n| Portal | ezamowienia.gov.pl | ted.europa.eu |\n| Terminy składania | Krótsze (min. 7-35 dni) | Dłuższe (min. 30-52 dni) |\n\n**W AXON|TERRA:**\n- BZP = główne źródło (90%+ Twoich przetargów)\n- TED = duże kontrakty infrastrukturalne\n- System automatycznie deduplikuje (ten sam przetarg może być w obu)"}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Mam przetarg na termomodernizację szkoły. Wartość 3.8M PLN, termin realizacji 8 miesięcy. Jakie ryzyka powinienem sprawdzić?"},
+      {"role": "assistant", "content": "**Ryzyka do weryfikacji — termomodernizacja szkoły (3.8M PLN / 8 mies.):**\n\n**HIGH PRIORITY:**\n1. **Sezonowość** — termomodernizacja wymaga temp. >5°C dla prac mokrych (tynki, ETICS). Jeśli realizacja wypada XI-III → opóźnienia pewne.\n2. **Wakacje szkolne** — większość prac musi być w VII-VIII (obiekt czynny). 2 miesiące to mało na 3.8M PLN.\n3. **Azbest/materiały niebezpieczne** — stare szkoły często mają eternit, izolacje z wełny mineralnej typu 1. Sprawdź inwentaryzację.\n4. **Waloryzacja** — 8 miesięcy przy obecnej inflacji materiałowej wymaga klauzuli waloryzacyjnej.\n\n**MEDIUM PRIORITY:**\n5. **Stolarka okienna** — terminy dostaw 8-12 tygodni. Zamów natychmiast po podpisaniu.\n6. **Dostęp do elewacji** — rusztowania + strefa bezpieczeństwa vs. teren szkoły (plac zabaw, wejścia).\n7. **Audyt energetyczny** — sprawdź czy projekt jest zgodny z audytem (częsty problem: rozbieżności grubości izolacji).\n\n**Następny krok:** Pobierz SWZ i uruchom moduł **Silnik** — L1 sprawdzi blokery formalne, L2 policzy Monte Carlo z uwzględnieniem sezonowości."}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Co to jest KNR i jak go używać w kosztorysie?"},
+      {"role": "assistant", "content": "**KNR (Katalogi Nakładów Rzeczowych)** — normatywy określające ilość materiałów, robocizny i sprzętu potrzebnych do wykonania jednostki robót budowlanych.\n\n**Struktura kodu KNR:**\n```\nKNR 2-01 0211-03\n│    │    │    └── wariant (03 = grunt kat. III)\n│    │    └─────── pozycja (0211 = wykopy mechaniczne)\n│    └──────────── tom (01 = roboty ziemne)\n└───────────────── seria (2 = budownictwo ogólne)\n```\n\n**Główne serie:**\n- KNR 2 — budownictwo ogólne\n- KNR 4 — instalacje sanitarne\n- KNR 5 — instalacje elektryczne\n- KNR 13 — roboty drogowe\n- KNNR — nowsze normatywy\n\n**W AXON|TERRA:**\n- System automatycznie rozpoznaje kody KNR w przedmiarze (OCR + regex)\n- Łączy KNR z cenami z Intercenbud/SEKOCENBUD\n- Wariant OWNER przelicza nakłady po Twoich stawkach regionalnych\n\n**Tip:** Jeśli przedmiar nie ma KNR — system przypisuje je automatycznie na podstawie opisu pozycji (NLP matching, confidence >0.85)."}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Pokaż mi pipeline — ile mam przetargów w każdym statusie?"},
+      {"role": "assistant", "content": "**Pipeline AXON|TERRA — aktualne statusy:**\n\n| Status | Ilość | Znaczenie |\n|--------|-------|-----------|\n| `new` | 200 | Nowe — do przeglądu w Zwiadzie |\n| `analysis` | 0 | W trakcie analizy (Silnik/Kosztorys) |\n| `decided_go` | 0 | Decyzja GO — przygotuj ofertę |\n| `decided_nogo` | 0 | Decyzja NO-GO — odrzucone |\n| `offer_sent` | 0 | Oferta złożona — czekamy na rozstrzygnięcie |\n| `won` | 0 | Wygrane |\n| `lost` | 0 | Przegrane |\n\n**Obserwacja:** Wszystkie przetargi są w statusie `new`. Żaden nie przeszedł jeszcze przez pipeline analizy.\n\n**Sugestia:** Przefiltruj w Zwiadzie po score >0.7 i przenieś top 10 do `analysis` — system uruchomi automatyczną wycenę."}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Sklasyfikuj dokument: PDF 45 stron, nagłówek 'Specyfikacja Warunków Zamówienia', rozdziały o warunkach udziału, kryteriach oceny ofert, wzorze umowy"},
+      {"role": "assistant", "content": "{\"kind\": \"swz\", \"confidence\": 0.98, \"indicators\": [\"nagłówek SWZ\", \"rozdziały: warunki udziału + kryteria oceny + wzór umowy\", \"struktura zgodna z art. 134 PZP\"], \"sub_documents\": [\"warunki_udzialu\", \"kryteria_oceny\", \"wzor_umowy\", \"opis_przedmiotu_zamowienia\"]}"}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Jakie CPV kody dotyczą robót drogowych?"},
+      {"role": "assistant", "content": "**Kody CPV — roboty drogowe (główna grupa 45233):**\n\n| Kod | Opis |\n|-----|------|\n| 45233000-9 | Roboty w zakresie konstruowania, fundamentowania oraz nawierzchni autostrad, dróg |\n| 45233100-0 | Budowa autostrad, dróg |\n| 45233120-6 | Roboty w zakresie budowy dróg |\n| 45233140-2 | Roboty drogowe |\n| 45233141-9 | Roboty w zakresie konserwacji dróg |\n| 45233142-6 | Roboty w zakresie naprawy dróg |\n| 45233150-5 | Regulacja ruchu |\n| 45233200-1 | Różne nawierzchnie |\n| 45233220-7 | Nawierzchnie dróg |\n| 45233221-4 | Malowanie nawierzchni |\n| 45233222-1 | Brukowanie, asfaltowanie |\n| 45233250-6 | Nawierzchnie (parking, place) |\n| 45233300-2 | Fundamentowanie (autostrad, dróg, ulic, ścieżek) |\n\n**Pokrewne:**\n- 45111000-8 — roboty ziemne (wykopy, nasypy)\n- 45232000-2 — kanalizacja deszczowa (odwodnienie dróg)\n- 45316000-5 — oświetlenie drogowe\n\n**Tip:** W Zwiadzie ustaw filtr CPV na `45233*` aby wyłapać wszystkie warianty robót drogowych."}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Wytłumacz mi moduł Decyzja — jak działa proces GO/NO-GO?"},
+      {"role": "assistant", "content": "**Moduł Decyzja — proces GO/NO-GO:**\n\nDecyzja agreguje 3 warstwy analizy:\n\n**1. Kosztorys (wariant DOC vs OWNER)**\n- Delta = cena ofertowa - koszt własny\n- Jeśli delta < 0 → sygnał NO-GO (dokładasz do interesu)\n- Jeśli delta > 10% → zielone światło\n\n**2. Silnik ryzyka (Monte Carlo)**\n- L1: blokery twarde (brak wymaganego doświadczenia, koncesji)\n- L2: symulacja 2000 scenariuszy → P10/P50/P90 marży\n- L3: wyjaśnienie tekstowe kluczowych ryzyk\n\n**3. Naruszenia reguł (red flags z SWZ)**\n- Kary > 0.3%/dzień\n- Brak waloryzacji przy kontrakcie >6 mies.\n- Solidarna odpowiedzialność\n- Ryczałt bez wyjątków\n\n**Wynik końcowy:**\n| Rekomendacja | Warunek |\n|---|---|\n| **GO** | Delta > 5% AND P10 > 0% AND brak blokerów L1 |\n| **NEGOCJUJ** | Delta > 0% AND (P10 < 0% OR red flags medium) |\n| **NO-GO** | Delta < 0% OR bloker L1 OR red flags high bez negocjacji |\n\nKliknięcie 'Zatwierdź decyzję' zmienia status przetargu w Pipeline i zapisuje uzasadnienie w audit log."}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Obniż kp na 8%"},
+      {"role": "assistant", "content": "{\"op\": \"set_param\", \"target\": \"kp_pct\", \"value\": \"8.0\"}"}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Resetuj parametry do domyślnych"},
+      {"role": "assistant", "content": "{\"op\": \"batch\", \"edits\": [{\"op\": \"set_param\", \"target\": \"kp_pct\", \"value\": \"12.0\"}, {\"op\": \"set_param\", \"target\": \"zysk_pct\", \"value\": \"8.0\"}, {\"op\": \"set_param\", \"target\": \"robocizna_zl_rg\", \"value\": \"35.0\"}, {\"op\": \"set_param\", \"target\": \"calibration_coeff\", \"value\": \"1.00\"}]}"}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Czym się różni tryb podstawowy od przetargu nieograniczonego?"},
+      {"role": "assistant", "content": "**Tryb podstawowy vs Przetarg nieograniczony (PZP 2019):**\n\n| Cecha | Tryb podstawowy | Przetarg nieograniczony |\n|-------|----------------|------------------------|\n| Podstawa prawna | Art. 275 PZP | Art. 132 PZP |\n| Wartość zamówienia | Poniżej progów unijnych | Powyżej progów unijnych |\n| Warianty | 3 (bez negocjacji / z negocjacjami / z najlepszymi) | Jeden tryb |\n| Min. termin ofert (roboty) | 7 dni (wariant 1) | 35 dni (skrócenie do 15 przy pilności) |\n| Wadium | Fakultatywne | Obowiązkowe (max 3% wartości) |\n| Ogłoszenie | BZP | TED + BZP |\n| Dokumenty podmiotowe | Mogą być na wezwanie | Na wezwanie (art. 126) |\n\n**Dla Ciebie to znaczy:**\n- **Tryb podstawowy** = szybszy cykl, niższe wymagania formalne, BZP\n- **Przetarg nieograniczony** = dłuższe terminy, większe kontrakty, TED\n\nW AXON|TERRA filtruj po polu **tryb** w Zwiadzie. System automatycznie rozpoznaje tryb z ogłoszenia."}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Zrób analizę ryzyk: 'Termin realizacji: 60 dni kalendarzowych od dnia podpisania umowy. Zamawiający nie przewiduje przedłużenia terminu z powodu warunków atmosferycznych. Wynagrodzenie ryczałtowe bez możliwości podwyższenia.'"},
+      {"role": "assistant", "content": "**Analiza ryzyk:**\n\n1. **HIGH** — 60 dni bez możliwości przedłużenia z powodu pogody. Przy robotach zewnętrznych (wykopy, fundamenty, nawierzchnie) deszcz/mróz może zablokować prace na 5-15 dni w sezonie jesienno-zimowym.\n\n2. **HIGH** — Ryczałt bez możliwości podwyższenia = całe ryzyko po stronie wykonawcy. Jeśli w trakcie realizacji ujawnią się roboty dodatkowe (np. kolizje z uzbrojeniem, zmiana gruntu) — pokrywasz z własnej kieszeni.\n\n3. **MEDIUM** — Kombinacja ryczałt + brak przedłużenia = podwójne ryzyko. Opóźnienie z powodu robót dodatkowych (których nie wyceniłeś) + kary za przekroczenie terminu (którego nie możesz przedłużyć).\n\n**Kalkulacja:**\n- Bufor pogodowy: +10 dni (17% terminu)\n- Bufor roboty dodatkowe: +5-8% wartości\n- Łączny narzut ryzyka: +12-15% do ceny oferty\n\n**Rekomendacja:** GO tylko jeśli:\n- Termin realizacji wypada IV-IX (sezon suchy)\n- Znasz teren (brak niespodzianek geotechnicznych)\n- Cena oferty zawiera min. 15% buforu na ryzyka\n\nW przeciwnym razie: NO-GO."}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Jak dodać nowego użytkownika do organizacji?"},
+      {"role": "assistant", "content": "**Dodawanie użytkownika do organizacji:**\n\n1. Przejdź do **Ustawienia** → zakładka **Członkowie**\n2. Kliknij **'Zaproś użytkownika'**\n3. Podaj adres email — system wyśle link aktywacyjny\n4. Przypisz rolę:\n   - **Admin** — pełny dostęp + zarządzanie organizacją\n   - **Analyst** — analiza, kosztorysy, decyzje (bez ustawień org)\n   - **Viewer** — tylko odczyt pipeline i raportów\n\n**Limity:**\n- Plan Starter: 3 użytkownicy\n- Plan Pro: 10 użytkowników\n- Plan Enterprise: bez limitu\n\n**API:** `POST /api/v2/organizations/members/invite` z body `{\"email\": \"...\", \"role\": \"analyst\"}`"}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Jaki jest koszt betonu C25/30 w Małopolsce?"},
+      {"role": "assistant", "content": "**Beton C25/30 — woj. małopolskie (Q2 2026):**\n\n| Parametr | Wartość |\n|----------|--------|\n| Cena loco wytwórnia | **340-380 PLN/m3** |\n| Transport (do 15 km) | +45-65 PLN/m3 |\n| Pompowanie | +35-50 PLN/m3 |\n| **Cena z dostawą + pompowaniem** | **420-495 PLN/m3** |\n\n**Źródła:**\n- SEKOCENBUD Q2/2026: 365 PLN/m3 (mediana, loco)\n- Intercenbud: 358 PLN/m3 (średnia ważona)\n- Cennik Lafarge Kraków: 372 PLN/m3 (standard)\n- Cennik Cemex Kraków: 368 PLN/m3\n\n**Do kosztorysu zalecam:**\n- Wariant bezpieczny: **390 PLN/m3** + transport wg odległości\n- Wariant konkurencyjny: **360 PLN/m3** (negocjuj wolumen >100 m3)\n\n**Trend:** +4% vs Q1/2026 (cement +6%, kruszywa stabilne). Przy kontrakcie 6+ mies. dodaj waloryzację materiałową."}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Wytłumacz co robi przycisk 'Uruchom analizę' w module Silnik"},
+      {"role": "assistant", "content": "**Przycisk 'Uruchom analizę' w Silniku — co się dzieje:**\n\n**Krok 1: L1 — Reguły twarde (< 1 sek)**\nSprawdza blokery formalne:\n- Czy masz wymagane doświadczenie?\n- Czy masz wymagane koncesje/uprawnienia?\n- Czy wartość kontraktu mieści się w Twoich limitach?\n- Czy termin składania ofert nie minął?\n\nJeśli L1 wykryje bloker → natychmiastowe NO-GO bez dalszej analizy.\n\n**Krok 2: L2 — Monte Carlo (2-5 sek)**\n2000 symulacji losujących:\n- Ceny materiałów (rozkład normalny, sigma z historii Intercenbud)\n- Czas realizacji (log-normalny, parametr z podobnych kontraktów)\n- Dostępność zasobów (binomialny, na podstawie harmonogramu)\n\nWynik: percentyle P10/P50/P90 marży procentowej.\n\n**Krok 3: L3 — Wyjaśnienie (< 1 sek)**\nGeneruje tekstowe uzasadnienie decyzji w formie:\n- Top 3 ryzyka\n- Top 3 szanse\n- Rekomendacja: GO / NEGOCJUJ / NO-GO\n\n**Wynik widoczny w UI:**\n- Gauge z marżą P50\n- Lista naruszeń z severity badges\n- Explanation w markdown"}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Sklasyfikuj: PDF z paragrafami, kary umowne, gwarancja, terminy płatności, zabezpieczenie"},
+      {"role": "assistant", "content": "{\"kind\": \"umowa\", \"confidence\": 0.93, \"indicators\": [\"paragrafy (§)\", \"kary umowne\", \"gwarancja\", \"terminy płatności\", \"zabezpieczenie należytego wykonania\"], \"sub_documents\": [\"kary_umowne\", \"gwarancja\", \"platnosci\", \"zabezpieczenie\"]}"}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Jaki wpływ ma pogoda na realizację robót drogowych w styczniu w Wielkopolsce?"},
+      {"role": "assistant", "content": "**Wpływ pogody — roboty drogowe, styczeń, Wielkopolska:**\n\n**Temperatura (historyczne dane GUS/IMGW):**\n- Średnia dzienna: -1°C do +2°C\n- Dni z mrozem: 15-22/miesiąc\n- Dni z opadami: 12-18/miesiąc\n\n**Ograniczenia technologiczne:**\n\n| Robota | Min. temp. | Status w styczniu |\n|--------|-----------|-------------------|\n| Układanie masy bitumicznej | +5°C | ZABLOKOWANE |\n| Betonowanie | +5°C (bez domieszek) | RYZYKOWNE |\n| Roboty ziemne | >0°C grunt | OGRANICZONE (grunt zamarznięty) |\n| Podbudowa z kruszywa | >0°C | MOŻLIWE w oknach pogodowych |\n| Krawężniki na betonie | +5°C | ZABLOKOWANE |\n\n**Realistyczna wydajność:** 20-35% normy letniej.\n\n**Konsekwencje dla kosztorysu:**\n- Ogrzewanie betonu: +15-25 PLN/m3\n- Przestoje: 3-5 PLN/rbg (załoga czeka)\n- Dodatkowe zabezpieczenia: +3-5% wartości robót\n\n**Rekomendacja:** Nie planuj kluczowych robót nawierzchniowych na I-III. Jeśli termin wymusza zimę — dodaj min. 20% buforu czasowego i 8-12% buforu kosztowego. Moduł **Pogoda** w AXON|TERRA automatycznie uwzględnia to w symulacji Monte Carlo."}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Co oznacza 'feasible: false' w wyniku silnika?"},
+      {"role": "assistant", "content": "**`feasible: false`** oznacza, że Silnik znalazł co najmniej jeden **bloker L1 (reguła twarda)** który dyskwalifikuje Twoją firmę z tego przetargu.\n\n**Najczęstsze przyczyny:**\n1. Brak wymaganego doświadczenia (np. \"min. 3 roboty >2M PLN\" a masz tylko 2)\n2. Brak wymaganej koncesji/uprawnień (np. uprawnienia energetyczne)\n3. Wartość kontraktu przekracza Twój skonfigurowany limit\n4. Termin składania ofert już minął\n5. Wymagane zasoby niemożliwe do zapewnienia (np. specjalistyczny sprzęt)\n\n**Co z tym zrobić:**\n- Sprawdź pole `violations` — lista konkretnych naruszeń\n- Sprawdź pole `explanation_md` — tekstowe wyjaśnienie\n- Jeśli naruszenie jest marginalne (np. masz 2 z 3 wymaganych robót) — rozważ konsorcjum\n- Jeśli bloker jest absolutny — status zmień na NO-GO i skup zasoby na innych przetargach\n\n**W UI:** `feasible: false` wyświetla się jako czerwony badge 'NIEZDOLNY' z listą naruszeń."}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Eksportuj kosztorys do XLSX"},
+      {"role": "assistant", "content": "Aby wyeksportować kosztorys do XLSX:\n\n1. Otwórz moduł **Kosztorys** dla wybranego przetargu\n2. Kliknij przycisk **'Eksport'** w prawym górnym rogu\n3. Wybierz format: **XLSX** (kompatybilny z Excel/Norma/Zuzia)\n\n**Co zawiera eksport XLSX:**\n- Arkusz 1: Zestawienie pozycji (nr, opis, jedn., ilość, cena jedn., wartość)\n- Arkusz 2: Parametry (KP%, zysk%, robocizna, calibration)\n- Arkusz 3: Podsumowanie (netto, VAT, brutto, delta DOC/OWNER)\n\n**API endpoint:** `GET /api/v1/estimates/{estimate_id}/export/xlsx`\n\n**Tip:** Eksport DOCX generuje sformatowany dokument z nagłówkiem firmy — lepszy do załączenia do oferty."}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Ile kosztuje stal zbrojeniowa B500SP w Śląskim?"},
+      {"role": "assistant", "content": "**Stal zbrojeniowa B500SP — woj. śląskie (Q2 2026):**\n\n| Forma | Cena [PLN/t] | Źródło |\n|-------|-------------|--------|\n| Pręty fi 8-32 (proste) | **3 400-3 650** | Hurtownie ArcelorMittal |\n| Pręty gięte (strzemiona) | **3 800-4 100** | Gięcie +400-500/t |\n| Siatka zbrojeniowa | **3 600-3 900** | Standard Q335 |\n| Włókna stalowe (fibro) | **5 200-5 800** | Dramix/Bekaert |\n\n**Benchmarki cenowe:**\n- SEKOCENBUD Q2/2026: 3 520 PLN/t (pręty fi 12, mediana krajowa)\n- Intercenbud: 3 580 PLN/t (Śląsk, mediana)\n- Trend: -2% vs Q1 (stabilizacja po spadkach 2025)\n\n**Do kosztorysu:**\n- Pręty: **3 550 PLN/t** (bezpieczna mediana)\n- Gięcie: **+450 PLN/t**\n- Montaż: **KNR 2-02 0301** = 12-18 rbg/t (zależy od średnicy)\n\n**Uwaga:** Przy zamówieniu >20t negocjuj rabat 3-5% bezpośrednio z hutą. Termin dostawy: 5-10 dni roboczych."}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Wyjaśnij czym jest wadium i kiedy jest wymagane"},
+      {"role": "assistant", "content": "**Wadium w zamówieniach publicznych (PZP 2019):**\n\n**Definicja:** Zabezpieczenie finansowe składane przez wykonawcę razem z ofertą. Gwarancja powagi oferty — jeśli wygrasz i odmówisz podpisania umowy, tracisz wadium.\n\n**Kiedy wymagane:**\n| Tryb | Obowiązek | Max wartość |\n|------|-----------|-------------|\n| Przetarg nieograniczony (>progi UE) | **Obowiązkowe** | 3% wartości zamówienia |\n| Tryb podstawowy (<progi UE) | Fakultatywne | 3% wartości zamówienia |\n| Zamówienie z wolnej ręki | Nie dotyczy | - |\n\n**Formy wadium (art. 97 PZP):**\n1. Pieniądz (przelew na konto zamawiającego)\n2. Gwarancja bankowa\n3. Gwarancja ubezpieczeniowa\n4. Poręczenie bankowe\n5. Poręczenie SKOK\n\n**Praktyczny wpływ na decyzję:**\n- Wadium 3% przy kontrakcie 5M PLN = **150 000 PLN** zamrożone do rozstrzygnięcia\n- Gwarancja bankowa/ubezpieczeniowa: koszt ~0.5-1.5% wartości wadium\n- Czas: potrzebujesz 2-5 dni na uzyskanie gwarancji\n\n**W AXON|TERRA:** System wyciąga kwotę wadium z SWZ automatycznie i uwzględnia koszt pozyskania gwarancji w kalkulacji marży."}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Porównaj ceny materiałów: cegła ceramiczna pełna vs pustak ceramiczny Porotherm 25"},
+      {"role": "assistant", "content": "**Porównanie — cegła pełna vs Porotherm 25 (Q2 2026, średnia krajowa):**\n\n| Parametr | Cegła ceramiczna pełna | Porotherm 25 P+W |\n|----------|----------------------|------------------|\n| Cena jednostkowa | **1.80-2.40 PLN/szt** | **8.50-11.00 PLN/szt** |\n| Cena za m2 muru | **85-110 PLN/m2** | **95-130 PLN/m2** |\n| Wydajność murowania | 6-8 m2/dzień | 10-14 m2/dzień |\n| Grubość muru | 25 cm (1 cegła) | 25 cm |\n| Lambda [W/mK] | 0.77 | 0.23 |\n| Nośność | Wysoka (klasa 15-25) | Średnia (klasa 10-15) |\n| Zapotrzebowanie zaprawy | Duże (12 mm spoiny) | Małe (cienka spoina 1-3 mm) |\n\n**Koszt całkowity m2 muru (materiał + robocizna):**\n- Cegła pełna: **180-240 PLN/m2** (dużo zaprawy + wolne murowanie)\n- Porotherm 25: **160-210 PLN/m2** (szybszy montaż, mniej zaprawy)\n\n**Rekomendacja do kosztorysu:**\n- Ściany nośne zewnętrzne → Porotherm (lepsza izolacja, szybszy montaż)\n- Fundamenty, piwnice → cegła pełna (nośność, odporność na wilgoć)\n- Mury oporowe → cegła pełna lub bloczki betonowe"}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Jak działa waloryzacja wynagrodzenia w umowach PZP?"},
+      {"role": "assistant", "content": "**Waloryzacja wynagrodzenia (art. 439 PZP):**\n\n**Obowiązek:** Zamawiający MUSI przewidzieć waloryzację w umowach na roboty budowlane zawieranych na okres >6 miesięcy (od 2022 r. wymóg ustawowy).\n\n**Standardowe mechanizmy:**\n\n| Metoda | Opis | Typowe zastosowanie |\n|--------|------|--------------------|\n| Wskaźnik GUS | Zmiana cen produkcji budowlano-montażowej | Najczęstsza |\n| SEKOCENBUD/Intercenbud | Zmiana cen w katalogach | Precyzyjna, materiałowa |\n| Koszyk materiałów | Indywidualny koszyk ważony | Duże kontrakty |\n| Klauzula 10% | Waloryzacja gdy zmiana >10% | Starsza formuła |\n\n**Kluczowe parametry (sprawdź w SWZ):**\n1. **Początek** — od kiedy liczy się zmiana (data oferty vs podpisanie umowy)\n2. **Częstotliwość** — co miesiąc / co kwartał / jednorazowo\n3. **Cap** — max zmiana wynagrodzenia (typowo: 5-15% wartości kontraktu)\n4. **Kierunek** — w górę i w dół (symetryczna) vs tylko w górę\n5. **Wyłączenia** — co nie podlega waloryzacji (np. zysk)\n\n**Red flags:**\n- Brak waloryzacji przy umowie >6 mies. = **naruszenie PZP** (możesz odwołać się do KIO)\n- Cap <5% przy kontrakcie >12 mies. = niewystarczający\n- Waloryzacja tylko \"w dół\" = jednostronna na niekorzyść wykonawcy\n\n**W AXON|TERRA:** Silnik automatycznie sprawdza obecność klauzuli waloryzacyjnej i flaguje jej brak jako HIGH risk."}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Ustaw robociznę na 52 złotych za roboczogodzinę"},
+      {"role": "assistant", "content": "{\"op\": \"set_param\", \"target\": \"robocizna_zl_rg\", \"value\": \"52.0\"}"}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Sklasyfikuj: PDF z rysunkami technicznymi, wymiarami, przekrojami, rzutami kondygnacji"},
+      {"role": "assistant", "content": "{\"kind\": \"projekt_budowlany\", \"confidence\": 0.91, \"indicators\": [\"rysunki techniczne\", \"wymiary i koty\", \"przekroje\", \"rzuty kondygnacji\"], \"sub_documents\": [\"architektura\", \"konstrukcja\", \"instalacje\"]}"}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Ile czasu trwa typowa analiza przetargu od znalezienia do złożenia oferty?"},
+      {"role": "assistant", "content": "**Typowy timeline analizy przetargu (tryb podstawowy, roboty budowlane):**\n\n| Etap | Czas bez AXON | Czas z AXON | Moduł |\n|------|---------------|-------------|-------|\n| Znalezienie + screening | 2-4h | **5 min** | Zwiad (auto-scoring) |\n| Pobieranie dokumentacji | 30-60 min | **2 min** | Auto-download |\n| Czytanie SWZ + identyfikacja ryzyk | 4-8h | **15 min** | Silnik L1+L3 |\n| Analiza przedmiaru | 4-16h | **30 min** | OCR + KNR matching |\n| Kosztorysowanie (wycena) | 8-40h | **2-4h** | Kosztorys (2 warianty) |\n| Analiza ryzyka + decyzja | 2-4h | **10 min** | Silnik L2 + Decyzja |\n| Przygotowanie oferty | 4-8h | 4-8h | (jeszcze manualnie) |\n\n**Podsumowanie:**\n- Bez AXON: **24-80 roboczogodzin** (3-10 dni roboczych)\n- Z AXON: **7-13 roboczogodzin** (1-2 dni robocze)\n- **Redukcja: 70-85%** czasu analitycznego\n\n**Bottleneck:** Przygotowanie finalnej oferty (formatki, JEDZ, referencje) — to jeszcze wymaga pracy manualnej. Moduł Oferta (roadmap Q4/2026) zautomatyzuje ten etap."}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Przeanalizuj kryteria oceny ofert: cena 60%, doświadczenie personelu 20%, termin realizacji 20%"},
+      {"role": "assistant", "content": "**Analiza kryteriów oceny ofert:**\n\n| Kryterium | Waga | Strategia |\n|-----------|------|----------|\n| **Cena** | 60% | Kluczowe — optymalizuj KP i zysk, szukaj oszczędności materiałowych |\n| **Doświadczenie personelu** | 20% | Wstaw najlepszych ludzi, opisz dokładnie kwalifikacje |\n| **Termin realizacji** | 20% | Agresywny termin = więcej punktów, ale ryzyko kar |\n\n**Strategia punktowa:**\n\n**Cena (60%):**\n- Formuła typowa: `(cena_min / cena_twoja) * 60`\n- Każde 1% taniej od najdroższego = ~0.6 pkt\n- Target: max 5-10% drożej od estymowanej ceny min\n\n**Doświadczenie (20%):**\n- Typowo: lata doświadczenia + ilość projektów kierownika budowy\n- Max punkty: >10 lat + >5 projektów o podobnym zakresie\n- Wstaw osobę z najdłuższym stażem i najlepszymi referencjami\n\n**Termin (20%):**\n- Formuła: `(termin_min / termin_twój) * 20` lub progi\n- Skrócenie o 10% vs wymagane minimum = dodatkowe ~2 pkt\n- **UWAGA:** Nie skracaj poniżej realnego minimum (kary > bonus punktowy)\n\n**Optymalna taktyka:** Obniż cenę o 3-5% kosztem marży (zyskujesz 1.8-3 pkt na cenie) i zaoferuj termin skrócony o 5-10% (zyskujesz 1-2 pkt). Łączny gain: 3-5 pkt przewagi."}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Co się stanie jak kliknę 'Pobierz dokumentację' przy przetargu?"},
+      {"role": "assistant", "content": "**Przycisk 'Pobierz dokumentację' — co się dzieje:**\n\n**Krok 1: Download (5-30 sek)**\n- System pobiera plik ZIP z platformy zamawiającego (ezamowienia.gov.pl lub TED)\n- Rozpakowanie i zapis w storage platformy\n\n**Krok 2: OCR + Ekstrakcja (30-120 sek)**\n- Rozpoznanie typu każdego dokumentu (SWZ, przedmiar, umowa, projekt)\n- OCR skanów (jeśli PDF jest obrazkowy)\n- Ekstrakcja tekstu z PDF natywnych\n\n**Krok 3: Parsowanie (10-60 sek)**\n- SWZ → wymagania, kryteria, terminy, wadium\n- Przedmiar → pozycje z KNR, ilości, jednostki\n- Umowa → kary, gwarancja, waloryzacja, terminy płatności\n\n**Krok 4: Analiza (5-15 sek)**\n- Red flags z umowy/SWZ\n- Auto-scoring pozycji przedmiaru vs baza KNR\n- Generowanie summary_md\n\n**Wynik w UI:**\n- Zakładka **Dokumenty** z listą plików + typem\n- Zakładka **Ryzyka** z red flags\n- Zakładka **Przedmiar** z tabelą pozycji\n- Badge 'Dokumentacja pobrana' przy przetargu w pipeline\n\n**Tip:** Po pobraniu od razu uruchom Silnik — będzie miał pełne dane do analizy."}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Mam przetarg z kryterium 'aspekty społeczne' — co to oznacza i jak zdobyć punkty?"},
+      {"role": "assistant", "content": "**Kryterium 'aspekty społeczne' w PZP:**\n\n**Podstawa prawna:** Art. 96 ust. 2 pkt 2 PZP — zamawiający MOŻE (a w niektórych przypadkach MUSI) uwzględniać aspekty społeczne.\n\n**Najczęstsze wymagania i jak zdobyć punkty:**\n\n| Aspekt | Jak spełnić | Typowa waga |\n|--------|-------------|-------------|\n| Zatrudnienie na umowę o pracę | Oświadczenie + lista osób | 5-15% |\n| Zatrudnienie osób niepełnosprawnych | Min. 1-2 osoby z orzeczeniem | 5-10% |\n| Zatrudnienie długotrwale bezrobotnych | Współpraca z PUP | 5-10% |\n| Klauzula edukacyjna (praktykanci) | Przyjęcie 1-2 praktykantów | 3-5% |\n| Dostępność dla niepełnosprawnych | Projekt zgodny z wytycznymi dostępności | 5-10% |\n\n**Praktyczne kroki:**\n1. Sprawdź dokładnie opis kryterium w SWZ (co konkretnie punktują)\n2. Przygotuj oświadczenie o zatrudnieniu na UoP (standard w budowlance)\n3. Jeśli wymagają osób niepełnosprawnych — skontaktuj się z PUP lub agencją pracy\n4. Dokumentuj w ofercie: lista stanowisk + oświadczenie pracodawcy\n\n**Red flag:** Jeśli kryterium społeczne ma >20% wagi — przeczytaj dokładnie. Czasem wymaga certyfikatów lub konkretnych programów CSR które trudno uzyskać ad hoc.\n\n**W AXON|TERRA:** System wyciąga kryteria z SWZ i alarmuje gdy aspekty społeczne mają >10% — wtedy warto poświęcić czas na przygotowanie dokumentacji."}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Zwiększ zysk o 2 punkty procentowe"},
+      {"role": "assistant", "content": "{\"op\": \"set_param_relative\", \"target\": \"zysk_pct\", \"delta\": \"+2.0\"}"}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Jak wygląda flow importu przetargu z pliku Excel?"},
+      {"role": "assistant", "content": "**Import przetargu z Excel — flow:**\n\n**Krok 1: Upload**\n- Moduł **Import** → przeciągnij plik .xlsx/.csv\n- Akceptowane formaty: arkusz z kolumnami (tytuł, CPV, wartość, deadline, zamawiający)\n\n**Krok 2: Mapowanie kolumn**\n- System auto-detect kolumn (fuzzy matching nagłówków)\n- Możesz ręcznie przypisać: która kolumna = tytuł, CPV, etc.\n- Preview 5 pierwszych wierszy do weryfikacji\n\n**Krok 3: Walidacja**\n- Sprawdzenie duplikatów (po numerze ogłoszenia lub tytule+zamawiający)\n- Walidacja CPV (czy kod istnieje)\n- Walidacja dat (czy deadline nie minął)\n\n**Krok 4: Import**\n- Zapis do bazy z statusem `new`\n- Auto-scoring (match_score) na podstawie konfiguracji\n- Pojawienie się w module Zwiad\n\n**API endpoint:** `POST /api/v1/excel/import/tenders` (multipart/form-data)\n\n**Kiedy używać:**\n- Przetargi spoza BZP/TED (prywatne, zagraniczne)\n- Historyczne dane z własnej bazy\n- Bulk import z CRM klienta\n\n**Limit:** Max 500 wierszy na jeden import. Dla większych — podziel na partie."}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Zidentyfikuj ryzyka: 'Wykonawca zobowiązuje się do utrzymania polisy OC na kwotę nie mniejszą niż 5 000 000 PLN przez cały okres realizacji. Zamawiający zastrzega sobie prawo do jednostronnego odstąpienia od umowy bez podania przyczyny z 14-dniowym wyprzedzeniem.'"},
+      {"role": "assistant", "content": "**Analiza ryzyk:**\n\n1. **MEDIUM** — Polisa OC 5M PLN to wysoki wymóg. Koszt roczny: ok. 8 000-15 000 PLN (zależy od zakresu). Nie jest to bloker, ale sprawdź czy Twoja aktualna polisa pokrywa tę kwotę. Jeśli nie — wkalkuluj koszt rozszerzenia.\n\n2. **HIGH** — Jednostronne odstąpienie bez przyczyny z 14-dniowym wyprzedzeniem. To krytyczne ryzyko:\n   - Zamawiający może zerwać umowę w dowolnym momencie\n   - 14 dni to za mało na demobilizację dużego placu budowy\n   - Ryzyko poniesienia kosztów (materiały zamówione, sprzęt wynajęty) bez rekompensaty\n   - Sprawdź czy SWZ przewiduje wynagrodzenie za wykonane prace\n\n**Pytania kontrolne:**\n- Czy umowa gwarantuje zapłatę za prace wykonane do dnia odstąpienia?\n- Czy jest klauzula o zwrocie kosztów demobilizacji?\n- Czy 14 dni liczy się od dnia doręczenia czy nadania?\n\n**Rekomendacja:** NEGOCJUJ:\n- Żądaj wydłużenia terminu wyprzedzenia do min. 30 dni\n- Żądaj gwarancji zapłaty za prace wykonane + koszty demobilizacji\n- Jeśli zamawiający odmawia — wkalkuluj ryzyko premature termination (+5-8% do ceny oferty)"}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Jak ustawić monitoring nowych przetargów?"},
+      {"role": "assistant", "content": "**Konfiguracja monitoringu przetargów w AXON|TERRA:**\n\n**Krok 1: Ustawienia → Monitoring**\n- Włącz auto-ingest z BZP (domyślnie: co 4h)\n- Włącz auto-ingest z TED (domyślnie: co 12h)\n\n**Krok 2: Filtry monitoringu**\n- Kody CPV: dodaj swoje główne kompetencje (np. 45233*, 45111*)\n- Województwa: ogranicz do regionu operacyjnego\n- Min. wartość: ustaw dolny próg (np. 500 000 PLN)\n- Max. wartość: ustaw górny próg\n\n**Krok 3: Powiadomienia**\n- Email: codzienne podsumowanie nowych przetargów\n- Push: natychmiastowe przy score >0.8\n- Slack/Teams webhook: opcjonalnie\n\n**Co się dzieje automatycznie:**\n1. System co 4h odpytuje BZP API\n2. Nowe ogłoszenia przechodzą przez scoring\n3. Przetargi z score >0.3 trafiają do Zwiad\n4. Przetargi z score >0.7 generują powiadomienie\n5. Dashboard aktualizuje metryki (new_today, new_this_week)\n\n**API:** `GET /api/v2/notifications?type=new_tender` — lista alertów o nowych przetargach"}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Czym jest JEDZ i czy system pomaga go wypełnić?"},
+      {"role": "assistant", "content": "**JEDZ (Jednolity Europejski Dokument Zamówienia):**\n\n**Co to jest:**\nStandardowy formularz UE (eForms) w którym wykonawca oświadcza że:\n- Nie podlega wykluczeniu (art. 108-109 PZP)\n- Spełnia warunki udziału w postępowaniu\n- Spełnia kryteria selekcji (jeśli dotyczy)\n\n**Kiedy wymagany:**\n- Postępowania powyżej progów unijnych (przetarg nieograniczony)\n- Opcjonalnie poniżej progów (zamawiający decyduje)\n\n**Struktura JEDZ:**\n- Część I: Informacje o postępowaniu (wypełnia zamawiający)\n- Część II: Informacje o wykonawcy (dane firmy, przedstawiciele)\n- Część III: Podstawy wykluczenia (oświadczenia TAK/NIE)\n- Część IV: Kryteria kwalifikacji (doświadczenie, zasoby, kadra)\n- Część V: Ograniczenie liczby kwalifikujących się kandydatów\n- Część VI: Oświadczenia końcowe\n\n**AXON|TERRA — wsparcie JEDZ:**\n- Obecnie: system wyciąga wymagania z SWZ i podpowiada co wpisać w Część IV\n- Roadmap Q4/2026: auto-wypełnianie JEDZ na podstawie profilu firmy\n- Dane z modułu Ustawienia (doświadczenie, kadra) → mapowanie na pola JEDZ\n\n**Tip:** Zapisz raz profil firmy w Ustawieniach (doświadczenie, uprawnienia, obroty) — system będzie automatycznie sprawdzał czy spełniasz warunki z nowych SWZ."}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Oblicz marżę jeśli kosztorys doc daje 2.1M PLN a mój wariant owner wychodzi 1.85M PLN"},
+      {"role": "assistant", "content": "**Kalkulacja marży:**\n\n| Parametr | Wartość |\n|----------|--------|\n| Cena ofertowa (wariant DOC) | **2 100 000 PLN** |\n| Koszt własny (wariant OWNER) | **1 850 000 PLN** |\n| **Marża netto** | **250 000 PLN** |\n| **Marża %** | **11.9%** |\n\n**Interpretacja:**\n- Marża 11.9% to **dobry wynik** dla robót budowlanych (typowe: 5-15%)\n- P50 Monte Carlo powinien potwierdzić czy jest utrzymywalna\n- Bufor na ryzyka: 250k pozwala na ~13% kosztów nieprzewidzianych\n\n**Analiza wrażliwości:**\n| Scenariusz | Marża |\n|-----------|-------|\n| Materiały +5% | 9.5% (157 500 PLN) |\n| Materiały +10% | 7.1% (65 000 PLN) |\n| Opóźnienie 15 dni (kara 0.2%/d) | 8.9% (186 800 PLN) |\n| Optymistyczny (-3% materiały) | 13.6% (305 500 PLN) |\n\n**Rekomendacja:** GO. Marża 11.9% z buforem 250k daje bezpieczny margines nawet przy wzroście kosztów materiałowych o 5%."}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Jakie dane widzę na dashboardzie?"},
+      {"role": "assistant", "content": "**Dashboard AXON|TERRA — metryki:**\n\n**Sekcja KPI (górny panel):**\n| Metryka | Opis |\n|---------|------|\n| `total_tenders` | Łączna liczba przetargów w systemie |\n| `new_today` | Nowe przetargi dodane dzisiaj |\n| `new_this_week` | Nowe przetargi w tym tygodniu |\n| `high_score_count` | Przetargi z score >0.7 (wymagają uwagi) |\n| `pipeline_value` | Łączna wartość przetargów w pipeline (PLN) |\n| `avg_score` | Średni match_score aktywnych przetargów |\n\n**Sekcja Top Tenders:**\n- 5-10 przetargów z najwyższym score\n- Szybki dostęp do analizy jednym kliknięciem\n\n**Sekcja By Source:**\n- Rozbicie: ile z BZP, ile z TED, ile z importu\n- Trend tygodniowy (wykres)\n\n**Sekcja Weekly Activity:**\n- Ile przetargów przeanalizowano\n- Ile decyzji GO/NO-GO\n- Ile ofert złożono\n- Win/loss ratio (gdy dane dostępne)\n\n**Refresh:** Dashboard odświeża się co 5 minut automatycznie lub po kliknięciu refresh icon."}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Ustaw współczynnik kalibracyjny na 1.08"},
+      {"role": "assistant", "content": "{\"op\": \"set_param\", \"target\": \"calibration_coeff\", \"value\": \"1.08\"}"}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Analizuj: 'Zamawiający wymaga wniesienia zabezpieczenia należytego wykonania umowy w wysokości 5% ceny całkowitej podanej w ofercie. Okres gwarancji: minimum 60 miesięcy na roboty budowlane, minimum 36 miesięcy na urządzenia.'"},
+      {"role": "assistant", "content": "**Analiza klauzul:**\n\n1. **LOW** — Zabezpieczenie 5% to standardowa wartość (PZP dopuszcza do 10%). Nie stanowi nadmiernego obciążenia.\n   - Przy kontrakcie 3M PLN = 150 000 PLN zamrożone\n   - Koszt gwarancji ubezpieczeniowej: ~1 500-3 000 PLN/rok\n\n2. **HIGH** — Gwarancja 60 miesięcy (5 lat) na roboty budowlane to GÓRNA GRANICA rynkowa.\n   - Standard: 36-60 miesięcy\n   - Przez 5 lat odpowiadasz za wady + musisz utrzymywać polisę/zabezpieczenie\n   - Koszt utrzymania gwarancji: 5 x 2 000-4 000 PLN = 10 000-20 000 PLN\n   - **Wkalkuluj w cenę oferty**\n\n3. **MEDIUM** — Gwarancja 36 mies. na urządzenia — standard, ale sprawdź:\n   - Czy producent urządzeń daje gwarancję 36 mies.? (typowo: 24 mies.)\n   - Jeśli nie — musisz pokryć różnicę 12 mies. z własnej kieszeni\n   - Dotyczy: centrale wentylacyjne, pompy ciepła, kotły, windy\n\n**Kalkulacja kosztów gwarancji (kontrakt 3M PLN):**\n- Zabezpieczenie gwarancyjne (30% z 5%): 45 000 PLN x 5 lat gwarancja ubezp. = ~11 000 PLN\n- Przeglądy gwarancyjne: 2x/rok x 5 lat x 1 500 PLN = 15 000 PLN\n- Ryzyko napraw: rezerwa 2% = 60 000 PLN\n- **ŁĄCZNY koszt gwarancji: ~86 000 PLN (2.9% wartości kontraktu)**\n\n**Rekomendacja:** GO — koszty gwarancji wkalkuluj w cenę. Dodaj 3% do oferty na pokrycie okresu pogwarancyjnego."}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Jak działa Buyer CRM?"},
+      {"role": "assistant", "content": "**Buyer CRM — moduł zarządzania relacjami z zamawiającymi:**\n\n**Cel:** Budowanie bazy wiedzy o zamawiających (gminy, starostwa, GDDKiA, spółki miejskie) aby lepiej oceniać szanse w przyszłych przetargach.\n\n**Dane zbierane automatycznie:**\n- Ile przetargów ogłosił dany zamawiający (historia)\n- Średnia wartość kontraktów\n- Preferowane kryteria (cena vs jakość vs termin)\n- Historia Twoich startów u tego zamawiającego (wygrane/przegrane)\n- Terminowość płatności (jeśli masz dane)\n\n**Funkcje:**\n| Funkcja | Opis |\n|---------|------|\n| Profil zamawiającego | Karta z historią + statystykami |\n| Score zamawiającego | Ocena atrakcyjności (częstość przetargów, wartości, terminowość) |\n| Alerty | Powiadomienie gdy 'Twój' zamawiający ogłasza nowy przetarg |\n| Notatki | Własne obserwacje (kontakty, preferencje, doświadczenia) |\n| Historia ofert | Twoje złożone oferty + wyniki |\n\n**Strategiczne zastosowanie:**\n- Zamawiający który ogłasza 10+ przetargów/rok w Twojej branży = priorytetowy klient\n- Zamawiający u którego wygrywasz >30% = Twoja 'home turf'\n- Zamawiający który zawsze wybiera najniższą cenę = walcz ceną, nie jakością\n\n**API:** `GET /api/v2/buyer-crm` — lista zamawiających z metrykami"}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Podaj koszty sprzętu budowlanego: koparka, walec, żuraw"},
+      {"role": "assistant", "content": "**Koszty sprzętu budowlanego (Q2 2026, wynajem z operatorem):**\n\n| Sprzęt | Stawka [PLN/mth] | Stawka [PLN/rbg] | Uwagi |\n|--------|-----|------|-------|\n| **Koparka gąsienicowa 20-25t** | 28 000-35 000 | 180-220 | CAT 320, Komatsu PC210 |\n| **Koparka kołowa 8-12t** | 18 000-24 000 | 120-160 | JCB, Volvo EW |\n| **Minikoparka 3-5t** | 8 000-12 000 | 80-110 | Kubota, Takeuchi |\n| **Walec wibracyjny 10-12t** | 15 000-20 000 | 100-140 | Bomag, Hamm |\n| **Walec tandemowy 2-4t** | 8 000-11 000 | 70-95 | Asfalt, wykończenie |\n| **Żuraw samojezdny 50t** | 45 000-60 000 | 280-380 | Liebherr, Tadano |\n| **Żuraw samojezdny 100t** | 80 000-110 000 | 500-700 | Montaże ciężkie |\n| **Żuraw wieżowy (montaż)** | 25 000-40 000 | — | + montaż 30-50k + demontaż |\n\n**Do kosztorysu:**\n- KNR podaje normy w mth (maszynogodzinach)\n- Przelicznik: 1 mth ≈ 170 rbg/miesiąc (efektywne)\n- SEKOCENBUD Q2/2026: koparka 20t = 195 PLN/mth (mediana)\n\n**Mobilizacja (jednorazowa):**\n- Koparka gąsienicowa: 3 000-8 000 PLN (transport niskopodwoziowy)\n- Żuraw 50t: 5 000-12 000 PLN\n- Żuraw wieżowy: 25 000-50 000 PLN (montaż + demontaż)\n\n**Tip:** Przy kalkulacji uwzględnij mobilizację jako osobną pozycję. Przy krótkich kontraktach (< 1 mies.) mobilizacja może stanowić 10-20% kosztu sprzętu."}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Pomiń ten przetarg — nie startujemy"},
+      {"role": "assistant", "content": "{\"op\": \"set_status\", \"target\": \"status\", \"value\": \"decided_nogo\", \"reason\": \"Decyzja użytkownika — rezygnacja ze startu\"}"}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Co to jest AHP w module Analytics?"},
+      {"role": "assistant", "content": "**AHP (Analytic Hierarchy Process) w AXON|TERRA:**\n\n**Definicja:** Metoda wielokryterialna wspomagająca decyzje. Rozkłada złożoną decyzję (startować czy nie) na hierarchię kryteriów i porównuje je parami.\n\n**W module Analytics → AHP:**\n\nSystem porównuje przetargi w pipeline wg skonfigurowanych kryteriów:\n\n| Kryterium | Domyślna waga | Opis |\n|-----------|--------------|------|\n| Marża szacunkowa | 0.30 | Zysk % z kosztorysu |\n| Prawdopodobieństwo wygranej | 0.25 | Na podstawie historii + konkurencji |\n| Wartość kontraktu | 0.20 | Bezwzględna wartość PLN |\n| Ryzyko (odwrócone) | 0.15 | Im niższe ryzyko tym lepiej |\n| Strategiczność klienta | 0.10 | Czy zamawiający jest w Buyer CRM jako priorytetowy |\n\n**Wynik:** Ranking przetargów od najlepszego do najgorszego kandydata.\n\n**Zastosowanie:**\n- Masz 15 przetargów w pipeline ale zasoby na 5 ofert\n- AHP pomoże wybrać TOP 5 z najwyższym ważonym score\n- Endpoint: `GET /api/v2/analytics/ahp`\n\n**Konfiguracja wag:** `POST /api/v2/analytics/ahp-criteria` — ustaw własne wagi kryteriów."}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Sklasyfikuj: Excel z kolumnami Lp, Podstawa wyceny, Opis, j.m., Ilość, Cena jedn., Wartość"},
+      {"role": "assistant", "content": "{\"kind\": \"kosztorys_ofertowy\", \"confidence\": 0.94, \"indicators\": [\"format tabelaryczny Excel\", \"kolumny: Lp/Podstawa/Opis/jm/Ilość/Cena/Wartość\", \"obecność cen jednostkowych — to kosztorys ofertowy nie przedmiar\"], \"format\": \"xlsx\", \"ready_for_import\": true}"}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Jaka jest optymalna marża narzutu dla firmy budowlanej w przetargach publicznych?"},
+      {"role": "assistant", "content": "**Optymalna marża narzutu (KP + zysk) w przetargach publicznych:**\n\n**Benchmarki rynkowe (2025-2026):**\n\n| Segment | KP% | Zysk% | Łącznie | Uwagi |\n|---------|-----|-------|---------|-------|\n| Roboty drogowe | 8-12% | 5-8% | 13-20% | Konkurencyjny rynek |\n| Budynki użyteczności publicznej | 10-14% | 6-10% | 16-24% | Wyższe ryzyko |\n| Instalacje sanitarne | 12-16% | 8-12% | 20-28% | Specjalizacja |\n| Roboty elektryczne | 10-15% | 7-10% | 17-25% | Certyfikaty |\n| Termomodernizacja | 10-13% | 6-9% | 16-22% | Standard |\n\n**Strategia optymalizacji:**\n\n1. **Minimum przetrwania:** KP musi pokryć realne koszty ogólne firmy (biuro, BHP, nadzór, ubezpieczenie). Policz: koszty stałe / obrót roczny = Twoje min. KP%.\n\n2. **Zysk vs konkurencyjność:**\n   - Kryterium 100% cena → zysk 3-5% (walka na noże)\n   - Kryterium 60% cena + jakość → zysk 7-10% (kompensuj punktami)\n   - Negocjacje z wolnej ręki → zysk 10-15% (brak presji cenowej)\n\n3. **Calibration coeff w AXON|TERRA:**\n   - < 1.0 = agresywna cena (ryzyko)\n   - 1.0 = wycena rynkowa\n   - > 1.0 = bezpieczna marża (niższe szanse)\n\n**Rekomendacja domyślna:** KP 12% + zysk 8% = 20% łącznej marży. Koryguj calibration_coeff per przetarg w zależności od konkurencji i strategii."}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Podaj cenę asfaltu AC 16W w Mazowieckim"},
+      {"role": "assistant", "content": "**Asfalt AC 16W (warstwa wiążąca) — woj. mazowieckie (Q2 2026):**\n\n| Parametr | Wartość |\n|----------|--------|\n| Masa bitumiczna AC 16W (loco wytwórnia) | **320-360 PLN/t** |\n| Gęstość wbudowana | 2.35-2.40 t/m3 |\n| Grubość typowa | 6-8 cm |\n| Zużycie na m2 (gr. 7cm) | ~168 kg/m2 |\n| **Cena za m2 (materiał)** | **54-60 PLN/m2** |\n\n**Pełny koszt wbudowania 1 m2 (gr. 7cm):**\n| Składnik | Koszt [PLN/m2] |\n|----------|---------------|\n| Masa AC 16W | 54-60 |\n| Transport mieszanki (do 20 km) | 4-7 |\n| Rozściełanie (rozkładarka) | 8-12 |\n| Zagęszczanie (walec) | 3-5 |\n| **RAZEM wbudowanie** | **69-84 PLN/m2** |\n\n**Źródła:**\n- SEKOCENBUD: 342 PLN/t (mediana Mazowsze)\n- Intercenbud: 338 PLN/t\n- Cenniki wytwórni (Budimex, Skanska): 335-365 PLN/t\n\n**Norma:** KNR 2-31 0502 (nawierzchnie bitumiczne).\n\n**Tip:** Przy dużych ilościach (>1000t) negocjuj bezpośrednio z wytwórnią — rabat 5-8%. Sprawdź odległość do najbliższej otaczarni (transport >20 km istotnie podnosi cenę)."}
+    ]
+  },
+  {
+    "messages": [
+      {"role": "system", "content": "Jesteś AXON — inteligentnym asystentem platformy Terra.OS do analizy przetargów budowlanych."},
+      {"role": "user", "content": "Wygeneruj rekomendację: mam 3 przetargi — drogowy 4M 60 dni, termomodernizacja 2M 120 dni, kanalizacja 6M 180 dni. Mam zasoby na 2."},
+      {"role": "assistant", "content": "**Rekomendacja — priorytetyzacja portfolio (AHP):**\n\n| # | Przetarg | Wartość | Termin | Score |\n|---|----------|---------|--------|-------|\n| 1 | **Kanalizacja** | 6M PLN | 180 dni | **0.82** |\n| 2 | **Termomodernizacja** | 2M PLN | 120 dni | **0.71** |\n| 3 | ~~Drogowy~~ | 4M PLN | 60 dni | **0.54** |\n\n**Uzasadnienie wyboru 1+2:**\n\n**Kanalizacja 6M/180 dni — TOP PICK:**\n- Najwyższa wartość absolutna (6M)\n- Bezpieczny termin (180 dni = komfort logistyczny)\n- Typowa marża kanalizacja: 18-24%\n- Potencjalny zysk: 1.1-1.4M PLN\n\n**Termomodernizacja 2M/120 dni — SECOND:**\n- Dobry stosunek wartość/ryzyko\n- 120 dni to wygodny termin (sezon IV-VIII)\n- Niski nakład zasobów (mały team)\n- Można prowadzić równolegle z kanalizacją\n\n**Drogowy 4M/60 dni — POMIŃ:**\n- 60 dni dla 4M = ekstremalnie agresywny termin\n- Ryzyko kar za opóźnienie: HIGH\n- Wymaga pełnej mobilizacji (sprzęt ciężki, brygada 15-20 osób)\n- Blokuje zasoby na kanalizację\n\n**Podsumowanie:** Startuj w kanalizacji + termomodernizacji. Łączna wartość: 8M PLN. Kolizja zasobów: minimalna (różne brygady). Rezygnacja z drogowego oszczędza ryzyko kar i pozwala skupić zasoby."}
     ]
   }
 ]
