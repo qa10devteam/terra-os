@@ -11,10 +11,9 @@ from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
     BitsAndBytesConfig,
-    TrainingArguments,
 )
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
-from trl import SFTTrainer
+from trl import SFTTrainer, SFTConfig
 
 # ─── Config ────────────────────────────────────────────────────────────
 MODEL_ID = "Qwen/Qwen2.5-7B-Instruct"  # 7B fits comfortably on 1x L4 with 4-bit
@@ -66,7 +65,7 @@ tokenizer.padding_side = "right"
 model = AutoModelForCausalLM.from_pretrained(
     MODEL_ID,
     quantization_config=bnb_config,
-    device_map="auto",  # Spread across 4x L4
+    device_map="cuda:0",  # Single GPU — Qwen 7B 4-bit ~5GB, L4 ma 24GB
     trust_remote_code=True,
     torch_dtype=torch.bfloat16,
 )
@@ -87,14 +86,14 @@ model = get_peft_model(model, lora_config)
 model.print_trainable_parameters()
 
 # ─── Training arguments ───────────────────────────────────────────────
-training_args = TrainingArguments(
+training_args = SFTConfig(
     output_dir=OUTPUT_DIR,
     num_train_epochs=EPOCHS,
     per_device_train_batch_size=BATCH_SIZE,
     gradient_accumulation_steps=GRAD_ACCUM,
     learning_rate=LR,
     weight_decay=0.01,
-    warmup_ratio=0.1,
+    warmup_steps=2,
     lr_scheduler_type="cosine",
     logging_steps=5,
     save_strategy="epoch",
@@ -111,10 +110,10 @@ trainer = SFTTrainer(
     model=model,
     train_dataset=dataset,
     args=training_args,
-    tokenizer=tokenizer,
+    processing_class=tokenizer,
     max_seq_length=MAX_SEQ_LEN,
     dataset_text_field="text",
-    packing=True,  # Pack short examples together for efficiency
+    packing=False,  # off — brak flash-attn, unikamy cross-contamination
 )
 
 trainer.train()

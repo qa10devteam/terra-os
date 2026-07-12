@@ -57,3 +57,5 @@ data/ddc_cwicr_pl_warsaw_workitems.parquet
 models/
 logs/alert_dispatcher.log
 data/intercenbud_kobo_full.json
+finetune_env/
+services/ai/finetune/axon-qwen-7b-lora/
