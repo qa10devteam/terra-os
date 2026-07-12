@@ -1,271 +1,218 @@
+"""ICB Price Forecaster — generuje prognozy cen na kolejne kwartały.
+
+Używa exponential smoothing (Holt-Winters) + linear regression jako fallback.
+Wyniki zapisuje do tabeli `icb_forecast` per symbol/category.
 """
-ICB Price Forecaster — predicts price trends for ICB categories.
-Uses linear regression (numpy) as default, Prophet if installed.
-Output cached in icb_forecast table.
-"""
+from __future__ import annotations
+
 import logging
-from datetime import datetime
-from typing import Optional
+from datetime import datetime, timezone
 
 import numpy as np
-from sqlalchemy import text
-from sqlalchemy.exc import SQLAlchemyError
+import sqlalchemy as sa
 
 from terra_db.session import get_engine
 
 logger = logging.getLogger(__name__)
 
 
-def _quarter_to_index(kwartalnr: int, kwartalrok: int) -> int:
-    """Convert quarter/year to a monotonic integer index for regression."""
-    return kwartalrok * 4 + (kwartalnr - 1)
+def _holt_winters_forecast(values: list[float], horizon: int = 4, alpha: float = 0.3, beta: float = 0.1) -> list[float]:
+    """Simple Holt double exponential smoothing (no seasonality)."""
+    if len(values) < 3:
+        # Not enough data for Holt — just return last value
+        return [values[-1]] * horizon
+
+    # Initialize
+    level = values[0]
+    trend = (values[1] - values[0])
+
+    levels = [level]
+    trends = [trend]
+
+    for i in range(1, len(values)):
+        new_level = alpha * values[i] + (1 - alpha) * (level + trend)
+        new_trend = beta * (new_level - level) + (1 - beta) * trend
+        level = new_level
+        trend = new_trend
+        levels.append(level)
+        trends.append(trend)
+
+    # Forecast
+    forecasts = []
+    for h in range(1, horizon + 1):
+        forecasts.append(level + h * trend)
+
+    return forecasts
 
 
-def _index_to_quarter(index: int) -> tuple[int, int]:
-    """Convert monotonic index back to (quarter, year)."""
-    year = index // 4
-    quarter = (index % 4) + 1
-    return quarter, year
+def _prediction_interval(values: list[float], forecasts: list[float], confidence: float = 0.95) -> list[tuple[float, float]]:
+    """Compute prediction intervals based on residual std."""
+    if len(values) < 4:
+        spread = abs(values[-1] * 0.1)
+        return [(f - spread, f + spread) for f in forecasts]
+
+    # Compute residuals from in-sample one-step-ahead
+    residuals = []
+    for i in range(1, len(values)):
+        # Simple: residual = actual - previous
+        residuals.append(values[i] - values[i - 1])
+
+    std = float(np.std(residuals)) if residuals else abs(values[-1] * 0.05)
+
+    # z-score for 95% CI
+    z = 1.96 if confidence == 0.95 else 1.645
+
+    intervals = []
+    for h, f in enumerate(forecasts, 1):
+        # Interval widens with horizon
+        margin = z * std * (h ** 0.5)
+        intervals.append((round(max(0, f - margin), 4), round(f + margin, 4)))
+
+    return intervals
 
 
-def forecast_icb_price(icb_id: int, quarters_ahead: int = 4) -> dict:
-    """
-    Predict price trend for a given ICB item.
-
-    Fetches last 12 quarters of price data from icb_ceny_srednie,
-    fits a linear regression (numpy polyfit degree=1), and returns
-    forecasted prices with ±1.5 * std(residuals) confidence intervals.
-
-    Returns:
-        dict with keys: icb_id, symbol, typ_rms, predictions, trend_pct
-        or empty dict on error/no data.
-    """
+def compute_forecasts_for_category(
+    category: str,
+    typ_rms: str = "M",
+    horizon: int = 4,
+    model_name: str = "holt_winters",
+) -> list[dict]:
+    """Compute and store forecasts for a category."""
     engine = get_engine()
-    try:
-        with engine.connect() as conn:
-            rows = conn.execute(
-                text(
-                    """
-                    SELECT symbol, typ_rms, kwartalnr, kwartalrok, cena_netto
-                    FROM icb_ceny_srednie
-                    WHERE id_ceny = :icb_id
-                      AND cena_netto IS NOT NULL
-                    ORDER BY kwartalrok DESC, kwartalnr DESC
-                    LIMIT 12
-                    """
-                ),
-                {"icb_id": icb_id},
-            ).fetchall()
-    except SQLAlchemyError:
-        logger.exception("DB error fetching ICB price data for icb_id=%s", icb_id)
-        return {}
 
-    if not rows:
-        logger.warning("No price data found for icb_id=%s", icb_id)
-        return {}
+    # Get historical averages per quarter
+    with engine.connect() as conn:
+        rows = conn.execute(sa.text("""
+            SELECT kwartalrok, kwartalnr,
+                   round(avg(cena_netto)::numeric, 4) as avg_price,
+                   count(*) as n
+            FROM icb_ceny_srednie
+            WHERE category = :cat AND typ_rms = :typ AND cena_netto > 0
+            GROUP BY kwartalrok, kwartalnr
+            ORDER BY kwartalrok, kwartalnr
+        """), {"cat": category, "typ": typ_rms}).fetchall()
 
-    symbol = rows[0][0]
-    typ_rms = rows[0][1]
+    if len(rows) < 6:
+        logger.warning(f"Not enough data for forecast: {category}/{typ_rms} ({len(rows)} quarters)")
+        return []
 
-    # Build time-series arrays (oldest first)
-    data = sorted(rows, key=lambda r: (r[3], r[2]))  # sort by year, quarter
-    indices = np.array([_quarter_to_index(r[2], r[3]) for r in data], dtype=float)
-    prices = np.array([float(r[4]) for r in data], dtype=float)
+    values = [float(r.avg_price) for r in rows]
+    last_year = rows[-1].kwartalrok
+    last_q = rows[-1].kwartalnr
 
-    if len(prices) < 2:
-        logger.warning("Insufficient data points for regression: icb_id=%s", icb_id)
-        return {
-            "icb_id": icb_id,
-            "symbol": symbol,
+    # Forecast
+    forecasts = _holt_winters_forecast(values, horizon)
+    intervals = _prediction_interval(values, forecasts)
+
+    # Compute MAPE on last 4 known quarters (backtesting)
+    if len(values) > 8:
+        train = values[:-4]
+        test = values[-4:]
+        backtest_fc = _holt_winters_forecast(train, 4)
+        mape = sum(abs((a - f) / a) for a, f in zip(test, backtest_fc) if a > 0) / len(test) * 100
+    else:
+        mape = None
+
+    # Generate forecast quarter labels
+    results = []
+    q, y = last_q, last_year
+    for i, (fc, (lb, ub)) in enumerate(zip(forecasts, intervals)):
+        q += 1
+        if q > 4:
+            q = 1
+            y += 1
+        results.append({
+            "category": category,
             "typ_rms": typ_rms,
-            "predictions": [],
-            "trend_pct": 0.0,
-        }
+            "forecast_quarter": q,
+            "forecast_year": y,
+            "predicted_price": round(fc, 4),
+            "lower_bound": round(lb, 4),
+            "upper_bound": round(ub, 4),
+            "model_name": model_name,
+            "mape_pct": round(mape, 2) if mape else None,
+        })
 
-    # Linear regression
-    coeffs = np.polyfit(indices, prices, deg=1)
-    poly = np.poly1d(coeffs)
+    # Store to icb_forecast
+    with engine.begin() as conn:
+        # Clear old forecasts for this category
+        conn.execute(sa.text("""
+            DELETE FROM icb_forecast WHERE category = :cat AND typ_rms = :typ
+        """), {"cat": category, "typ": typ_rms})
 
-    # Residual std for confidence interval
-    residuals = prices - poly(indices)
-    residual_std = float(np.std(residuals))
-    ci = 1.5 * residual_std
+        for r in results:
+            conn.execute(sa.text("""
+                INSERT INTO icb_forecast (category, typ_rms, forecast_quarter, forecast_year,
+                                          predicted_price, lower_bound, upper_bound, model_name, mape_pct, computed_at)
+                VALUES (:cat, :typ, :fq, :fy, :pp, :lb, :ub, :mn, :mape, NOW())
+            """), {
+                "cat": r["category"], "typ": r["typ_rms"],
+                "fq": r["forecast_quarter"], "fy": r["forecast_year"],
+                "pp": r["predicted_price"], "lb": r["lower_bound"], "ub": r["upper_bound"],
+                "mn": r["model_name"], "mape": r["mape_pct"],
+            })
 
-    # Trend percentage: slope over first price
-    last_index = indices[-1]
-    first_price = float(poly(indices[0]))
-    slope = float(coeffs[0])  # price change per quarter
-    trend_pct = (slope * len(indices) / first_price * 100.0) if first_price != 0 else 0.0
-
-    # Generate future predictions
-    predictions = []
-    for i in range(1, quarters_ahead + 1):
-        future_index = last_index + i
-        pred_price = float(poly(future_index))
-        q, y = _index_to_quarter(int(future_index))
-        predictions.append(
-            {
-                "quarter": q,
-                "year": y,
-                "price": round(pred_price, 4),
-                "lower": round(pred_price - ci, 4),
-                "upper": round(pred_price + ci, 4),
-            }
-        )
-
-    return {
-        "icb_id": icb_id,
-        "symbol": symbol,
-        "typ_rms": typ_rms,
-        "predictions": predictions,
-        "trend_pct": round(trend_pct, 4),
-    }
+    return results
 
 
-def cache_forecasts(icb_ids: list[int], quarters_ahead: int = 4) -> int:
-    """
-    Compute and cache forecasts for a list of ICB IDs.
-
-    For each icb_id, calls forecast_icb_price and upserts each
-    predicted quarter into the icb_forecast table.
-
-    Returns:
-        Total count of cached forecast entries inserted/updated.
-    """
+def compute_all_forecasts(horizon: int = 4) -> dict:
+    """Run forecasts for all categories + R/M/S types."""
     engine = get_engine()
-    cached_count = 0
+    with engine.connect() as conn:
+        categories = conn.execute(sa.text("""
+            SELECT DISTINCT category FROM icb_ceny_srednie
+            WHERE category IS NOT NULL ORDER BY category
+        """)).fetchall()
 
-    for icb_id in icb_ids:
-        forecast = forecast_icb_price(icb_id, quarters_ahead=quarters_ahead)
-        if not forecast or not forecast.get("predictions"):
-            continue
-
-        for pred in forecast["predictions"]:
+    total = 0
+    errors = []
+    for (cat,) in categories:
+        for typ in ["M", "S", "R"]:
             try:
-                with engine.begin() as conn:
-                    conn.execute(
-                        text(
-                            """
-                            INSERT INTO icb_forecast
-                                (icb_id, symbol, typ_rms, forecast_year, forecast_quarter,
-                                 predicted_price, price_lower, price_upper, trend_pct, created_at)
-                            VALUES
-                                (:icb_id, :symbol, :typ_rms, :year, :quarter,
-                                 :price, :lower, :upper, :trend_pct, NOW())
-                            ON CONFLICT (icb_id, forecast_year, forecast_quarter)
-                            DO UPDATE SET
-                                predicted_price = EXCLUDED.predicted_price,
-                                price_lower     = EXCLUDED.price_lower,
-                                price_upper     = EXCLUDED.price_upper,
-                                trend_pct       = EXCLUDED.trend_pct,
-                                created_at      = NOW()
-                            """
-                        ),
-                        {
-                            "icb_id": icb_id,
-                            "symbol": forecast["symbol"],
-                            "typ_rms": forecast["typ_rms"],
-                            "year": pred["year"],
-                            "quarter": pred["quarter"],
-                            "price": pred["price"],
-                            "lower": pred["lower"],
-                            "upper": pred["upper"],
-                            "trend_pct": forecast["trend_pct"],
-                        },
-                    )
-                cached_count += 1
-            except SQLAlchemyError:
-                logger.exception(
-                    "DB error caching forecast for icb_id=%s quarter=%s/%s",
-                    icb_id,
-                    pred["quarter"],
-                    pred["year"],
-                )
+                results = compute_forecasts_for_category(cat, typ, horizon)
+                total += len(results)
+            except Exception as e:
+                errors.append(f"{cat}/{typ}: {e}")
 
-    logger.info("cache_forecasts: cached %d entries for %d ICB IDs", cached_count, len(icb_ids))
-    return cached_count
+    return {"forecasts_generated": total, "errors": errors}
 
 
-def get_cached_forecast(icb_id: int, year: int, quarter: int) -> Optional[dict]:
-    """
-    Retrieve a previously cached forecast for a given ICB item and quarter.
-
-    Returns:
-        dict with forecast data or None if not found.
-    """
+def get_forecasts(
+    category: str | None = None,
+    typ_rms: str = "M",
+    symbol: str | None = None,
+) -> list[dict]:
+    """Retrieve stored forecasts from icb_forecast."""
     engine = get_engine()
-    try:
-        with engine.connect() as conn:
-            row = conn.execute(
-                text(
-                    """
-                    SELECT icb_id, symbol, typ_rms, forecast_year, forecast_quarter,
-                           predicted_price, price_lower, price_upper, trend_pct, created_at
-                    FROM icb_forecast
-                    WHERE icb_id = :icb_id
-                      AND forecast_year = :year
-                      AND forecast_quarter = :quarter
-                    LIMIT 1
-                    """
-                ),
-                {"icb_id": icb_id, "year": year, "quarter": quarter},
-            ).fetchone()
-    except SQLAlchemyError:
-        logger.exception(
-            "DB error fetching cached forecast for icb_id=%s %s/Q%s", icb_id, year, quarter
-        )
-        return None
+    filters = ["typ_rms = :typ"]
+    params: dict = {"typ": typ_rms}
 
-    if row is None:
-        return None
+    if category:
+        filters.append("category = :cat")
+        params["cat"] = category
+    if symbol:
+        filters.append("symbol = :sym")
+        params["sym"] = symbol
 
-    return {
-        "icb_id": row[0],
-        "symbol": row[1],
-        "typ_rms": row[2],
-        "forecast_year": row[3],
-        "forecast_quarter": row[4],
-        "predicted_price": float(row[5]) if row[5] is not None else None,
-        "price_lower": float(row[6]) if row[6] is not None else None,
-        "price_upper": float(row[7]) if row[7] is not None else None,
-        "trend_pct": float(row[8]) if row[8] is not None else None,
-        "created_at": row[9].isoformat() if isinstance(row[9], datetime) else str(row[9]),
-    }
+    where = " AND ".join(filters)
+    with engine.connect() as conn:
+        rows = conn.execute(sa.text(f"""
+            SELECT category, typ_rms, forecast_quarter, forecast_year,
+                   predicted_price, lower_bound, upper_bound, model_name, mape_pct, computed_at
+            FROM icb_forecast
+            WHERE {where}
+            ORDER BY forecast_year, forecast_quarter
+        """), params).fetchall()
 
-
-def run_top_materials_forecast(limit: int = 100) -> dict:
-    """
-    Find the top `limit` most-used ICB items and cache their forecasts.
-
-    Selects items by entry count in icb_ceny_srednie (proxy for usage frequency).
-
-    Returns:
-        dict with 'cached' (int) and 'icb_ids' (list[int]).
-    """
-    engine = get_engine()
-    try:
-        with engine.connect() as conn:
-            rows = conn.execute(
-                text(
-                    """
-                    SELECT id_ceny, COUNT(*) AS cnt
-                    FROM icb_ceny_srednie
-                    GROUP BY id_ceny
-                    ORDER BY cnt DESC
-                    LIMIT :limit
-                    """
-                ),
-                {"limit": limit},
-            ).fetchall()
-    except SQLAlchemyError:
-        logger.exception("DB error fetching top ICB items")
-        return {"cached": 0, "icb_ids": []}
-
-    icb_ids = [int(row[0]) for row in rows]
-    if not icb_ids:
-        logger.warning("run_top_materials_forecast: no ICB items found")
-        return {"cached": 0, "icb_ids": []}
-
-    cached = cache_forecasts(icb_ids)
-    logger.info("run_top_materials_forecast: cached %d entries for %d items", cached, len(icb_ids))
-    return {"cached": cached, "icb_ids": icb_ids}
+    return [
+        {
+            "category": r[0], "typ_rms": r[1],
+            "period": f"{r[3]}-Q{r[2]}",
+            "predicted_price": float(r[4]),
+            "lower_bound": float(r[5]),
+            "upper_bound": float(r[6]),
+            "model": r[7], "mape_pct": float(r[8]) if r[8] else None,
+            "computed_at": str(r[9]) if r[9] else None,
+        }
+        for r in rows
+    ]

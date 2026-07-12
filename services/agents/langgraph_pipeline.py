@@ -39,6 +39,7 @@ class AgentState(TypedDict, total=False):
     bid_strategy: dict
     decision_brief: str
     go_decision: str        # GO / NO-GO / CONSIDER
+    icb_pricing: dict       # InterCenBud pricing data
 
 
 # ---------------------------------------------------------------------------
@@ -573,6 +574,125 @@ Wygeneruj Decision Brief w Markdown (max 400 słów) z sekcjami:
 
 
 # ---------------------------------------------------------------------------
+# NODE 8: icb_pricing — wycena materiałów z InterCenBud
+# ---------------------------------------------------------------------------
+
+def node_icb_pricing(state: AgentState) -> AgentState:
+    """Dodaj kalkulację kosztów materiałów z ICB (784k rekordów).
+
+    Analizuje CPV tendera, dopasowuje kategorie ICB, pobiera aktualne ceny
+    i dodaje podsumowanie kosztowe do state.
+    """
+    steps = list(state.get("steps", []))
+    steps.append("icb_pricing")
+    if state.get("error"):
+        return {**state, "steps": steps}
+
+    tender_data = state.get("tender_data", {})
+    analysis = state.get("analysis", {})
+
+    # Map CPV codes to ICB categories
+    cpv_to_icb = {
+        "45": "murarstwo",       # Construction work
+        "4521": "murarstwo",     # Building construction
+        "4522": "dach_pokrycia", # Roof works
+        "4523": "nawierzchnie",  # Highway, road
+        "4524": "instalacje_wod_kan",  # Water works
+        "4525": "kruszywa_ziemne",     # Construction for mining
+        "4431": "plytki_ceramiczne",   # Floor covering
+        "4432": "malowanie",           # Painting
+        "4433": "instalacje_wod_kan",  # Plumbing
+        "4434": "elektryka",           # Electrical
+        "4411": "stal_konstrukcyjna",  # Structural steel
+        "4412": "izolacja_termo",      # Insulation
+    }
+
+    tender_cpvs = tender_data.get("cpv") or []
+    if isinstance(tender_cpvs, str):
+        try:
+            import json as _json
+            tender_cpvs = _json.loads(tender_cpvs)
+        except Exception:
+            tender_cpvs = [tender_cpvs]
+
+    # Determine relevant categories
+    categories = set()
+    for cpv in tender_cpvs:
+        cpv_str = str(cpv).replace(".", "")
+        for prefix, cat in cpv_to_icb.items():
+            if cpv_str.startswith(prefix):
+                categories.add(cat)
+                break
+
+    if not categories:
+        # Fallback: use all major construction categories
+        categories = {"murarstwo", "stal_konstrukcyjna", "kruszywa_ziemne", "instalacje_wod_kan"}
+
+    try:
+        from services.api.services.api.intelligence.icb_service import (
+            get_latest_quarter, get_all_narzuty, get_regional_coefficient,
+        )
+        from services.api.services.api.intelligence.price_intelligence import (
+            get_material_risk_score,
+        )
+
+        rok, nr = get_latest_quarter()
+
+        # Get average prices per category
+        category_prices = {}
+        category_risks = {}
+        for cat in categories:
+            rows = _run_query("""
+                SELECT ROUND(AVG(cena_netto)::numeric, 2) as avg_price,
+                       ROUND(MIN(cena_netto)::numeric, 2) as min_price,
+                       ROUND(MAX(cena_netto)::numeric, 2) as max_price,
+                       COUNT(*) as n
+                FROM icb_ceny_srednie
+                WHERE category = :cat AND typ_rms = 'M'
+                  AND kwartalrok = :rok AND kwartalnr = :nr AND cena_netto > 0
+            """, {"cat": cat, "rok": rok, "nr": nr})
+            if rows and rows[0]["avg_price"]:
+                category_prices[cat] = rows[0]
+
+            # Risk assessment
+            risk = get_material_risk_score(cat)
+            category_risks[cat] = risk
+
+        # Get narzuty for the region
+        region = tender_data.get("region", "mazowieckie")
+        regional_coeff = get_regional_coefficient(region, "Ogolne", rok, nr)
+        narzuty = get_all_narzuty(rok, nr)
+
+        # Build ICB pricing context
+        icb_pricing = {
+            "quarter": f"{rok}-Q{nr}",
+            "categories_analyzed": list(categories),
+            "regional_coefficient": regional_coeff,
+            "region": region,
+            "category_prices": category_prices,
+            "material_risks": {
+                cat: {"score": r.get("score", 0), "level": r.get("level", "unknown"), "trend": r.get("trend", "stable")}
+                for cat, r in category_risks.items()
+            },
+            "narzuty_summary": {
+                "koszty_posrednie": narzuty[0]["koszty_posrednie"] if narzuty else 65.0,
+                "zysk": narzuty[0]["zysk"] if narzuty else 10.0,
+                "koszty_zakupu": narzuty[0]["koszty_zakupu"] if narzuty else 12.0,
+            } if narzuty else {},
+            "high_risk_materials": [
+                cat for cat, r in category_risks.items()
+                if r.get("level") == "high"
+            ],
+        }
+
+    except Exception as exc:
+        logger.warning("icb_pricing: %s", exc)
+        icb_pricing = {"error": str(exc), "categories_analyzed": list(categories)}
+
+    return {**state, "steps": steps, "icb_pricing": icb_pricing}
+
+
+# ---------------------------------------------------------------------------
 # Graph v1 — Zwiad + Analiza + Scoring
 # ---------------------------------------------------------------------------
 
@@ -596,6 +716,7 @@ def _build_graph_v2() -> Any:
     g.add_node("ahp_eval",        node_ahp_eval)
     g.add_node("competitor_check", node_competitor_check)
     g.add_node("bid_strategy",    node_bid_strategy)
+    g.add_node("icb_pricing",     node_icb_pricing)
     g.add_node("generate_brief",  node_generate_brief)
     g.set_entry_point("fetch_tender")
     g.add_edge("fetch_tender",    "analyze_swz")
@@ -603,7 +724,8 @@ def _build_graph_v2() -> Any:
     g.add_edge("score_tender",    "ahp_eval")
     g.add_edge("ahp_eval",        "competitor_check")
     g.add_edge("competitor_check","bid_strategy")
-    g.add_edge("bid_strategy",    "generate_brief")
+    g.add_edge("bid_strategy",    "icb_pricing")
+    g.add_edge("icb_pricing",     "generate_brief")
     g.add_edge("generate_brief",  END)
     return g.compile()
 

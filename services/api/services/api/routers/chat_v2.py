@@ -64,6 +64,62 @@ def _tool_get_pipeline_kpi(engine, tenant_id: str) -> str:
     return f"Pipeline: {row[0]} przetargów, {row[1]} wygranych, wartość pipeline: {row[2] or 0} PLN"
 
 
+def _tool_icb_prices(engine, query: str) -> str:
+    """Internal tool: search ICB material prices (784k records)."""
+    with engine.connect() as conn:
+        # Get latest quarter
+        lq = conn.execute(sa.text(
+            "SELECT kwartalrok, kwartalnr FROM icb_ceny_srednie ORDER BY kwartalrok DESC, kwartalnr DESC LIMIT 1"
+        )).fetchone()
+        if not lq:
+            return "Brak danych ICB."
+        rok, nr = lq[0], lq[1]
+
+        rows = conn.execute(sa.text("""
+            SELECT nazwa, symbol, jednostka, cena_netto, category
+            FROM icb_ceny_srednie
+            WHERE kwartalrok=:rok AND kwartalnr=:nr AND cena_netto > 0
+              AND (nazwa ILIKE :q OR symbol ILIKE :q)
+            ORDER BY cena_netto DESC LIMIT 8
+        """), {"rok": rok, "nr": nr, "q": f"%{query}%"}).fetchall()
+
+    if not rows:
+        return f"Nie znaleziono materiałów ICB dla: {query}"
+
+    lines = [f"Ceny materiałów ICB ({rok}-Q{nr}):"]
+    for r in rows:
+        lines.append(f"- {r[0]} [{r[1]}]: {float(r[3]):.2f} PLN/{r[2]} (kat: {r[4]})")
+
+    # Add narzuty info
+    with engine.connect() as conn:
+        narz = conn.execute(sa.text("""
+            SELECT nazwa, koszty_posrednie, zysk, koszty_zakupu
+            FROM icb_narzuty WHERE kwartalrok=:rok AND kwartalnr=:nr LIMIT 3
+        """), {"rok": rok, "nr": nr}).fetchall()
+    if narz:
+        lines.append("\nNarzuty (%):")
+        for n in narz:
+            lines.append(f"  {n[0]}: KP={n[1]}%, Z={n[2]}%, KZ={n[3]}%")
+
+    return "\n".join(lines)
+
+
+def _tool_material_risk(engine) -> str:
+    """Internal tool: material price risk assessment."""
+    from .icb_advanced import volatility_matrix
+    try:
+        matrix = volatility_matrix(quarters=4)
+        high = [m for m in matrix if m["risk_level"] == "high"]
+        if not high:
+            return "Wszystkie kategorie materiałów: ryzyko cenowe NISKIE."
+        lines = ["⚠️ Kategorie z WYSOKIM ryzykiem cenowym:"]
+        for m in high[:8]:
+            lines.append(f"- {m['category']} ({m['typ_rms']}): CV={m['cv']:.3f}, śr.cena={m['mean_price']}")
+        return "\n".join(lines)
+    except Exception as e:
+        return f"Błąd analizy ryzyka: {e}"
+
+
 def _build_context(engine, session_data: dict) -> str:
     """Build context string from session metadata."""
     parts = []
@@ -129,6 +185,14 @@ def send_message(session_id: str, body: SendMessageRequest) -> StreamingResponse
         tool_result = _tool_search_tenders(engine, tenant_id, body.message)
     elif any(kw in msg_lower for kw in ["pipeline", "kpi", "statystyk", "ile"]):
         tool_result = _tool_get_pipeline_kpi(engine, tenant_id)
+    elif any(kw in msg_lower for kw in ["cena", "materiał", "cennik", "icb", "intercenbud", "koszt materiał", "ile kosztuje", "stawka"]):
+        # Extract search query - remove trigger words
+        q = body.message
+        for w in ["jaka jest cena", "ile kosztuje", "cennik", "cena", "materiał"]:
+            q = q.lower().replace(w, "").strip()
+        tool_result = _tool_icb_prices(engine, q if len(q) > 2 else body.message)
+    elif any(kw in msg_lower for kw in ["ryzyko", "zmienność", "volatile", "drożeje", "wzrost cen"]):
+        tool_result = _tool_material_risk(engine)
 
     system = TERRA_SYSTEM_PROMPT + f"\n\nKONTEKST SESJI:\n{context}"
     if summary:
