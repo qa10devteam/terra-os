@@ -39,7 +39,8 @@ def _try_isolation_forest(
         clf = IsolationForest(n_estimators=100, contamination=0.05, random_state=42)
         preds = clf.fit_predict(feature_matrix)
         return [bool(p == -1) for p in preds]
-    except Exception:
+    except Exception as e:
+        logger.debug("source=intelligence func=_try_isolation_forest: %s", e)
         logger.exception("IsolationForest failed; skipping")
         return None
 

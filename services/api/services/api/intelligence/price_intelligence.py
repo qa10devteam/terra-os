@@ -244,7 +244,7 @@ def forecast_price(
     except ImportError:
         pass
     except Exception as e:
-        logger.warning(f"Prophet forecast failed: {e}")
+        logger.warning("source=intelligence func=forecast_price: Prophet forecast failed: %s", e)
 
     # Fallback: linear trend z confidence interval
     x = list(range(n))

@@ -1,6 +1,7 @@
 """S61/S62 — Buyer Score: ocena ryzyka nabywcy na podstawie danych KRS, historii ofert, przetargów."""
 from __future__ import annotations
 
+import logging
 import uuid
 import sqlalchemy as sa
 from fastapi import APIRouter
@@ -8,6 +9,8 @@ from terra_db.session import get_engine
 from ..auth.deps import AuthUser, TenantDep
 
 router = APIRouter(prefix="/api/v2/intelligence", tags=["buyer-score"])
+
+logger = logging.getLogger(__name__)
 
 
 def calculate_buyer_score(nip: str, tenant_id: str, conn) -> float:
@@ -32,7 +35,8 @@ def calculate_buyer_score(nip: str, tenant_id: str, conn) -> float:
         ).fetchone()
         if row and row.cnt > 0:
             score += 0.3
-    except Exception:
+    except Exception as e:
+        logger.debug("source=intelligence func=calculate_buyer_score krs_active: %s", e)
         score += 0.15  # partial credit on error
 
     # payment_history: tender wins (0.3)
@@ -52,7 +56,8 @@ def calculate_buyer_score(nip: str, tenant_id: str, conn) -> float:
             score += 0.3 * (row2.won_cnt / row2.total_cnt)
         else:
             score += 0.15
-    except Exception:
+    except Exception as e:
+        logger.debug("source=intelligence func=calculate_buyer_score payment_history: %s", e)
         score += 0.15
 
     # tender_count_12mo (0.2)
@@ -72,7 +77,8 @@ def calculate_buyer_score(nip: str, tenant_id: str, conn) -> float:
             score += min(0.2, 0.2 * (cnt / 10.0))
         else:
             score += 0.1
-    except Exception:
+    except Exception as e:
+        logger.debug("source=intelligence func=calculate_buyer_score tender_count: %s", e)
         score += 0.1
 
     # value_reliability (0.2) — avg(final/estimated)
@@ -95,7 +101,8 @@ def calculate_buyer_score(nip: str, tenant_id: str, conn) -> float:
             score += 0.2 * reliability
         else:
             score += 0.1
-    except Exception:
+    except Exception as e:
+        logger.debug("source=intelligence func=calculate_buyer_score value_reliability: %s", e)
         score += 0.1
 
     return min(1.0, max(0.0, score))
@@ -124,8 +131,8 @@ def get_buyer_score(nip: str, user: AuthUser, tenant_id: TenantDep) -> dict:
                     },
                 )
                 conn.commit()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("source=intelligence func=get_buyer_score notification_insert: %s", e)
 
     return {
         "nip": nip,

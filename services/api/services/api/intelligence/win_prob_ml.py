@@ -115,7 +115,7 @@ def _train_model(conn: Any | None = None) -> None:
         from sklearn.preprocessing import StandardScaler
         from sklearn.pipeline import Pipeline
     except ImportError:
-        logger.error("scikit-learn not installed, win probability ML disabled")
+        logger.error("source=intelligence func=_train_model: scikit-learn not installed, win probability ML disabled")
         return
 
     X, y = [], []
@@ -157,7 +157,7 @@ def _train_model(conn: Any | None = None) -> None:
         with open(_MODEL_PATH, "wb") as f:
             pickle.dump((pipe, _cpv_encoder, _region_encoder), f)
     except Exception as e:
-        logger.warning("Could not save model: %s", e)
+        logger.warning("source=intelligence func=_train_model: Could not save model: %s", e)
     logger.info("Win probability model trained on %d samples", len(X))
 
 
@@ -177,7 +177,7 @@ def _load_or_train(conn: Any | None = None) -> None:
                     logger.info("Loaded existing win prob model")
                     return
         except Exception as e:
-            logger.warning("Could not load model: %s", e)
+            logger.warning("source=intelligence func=_load_or_train: Could not load model: %s", e)
     _train_model(conn)
 
 

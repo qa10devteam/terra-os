@@ -93,7 +93,7 @@ def compute_forecasts_for_category(
         """), {"cat": category, "typ": typ_rms}).fetchall()
 
     if len(rows) < 6:
-        logger.warning(f"Not enough data for forecast: {category}/{typ_rms} ({len(rows)} quarters)")
+        logger.warning("source=intelligence func=compute_forecasts_for_category: Not enough data for forecast: %s/%s (%d quarters)", category, typ_rms, len(rows))
         return []
 
     values = [float(r.avg_price) for r in rows]

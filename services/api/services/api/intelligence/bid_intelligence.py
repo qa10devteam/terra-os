@@ -232,7 +232,8 @@ def _get_win_ratios_for_cpv(cpv_prefix: str, province: str | None) -> list[float
                 LIMIT 500
             """), {"cpv_filter": f"{cpv_prefix}0000-0"[:9]}).fetchall()
         return [float(r.ratio) for r in rows if r.ratio and 0.2 < r.ratio < 3.0]
-    except Exception:
+    except Exception as e:
+        logger.debug("source=intelligence func=_get_win_ratios_for_cpv: %s", e)
         return []
 
 
