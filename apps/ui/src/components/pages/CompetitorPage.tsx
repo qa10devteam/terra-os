@@ -262,13 +262,13 @@ function AddCompetitorModal({ onClose, onAdd }: { onClose: () => void; onAdd: (n
         />
 
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg border border-earth-700 text-earth-400 text-sm hover:border-earth-600 transition-colors">
+          <button onClick={onClose} className="btn-secondary flex-1 py-2.5 transition-colors">
             Anuluj
           </button>
           <button
             onClick={handleAdd}
             disabled={saving || (!selected && !q.match(/^\d{10}$/))}
-            className="flex-1 py-2.5 rounded-lg bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            className="btn-primary flex-1 py-2.5"
           >
             {saving ? <RefreshCw size={14} className="animate-spin" /> : <Plus size={14} />}
             Dodaj

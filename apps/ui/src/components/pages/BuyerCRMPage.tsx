@@ -60,7 +60,7 @@ const STAGE_COLORS: Record<CRMStage, string> = {
   prospect:  'bg-zinc-700 text-zinc-300 border-zinc-600',
   contacted: 'bg-blue-500/20 text-blue-300 border-blue-500/40',
   demo:      'bg-purple-500/20 text-purple-300 border-purple-500/40',
-  active:    'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+  active:    'bg-accent-primary/20 text-accent-primary border-accent-primary/40',
   churned:   'bg-red-500/20 text-red-300 border-red-500/40',
 };
 
@@ -68,7 +68,7 @@ const STAGE_DOT: Record<CRMStage, string> = {
   prospect:  'bg-zinc-400',
   contacted: 'bg-blue-400',
   demo:      'bg-purple-400',
-  active:    'bg-emerald-400',
+  active:    'bg-accent-primary',
   churned:   'bg-red-400',
 };
 
@@ -182,7 +182,7 @@ function BuyerCard({
       onClick={onClick}
       className={`w-full text-left p-4 rounded-xl border transition-all group
         ${selected
-          ? 'bg-earth-800 border-emerald-500/50 shadow-lg shadow-emerald-500/5'
+          ? 'bg-earth-800 border-accent-primary/50 shadow-token-sm'
           : 'bg-earth-900 border-earth-700 hover:border-earth-600 hover:bg-earth-850'}`}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
@@ -231,7 +231,7 @@ function BuyerCard({
             </span>
           )}
         </div>
-        <ChevronRight size={14} className={`text-earth-600 group-hover:text-earth-400 transition-colors ${selected ? 'text-emerald-500' : ''}`} />
+        <ChevronRight size={14} className={`text-earth-600 group-hover:text-earth-400 transition-colors ${selected ? 'text-accent-primary' : ''}`} />
       </div>
     </motion.button>
   );
@@ -286,7 +286,7 @@ function TendersTab({ itemId }: { itemId: string }) {
           initial={{ opacity: 0, x: 6 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: i * 0.03 }}
-          className="p-3 bg-earth-800 rounded-lg border border-earth-700 hover:border-earth-600 transition-colors"
+          className="bg-earth-900 border border-earth-800/50 rounded-token-xl p-3 hover:border-earth-700 transition-colors"
         >
           <div className="text-sm text-earth-100 line-clamp-2 mb-1.5">{t.title}</div>
           <div className="flex items-center gap-3 flex-wrap">
@@ -303,7 +303,7 @@ function TendersTab({ itemId }: { itemId: string }) {
             )}
             {t.status && (
               <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                t.status === 'completed' ? 'bg-emerald-500/15 text-emerald-400' :
+                t.status === 'completed' ? 'bg-accent-primary/15 text-accent-primary' :
                 t.status === 'cancelled' ? 'bg-red-500/15 text-red-400' :
                 'bg-earth-700 text-earth-400'
               }`}>{t.status}</span>
@@ -430,8 +430,8 @@ function BuyerProfilePanel({
     { id: 'followup', label: 'Follow-up', icon: <CalendarClock size={13} /> },
   ];
 
-  const inputCls = 'w-full bg-earth-800 border border-earth-700 rounded-lg px-3 py-2 text-sm text-earth-100 placeholder-earth-500 focus:outline-none focus:border-emerald-500 transition-colors';
-  const labelCls = 'block text-xs text-earth-500 mb-1';
+  const inputCls = 'input-base';
+  const labelCls = 'label-base';
 
   return (
     <motion.div
@@ -534,7 +534,7 @@ function BuyerProfilePanel({
               onClick={() => { setTab(t.id); setEditing(false); }}
               className={`flex items-center gap-1.5 px-3 py-3 text-xs font-medium border-b-2 shrink-0 transition-colors
                 ${tab === t.id
-                  ? 'border-emerald-500 text-emerald-400'
+                  ? 'border-accent-primary text-accent-primary'
                   : 'border-transparent text-earth-500 hover:text-earth-300'}`}
             >
               {t.icon} {t.label}
@@ -638,7 +638,7 @@ function BuyerProfilePanel({
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex-1 py-2.5 bg-emerald-500 text-white text-sm font-medium rounded-lg hover:bg-emerald-400 disabled:opacity-40 flex items-center justify-center gap-2 transition-colors"
+                  className="btn-primary flex-1 py-2.5 flex items-center justify-center gap-2"
                 >
                   {saving ? <RefreshCw size={13} className="animate-spin" /> : <CheckCircle size={13} />}
                   Zapisz
@@ -660,7 +660,7 @@ function BuyerProfilePanel({
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="w-full py-2.5 bg-emerald-500 text-white text-sm font-medium rounded-lg hover:bg-emerald-400 disabled:opacity-40 flex items-center justify-center gap-2 transition-colors"
+                className="btn-primary w-full py-2.5 flex items-center justify-center gap-2"
               >
                 {saving ? <RefreshCw size={13} className="animate-spin" /> : <CheckCircle size={13} />}
                 Zapisz notatki
@@ -727,7 +727,7 @@ function BuyerProfilePanel({
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="w-full py-2.5 bg-emerald-500 text-white text-sm font-medium rounded-lg hover:bg-emerald-400 disabled:opacity-40 flex items-center justify-center gap-2 transition-colors"
+                className="btn-primary w-full py-2.5 flex items-center justify-center gap-2"
               >
                 {saving ? <RefreshCw size={13} className="animate-spin" /> : <CheckCircle size={13} />}
                 Zapisz follow-up
@@ -807,8 +807,8 @@ function AddBuyerModal({
     }
   };
 
-  const inputCls = 'w-full bg-earth-800 border border-earth-700 rounded-lg px-3 py-2 text-sm text-earth-100 placeholder-earth-500 focus:outline-none focus:border-emerald-500 transition-colors';
-
+  const inputCls = 'input-base';
+  const labelCls = 'label-base';
   const cpvChart = selected?.top_cpv?.slice(0, 5).map(c => ({ name: c.code.slice(0, 5), value: c.count })) ?? [];
 
   return (
@@ -844,7 +844,7 @@ function AddBuyerModal({
                 value={q}
                 onChange={e => { setQ(e.target.value); setSelected(null); }}
                 placeholder="Nazwa urzędu lub NIP (10 cyfr)..."
-                className="w-full bg-earth-800 border border-earth-700 rounded-lg pl-9 pr-4 py-2.5 text-sm text-earth-100 placeholder-earth-500 focus:outline-none focus:border-emerald-500 transition-colors"
+                className="input-base pl-9 pr-4 py-2.5"
               />
               {searching && (
                 <RefreshCw size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-earth-400 animate-spin" />
@@ -1029,12 +1029,12 @@ export function BuyerCRMPage() {
   return (
     <>
       <PageShell
-        title="CRM Zamawiających"
-        subtitle="Zarządzaj relacjami z zamawiającymi i planuj follow-upy"
+        title="CRM Zamawiających Publicznych"
+        subtitle="Zarządzaj relacjami z urzędami i planuj follow-upy przetargowe"
         actions={
           <button
             onClick={() => setShowAdd(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-400 transition-colors"
+            className="btn-primary"
           >
             <Plus size={15} />
             Dodaj zamawiającego
@@ -1063,7 +1063,7 @@ export function BuyerCRMPage() {
                 { label: 'Follow-upy',  value: followups.length, icon: CalendarClock, color: '#f59e0b' },
                 { label: 'Przeterminowane', value: overdueCount, icon: AlertTriangle, color: overdueCount > 0 ? '#ef4444' : '#71717a' },
               ].map(({ label, value, icon: Icon, color }) => (
-                <div key={label} className="bg-earth-900 border border-earth-700 rounded-xl p-3 flex items-center gap-3">
+                <div key={label} className="card-hover p-3 flex items-center gap-3">
                   <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: color + '22' }}>
                     <Icon size={16} style={{ color }} />
                   </div>
@@ -1108,7 +1108,7 @@ export function BuyerCRMPage() {
                 value={searchQ}
                 onChange={e => setSearchQ(e.target.value)}
                 placeholder="Szukaj po nazwie, NIP, kontakcie..."
-                className="w-full bg-earth-900 border border-earth-700 rounded-lg pl-9 pr-4 py-2 text-sm text-earth-100 placeholder-earth-500 focus:outline-none focus:border-emerald-500 transition-colors"
+                className="input-base pl-9 pr-4 py-2"
               />
               {searchQ && (
                 <button
@@ -1139,7 +1139,7 @@ export function BuyerCRMPage() {
               <p className="text-sm text-earth-600 mb-6">Dodaj zamawiających, żeby zarządzać relacjami i planować follow-upy</p>
               <button
                 onClick={() => setShowAdd(true)}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-400 transition-colors"
+                className="inline-flex items-center gap-2 px-5 py-2.5 btn-primary"
               >
                 <Plus size={15} />
                 Dodaj pierwszego zamawiającego

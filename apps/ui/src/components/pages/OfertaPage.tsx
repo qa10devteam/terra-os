@@ -1232,7 +1232,7 @@ export function OfertaPage() {
 
       // Fetch PDF blob via raw fetch (authFetch parses JSON)
       const res = await fetch(`/api/v1/offers/${offerId}/pdf`, {
-        headers: accessToken ? { Authorization: *** ${accessToken}` } : {},
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
       });
 
       if (!res.ok) {
