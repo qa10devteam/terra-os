@@ -114,23 +114,18 @@ def get_cpv_heatmap() -> list[dict[str, Any]]:
     with engine.connect() as conn:
         rows = conn.execute(
             sa.text("""
-                SELECT cpv_division, year, quarter, total, won, win_rate, avg_value
+                SELECT cpv5, voivodeship, tender_count, avg_value, total_value
                 FROM mv_cpv_heatmap
-                ORDER BY year DESC, quarter DESC, total DESC
-            """)
-        ).fetchall()
-    return [
-        {
-            "cpv_division": r[0],
-            "year": r[1],
-            "quarter": r[2],
-            "total": r[3],
-            "won": r[4],
-            "win_rate": float(r[5]) if r[5] else 0,
-            "avg_value": float(r[6]) if r[6] else 0,
-        }
-        for r in rows
-    ]
+                ORDER BY tender_count DESC NULLS LAST
+                LIMIT 100
+            """)).fetchall()
+    return [{
+        "cpv5": r[0],
+        "voivodeship": r[1],
+        "tender_count": int(r[2]) if r[2] else 0,
+        "avg_value": float(r[3]) if r[3] else 0,
+        "total_value": float(r[4]) if r[4] else 0,
+    } for r in rows]
 
 
 # ─── Admin: Refresh MVs ──────────────────────────────────────────────────────

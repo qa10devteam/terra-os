@@ -39,10 +39,10 @@ def get_audit_trail(
     params: dict[str, Any] = {"lim": limit, "off": offset}
 
     if entity_type:
-        conditions.append("entity_type = :etype")
+        conditions.append("entity = :etype")
         params["etype"] = entity_type
     if user_id:
-        conditions.append("user_id = :uid")
+        conditions.append("actor = :uid")
         params["uid"] = user_id
     if action:
         conditions.append("action = :act")
@@ -52,10 +52,10 @@ def get_audit_trail(
 
     with engine.connect() as conn:
         rows = conn.execute(sa.text(f"""
-            SELECT id, entity_type, entity_id, action, user_id, changes, created_at
+            SELECT id, entity, entity_id, action, actor, detail, at
             FROM audit_log
             {where}
-            ORDER BY created_at DESC
+            ORDER BY at DESC
             LIMIT :lim OFFSET :off
         """), params).fetchall()
 
@@ -71,9 +71,9 @@ def get_audit_trail(
             "entity_type": r[1],
             "entity_id": str(r[2]) if r[2] else None,
             "action": r[3],
-            "user_id": str(r[4]) if r[4] else None,
+            "actor": str(r[4]) if r[4] else None,
             "changes_summary": _summarize_changes(r[5]),
-            "created_at": r[6].isoformat() if r[6] else None,
+            "at": r[6].isoformat() if r[6] else None,
         } for r in rows],
         "total": total,
         "limit": limit,
@@ -91,10 +91,10 @@ def get_entity_history(
 
     with engine.connect() as conn:
         rows = conn.execute(sa.text("""
-            SELECT id, entity_type, action, user_id, changes, created_at
+            SELECT id, entity, action, actor, detail, at
             FROM audit_log
             WHERE entity_id = :eid
-            ORDER BY created_at DESC
+            ORDER BY at DESC
             LIMIT :lim
         """), {"eid": entity_id, "lim": limit}).fetchall()
 
@@ -102,9 +102,9 @@ def get_entity_history(
         "id": str(r[0]),
         "entity_type": r[1],
         "action": r[2],
-        "user_id": str(r[3]) if r[3] else None,
+        "actor": str(r[3]) if r[3] else None,
         "changes": json.loads(r[4]) if r[4] else {},
-        "created_at": r[5].isoformat() if r[5] else None,
+        "at": r[5].isoformat() if r[5] else None,
     } for r in rows]
 
 
@@ -129,10 +129,10 @@ def get_diff(audit_id: str) -> dict[str, Any]:
         "entity_type": row[1],
         "entity_id": str(row[2]) if row[2] else None,
         "action": row[3],
-        "user_id": str(row[4]) if row[4] else None,
+        "actor": str(row[4]) if row[4] else None,
         "diff": changes,
         "fields_changed": list(changes.keys()) if isinstance(changes, dict) else [],
-        "created_at": row[6].isoformat() if row[6] else None,
+        "at": row[6].isoformat() if row[6] else None,
     }
 
 
@@ -146,29 +146,29 @@ def get_audit_stats(
     with engine.connect() as conn:
         # Activity by day
         daily = conn.execute(sa.text("""
-            SELECT DATE(created_at) as day, COUNT(*) as cnt, 
-                   COUNT(DISTINCT user_id) as users
+            SELECT DATE(at) as day, COUNT(*) as cnt,
+                   COUNT(DISTINCT actor) as users
             FROM audit_log
-            WHERE created_at > NOW() - INTERVAL '1 day' * :days
+            WHERE at > NOW() - INTERVAL '1 day' * :days
             GROUP BY 1 ORDER BY 1 DESC
             LIMIT 30
         """), {"days": days}).fetchall()
 
         # Top actors
         actors = conn.execute(sa.text("""
-            SELECT user_id, COUNT(*) as cnt
+            SELECT actor, COUNT(*) as cnt
             FROM audit_log
-            WHERE created_at > NOW() - INTERVAL '1 day' * :days
-              AND user_id IS NOT NULL
+            WHERE at > NOW() - INTERVAL '1 day' * :days
+              AND actor IS NOT NULL
             GROUP BY 1 ORDER BY 2 DESC
             LIMIT 10
         """), {"days": days}).fetchall()
 
         # Actions distribution
         actions = conn.execute(sa.text("""
-            SELECT action, entity_type, COUNT(*) as cnt
+            SELECT action, entity, COUNT(*) as cnt
             FROM audit_log
-            WHERE created_at > NOW() - INTERVAL '1 day' * :days
+            WHERE at > NOW() - INTERVAL '1 day' * :days
             GROUP BY 1, 2 ORDER BY 3 DESC
             LIMIT 20
         """), {"days": days}).fetchall()
@@ -181,12 +181,12 @@ def get_audit_stats(
             "active_users": int(r[2]),
         } for r in daily],
         "top_actors": [{
-            "user_id": str(r[0]),
+            "actor": str(r[0]),
             "changes": int(r[1]),
         } for r in actors],
         "action_distribution": [{
             "action": r[0],
-            "entity_type": r[1],
+            "entity": r[1],
             "count": int(r[2]),
         } for r in actions],
     }

@@ -271,9 +271,9 @@ def agent_status() -> dict[str, Any]:
     with engine.connect() as conn:
         # Last scan
         last_scan = conn.execute(sa.text("""
-            SELECT details, created_at FROM audit_log
+            SELECT detail, at FROM audit_log
             WHERE action = 'proactive_scan'
-            ORDER BY created_at DESC LIMIT 1
+            ORDER BY at DESC LIMIT 1
         """)).fetchone()
 
         # Config

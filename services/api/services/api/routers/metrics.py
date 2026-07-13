@@ -43,7 +43,7 @@ def get_system_metrics() -> dict[str, Any]:
         """)).fetchall()
 
         # ICB
-        icb_count = conn.execute(sa.text("SELECT COUNT(*) FROM icb_data")).scalar() or 0
+        icb_count = conn.execute(sa.text("SELECT COUNT(*) FROM icb_ceny_srednie")).scalar() or 0
         icb_forecast = conn.execute(sa.text("SELECT COUNT(*) FROM icb_forecast")).scalar() or 0
 
         # DB size
