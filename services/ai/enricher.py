@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 def embed_tenders(engine: Any, tenant_id: str, limit: int = 500) -> int:
     """Embed tenders that lack pgvector embeddings. Returns count embedded."""
     try:
+        from services.ai.router import Task  # lazy import — avoids circular deps at module load  # noqa: F401
         from services.ai.embedder import embed_tenders_batch
         count = embed_tenders_batch(engine, tenant_id=tenant_id, limit=limit)
         logger.info("source=enricher step=embed_tenders tenant=%s count=%d", tenant_id, count)
@@ -93,6 +94,67 @@ def embed_swz_documents(engine: Any, tenant_id: str, limit: int = 20) -> int:
         return 0
 
 
+def extract_risk_after_embed(engine: Any, tenant_id: str, limit: int = 20) -> int:
+    """Extract risk flags from newly-chunked SWZ documents and update tender_document.risk_level.
+
+    Runs after embed_swz_documents().  For each recently-embedded document that
+    has doc_chunks but no risk_level yet, we load its text, call
+    extract_risk_flags() and persist the resulting level back to the DB.
+
+    Returns count of documents whose risk_level was updated.
+    """
+    try:
+        import sqlalchemy as sa
+        from services.documents.risk_extractor import extract_risk_flags, risk_level
+
+        with engine.connect() as conn:
+            rows = conn.execute(sa.text("""
+                SELECT td.id, td.local_path
+                FROM tender_document td
+                JOIN tender t ON t.id = td.tender_id
+                WHERE t.tenant_id = :tid
+                  AND td.parsed_ok = true
+                  AND td.local_path IS NOT NULL
+                  AND (td.risk_level IS NULL OR td.risk_level = '')
+                  AND EXISTS (
+                      SELECT 1 FROM doc_chunks dc
+                      WHERE dc.source_id = CAST(td.id AS text)
+                  )
+                ORDER BY td.created_at DESC
+                LIMIT :lim
+            """), {"tid": tenant_id, "lim": limit}).fetchall()
+
+        if not rows:
+            return 0
+
+        updated = 0
+        for row in rows:
+            doc_id, local_path = row[0], row[1]
+            try:
+                with open(local_path, "r", errors="ignore") as fh:
+                    text = fh.read(100_000)
+                if not text.strip():
+                    continue
+                flags = extract_risk_flags(text)
+                level, _score = risk_level(flags)
+                with engine.begin() as conn2:
+                    conn2.execute(
+                        sa.text("UPDATE tender_document SET risk_level = :rl WHERE id = :id"),
+                        {"rl": level, "id": str(doc_id)},
+                    )
+                updated += 1
+            except Exception as exc:
+                logger.debug("source=enricher step=extract_risk doc=%s: %s", doc_id, exc)
+
+        logger.info(
+            "source=enricher step=extract_risk tenant=%s updated=%d", tenant_id, updated
+        )
+        return updated
+    except Exception as exc:
+        logger.warning("source=enricher step=extract_risk failed: %s", exc)
+        return 0
+
+
 def trigger_ml_retrain_if_due(engine: Any) -> dict:
     """Trigger ML scorer retrain if enough new results have accumulated."""
     try:
@@ -113,11 +175,12 @@ def auto_summarize(engine: Any, tenant_id: str, limit: int = 5) -> int:
     """Generate LLM summaries for high-score tenders that lack summaries.
 
     Stores result in tender.ai_summary (if column exists).
+    Uses AI router to pick correct LLM (LOCAL vLLM or CLOUD).
     Returns count of summaries generated.
     """
     try:
         import sqlalchemy as sa
-        from services.ai.clients import get_llm_client
+        from services.ai.router import Task, get_client_for_task, system_prompt_for
 
         with engine.connect() as conn:
             # Check if ai_summary column exists
@@ -138,7 +201,8 @@ def auto_summarize(engine: Any, tenant_id: str, limit: int = 5) -> int:
         if not rows:
             return 0
 
-        llm = get_llm_client()
+        llm = get_client_for_task(Task.SUMMARIZE)
+        sys_prompt = system_prompt_for(Task.SUMMARIZE)
         count = 0
         for row in rows:
             try:
@@ -151,7 +215,8 @@ def auto_summarize(engine: Any, tenant_id: str, limit: int = 5) -> int:
                 )
                 summary = llm.generate(
                     prompt,
-                    system="Jesteś ekspertem przetargów budowlanych. Piszesz po polsku, zwięźle.",
+                    system=sys_prompt,
+                    json_mode=True,
                 )
                 with engine.begin() as conn2:
                     conn2.execute(sa.text(
@@ -194,7 +259,7 @@ def run_enrichment(
     Returns:
         Thread if background=True, else None.
     """
-    _all_steps = {"embed_tenders", "embed_swz", "ml_retrain", "summarize"}
+    _all_steps = {"embed_tenders", "embed_swz", "ml_retrain", "summarize", "extract_risk"}
     active_steps = set(steps) if steps else _all_steps
 
     def _run() -> None:
@@ -209,6 +274,9 @@ def run_enrichment(
 
         if "embed_swz" in active_steps:
             results["embed_swz"] = embed_swz_documents(engine, tenant_id)
+
+        if "extract_risk" in active_steps:
+            results["extract_risk"] = extract_risk_after_embed(engine, tenant_id)
 
         if "ml_retrain" in active_steps:
             results["ml_retrain"] = trigger_ml_retrain_if_due(engine)

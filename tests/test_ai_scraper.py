@@ -612,6 +612,9 @@ class TestAIRouter:
     def test_extract_fields_routes_local(self):
         assert route(Task.EXTRACT_FIELDS) == LLMTarget.LOCAL
 
+    def test_extract_przedmiar_routes_local(self):
+        assert route(Task.EXTRACT_PRZEDMIAR) == LLMTarget.LOCAL
+
     def test_ocr_vlm_routes_local(self):
         assert route(Task.OCR_VLM) == LLMTarget.LOCAL
 
@@ -631,6 +634,9 @@ class TestAIRouter:
     def test_explain_verdict_routes_cloud(self):
         assert route(Task.EXPLAIN_VERDICT) == LLMTarget.CLOUD
 
+    def test_decision_routes_cloud(self):
+        assert route(Task.DECISION) == LLMTarget.CLOUD
+
     def test_chat_edit_routes_cloud(self):
         assert route(Task.CHAT_EDIT) == LLMTarget.CLOUD
 
@@ -649,8 +655,9 @@ class TestAIRouter:
     def test_cloud_target_value(self):
         assert LLMTarget.CLOUD == "cloud"
 
-    def test_task_enum_has_ten_members(self):
-        assert len(list(Task)) == 10
+    def test_task_enum_has_twelve_members(self):
+        # 6 LOCAL + 6 CLOUD tasks
+        assert len(list(Task)) == 12
 
     def test_route_returns_llm_target_instance(self):
         for task in Task:
