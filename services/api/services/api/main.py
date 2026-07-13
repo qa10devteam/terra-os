@@ -190,6 +190,16 @@ try:
 except Exception as e:
     logging.getLogger(__name__).warning("events router: %s", e)
 try:
+    from .routers import audit_v2
+    _optional_routers.append(('audit_v2', audit_v2))
+except Exception as e:
+    logging.getLogger(__name__).warning("audit_v2 router: %s", e)
+try:
+    from .routers import metrics
+    _optional_routers.append(('metrics', metrics))
+except Exception as e:
+    logging.getLogger(__name__).warning("metrics router: %s", e)
+try:
     from .routers import chat_v2
     _optional_routers.append(('chat_v2', chat_v2))
 except Exception as e:
@@ -575,6 +585,10 @@ if 'scoring_v2' in _opt_map:
     app.include_router(_opt_map['scoring_v2'].router)
 if 'events' in _opt_map:
     app.include_router(_opt_map['events'].router)
+if 'audit_v2' in _opt_map:
+    app.include_router(_opt_map['audit_v2'].router)
+if 'metrics' in _opt_map:
+    app.include_router(_opt_map['metrics'].router)
 
 # ── v1 compat aliases — frontend używa /api/v1/tenders ──────────────────────
 from fastapi import Request as _Request
