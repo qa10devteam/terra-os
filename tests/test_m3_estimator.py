@@ -316,8 +316,8 @@ async def test_acceptance_a1_end_to_end():
         r1 = await ac.post("/api/v1/ingest/run?offline=true")
         assert r1.status_code in (200, 202)
 
-        # 2. List tenders
-        r2 = await ac.get("/api/v1/tenders", headers=headers)
+        # 2. List tenders (v2 endpoint)
+        r2 = await ac.get("/api/v2/tenders", headers=headers)
         assert r2.status_code == 200
         items = r2.json()["items"]
         assert len(items) >= 1

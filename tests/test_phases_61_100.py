@@ -384,7 +384,7 @@ class TestAppImport:
     def test_app_imports_successfully(self):
         from services.api.services.api.main import app
         assert app is not None
-        assert app.title == "Terra.OS API"
+        assert app.title == "YU-NA API"
 
     def _app_paths(self, app):
         """Collect all route paths recursively (handles FastAPI _IncludedRouter)."""

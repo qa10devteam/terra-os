@@ -52,7 +52,7 @@ def embed_swz_documents(engine: Any, tenant_id: str, limit: int = 20) -> int:
                   AND td.local_path IS NOT NULL
                   AND NOT EXISTS (
                       SELECT 1 FROM doc_chunks dc
-                      WHERE dc.source_id = CAST(td.id AS text)
+                      WHERE dc.source_id = td.id
                   )
                 ORDER BY td.created_at DESC
                 LIMIT :lim
@@ -118,7 +118,7 @@ def extract_risk_after_embed(engine: Any, tenant_id: str, limit: int = 20) -> in
                   AND (td.risk_level IS NULL OR td.risk_level = '')
                   AND EXISTS (
                       SELECT 1 FROM doc_chunks dc
-                      WHERE dc.source_id = CAST(td.id AS text)
+                      WHERE dc.source_id = td.id
                   )
                 ORDER BY td.created_at DESC
                 LIMIT :lim

@@ -216,3 +216,204 @@ def get_forecasts(
         }
         for r in rows
     ]
+
+
+# ─── ICB per-item forecast API (used by tests + API endpoints) ────────────────
+
+def _quarter_to_index(kwartalnr: int, kwartalrok: int) -> int:
+    """Convert (quarter, year) → monotonic integer index.
+
+    Example: (1, 2024) → 2024*4 + 0 = 8096
+    """
+    return kwartalrok * 4 + (kwartalnr - 1)
+
+
+def _index_to_quarter(idx: int) -> tuple[int, int]:
+    """Reverse of _quarter_to_index: index → (kwartalnr, kwartalrok)."""
+    y, q0 = divmod(idx, 4)
+    return q0 + 1, y
+
+
+def forecast_icb_price(
+    icb_id: int,
+    quarters_ahead: int = 4,
+) -> dict | None:
+    """Forecast price for a single ICB item by id_ceny.
+
+    Queries icb_ceny_srednie for historical prices, applies Holt-Winters.
+    Returns dict with keys: icb_id, symbol, typ_rms, trend_pct, predictions[].
+    Returns None if insufficient data (< 3 data points).
+    """
+    engine = get_engine()
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(sa.text("""
+                SELECT symbol, typ_rms, kwartalnr, kwartalrok, cena_netto
+                FROM icb_ceny_srednie
+                WHERE id_ceny = :icb_id AND cena_netto > 0
+                ORDER BY kwartalrok, kwartalnr
+            """), {"icb_id": icb_id}).fetchall()
+    except Exception as e:
+        logger.debug("source=intelligence func=forecast_icb_price icb_id=%s: %s", icb_id, e)
+        return None
+
+    if not rows or len(rows) < 3:
+        return {"icb_id": icb_id, "predictions": [], "trend_pct": 0.0}
+
+    values = [float(r[4]) for r in rows]
+    symbol = rows[0][0]
+    typ_rms = rows[0][1]
+    last_q = rows[-1][2]
+    last_y = rows[-1][3]
+
+    forecasts = _holt_winters_forecast(values, horizon=quarters_ahead)
+    intervals = _prediction_interval(values, forecasts)
+
+    # Trend percent: (last_forecast - last_known) / last_known * 100
+    trend_pct = 0.0
+    if values[-1] > 0:
+        trend_pct = round((forecasts[-1] - values[-1]) / values[-1] * 100, 2)
+
+    predictions = []
+    q, y = last_q, last_y
+    for i, (fc, (lb, ub)) in enumerate(zip(forecasts, intervals)):
+        q += 1
+        if q > 4:
+            q = 1
+            y += 1
+        predictions.append({
+            "quarter": q,
+            "year": y,
+            "price": round(fc, 4),
+            "lower": round(lb, 4),
+            "upper": round(ub, 4),
+        })
+
+    return {
+        "icb_id": icb_id,
+        "symbol": symbol,
+        "typ_rms": typ_rms,
+        "trend_pct": trend_pct,
+        "predictions": predictions,
+    }
+
+
+def get_cached_forecast(
+    icb_id: int,
+    year: int,
+    quarter: int,
+) -> dict | None:
+    """Return a single cached forecast row from icb_forecast_icb table.
+
+    Returns None if not found.
+    """
+    engine = get_engine()
+    try:
+        with engine.connect() as conn:
+            row = conn.execute(sa.text("""
+                SELECT icb_id, symbol, typ_rms, forecast_year, forecast_quarter,
+                       predicted_price, price_lower, price_upper, trend_pct, created_at
+                FROM icb_forecast_icb
+                WHERE icb_id = :icb_id AND forecast_year = :year AND forecast_quarter = :quarter
+                LIMIT 1
+            """), {"icb_id": icb_id, "year": year, "quarter": quarter}).fetchone()
+    except Exception as e:
+        logger.debug("source=intelligence func=get_cached_forecast icb_id=%s: %s", icb_id, e)
+        return None
+
+    if row is None:
+        return None
+
+    return {
+        "icb_id": row[0],
+        "symbol": row[1],
+        "typ_rms": row[2],
+        "forecast_year": row[3],
+        "forecast_quarter": row[4],
+        "predicted_price": float(row[5]) if row[5] is not None else None,
+        "price_lower": float(row[6]) if row[6] is not None else None,
+        "price_upper": float(row[7]) if row[7] is not None else None,
+        "trend_pct": float(row[8]) if row[8] is not None else None,
+        "created_at": str(row[9]) if row[9] else None,
+    }
+
+
+def cache_forecasts(
+    icb_ids: list[int],
+    quarters_ahead: int = 4,
+) -> int:
+    """Compute and persist forecasts for given ICB ids to icb_forecast_icb.
+
+    Returns count of successfully cached forecasts.
+    """
+    if not icb_ids:
+        return 0
+
+    engine = get_engine()
+    count = 0
+    for icb_id in icb_ids:
+        try:
+            result = forecast_icb_price(icb_id, quarters_ahead=quarters_ahead)
+            if result is None:
+                continue
+
+            with engine.begin() as conn:
+                # Upsert each prediction row
+                conn.execute(sa.text("""
+                    DELETE FROM icb_forecast_icb
+                    WHERE icb_id = :icb_id
+                """), {"icb_id": icb_id})
+
+                for pred in result["predictions"]:
+                    conn.execute(sa.text("""
+                        INSERT INTO icb_forecast_icb
+                            (icb_id, symbol, typ_rms, forecast_year, forecast_quarter,
+                             predicted_price, price_lower, price_upper, trend_pct, created_at)
+                        VALUES
+                            (:icb_id, :symbol, :typ_rms, :fy, :fq,
+                             :price, :lower, :upper, :trend, NOW())
+                    """), {
+                        "icb_id": icb_id,
+                        "symbol": result["symbol"],
+                        "typ_rms": result["typ_rms"],
+                        "fy": pred["year"],
+                        "fq": pred["quarter"],
+                        "price": pred["price"],
+                        "lower": pred["lower"],
+                        "upper": pred["upper"],
+                        "trend": result["trend_pct"],
+                    })
+            count += 1
+        except Exception as e:
+            logger.debug("source=intelligence func=cache_forecasts icb_id=%s: %s", icb_id, e)
+
+    return count
+
+
+def run_top_materials_forecast(limit: int = 50, quarters_ahead: int = 4) -> dict:
+    """Run forecasts for the most-referenced ICB items.
+
+    Returns summary dict with count of successful/failed forecasts.
+    """
+    engine = get_engine()
+    try:
+        with engine.connect() as conn:
+            rows = conn.execute(sa.text("""
+                SELECT DISTINCT icb_id_m AS icb_id
+                FROM kosztorys_pozycja
+                WHERE icb_id_m IS NOT NULL
+                ORDER BY icb_id_m
+                LIMIT :lim
+            """), {"lim": limit}).fetchall()
+        icb_ids = [r[0] for r in rows]
+    except Exception as e:
+        logger.debug("source=intelligence func=run_top_materials_forecast: %s", e)
+        return {"error": str(e), "cached": 0}
+
+    cached = cache_forecasts(icb_ids, quarters_ahead=quarters_ahead)
+    return {
+        "icb_ids": icb_ids,
+        "cached": cached,
+        "requested": len(icb_ids),
+    }
+
