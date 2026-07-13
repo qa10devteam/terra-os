@@ -160,6 +160,26 @@ try:
 except Exception as e:
     logging.getLogger(__name__).warning("scoring router: %s", e)
 try:
+    from .routers import olap
+    _optional_routers.append(('olap', olap))
+except Exception as e:
+    logging.getLogger(__name__).warning("olap router: %s", e)
+try:
+    from .routers import forecasting
+    _optional_routers.append(('forecasting', forecasting))
+except Exception as e:
+    logging.getLogger(__name__).warning("forecasting router: %s", e)
+try:
+    from .routers import proactive
+    _optional_routers.append(('proactive', proactive))
+except Exception as e:
+    logging.getLogger(__name__).warning("proactive router: %s", e)
+try:
+    from .routers import multimodal
+    _optional_routers.append(('multimodal', multimodal))
+except Exception as e:
+    logging.getLogger(__name__).warning("multimodal router: %s", e)
+try:
     from .routers import chat_v2
     _optional_routers.append(('chat_v2', chat_v2))
 except Exception as e:
@@ -533,6 +553,14 @@ if 'icb_advanced' in _opt_map:
     app.include_router(_opt_map['icb_advanced'].router)
 if 'scoring' in _opt_map:
     app.include_router(_opt_map['scoring'].router)
+if 'olap' in _opt_map:
+    app.include_router(_opt_map['olap'].router)
+if 'forecasting' in _opt_map:
+    app.include_router(_opt_map['forecasting'].router)
+if 'proactive' in _opt_map:
+    app.include_router(_opt_map['proactive'].router)
+if 'multimodal' in _opt_map:
+    app.include_router(_opt_map['multimodal'].router)
 
 # ── v1 compat aliases — frontend używa /api/v1/tenders ──────────────────────
 from fastapi import Request as _Request
