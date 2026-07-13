@@ -210,15 +210,19 @@ def run_ingest(
                             info: dict = {"name": ""}
                             try:
                                 import httpx
-                                r = httpx.get(
-                                    f"https://api-krs.ms.gov.pl/api/krs/OdpisAktualny/podmiot/nip/{nip_val}",
-                                    headers={"Accept": "application/json"}, timeout=10,
-                                )
+                                with httpx.Client(
+                                    timeout=httpx.Timeout(connect=5.0, read=15.0, write=5.0, pool=3.0),
+                                    follow_redirects=True,
+                                    headers={"Accept": "application/json", "User-Agent": "TerraOS/1.0"},
+                                ) as krs_client:
+                                    r = krs_client.get(
+                                        f"https://api-krs.ms.gov.pl/api/krs/OdpisAktualny/podmiot/nip/{nip_val}",
+                                    )
                                 if r.status_code == 200:
                                     d = r.json()
                                     info = {"name": d.get("odpis", {}).get("dane", {}).get("dzialy", {}).get("dzial1", {}).get("danePodmiotu", {}).get("nazwa", "")}
-                            except Exception:
-                                pass
+                            except Exception as e:
+                                logger.debug("source=pipeline krs_enrich nip=%s: %s", nip_val, e)
                             with eng2.connect() as c2:
                                 c2.execute(sa.text("""
                                     INSERT INTO buyer_crm (id, tenant_id, buyer_nip, crm_stage, notes, last_verified_at)
@@ -229,10 +233,10 @@ def run_ingest(
                                 """), {"tid": tid, "nip": nip_val,
                                        "note": info.get("name", "")})
                                 c2.commit()
-                        except Exception:
-                            pass
-                except Exception:
-                    pass
+                        except Exception as e:
+                            logger.debug("source=pipeline krs_enrich nip=%s: %s", nip_val, e)
+                except Exception as e:
+                    logger.warning("source=pipeline krs_enrich_batch failed: %s", e)
             import threading
             nip_list = [r[0] for r in rows_nip]
             threading.Thread(target=_krs_enrich_batch, args=(nip_list, str(tenant_id)), daemon=True).start()

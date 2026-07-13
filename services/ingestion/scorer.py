@@ -50,7 +50,7 @@ def invalidate_scorer_cache(tenant_id: str | None = None) -> None:
                 del _cache[k]
         else:
             _cache.clear()
-    logger.info("Scorer cache invalidated (tenant=%s)", tenant_id or "all")
+    logger.info("source=scorer cache invalidated (tenant=%s)", tenant_id or "all")
 
 # ─── ScoringWeights ────────────────────────────────────────────────────────────
 
@@ -153,7 +153,7 @@ def load_scoring_config(tenant_id: str) -> ScoringWeights:
             _cache_set(cache_key, result)
             return result
     except Exception as e:
-        logger.warning(f"load_scoring_config failed: {e}")
+        logger.warning(f"source=scorer load_scoring_config failed: {e}")
     _cache_set(cache_key, _DEFAULT_WEIGHTS)
     return _DEFAULT_WEIGHTS
 
@@ -208,7 +208,7 @@ def load_cpv_win_rates(tenant_id: str | None = None) -> dict[str, float]:
             win_rates[prefix] = round(wins / max(total, 1), 4)
 
     except Exception as e:
-        logger.warning(f"load_cpv_win_rates failed: {e}")
+        logger.warning(f"source=scorer load_cpv_win_rates failed: {e}")
 
     _cache_set(cache_key, win_rates)
     return win_rates
@@ -363,8 +363,8 @@ def score_tender(
                 ml_score = ml.score_tender(tender_feats)
                 # blend: 60% rule-based + 40% ML
                 score = round(0.6 * score + 0.4 * ml_score, 4)
-    except Exception:
-        pass  # ML scorer optional — fallback to rule-based
+    except Exception as e:
+        logger.debug("source=scorer step=ml_blend: %s", e)  # ML scorer optional — fallback to rule-based
 
     # Build human-readable reason string
     reason_parts = []
@@ -439,7 +439,7 @@ def rescore_tenant(tenant_id: str, batch_size: int = 500) -> dict:
         avg_after /= processed
 
     logger.info(
-        f"Rescore tenant={tenant_id}: {processed} tenders, "
+        f"source=scorer Rescore tenant={tenant_id}: {processed} tenders, "
         f"avg {avg_before:.3f} → {avg_after:.3f}"
     )
     return {

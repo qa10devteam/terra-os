@@ -117,7 +117,8 @@ def parse_value(raw: Any) -> Decimal | None:
         return None
     try:
         return Decimal(str(raw)).quantize(Decimal("0.01"))
-    except Exception:
+    except Exception as e:
+        logger.debug("source=normalize func=parse_value input=%r: %s", raw, e)
         return None
 
 
@@ -326,7 +327,8 @@ def _ted_value(notice: dict, *keys: str) -> Decimal | None:
             continue
         try:
             return Decimal(str(raw))
-        except Exception:
+        except Exception as e:
+            logger.debug("source=normalize func=_ted_value input=%r: %s", raw, e)
             continue
     return None
 
@@ -348,8 +350,8 @@ def _ted_deadline(notice: dict) -> datetime | None:
         m = re_.match(r"(\d{4}-\d{2}-\d{2})", str(raw))
         if m:
             return datetime.fromisoformat(m.group(1) + "T23:59:59").replace(tzinfo=timezone.utc)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("source=normalize func=_ted_deadline input=%r: %s", raw, e)
     return None
 
 
@@ -407,7 +409,8 @@ def normalize_ted_notice(notice: dict[str, Any]) -> TenderIn | None:
             int(pub_date_str[:4]), int(pub_date_str[4:6]), int(pub_date_str[6:8]),
             tzinfo=timezone.utc,
         )
-    except Exception:
+    except Exception as e:
+        logger.debug("source=normalize func=normalize_ted_notice input=%r: %s", pub_date_raw, e)
         published_at = datetime.now(tz=timezone.utc)
 
     url = f"https://ted.europa.eu/pl/notice/{pub_num}/html"
