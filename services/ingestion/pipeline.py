@@ -165,6 +165,13 @@ def run_ingest(
     # Step 4+5: Score + Upsert
     _progress("scoring", 75)
     # tenant_id and profile already loaded above (Step 3)
+    # Lazy import of ML scorer (optional, non-fatal)
+    try:
+        from services.ingestion.scorer_ml import get_ml_scorer as _get_ml_scorer
+        _ml_scorer_inst = _get_ml_scorer()
+    except Exception:
+        _ml_scorer_inst = None
+
     for tender in passed:
         try:
             score_result = score_tender(tender, profile)
@@ -177,13 +184,53 @@ def run_ingest(
             )
             if created:
                 result.created += 1
+                # Notify ML scorer about each new tender inserted
+                if _ml_scorer_inst is not None:
+                    try:
+                        _ml_scorer_inst.on_new_result()
+                    except Exception:
+                        pass
             else:
                 result.updated += 1
         except Exception as exc:
             logger.warning("Upsert error for %s: %s", tender.external_id, exc)
             result.errors += 1
 
+    # Trigger ML retrain in background if enough new tenders were created this run
+    if result.created >= 7 and _ml_scorer_inst is not None:
+        def _ml_retrain_bg(eng: object) -> None:
+            try:
+                logger.info("source=pipeline ml_retrain triggered (created=%d)", result.created)
+                retrain_result = _ml_scorer_inst.retrain_from_db(eng)
+                logger.info("source=pipeline ml_retrain done: %s", retrain_result)
+            except Exception as exc:
+                logger.warning("source=pipeline ml_retrain error: %s", exc)
+
+        import threading as _threading
+        _threading.Thread(target=_ml_retrain_bg, args=(engine,), daemon=True).start()
+
     logger.info("Ingest done: %r", result)
+
+    # Step 5b: Auto-embed newly created tenders (background, non-blocking)
+    if result.created > 0:
+        try:
+            import threading
+            from services.ai.embedder import embed_tenders_batch as _embed_tenders_batch
+
+            def _run_embed(eng, tid: str) -> None:
+                try:
+                    n = _embed_tenders_batch(eng, tid)
+                    logger.info("Step 5b: embedded %d tenders for tenant=%s", n, tid)
+                except Exception as _e:
+                    logger.info("Step 5b: embed_tenders_batch skipped: %s", _e)
+
+            threading.Thread(
+                target=_run_embed,
+                args=(engine, str(tenant_id)),
+                daemon=True,
+            ).start()
+        except Exception as _exc5b:
+            logger.info("Step 5b: auto-embed init skipped: %s", _exc5b)
 
     # S58: KRS auto-enrich for new tenders with buyer_nip not yet in buyer_crm
     try:
@@ -319,6 +366,30 @@ def run_ingest(
                             )
                             if fr.documents:
                                 fetched_ok += 1
+                                # Step 8b: embed document chunks for RAG
+                                try:
+                                    from services.ai.rag import embed_document_chunks as _embed_doc_chunks
+                                    for doc in fr.documents:
+                                        try:
+                                            _doc_text = ""
+                                            if doc.local_path:
+                                                try:
+                                                    with open(doc.local_path, "r", errors="ignore") as _fh:
+                                                        _doc_text = _fh.read(100_000)
+                                                except Exception:
+                                                    pass
+                                            if _doc_text:
+                                                _embed_doc_chunks(
+                                                    engine,
+                                                    str(row[0]),
+                                                    _doc_text,
+                                                    source_id=doc.object_id,
+                                                    source_type="bzp_document",
+                                                )
+                                        except Exception as _e_doc:
+                                            logger.debug("Step 8b: embed doc chunk skip %s: %s", doc.filename, _e_doc)
+                                except Exception as _e_rag:
+                                    logger.debug("Step 8b: rag embed skipped for tender %s: %s", row[0], _e_rag)
                         except Exception as e:
                             logger.debug("Auto-fetch SWZ skip %s: %s", row[0], e)
                 logger.info("Auto-fetch SWZ done: %d/%d OK", fetched_ok, len(rows))
@@ -421,6 +492,15 @@ def run_ingest(
         )
     except Exception as exc:
         logger.debug("n8n trigger_webhook non-critical: %s", exc)
+
+    # AI Enrichment: embed vectors + RAG chunks + ML retrain + auto-summaries
+    # Runs in background daemon thread — non-blocking, best-effort
+    try:
+        from services.ai.enricher import run_enrichment
+        run_enrichment(engine, str(tenant_id), background=True)
+        logger.info("source=pipeline ai_enrichment scheduled for tenant=%s", tenant_id)
+    except Exception as exc:
+        logger.debug("source=pipeline ai_enrichment skip: %s", exc)
 
     # S23: final done step
     _progress("done", 100)
