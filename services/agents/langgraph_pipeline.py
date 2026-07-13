@@ -73,8 +73,13 @@ def _run_exec(sql: str, params: dict | None = None) -> None:
 # ---------------------------------------------------------------------------
 
 def _get_llm():
-    from services.ai.vllm_client import VLLMClient
-    return VLLMClient(base_url="http://localhost:8001/v1", model="axon", timeout=60.0)
+    """Get LLM client — VLLMClient in production, StubClient in TERRA_OFFLINE mode."""
+    try:
+        from services.ai.clients import get_llm_client
+        return get_llm_client()
+    except Exception:
+        from services.ai.vllm_client import VLLMClient
+        return VLLMClient(base_url="http://localhost:8001/v1", model="axon", timeout=60.0)
 
 
 def _llm_generate(prompt: str, system: str = "", json_mode: bool = False) -> str:
@@ -137,7 +142,7 @@ def node_analyze_swz(state: AgentState) -> AgentState:
     documents = state.get("documents", [])
     tender_id = state.get("tender_id", "")
 
-    # Build context for LLM
+    # Build context for LLM — prefer RAG chunks if available, fallback to raw docs
     ctx_parts = [
         f"Przetarg: {tender_data.get('title', '—')}",
         f"Zamawiający: {tender_data.get('buyer', '—')}",
@@ -145,20 +150,43 @@ def node_analyze_swz(state: AgentState) -> AgentState:
         f"CPV: {tender_data.get('cpv', [])}",
         f"Termin: {tender_data.get('deadline_at', '—')}",
     ]
-    if documents:
-        for doc in documents[:3]:
-            txt = (doc.get("content_text") or "")[:1500]
-            if txt:
-                ctx_parts.append(f"\n--- Dokument: {doc.get('file_name', '')} ---\n{txt}")
-    else:
-        raw = tender_data.get("raw") or {}
-        if isinstance(raw, str):
-            try:
-                raw = json.loads(raw)
-            except Exception:
-                raw = {}
-        raw_txt = json.dumps(raw, ensure_ascii=False)[:2000]
-        ctx_parts.append(f"\nRaw data: {raw_txt}")
+
+    # Try RAG-based context retrieval first (pgvector doc_chunks)
+    rag_used = False
+    if tender_id:
+        try:
+            from services.ai.rag import rag_query
+            engine = _get_engine()
+            rag_chunks = rag_query(
+                engine,
+                query=f"{tender_data.get('title', '')} wymagania kluczowe warunki",
+                tender_id=tender_id,
+                top_k=6,
+            )
+            if rag_chunks:
+                rag_text = "\n---\n".join(c["text"] for c in rag_chunks)
+                ctx_parts.append(f"\n--- Fragmenty SWZ (RAG, top-{len(rag_chunks)}) ---\n{rag_text}")
+                rag_used = True
+                logger.info("source=langgraph node=analyze_swz rag_chunks=%d", len(rag_chunks))
+        except Exception as rag_exc:
+            logger.debug("source=langgraph node=analyze_swz rag skip: %s", rag_exc)
+
+    # Fallback: raw document text
+    if not rag_used:
+        if documents:
+            for doc in documents[:3]:
+                txt = (doc.get("content_text") or "")[:1500]
+                if txt:
+                    ctx_parts.append(f"\n--- Dokument: {doc.get('file_name', '')} ---\n{txt}")
+        else:
+            raw = tender_data.get("raw") or {}
+            if isinstance(raw, str):
+                try:
+                    raw = json.loads(raw)
+                except Exception:
+                    raw = {}
+            raw_txt = json.dumps(raw, ensure_ascii=False)[:2000]
+            ctx_parts.append(f"\nRaw data: {raw_txt}")
 
     context_str = "\n".join(ctx_parts)
 
