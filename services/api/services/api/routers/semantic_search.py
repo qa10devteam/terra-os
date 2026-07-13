@@ -55,10 +55,10 @@ def semantic_search(body: SemanticSearchRequest) -> list[dict[str, Any]]:
         rows = conn.execute(
             sa.text("""
                 SELECT id, title, buyer, cpv, value_pln, match_score,
-                       1 - (embedding <=> :emb::vector) as similarity
+                       1 - (embedding <=> CAST(:emb AS vector)) as similarity
                 FROM tender
                 WHERE tenant_id = :tid AND embedding IS NOT NULL
-                ORDER BY embedding <=> :emb::vector
+                ORDER BY embedding <=> CAST(:emb AS vector)
                 LIMIT :lim
             """),
             {"emb": emb_str, "tid": body.tenant_id, "lim": body.limit},

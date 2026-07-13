@@ -184,3 +184,48 @@ def get_audit_trail(
     with engine.connect() as conn:
         rows = conn.execute(sa.text(q), params).fetchall()
     return [dict(r._mapping) for r in rows]
+
+
+# ---------------------------------------------------------------------------
+# /recent — last N audit entries with user email join
+# ---------------------------------------------------------------------------
+
+@router.get("/recent")
+def get_recent_audit(
+    user: AuthUser,
+    limit: int = Query(20, ge=1, le=500, description="Max entries to return"),
+) -> list[dict]:
+    """Return the most recent audit log entries for the current tenant, with user email."""
+    engine = get_engine()
+    tenant_id = str(user.org_id)
+    with engine.connect() as conn:
+        rows = conn.execute(sa.text("""
+            SELECT
+                a.id,
+                a.action,
+                a.entity_type,
+                a.entity_id,
+                a.details,
+                a.created_at,
+                u.email AS user_email
+            FROM audit_log a
+            LEFT JOIN users u ON u.id = a.user_id
+            WHERE a.tenant_id = :tid
+            ORDER BY a.created_at DESC
+            LIMIT :limit
+        """), {"tid": tenant_id, "limit": limit}).fetchall()
+
+    return [
+        {
+            "id": str(r.id),
+            "action": r.action,
+            "entity_type": r.entity_type,
+            "entity_id": str(r.entity_id) if r.entity_id else None,
+            "details": r.details if isinstance(r.details, dict) else (
+                json.loads(r.details) if r.details else {}
+            ),
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+            "user_email": r.user_email,
+        }
+        for r in rows
+    ]

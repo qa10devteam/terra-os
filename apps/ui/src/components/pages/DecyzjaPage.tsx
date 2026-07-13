@@ -1,358 +1,869 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '@/store/useStore';
+import { useAuthFetch } from '@/lib/api-v2';
+import { showToast } from '@/components/Toast';
+import { GlassCard } from '@/components/ui/GlassCard';
+import type { Tender } from '@/types';
 import {
-  Scale, CheckCircle, XCircle, AlertCircle, ArrowRight,
-  TrendingUp, TrendingDown, ThumbsUp, ThumbsDown, Loader2,
+  Scale, CheckCircle, XCircle, AlertCircle, Loader2,
+  Clock, Building2, Hash, Brain, PlayCircle,
+  ThumbsUp, ThumbsDown, FileText, History, RefreshCw,
 } from 'lucide-react';
+
+// ── Local API types ────────────────────────────────────────────────────────────
+
+interface ApiTender {
+  id: string;
+  title: string;
+  buyer: string | null;
+  cpv: string[] | null;
+  value_pln: number | string | null;
+  match_score: number | null;
+  deadline_at: string | null;
+  pipeline_status: string;
+}
+
+interface TenderAnalysis {
+  id: string;
+  tender_id: string;
+  summary: string | null;
+  go_nogo: 'GO' | 'NO-GO' | null;
+  decision_brief: string | null;
+  created_at: string;
+}
 
 interface EngineResult {
   feasible: boolean;
   violations: { severity: string; message: string }[];
-  risk: {
+  risk?: {
     margin_p10: number;
     margin_p50: number;
     margin_p90: number;
-    drivers: { factor: string; ST: number }[];
   } | null;
 }
 
 interface CompareResult {
-  doc_total: string;
-  owner_total: string;
-  delta_pln: string;
-  margin_headroom_pct: string;
+  doc_total: string | number;
+  owner_total: string | number;
+  delta_pln: string | number;
+  margin_headroom_pct: string | number;
 }
 
-function fmtPLN(val: string | number | null | undefined) {
-  if (val === null || val === undefined) return '—';
-  const n = typeof val === 'string' ? parseFloat(val) : val;
-  if (isNaN(n)) return '—';
-  return n.toLocaleString('pl-PL', { style: 'currency', currency: 'PLN', maximumFractionDigits: 0 });
-}
+// ── Progress steps ─────────────────────────────────────────────────────────────
 
-// Status → polska etykieta
-const STATUS_LABELS: Record<string, string> = {
-  decided_go: 'GO ✓',
-  decided_nogo: 'NO-GO ✗',
+type ProgressStep =
+  | 'fetching'
+  | 'analyzing'
+  | 'scoring'
+  | 'icb_estimate'
+  | 'ahp_eval'
+  | 'generating_brief'
+  | 'done';
+
+const PROGRESS_STEPS: ProgressStep[] = [
+  'fetching',
+  'analyzing',
+  'scoring',
+  'icb_estimate',
+  'ahp_eval',
+  'generating_brief',
+  'done',
+];
+
+const STEP_LABELS: Record<ProgressStep, string> = {
+  fetching:          'Pobieranie danych',
+  analyzing:         'Analiza dokumentów',
+  scoring:           'Obliczanie Score',
+  icb_estimate:      'Szacowanie ICB',
+  ahp_eval:          'Ewaluacja AHP',
+  generating_brief:  'Generowanie briefu',
+  done:              'Ukończono',
 };
 
-type ToastState = { type: 'success' | 'error'; message: string } | null;
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function fmtPLN(v: number | string | null | undefined): string {
+  if (v === null || v === undefined) return '—';
+  const n = typeof v === 'string' ? parseFloat(v) : v;
+  if (isNaN(n)) return '—';
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + ' M zł';
+  if (n >= 1_000) return (n / 1_000).toFixed(0) + ' tys. zł';
+  return n.toFixed(0) + ' zł';
+}
+
+function daysUntil(deadline: string | null): number | null {
+  if (!deadline) return null;
+  return Math.ceil((new Date(deadline).getTime() - Date.now()) / 86_400_000);
+}
+
+function renderMarkdown(md: string): string {
+  if (!md) return '';
+  return md
+    .replace(/^### (.+)$/gm, '<h3 style="font-size:0.875rem;font-weight:700;color:#f1f5f9;margin-top:1rem;margin-bottom:0.25rem;">$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2 style="font-size:1rem;font-weight:700;color:#f1f5f9;margin-top:1.25rem;margin-bottom:0.5rem;">$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1 style="font-size:1.125rem;font-weight:700;color:#f1f5f9;margin-top:1.5rem;margin-bottom:0.5rem;">$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong style="color:#e2e8f0;font-weight:600;">$1</strong>')
+    .replace(/^- (.+)$/gm, '<li style="color:#94a3b8;font-size:0.8125rem;margin-left:1rem;list-style-type:disc;">$1</li>')
+    .replace(/(<li[^>]*>.*<\/li>\n?)+/g, '<ul style="margin:0.5rem 0;">$&</ul>')
+    .replace(/\n\n/g, '<br/>')
+    .replace(/^(?!<[hul])(.+)$/gm, '<p style="color:#94a3b8;font-size:0.8125rem;line-height:1.6;margin:0.25rem 0;">$1</p>');
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function DeadlineBadge({ deadline }: { deadline: string | null }) {
+  const days = daysUntil(deadline);
+  if (days === null) return <span className="text-earth-600 text-xs">—</span>;
+  const cls =
+    days < 0 ? 'text-red-400 bg-red-500/15 border-red-500/30' :
+    days <= 3 ? 'text-red-400 bg-red-500/15 border-red-500/30' :
+    days <= 7 ? 'text-orange-400 bg-orange-500/15 border-orange-500/30' :
+    days <= 14 ? 'text-yellow-400 bg-yellow-500/15 border-yellow-500/30' :
+    'text-earth-400 bg-earth-800/60 border-earth-700/40';
+  return (
+    <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${cls}`}>
+      {days < 0 ? 'po terminie' : days === 0 ? 'dziś' : `${days}d`}
+    </span>
+  );
+}
+
+function ScoreBadge({ score }: { score: number | null }) {
+  if (score === null) return <span className="text-earth-600 text-xs">—</span>;
+  const pct = Math.round(score * 100);
+  const cls =
+    score >= 0.75 ? 'text-emerald-400 bg-emerald-500/15 border-emerald-500/30' :
+    score >= 0.5  ? 'text-yellow-400 bg-yellow-500/15 border-yellow-500/30' :
+    'text-red-400 bg-red-500/15 border-red-500/30';
+  return (
+    <span className={`text-xs px-2 py-0.5 rounded-full font-bold border ${cls}`}>
+      {pct}%
+    </span>
+  );
+}
+
+function QueueCard({
+  t,
+  isSelected,
+  onClick,
+}: {
+  t: ApiTender;
+  isSelected: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -6 }}
+      animate={{ opacity: 1, x: 0 }}
+      onClick={onClick}
+      className={`p-3 rounded-xl border cursor-pointer transition-all duration-200 ${
+        isSelected
+          ? 'bg-blue-500/10 border-blue-500/40 shadow-md shadow-blue-500/10'
+          : 'bg-earth-900/60 border-earth-800/60 hover:border-earth-700 hover:bg-earth-900/80'
+      }`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <p className={`text-xs font-medium line-clamp-2 leading-snug flex-1 ${isSelected ? 'text-earth-100' : 'text-earth-200'}`}>
+          {t.title}
+        </p>
+        <ScoreBadge score={t.match_score} />
+      </div>
+
+      {t.buyer && (
+        <p className="text-earth-500 text-xs mt-1.5 truncate flex items-center gap-1">
+          <Building2 className="w-2.5 h-2.5 shrink-0 text-earth-600" />
+          {t.buyer}
+        </p>
+      )}
+
+      {t.cpv && t.cpv.length > 0 && (
+        <p className="text-earth-600 text-xs mt-0.5 truncate flex items-center gap-1">
+          <Hash className="w-2.5 h-2.5 shrink-0" />
+          {t.cpv[0]}
+        </p>
+      )}
+
+      <div className="flex items-center justify-between mt-2">
+        <span className="text-earth-400 text-xs font-mono">{fmtPLN(t.value_pln)}</span>
+        <DeadlineBadge deadline={t.deadline_at} />
+      </div>
+    </motion.div>
+  );
+}
+
+// ── Main Component ─────────────────────────────────────────────────────────────
 
 export function DecyzjaPage() {
-  const { selectedTender, setCurrentModule, accessToken } = useStore();
-  const tender = selectedTender as any;
+  const { selectedTender, setSelectedTender, accessToken } = useStore();
+  const authFetch = useAuthFetch();
+  const tender = selectedTender as unknown as ApiTender | null;
 
+  // Section A: Queue
+  const [queue, setQueue] = useState<ApiTender[]>([]);
+  const [queueLoading, setQueueLoading] = useState(true);
+
+  // Section B: Analysis data
+  const [analysis, setAnalysis] = useState<TenderAnalysis | null>(null);
   const [engine, setEngine] = useState<EngineResult | null>(null);
   const [compare, setCompare] = useState<CompareResult | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [actionStatus, setActionStatus] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [toast, setToast] = useState<ToastState>(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
 
+  // Section C: AI runner
+  const [running, setRunning] = useState(false);
+  const [currentStep, setCurrentStep] = useState<ProgressStep | null>(null);
+  const [completedSteps, setCompletedSteps] = useState<Set<ProgressStep>>(new Set());
+  const [brief, setBrief] = useState<string | null>(null);
+  const [goNogo, setGoNogo] = useState<'GO' | 'NO-GO' | null>(null);
+  const sseCleanup = useRef<(() => void) | null>(null);
+
+  // Section D: Decision + history
+  const [decisionStatus, setDecisionStatus] = useState<string | null>(null);
+  const [historyGo, setHistoryGo] = useState<ApiTender[]>([]);
+  const [historyNogo, setHistoryNogo] = useState<ApiTender[]>([]);
+
+  // ── Fetch queue ────────────────────────────────────────────────────────────
+  const fetchQueue = useCallback(async () => {
+    setQueueLoading(true);
+    try {
+      const data = await authFetch('/api/v2/tenders?pipeline_status=ANALIZOWANY&limit=20');
+      const items: ApiTender[] = data?.items ?? data ?? [];
+      setQueue(items.filter((t) => (t.match_score ?? 0) > 0.5));
+    } catch {
+      // silently ignore
+    } finally {
+      setQueueLoading(false);
+    }
+  }, [authFetch]);
+
+  useEffect(() => { fetchQueue(); }, [fetchQueue]);
+
+  // ── Fetch decision history ─────────────────────────────────────────────────
+  const fetchHistory = useCallback(async () => {
+    try {
+      const [go, nogo] = await Promise.all([
+        authFetch('/api/v1/tenders?pipeline_status=decided_go&limit=5').catch(() => null),
+        authFetch('/api/v1/tenders?pipeline_status=decided_nogo&limit=5').catch(() => null),
+      ]);
+      setHistoryGo((go?.items ?? go ?? []).slice(0, 5));
+      setHistoryNogo((nogo?.items ?? nogo ?? []).slice(0, 5));
+    } catch { /* ignore */ }
+  }, [authFetch]);
+
+  useEffect(() => { fetchHistory(); }, [fetchHistory]);
+
+  // ── Load analysis when tender changes ─────────────────────────────────────
   useEffect(() => {
-    if (!tender?.id || !accessToken) return;
-    setLoading(true);
-    setError(null);
-    const h = { Authorization: 'Bearer ' + accessToken };
-    Promise.all([
-      fetch(`/api/v1/tenders/${tender.id}/engine`, { headers: h }).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch(`/api/v1/tenders/${tender.id}/estimate/compare`, { headers: h }).then(r => r.ok ? r.json() : null).catch(() => null),
-    ]).then(([eng, cmp]) => {
-      setEngine(eng);
-      setCompare(cmp);
-      setLoading(false);
-    });
-  }, [tender?.id, accessToken]);
-
-  // Toast auto-dismiss
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 4000);
-    return () => clearTimeout(t);
-  }, [toast]);
-
-  const takeAction = (status: 'decided_go' | 'decided_nogo') => {
     if (!tender?.id) return;
-    setActionStatus('loading');
-    fetch(`/api/v1/tenders/${tender.id}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(accessToken ? { Authorization: 'Bearer ' + accessToken } : {}),
-      },
-      body: JSON.stringify({ status }),
-    })
-      .then(r => { if (!r.ok) throw new Error(`Błąd ${r.status}`); return r.json(); })
-      .then(() => {
-        setActionStatus(status);
-        const statusLabel = STATUS_LABELS[status] ?? status;
-        setToast({
-          type: 'success',
-          message: `Decyzja zapisana — przetarg przesunięty do statusu: ${statusLabel}`,
-        });
-      })
-      .catch((e) => {
-        setActionStatus('error');
-        setToast({ type: 'error', message: `Błąd zapisu decyzji: ${e.message}` });
-      });
-  };
+    setAnalysisLoading(true);
+    setAnalysis(null);
+    setEngine(null);
+    setCompare(null);
+    setBrief(null);
+    setGoNogo(null);
+    setCompletedSteps(new Set());
+    setCurrentStep(null);
+    setDecisionStatus(null);
+    setRunning(false);
+    sseCleanup.current?.();
 
-  // ── Empty state — nie wybrano przetargu ─────────────────────────────────────
-  if (!tender) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-6 text-center">
-        <div className="w-20 h-20 rounded-2xl bg-earth-800 flex items-center justify-center border border-earth-700/40">
-          <Scale className="w-10 h-10 text-earth-500" />
-        </div>
+    Promise.all([
+      authFetch(`/api/v2/tenders/${tender.id}/analysis`).catch(() => null),
+      authFetch(`/api/v1/tenders/${tender.id}/engine`).catch(() => null),
+      authFetch(`/api/v1/tenders/${tender.id}/estimate/compare`).catch(() => null),
+    ]).then(([ana, eng, cmp]) => {
+      if (ana) {
+        setAnalysis(ana);
+        if (ana.decision_brief) setBrief(ana.decision_brief);
+        if (ana.go_nogo) setGoNogo(ana.go_nogo);
+      }
+      if (eng) setEngine(eng);
+      if (cmp) setCompare(cmp);
+    }).finally(() => setAnalysisLoading(false));
+  }, [tender?.id, authFetch]);
+
+  // ── Cleanup SSE on unmount ─────────────────────────────────────────────────
+  useEffect(() => {
+    return () => { sseCleanup.current?.(); };
+  }, []);
+
+  // ── AI Runner ─────────────────────────────────────────────────────────────
+  const runAnalysis = useCallback(async () => {
+    if (!tender?.id || running) return;
+
+    sseCleanup.current?.();
+    setRunning(true);
+    setCompletedSteps(new Set());
+    setCurrentStep('fetching');
+    setBrief(null);
+    setGoNogo(null);
+
+    // Trigger POST
+    try {
+      await authFetch(`/api/v2/agent/analyze/${tender.id}`, { method: 'POST' });
+    } catch {
+      // OK to continue — might already be running
+    }
+
+    // SSE stream
+    const token = accessToken;
+    const url = `/api/v2/agent/analyze/${tender.id}/stream${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+    let es: EventSource | null = null;
+
+    try {
+      es = new EventSource(url);
+      sseCleanup.current = () => { es?.close(); };
+
+      es.onmessage = (evt: MessageEvent) => {
+        try {
+          const data = JSON.parse(evt.data as string) as {
+            step?: string;
+            decision_brief?: string;
+            go_nogo?: 'GO' | 'NO-GO';
+          };
+          if (!data.step) return;
+
+          const step = data.step as ProgressStep;
+
+          if (step === 'done') {
+            setCompletedSteps(new Set(PROGRESS_STEPS));
+            setCurrentStep('done');
+            setRunning(false);
+            if (data.decision_brief) setBrief(data.decision_brief);
+            if (data.go_nogo) setGoNogo(data.go_nogo);
+            es?.close();
+          } else {
+            setCurrentStep(step);
+            setCompletedSteps((prev) => {
+              const next = new Set(prev);
+              next.add(step);
+              return next;
+            });
+          }
+        } catch { /* ignore parse errors */ }
+      };
+
+      es.onerror = () => {
+        es?.close();
+        if (running) {
+          setRunning(false);
+          showToast('error', 'Błąd strumienia analizy SSE');
+        }
+      };
+    } catch {
+      setRunning(false);
+      showToast('error', 'Nie można uruchomić analizy AI');
+    }
+  }, [tender?.id, running, authFetch, accessToken]);
+
+  // ── Decision action ───────────────────────────────────────────────────────
+  const takeDecision = useCallback(
+    async (status: 'decided_go' | 'decided_nogo') => {
+      if (!tender?.id) return;
+      const previous = decisionStatus;
+      setDecisionStatus(status); // optimistic
+      try {
+        await authFetch(`/api/v1/tenders/${tender.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ pipeline_status: status }),
+        });
+        showToast(
+          'success',
+          status === 'decided_go' ? '✅ Decyzja GO zapisana!' : '❌ Decyzja NO-GO zapisana',
+        );
+        fetchHistory();
+        fetchQueue();
+      } catch (e) {
+        setDecisionStatus(previous);
+        showToast('error', `Błąd zapisu decyzji: ${(e as Error).message}`);
+      }
+    },
+    [tender?.id, decisionStatus, authFetch, fetchHistory, fetchQueue],
+  );
+
+  // ── Derived ───────────────────────────────────────────────────────────────
+  const delta = compare != null ? parseFloat(String(compare.delta_pln)) : null;
+  const headroom = compare != null ? parseFloat(String(compare.margin_headroom_pct)) : null;
+  const blockCount = engine?.violations?.filter((v) => v.severity === 'block').length ?? 0;
+  const warnCount = engine?.violations?.filter((v) => v.severity !== 'block').length ?? 0;
+
+  // ── Queue panel (shared between both layouts) ─────────────────────────────
+  const QueuePanel = (
+    <div className="w-80 shrink-0 border-r border-earth-800/60 flex flex-col overflow-hidden bg-earth-950">
+      <div className="px-4 py-3 border-b border-earth-800/60 flex items-center justify-between">
         <div>
-          <p className="text-earth-200 font-semibold text-xl">Wybierz przetarg z wyceną</p>
-          <p className="text-earth-500 text-sm mt-2 max-w-xs mx-auto leading-relaxed">
-            Wybierz przetarg z wyceną do podjęcia decyzji — GO (złóż ofertę) lub NO-GO (odrzuć)
+          <h2 className="text-sm font-semibold text-earth-200">Oczekuje na decyzję</h2>
+          <p className="text-earth-500 text-xs mt-0.5">
+            {queueLoading ? 'Ładowanie…' : `${queue.length} przetargów`}
           </p>
         </div>
         <button
-          onClick={() => setCurrentModule('zwiad')}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent-primary/10 text-accent-primary hover:bg-accent-primary/20 transition-colors text-sm font-medium border border-accent-primary/20"
+          onClick={fetchQueue}
+          aria-label="Odśwież kolejkę"
+          className="p-1.5 rounded-lg hover:bg-earth-800 transition-colors"
         >
-          Przejdź do Zwiadu <ArrowRight className="w-4 h-4" />
+          <RefreshCw className={`w-3.5 h-3.5 text-earth-500 ${queueLoading ? 'animate-spin' : ''}`} />
         </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-3 space-y-2">
+        {queueLoading
+          ? Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="p-3 rounded-xl bg-earth-900/60 border border-earth-800/50 animate-pulse h-[80px]" />
+            ))
+          : queue.length === 0
+            ? (
+              <div className="py-10 text-center">
+                <Scale className="w-8 h-8 text-earth-700 mx-auto mb-2" />
+                <p className="text-earth-500 text-xs">Brak przetargów w kolejce</p>
+                <p className="text-earth-700 text-xs mt-1">Status: ANALIZOWANY, score &gt; 50%</p>
+              </div>
+            )
+            : queue.map((t) => (
+              <QueueCard
+                key={t.id}
+                t={t}
+                isSelected={tender?.id === t.id}
+                onClick={() => setSelectedTender(t as unknown as Tender)}
+              />
+            ))
+        }
+      </div>
+    </div>
+  );
+
+  // ── Empty state ───────────────────────────────────────────────────────────
+  if (!tender) {
+    return (
+      <div className="flex h-full overflow-hidden">
+        {QueuePanel}
+        <div className="flex-1 flex flex-col items-center justify-center gap-5 text-center p-8">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4 }}
+            className="w-16 h-16 rounded-2xl bg-earth-800 flex items-center justify-center border border-earth-700/40"
+          >
+            <Scale className="w-8 h-8 text-earth-500" />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+          >
+            <p className="text-earth-200 font-semibold text-lg">Wybierz przetarg z kolejki</p>
+            <p className="text-earth-500 text-sm mt-1.5 max-w-xs leading-relaxed">
+              Kliknij przetarg po lewej stronie, aby zobaczyć analizę AI i podjąć decyzję GO / NO-GO
+            </p>
+          </motion.div>
+        </div>
       </div>
     );
   }
 
-  // Determine recommendation
-  const blockCount = engine?.violations?.filter(v => v.severity === 'block').length ?? 0;
-  const warnCount = engine?.violations?.filter(v => v.severity === 'warn').length ?? 0;
-  const margin = engine?.risk?.margin_p50 ?? null;
-  let recommendation: 'GO' | 'NO-GO' | 'NEGOCJUJ' = 'NEGOCJUJ';
-  if (!engine) recommendation = 'NEGOCJUJ';
-  else if (!engine.feasible || blockCount > 0) recommendation = 'NO-GO';
-  else if (margin !== null && margin > 0.08) recommendation = 'GO';
-  else if (margin !== null && margin < 0.03) recommendation = 'NO-GO';
-  else recommendation = 'NEGOCJUJ';
-
-  const recConfig = {
-    'GO': {
-      bg: 'bg-emerald-500/10 border-emerald-500/40',
-      textColor: 'text-emerald-400',
-      iconBg: 'bg-emerald-500/20',
-      icon: <CheckCircle className="w-10 h-10 text-emerald-400" />,
-      subtitle: 'Złóż ofertę — warunki sprzyjające, marża akceptowalna',
-      explanation: 'System rekomenduje złożenie oferty. Ostateczna decyzja należy do kierownika budowy.',
-    },
-    'NO-GO': {
-      bg: 'bg-red-500/10 border-red-500/40',
-      textColor: 'text-red-400',
-      iconBg: 'bg-red-500/20',
-      icon: <XCircle className="w-10 h-10 text-red-400" />,
-      subtitle: 'Odrzuć przetarg — zbyt wysokie ryzyko lub blokady systemowe',
-      explanation: 'System rekomenduje rezygnację. Sprawdź naruszenia reguł w module Silnik.',
-    },
-    'NEGOCJUJ': {
-      bg: 'bg-yellow-500/10 border-yellow-500/40',
-      textColor: 'text-yellow-400',
-      iconBg: 'bg-yellow-500/20',
-      icon: <AlertCircle className="w-10 h-10 text-yellow-400" />,
-      subtitle: 'Warunki graniczne — rozważ negocjacje przed złożeniem oferty',
-      explanation: 'Marża jest na granicy akceptowalności. Zalecane negocjacje warunków umowy.',
-    },
-  };
-  const rec = recConfig[recommendation];
-
-  const delta = compare ? parseFloat(compare.delta_pln) : 0;
-  const headroom = compare ? parseFloat(compare.margin_headroom_pct) : null;
-
+  // ── Full layout ───────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col gap-6 p-6 h-full overflow-y-auto">
-      {/* Header */}
-      <div>
-        <h2 className="text-xl font-semibold text-earth-100">Decyzja — GO / NO-GO</h2>
-        <p className="text-earth-500 text-sm mt-0.5">Zatwierdź lub odrzuć udział w przetargu</p>
-        <p className="text-earth-600 text-xs mt-1 line-clamp-1">{tender.title}</p>
-      </div>
+    <div className="flex h-full overflow-hidden">
+      {QueuePanel}
 
-      {loading && (
-        <div className="flex items-center gap-3 text-earth-500">
-          <div className="w-4 h-4 border-2 border-earth-700 border-t-accent-primary rounded-full animate-spin" />
-          Ładowanie danych analizy…
-        </div>
-      )}
+      {/* Right panel */}
+      <div className="flex-1 overflow-y-auto bg-earth-950">
+        <div className="p-5 space-y-5 max-w-3xl mx-auto pb-12">
 
-      {/* Toast — potwierdzenie decyzji */}
-      {toast && (
-        <div className={`flex items-center gap-3 p-4 rounded-xl border text-sm font-medium ${
-          toast.type === 'success'
-            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-            : 'bg-red-500/10 border-red-500/30 text-red-300'
-        }`}>
-          {toast.type === 'success' ? <CheckCircle className="w-5 h-5 shrink-0" /> : <XCircle className="w-5 h-5 shrink-0" />}
-          {toast.message}
-        </div>
-      )}
-
-      {!loading && (
-        <>
-          {/* Verdict banner — DUŻY, z pełnym wyjaśnieniem */}
-          <div className={`rounded-2xl p-6 border-2 ${rec.bg}`}>
-            <div className="flex items-start gap-5">
-              <div className={`w-18 h-18 rounded-2xl flex items-center justify-center shrink-0 p-3 ${rec.iconBg}`}>
-                {rec.icon}
-              </div>
-              <div className="flex-1">
-                <p className="text-earth-500 text-xs font-medium uppercase tracking-wider mb-1">
-                  Rekomendacja systemu
-                </p>
-                <p className={`text-5xl font-black tracking-tight leading-none ${rec.textColor}`}>
-                  {recommendation}
-                </p>
-                <p className={`text-base font-semibold mt-2 ${rec.textColor}`}>
-                  {rec.subtitle}
-                </p>
-                <p className="text-earth-400 text-sm mt-1 leading-relaxed">
-                  {rec.explanation}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Trzy metryki — polskie etykiety, PLN sformatowane */}
-          <div className="grid grid-cols-3 gap-4">
-            {/* Różnica kosztorysów */}
-            <div className="glass-card rounded-xl p-4">
-              <p className="text-earth-500 text-xs mb-0.5">Różnica kosztorysów (B − A)</p>
-              <p className="text-earth-600 text-xs mb-3">Wycena własna minus dokumentacja</p>
-              {compare ? (
-                <div>
-                  <div className="flex items-center gap-2">
-                    {delta > 0
-                      ? <TrendingUp className="w-4 h-4 text-red-400" />
-                      : <TrendingDown className="w-4 h-4 text-emerald-400" />}
-                    <span className={`text-xl font-bold font-mono tabular-nums ${delta > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
-                      {delta > 0 ? '+' : ''}{fmtPLN(delta)}
-                    </span>
-                  </div>
-                  {headroom !== null && (
-                    <p className="text-earth-500 text-xs mt-1.5">
-                      Przestrzeń marżowa:{' '}
-                      <span className={headroom < 0 ? 'text-red-400' : 'text-emerald-400'}>
-                        {headroom.toFixed(2)}%
-                      </span>
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <p className="text-earth-600 text-sm">Brak kosztorysów — uruchom wycenę</p>
-              )}
+          {/* ── Section B: Selected Tender ───────────────────── */}
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <FileText className="w-4 h-4 text-blue-400" />
+              <h3 className="text-xs font-semibold text-earth-400 uppercase tracking-wider">Wybrany przetarg</h3>
             </div>
 
-            {/* Marża P50 */}
-            <div className="glass-card rounded-xl p-4">
-              <p className="text-earth-500 text-xs mb-0.5">Marża P50 — najbardziej prawdopodobna</p>
-              <p className="text-earth-600 text-xs mb-3">Wynik symulacji Monte Carlo</p>
-              {engine?.risk ? (
+            <GlassCard className="p-4">
+              <h2 className="text-earth-100 font-semibold text-sm leading-snug mb-3">{tender.title}</h2>
+              <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                 <div>
-                  <p className="text-yellow-400 font-black text-3xl">
-                    {(engine.risk.margin_p50 * 100).toFixed(1)}%
+                  <p className="text-earth-600 text-xs mb-0.5">Zamawiający</p>
+                  <p className="text-earth-300 text-xs leading-snug flex items-start gap-1">
+                    <Building2 className="w-3 h-3 shrink-0 mt-0.5 text-earth-600" />
+                    <span className="truncate">{tender.buyer ?? '—'}</span>
                   </p>
-                  <div className="flex gap-3 mt-2">
-                    <span className="text-xs text-earth-600">
-                      P10 (pesym.): <span className="text-red-400">{(engine.risk.margin_p10 * 100).toFixed(1)}%</span>
-                    </span>
-                    <span className="text-xs text-earth-600">
-                      P90 (optym.): <span className="text-emerald-400">{(engine.risk.margin_p90 * 100).toFixed(1)}%</span>
-                    </span>
-                  </div>
                 </div>
-              ) : (
-                <p className="text-earth-600 text-sm">Brak danych — uruchom Silnik decyzyjny</p>
-              )}
-            </div>
-
-            {/* Naruszenia reguł */}
-            <div className="glass-card rounded-xl p-4">
-              <p className="text-earth-500 text-xs mb-0.5">Naruszenia reguł</p>
-              <p className="text-earth-600 text-xs mb-3">Wykryte przez silnik decyzyjny</p>
-              {engine ? (
                 <div>
-                  <p className={`font-black text-3xl ${blockCount > 0 ? 'text-red-400' : warnCount > 0 ? 'text-yellow-400' : 'text-emerald-400'}`}>
-                    {engine.violations?.length ?? 0}
+                  <p className="text-earth-600 text-xs mb-0.5">Kod CPV</p>
+                  <p className="text-earth-300 text-xs font-mono flex items-center gap-1">
+                    <Hash className="w-3 h-3 text-earth-600" />
+                    {tender.cpv?.[0] ?? '—'}
                   </p>
-                  <div className="flex gap-3 mt-2">
-                    <span className="text-xs text-earth-600">
-                      Blokady: <span className="text-red-400">{blockCount}</span>
-                    </span>
-                    <span className="text-xs text-earth-600">
-                      Ostrzeżenia: <span className="text-yellow-400">{warnCount}</span>
-                    </span>
-                  </div>
                 </div>
-              ) : (
-                <p className="text-earth-600 text-sm">Brak danych silnika</p>
-              )}
-            </div>
-          </div>
+                <div>
+                  <p className="text-earth-600 text-xs mb-0.5">Wartość szacunkowa</p>
+                  <p className="text-earth-300 text-sm font-mono font-semibold">{fmtPLN(tender.value_pln)}</p>
+                </div>
+                <div>
+                  <p className="text-earth-600 text-xs mb-0.5">Termin składania</p>
+                  <p className="text-earth-300 text-xs flex items-center gap-1.5">
+                    <Clock className="w-3 h-3 text-earth-600" />
+                    {tender.deadline_at
+                      ? new Date(tender.deadline_at).toLocaleDateString('pl-PL')
+                      : '—'}
+                    <DeadlineBadge deadline={tender.deadline_at} />
+                  </p>
+                </div>
+              </div>
+            </GlassCard>
 
-          {/* Kluczowe czynniki ryzyka */}
-          {engine?.risk && engine.risk.drivers.length > 0 && (
-            <div className="glass-card rounded-xl p-4">
-              <p className="text-earth-500 text-xs mb-1">Kluczowe czynniki ryzyka (top 5)</p>
-              <p className="text-earth-600 text-xs mb-3">Czynniki o największym wpływie na marżę — z analizy Monte Carlo</p>
-              <div className="flex flex-wrap gap-2">
-                {engine.risk.drivers.slice(0, 5).map((d, i) => (
-                  <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-earth-800 text-earth-300 border border-earth-700/40">
-                    {d.factor}{' '}
-                    <span className="text-earth-500">({(d.ST * 100).toFixed(0)}% wpływu)</span>
+            {/* Loading skeleton for analysis data */}
+            {analysisLoading && (
+              <div className="flex items-center gap-2 p-3 mt-3 text-earth-500 text-xs">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Ładowanie danych analizy…
+              </div>
+            )}
+
+            {/* Existing analysis summary */}
+            {!analysisLoading && analysis?.summary && (
+              <GlassCard className="p-4 mt-3">
+                <p className="text-earth-500 text-xs font-medium uppercase tracking-wider mb-2">Istniejąca analiza</p>
+                <p className="text-earth-300 text-xs leading-relaxed">{analysis.summary}</p>
+                <p className="text-earth-600 text-xs mt-2">
+                  {new Date(analysis.created_at).toLocaleString('pl-PL')}
+                </p>
+              </GlassCard>
+            )}
+
+            {/* Engine result */}
+            {!analysisLoading && engine && (
+              <GlassCard className="p-4 mt-3">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-earth-500 text-xs font-medium uppercase tracking-wider">Silnik decyzyjny</p>
+                  <span
+                    className={`text-xs px-2.5 py-1 rounded-full font-bold border ${
+                      engine.feasible
+                        ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                        : 'bg-red-500/15 text-red-400 border-red-500/30'
+                    }`}
+                  >
+                    {engine.feasible ? '✓ Wykonalne' : '✗ Niewykonalne'}
                   </span>
-                ))}
-              </div>
-            </div>
-          )}
+                </div>
 
-          {/* Przyciski decyzji */}
-          {actionStatus === 'decided_go' ? (
-            <div className="flex items-center gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
-              <CheckCircle className="w-5 h-5 shrink-0" />
-              <div>
-                <p className="font-semibold">Decyzja GO zapisana</p>
-                <p className="text-xs text-emerald-600 mt-0.5">Przetarg przesunięty do statusu: GO ✓ — prześlij do realizacji</p>
-              </div>
+                {engine.violations.length > 0 ? (
+                  <div className="space-y-1.5">
+                    <div className="flex gap-3 mb-2">
+                      {blockCount > 0 && (
+                        <span className="text-xs text-red-400">
+                          <span className="font-bold">{blockCount}</span> blokad
+                        </span>
+                      )}
+                      {warnCount > 0 && (
+                        <span className="text-xs text-yellow-400">
+                          <span className="font-bold">{warnCount}</span> ostrzeżeń
+                        </span>
+                      )}
+                    </div>
+                    {engine.violations.slice(0, 6).map((v, i) => (
+                      <div
+                        key={i}
+                        className={`flex items-start gap-2 text-xs px-3 py-2 rounded-lg ${
+                          v.severity === 'block'
+                            ? 'bg-red-500/10 text-red-300'
+                            : 'bg-yellow-500/10 text-yellow-300'
+                        }`}
+                      >
+                        {v.severity === 'block'
+                          ? <XCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                          : <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                        }
+                        {v.message}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-earth-500 text-xs flex items-center gap-1.5">
+                    <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
+                    Brak naruszeń reguł
+                  </p>
+                )}
+              </GlassCard>
+            )}
+
+            {/* Compare */}
+            {!analysisLoading && compare && (
+              <GlassCard className="p-4 mt-3">
+                <p className="text-earth-500 text-xs font-medium uppercase tracking-wider mb-3">Porównanie kosztorysów</p>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-earth-600 text-xs mb-1">Dokumentacja</p>
+                    <p className="text-earth-200 text-sm font-mono font-semibold">{fmtPLN(compare.doc_total)}</p>
+                  </div>
+                  <div>
+                    <p className="text-earth-600 text-xs mb-1">Wycena własna</p>
+                    <p className="text-earth-200 text-sm font-mono font-semibold">{fmtPLN(compare.owner_total)}</p>
+                  </div>
+                  <div>
+                    <p className="text-earth-600 text-xs mb-1">Delta B − A</p>
+                    <p className={`text-sm font-mono font-bold ${(delta ?? 0) > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                      {delta !== null ? `${delta > 0 ? '+' : ''}${fmtPLN(delta)}` : '—'}
+                    </p>
+                    {headroom !== null && (
+                      <p className="text-xs text-earth-600 mt-0.5">
+                        Marża:{' '}
+                        <span className={headroom < 0 ? 'text-red-400' : 'text-emerald-400'}>
+                          {headroom.toFixed(1)}%
+                        </span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Visual delta bar */}
+                {delta !== null && (
+                  <div className="mt-3">
+                    <div className="h-1.5 bg-earth-800 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-700 ${delta > 0 ? 'bg-red-500' : 'bg-emerald-500'}`}
+                        style={{
+                          width: `${Math.min(Math.abs(delta) / Math.max(parseFloat(String(compare.doc_total)) || 1, 1) * 200, 100)}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </GlassCard>
+            )}
+          </section>
+
+          {/* ── Section C: AI Analysis Runner ─────────────────── */}
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <Brain className="w-4 h-4 text-blue-400" />
+              <h3 className="text-xs font-semibold text-earth-400 uppercase tracking-wider">AI Analiza</h3>
             </div>
-          ) : actionStatus === 'decided_nogo' ? (
-            <div className="flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400">
-              <XCircle className="w-5 h-5 shrink-0" />
-              <div>
-                <p className="font-semibold">Decyzja NO-GO zapisana</p>
-                <p className="text-xs text-red-600 mt-0.5">Przetarg przesunięty do statusu: NO-GO ✗ — oznaczony jako odrzucony</p>
-              </div>
-            </div>
-          ) : (
-            <div className="flex gap-4 mt-2">
+
+            <GlassCard className="p-4">
+              {/* Run button */}
               <button
-                onClick={() => takeAction('decided_go')}
-                disabled={actionStatus === 'loading'}
-                className="flex-1 flex items-center justify-center gap-2 py-4 rounded-xl bg-emerald-500 text-white font-bold text-sm hover:bg-emerald-400 transition-colors disabled:opacity-50 shadow-lg shadow-emerald-500/20"
+                onClick={runAnalysis}
+                disabled={running}
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-blue-500 hover:bg-blue-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm transition-all duration-200 shadow-lg shadow-blue-500/20"
               >
-                {actionStatus === 'loading'
+                {running
                   ? <Loader2 className="w-4 h-4 animate-spin" />
-                  : <ThumbsUp className="w-5 h-5" />}
-                Zatwierdź GO — prześlij do realizacji
+                  : <PlayCircle className="w-4 h-4" />
+                }
+                {running ? 'Analiza w toku…' : 'Uruchom AI Analizę'}
               </button>
-              <button
-                onClick={() => takeAction('decided_nogo')}
-                disabled={actionStatus === 'loading'}
-                className="flex-1 flex items-center justify-center gap-2 py-4 rounded-xl bg-earth-800 text-earth-300 font-bold text-sm hover:bg-earth-700 transition-colors disabled:opacity-50 border border-earth-700"
-              >
-                {actionStatus === 'loading'
-                  ? <Loader2 className="w-4 h-4 animate-spin" />
-                  : <ThumbsDown className="w-5 h-5" />}
-                Odrzuć — oznacz jako NO-GO
-              </button>
+
+              {/* Progress steps */}
+              <AnimatePresence>
+                {(running || currentStep === 'done') && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-4 space-y-1 overflow-hidden"
+                  >
+                    {PROGRESS_STEPS.map((step, idx) => {
+                      const isDone = completedSteps.has(step);
+                      const isCurrent = currentStep === step && !isDone;
+                      return (
+                        <motion.div
+                          key={step}
+                          initial={{ opacity: 0, x: -8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: idx * 0.04 }}
+                          className={`flex items-center gap-2 text-xs px-3 py-2 rounded-lg transition-colors ${
+                            isDone
+                              ? 'bg-emerald-500/10 text-emerald-400'
+                              : isCurrent
+                              ? 'bg-blue-500/10 text-blue-300'
+                              : 'text-earth-600'
+                          }`}
+                        >
+                          {isDone ? (
+                            <CheckCircle className="w-3.5 h-3.5 shrink-0" />
+                          ) : isCurrent ? (
+                            <Loader2 className="w-3.5 h-3.5 shrink-0 animate-spin" />
+                          ) : (
+                            <div className="w-3.5 h-3.5 shrink-0 rounded-full border border-earth-700" />
+                          )}
+                          <span className={isCurrent ? 'font-medium' : ''}>{STEP_LABELS[step]}</span>
+                        </motion.div>
+                      );
+                    })}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* GO/NO-GO verdict badge */}
+              <AnimatePresence>
+                {goNogo && (
+                  <motion.div
+                    key="verdict"
+                    initial={{ opacity: 0, scale: 0.9, y: 8 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                    className={`mt-4 flex items-center justify-center gap-4 py-6 rounded-xl border-2 ${
+                      goNogo === 'GO'
+                        ? 'bg-emerald-500/10 border-emerald-500/40'
+                        : 'bg-red-500/10 border-red-500/40'
+                    }`}
+                  >
+                    {goNogo === 'GO' ? (
+                      <CheckCircle className="w-7 h-7 text-emerald-400" />
+                    ) : (
+                      <XCircle className="w-7 h-7 text-red-400" />
+                    )}
+                    <span
+                      className={`text-6xl font-black tracking-tight leading-none ${
+                        goNogo === 'GO' ? 'text-emerald-400' : 'text-red-400'
+                      }`}
+                    >
+                      {goNogo}
+                    </span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Decision brief markdown */}
+              <AnimatePresence>
+                {brief && (
+                  <motion.div
+                    key="brief"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35 }}
+                    className="mt-4 p-4 rounded-xl bg-earth-950 border border-earth-800/60"
+                  >
+                    <p className="text-earth-500 text-xs font-medium uppercase tracking-wider mb-3">
+                      Decision Brief
+                    </p>
+                    <div
+                      className="space-y-1"
+                      dangerouslySetInnerHTML={{ __html: renderMarkdown(brief) }}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </GlassCard>
+          </section>
+
+          {/* ── Section D: Decision Actions ───────────────────── */}
+          <section>
+            <div className="flex items-center gap-2 mb-3">
+              <Scale className="w-4 h-4 text-blue-400" />
+              <h3 className="text-xs font-semibold text-earth-400 uppercase tracking-wider">Decyzja</h3>
             </div>
-          )}
-        </>
-      )}
+
+            <GlassCard className="p-4">
+              <AnimatePresence mode="wait">
+                {decisionStatus === 'decided_go' ? (
+                  <motion.div
+                    key="confirmed-go"
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400"
+                  >
+                    <CheckCircle className="w-5 h-5 shrink-0" />
+                    <div>
+                      <p className="font-semibold text-sm">Decyzja GO zapisana</p>
+                      <p className="text-xs text-emerald-600 mt-0.5">
+                        Przetarg przekazany do realizacji — pipeline_status: decided_go
+                      </p>
+                    </div>
+                  </motion.div>
+                ) : decisionStatus === 'decided_nogo' ? (
+                  <motion.div
+                    key="confirmed-nogo"
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400"
+                  >
+                    <XCircle className="w-5 h-5 shrink-0" />
+                    <div>
+                      <p className="font-semibold text-sm">Decyzja NO-GO zapisana</p>
+                      <p className="text-xs text-red-600 mt-0.5">
+                        Przetarg oznaczony jako odrzucony — pipeline_status: decided_nogo
+                      </p>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="action-buttons"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex gap-3"
+                  >
+                    <button
+                      onClick={() => takeDecision('decided_go')}
+                      className="flex-1 flex items-center justify-center gap-2.5 py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white font-bold text-sm transition-all duration-200 shadow-lg shadow-emerald-500/20"
+                    >
+                      <ThumbsUp className="w-4 h-4" />
+                      GO — Złóż ofertę
+                    </button>
+                    <button
+                      onClick={() => takeDecision('decided_nogo')}
+                      className="flex-1 flex items-center justify-center gap-2.5 py-4 rounded-xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold text-sm transition-all duration-200"
+                    >
+                      <ThumbsDown className="w-4 h-4" />
+                      NO-GO — Odrzuć
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* History */}
+              {(historyGo.length > 0 || historyNogo.length > 0) && (
+                <div className="mt-4 pt-4 border-t border-earth-800/60">
+                  <div className="flex items-center gap-1.5 mb-3">
+                    <History className="w-3.5 h-3.5 text-earth-600" />
+                    <p className="text-earth-600 text-xs font-medium uppercase tracking-wider">
+                      Historia decyzji
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* GO history */}
+                    <div>
+                      <p className="text-emerald-500 text-xs font-semibold mb-2 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                        GO ({historyGo.length})
+                      </p>
+                      <div className="space-y-1">
+                        {historyGo.map((t) => (
+                          <p
+                            key={t.id}
+                            className="text-earth-500 text-xs truncate py-0.5 border-l-2 border-emerald-500/40 pl-2"
+                          >
+                            {t.title}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                    {/* NO-GO history */}
+                    <div>
+                      <p className="text-red-500 text-xs font-semibold mb-2 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
+                        NO-GO ({historyNogo.length})
+                      </p>
+                      <div className="space-y-1">
+                        {historyNogo.map((t) => (
+                          <p
+                            key={t.id}
+                            className="text-earth-500 text-xs truncate py-0.5 border-l-2 border-red-500/40 pl-2"
+                          >
+                            {t.title}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </GlassCard>
+          </section>
+
+        </div>
+      </div>
     </div>
   );
 }

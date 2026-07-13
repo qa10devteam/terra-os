@@ -1,344 +1,702 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { motion } from 'motion/react';
-import { AlertTriangle, TrendingUp, Filter } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import {
+  Plus, LayoutGrid, CalendarDays, Search, X, TrendingUp,
+  AlertTriangle, Loader2, DollarSign, Target, CheckCircle2, Activity,
+} from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { useAuthFetch } from '@/lib/api-v2';
 import { showToast } from '@/components/Toast';
-import { TenderDetail } from '@/components/TenderDetail';
-import { StatusBadge } from '@/components/ui/StatusBadge';
+import { GlassCard } from '@/components/ui/GlassCard';
+import type { Tender } from '@/types';
 
-// dnd-kit
-import {
-  DndContext,
-  DragOverlay,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  closestCenter,
-  type DragStartEvent,
-  type DragEndEvent,
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+// ── Types ─────────────────────────────────────────────────────────────────────
 
-// ── Types ──────────────────────────────────────────────────────────────────────
 interface TenderItem {
   id: string;
   title: string;
   buyer: string | null;
-  cpv: string[];
-  voivodeship: string | null;
-  value_pln: number | string | null;
+  cpv: string[] | null;
+  value_pln: number | null;
   match_score: number | null;
-  status: string;
+  pipeline_status: string;
   deadline_at: string | null;
-  match_reason: string | null;
-  source: string | null;
+  published_at?: string | null;
 }
 
-// ── Config ────────────────────────────────────────────────────────────────────
-const PIPELINE_STAGES = [
-  { key: 'new',          label: 'Monitoring',  desc: 'Świeżo z BZP',          color: '#60a5fa', borderColor: 'border-blue-500/30',   bg: 'bg-blue-500/8',    headerBg: 'bg-blue-500/15' },
-  { key: 'matched',      label: 'Analiza',     desc: 'Pasuje do profilu',      color: '#a78bfa', borderColor: 'border-purple-500/30', bg: 'bg-purple-500/8',  headerBg: 'bg-purple-500/15' },
-  { key: 'watching',     label: 'GO/NO-GO',    desc: 'W obserwacji',           color: '#38bdf8', borderColor: 'border-sky-500/30',    bg: 'bg-sky-500/8',     headerBg: 'bg-sky-500/15' },
-  { key: 'analyzing',    label: 'Kosztorys',   desc: 'Dokumentacja pobrana',   color: '#fbbf24', borderColor: 'border-yellow-500/30', bg: 'bg-yellow-500/8',  headerBg: 'bg-yellow-500/15' },
-  { key: 'estimated',    label: 'Weryfikacja', desc: 'Kosztorys gotowy',       color: '#34d399', borderColor: 'border-emerald-500/30',bg: 'bg-emerald-500/8', headerBg: 'bg-emerald-500/15' },
-  { key: 'decided_go',   label: 'Złożenie',    desc: 'Oferta złożona',         color: '#10b981', borderColor: 'border-emerald-600/40',bg: 'bg-emerald-600/8', headerBg: 'bg-emerald-600/20' },
-  { key: 'decided_nogo', label: 'Wynik',       desc: 'Rezygnacja / Wynik',     color: '#f87171', borderColor: 'border-red-500/30',    bg: 'bg-red-500/8',     headerBg: 'bg-red-500/15' },
-];
-
-function fmtPLN(v: number | string | null | undefined) {
-  if (v === null || v === undefined) return '—';
-  const n = typeof v === 'string' ? parseFloat(v) : v;
-  if (isNaN(n)) return '—';
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + ' M zł';
-  if (n >= 1_000) return (n / 1_000).toFixed(0) + ' tys. zł';
-  return n.toFixed(0) + ' zł';
+interface PipelineKPI {
+  active: number;
+  pipeline_value: number;
+  win_rate_mtd: number;
 }
 
-function daysUntil(deadline: string | null): number | null {
-  if (!deadline) return null;
-  return Math.ceil((new Date(deadline).getTime() - Date.now()) / 86400000);
+// ── Column config ─────────────────────────────────────────────────────────────
+
+const COLUMNS = [
+  { key: 'OBSERWOWANY', label: 'Obserwowany', color: '#94A3B8', ring: 'rgba(148,163,184,0.35)' },
+  { key: 'ANALIZOWANY', label: 'Analizowany', color: '#3B82F6', ring: 'rgba(59,130,246,0.35)' },
+  { key: 'DECYZJA',     label: 'Decyzja',     color: '#EAB308', ring: 'rgba(234,179,8,0.35)' },
+  { key: 'OFERTA',      label: 'Oferta',      color: '#F97316', ring: 'rgba(249,115,22,0.35)' },
+  { key: 'ZLOZONY',     label: 'Złożony',     color: '#A855F7', ring: 'rgba(168,85,247,0.35)' },
+  { key: 'WON',         label: 'WON ✓',       color: '#22C55E', ring: 'rgba(34,197,94,0.35)' },
+  { key: 'LOST',        label: 'LOST ✗',      color: '#EF4444', ring: 'rgba(239,68,68,0.35)' },
+] as const;
+
+const COL_COLOR_MAP: Record<string, string> = Object.fromEntries(
+  COLUMNS.map(c => [c.key, c.color])
+);
+
+// ── Formatters ────────────────────────────────────────────────────────────────
+
+function fmtPLN(v: number | null | undefined): string {
+  if (v == null) return '—';
+  if (v >= 1_000_000) return (v / 1_000_000).toFixed(1).replace('.0', '') + ' M zł';
+  if (v >= 1_000) return (v / 1_000).toFixed(0) + ' tys. zł';
+  return v.toFixed(0) + ' zł';
 }
 
-// ── Sortable card ─────────────────────────────────────────────────────────────
-function SortableCard({ tender, color, onOpen }: { tender: TenderItem; color: string; onOpen: (t: TenderItem) => void }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: tender.id });
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.3 : 1,
-  };
-  const score = tender.match_score !== null ? Math.round(tender.match_score * 100) : null;
-  const days = daysUntil(tender.deadline_at);
-  const urgent = days !== null && days <= 7;
+function daysUntil(d: string | null): number | null {
+  if (!d) return null;
+  return Math.ceil((new Date(d).getTime() - Date.now()) / 86_400_000);
+}
 
+// ── Score badge (SVG circle) ──────────────────────────────────────────────────
+
+function ScoreBadge({ score }: { score: number | null }) {
+  if (score === null) return null;
+  const pct = Math.round(score > 1 ? score : score * 100);
+  const color = pct >= 80 ? '#22C55E' : pct >= 60 ? '#EAB308' : '#EF4444';
+  const r = 10, cx = 12, cy = 12;
+  const circ = 2 * Math.PI * r;
+  const dash = (pct / 100) * circ;
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <motion.div
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        onClick={() => onOpen(tender)}
-        className={"p-3 rounded-xl bg-earth-900/60 border border-earth-800/50 hover:border-earth-700/70 hover:bg-earth-900 transition-all duration-200 cursor-pointer group" + (urgent ? " border-l-2 border-l-red-400/60" : "")}
-      >
-        <p className="text-earth-200 text-xs font-medium line-clamp-2 leading-snug group-hover:text-earth-100">{tender.title}</p>
-        <p className="text-earth-600 text-xs mt-1.5 truncate">{tender.buyer ?? '—'}</p>
-        <div className="flex items-center justify-between mt-2">
-          <span className="text-earth-400 text-xs font-mono">{fmtPLN(tender.value_pln)}</span>
-          {score !== null && (
-            <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{ color, backgroundColor: color + '20' }}>
-              {score}%
-            </span>
-          )}
-        </div>
-        {days !== null && (
-          <p className={"text-[10px] mt-1 font-mono " + (days <= 3 ? "text-red-400" : days <= 7 ? "text-yellow-400" : "text-earth-600")}>
-            {days < 0 ? "po terminie" : days === 0 ? "dziś" : days + "d"}
-          </p>
-        )}
-      </motion.div>
-    </div>
+    <svg width="24" height="24" viewBox="0 0 24 24" className="shrink-0">
+      <circle cx={cx} cy={cy} r={r} stroke="#1E293B" strokeWidth="2.5" fill="none" />
+      <circle
+        cx={cx} cy={cy} r={r} stroke={color} strokeWidth="2.5" fill="none"
+        strokeDasharray={`${dash} ${circ - dash}`} strokeLinecap="round"
+        transform={`rotate(-90 ${cx} ${cy})`}
+      />
+      <text x={cx} y={cy + 3.5} textAnchor="middle" fontSize="6.5" fontWeight="700" fill={color}>
+        {pct}
+      </text>
+    </svg>
   );
 }
 
-// ── Drag overlay card ─────────────────────────────────────────────────────────
-function DragCard({ tender }: { tender: TenderItem }) {
-  const score = tender.match_score !== null ? Math.round(tender.match_score * 100) : null;
+// ── Kanban Card ───────────────────────────────────────────────────────────────
+
+function KanbanCard({
+  tender, colColor, onDragStart, onDragEnd, onClick,
+}: {
+  tender: TenderItem;
+  colColor: string;
+  onDragStart: (e: React.DragEvent<HTMLDivElement>, t: TenderItem) => void;
+  onDragEnd: () => void;
+  onClick: (t: TenderItem) => void;
+}) {
+  const days = daysUntil(tender.deadline_at);
+  const isUrgent = days !== null && days >= 0 && days <= 7;
+  const cpvPrefix = tender.cpv?.[0]?.slice(0, 5) ?? null;
+
   return (
-    <div className="p-3 rounded-xl bg-earth-800 border border-earth-600 shadow-2xl opacity-95 w-60">
-      <p className="text-earth-100 text-xs font-medium line-clamp-2">{tender.title}</p>
-      <div className="flex items-center justify-between mt-2">
-        <span className="text-earth-400 text-xs font-mono">{fmtPLN(tender.value_pln)}</span>
-        {score !== null && <span className="text-xs font-bold text-accent-primary">{score}%</span>}
+    <div
+      draggable
+      onDragStart={(e) => onDragStart(e, tender)}
+      onDragEnd={onDragEnd}
+      onClick={() => onClick(tender)}
+      className={[
+        'p-3 rounded-xl bg-earth-900/70 border cursor-grab active:cursor-grabbing',
+        'hover:bg-earth-900 transition-all duration-150 group select-none',
+        isUrgent ? 'border-l-2 border-red-500/50 border-earth-800/50' : 'border-earth-800/50 hover:border-earth-700/70',
+      ].join(' ')}
+    >
+      {/* Title */}
+      <p className="text-earth-100 text-xs font-medium leading-snug line-clamp-2 group-hover:text-white">
+        {tender.title}
+      </p>
+      {/* Buyer */}
+      <p className="text-earth-500 text-[11px] mt-1 truncate">{tender.buyer ?? '—'}</p>
+
+      {/* CPV tag */}
+      {cpvPrefix && (
+        <span className="inline-block mt-1.5 text-[10px] px-1.5 py-0.5 rounded bg-earth-800/80 text-earth-500 font-mono">
+          CPV {cpvPrefix}
+        </span>
+      )}
+
+      {/* Bottom row */}
+      <div className="flex items-end justify-between mt-2 gap-1">
+        <div className="flex-1 min-w-0">
+          <p className="text-earth-400 text-[11px] font-mono tabular-nums">{fmtPLN(tender.value_pln)}</p>
+          {days !== null && (
+            <p className={[
+              'text-[10px] mt-0.5 font-mono',
+              days < 0 ? 'text-red-500' : days <= 3 ? 'text-red-400' : days <= 7 ? 'text-yellow-400' : 'text-earth-600',
+            ].join(' ')}>
+              {days < 0 ? `${Math.abs(days)}d po terminie` : days === 0 ? 'Dziś' : `${days}d`}
+            </p>
+          )}
+        </div>
+        <ScoreBadge score={tender.match_score} />
       </div>
     </div>
   );
 }
 
-// ── Skeleton card ─────────────────────────────────────────────────────────────
-function SkeletonCard() {
-  return (
-    <div className="p-3 rounded-xl bg-earth-900/60 border border-earth-800/50 animate-pulse">
-      <div className="h-3 bg-earth-800 rounded w-full mb-1.5" />
-      <div className="h-3 bg-earth-800 rounded w-3/4 mb-3" />
-      <div className="h-2.5 bg-earth-800 rounded w-1/2" />
-    </div>
-  );
-}
+// ── Kanban Column ─────────────────────────────────────────────────────────────
 
-// ── Droppable column ──────────────────────────────────────────────────────────
-function DroppableColumn({
-  stage, tenders, loading, onOpen,
+function KanbanColumn({
+  col, tenders, loading, isDragOver,
+  onDrop, onDragOver, onDragEnter, onDragLeave,
+  onCardClick, onCardDragStart, onCardDragEnd,
 }: {
-  stage: typeof PIPELINE_STAGES[number];
+  col: typeof COLUMNS[number];
   tenders: TenderItem[];
   loading: boolean;
-  onOpen: (t: TenderItem) => void;
+  isDragOver: boolean;
+  onDrop: (e: React.DragEvent<HTMLDivElement>, key: string) => void;
+  onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
+  onDragEnter: (e: React.DragEvent<HTMLDivElement>, key: string) => void;
+  onDragLeave: (e: React.DragEvent<HTMLDivElement>) => void;
+  onCardClick: (t: TenderItem) => void;
+  onCardDragStart: (e: React.DragEvent<HTMLDivElement>, t: TenderItem) => void;
+  onCardDragEnd: () => void;
 }) {
+  const totalVal = tenders.reduce((s, t) => s + (t.value_pln ?? 0), 0);
+  const colStyle: React.CSSProperties = isDragOver
+    ? { boxShadow: `0 0 0 2px ${col.ring}, inset 0 0 20px ${col.ring}` }
+    : {};
+
   return (
-    <div className={"flex flex-col w-64 rounded-2xl border " + stage.borderColor + " " + stage.bg + " overflow-hidden"}>
-      <div className={"px-3 py-2.5 " + stage.headerBg + " border-b " + stage.borderColor + " shrink-0"}>
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold" style={{ color: stage.color }}>{stage.label}</span>
-          <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ color: stage.color, backgroundColor: stage.color + '25' }}>
+    <div
+      onDrop={(e) => onDrop(e, col.key)}
+      onDragOver={onDragOver}
+      onDragEnter={(e) => onDragEnter(e, col.key)}
+      onDragLeave={onDragLeave}
+      style={colStyle}
+      className={[
+        'flex flex-col w-[220px] shrink-0 rounded-2xl border transition-all duration-150',
+        'bg-earth-900/20',
+        isDragOver ? 'scale-[1.01]' : '',
+      ].join(' ')}
+    >
+      {/* Header */}
+      <div
+        className="px-3 py-2.5 rounded-t-2xl shrink-0"
+        style={{ borderBottom: `1px solid ${col.color}22`, backgroundColor: col.color + '12' }}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm font-semibold" style={{ color: col.color }}>{col.label}</span>
+          <span
+            className="text-xs font-bold px-2 py-0.5 rounded-full tabular-nums"
+            style={{ color: col.color, backgroundColor: col.color + '25' }}
+          >
             {tenders.length}
           </span>
         </div>
-        <p className="text-earth-600 text-xs mt-0.5">{stage.desc}</p>
+        {totalVal > 0 && (
+          <p className="text-[11px] text-earth-600 mt-0.5 font-mono">{fmtPLN(totalVal)}</p>
+        )}
       </div>
-      <div className="flex-1 overflow-y-auto p-2 space-y-2">
-        <SortableContext items={tenders.map(t => t.id)} strategy={verticalListSortingStrategy}>
-          {loading
-            ? Array.from({ length: 2 }).map((_, i) => <SkeletonCard key={i} />)
-            : tenders.length === 0
-              ? (
-                <div className="py-6 text-center">
-                  <TrendingUp className="w-5 h-5 text-earth-800 mx-auto mb-1" />
-                  <p className="text-earth-700 text-xs">Brak przetargów</p>
-                </div>
-              )
-              : tenders.map(t => <SortableCard key={t.id} tender={t} color={stage.color} onOpen={onOpen} />)
-          }
-        </SortableContext>
+
+      {/* Cards */}
+      <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-[120px]" style={{ maxHeight: 'calc(100vh - 220px)' }}>
+        {loading ? (
+          [0, 1].map(i => (
+            <div key={i} className="p-3 rounded-xl bg-earth-900/60 border border-earth-800/50 animate-pulse">
+              <div className="h-3 bg-earth-800 rounded w-full mb-1.5" />
+              <div className="h-3 bg-earth-800 rounded w-3/4 mb-3" />
+              <div className="h-2 bg-earth-800 rounded w-1/2" />
+            </div>
+          ))
+        ) : tenders.length === 0 ? (
+          <div className="py-8 text-center">
+            <TrendingUp className="w-5 h-5 text-earth-800 mx-auto mb-1.5" />
+            <p className="text-earth-700 text-xs">Brak przetargów</p>
+          </div>
+        ) : (
+          tenders.map(t => (
+            <KanbanCard
+              key={t.id}
+              tender={t}
+              colColor={col.color}
+              onDragStart={onCardDragStart}
+              onDragEnd={onCardDragEnd}
+              onClick={onCardClick}
+            />
+          ))
+        )}
       </div>
     </div>
   );
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
-export function PipelinePage() {
-  const { accessToken } = useStore();
-  const [tendersByStage, setTendersByStage] = useState<Record<string, TenderItem[]>>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [totalValue, setTotalValue] = useState(0);
-  const [urgentOnly, setUrgentOnly] = useState(false);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [selectedTender, setSelectedTender] = useState<TenderItem | null>(null);
+// ── Timeline SVG View ─────────────────────────────────────────────────────────
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
-  );
+function TimelineView({ tenders }: { tenders: TenderItem[] }) {
+  const DAYS = 60;
+  const ROW_H = 34;
+  const LABEL_W = 180;
+  const CHART_W = 820;
+  const TOTAL_W = LABEL_W + CHART_W;
+  const today = Date.now();
+  const end = today + DAYS * 86_400_000;
 
-  const authFetch = useAuthFetch();
+  const withDeadline = tenders
+    .filter(t => t.deadline_at)
+    .sort((a, b) => new Date(a.deadline_at!).getTime() - new Date(b.deadline_at!).getTime())
+    .slice(0, 35);
 
-  const fetchTenders = useCallback(async () => {
-    try {
-      const data = await authFetch('/api/v2/tenders?limit=100');
-      const items: TenderItem[] = data.items ?? [];
-      const byStage: Record<string, TenderItem[]> = {};
-      for (const st of PIPELINE_STAGES) byStage[st.key] = [];
-      for (const t of items) {
-        if (byStage[t.status] !== undefined) byStage[t.status].push(t);
-      }
-      const tv = items.reduce((s, t) => {
-        const n = t.value_pln !== null ? parseFloat(String(t.value_pln)) : 0;
-        return s + (isNaN(n) ? 0 : n);
-      }, 0);
-      setTendersByStage(byStage);
-      setTotalValue(tv);
-      setLoading(false);
-    } catch (e: unknown) {
-      setError((e as Error).message);
-      setLoading(false);
-    }
-  }, [accessToken]);
+  const HEADER_H = 46;
+  const HEIGHT = HEADER_H + withDeadline.length * ROW_H + 10;
 
-  useEffect(() => { fetchTenders(); }, [fetchTenders]);
+  const dateX = (ms: number) => LABEL_W + ((ms - today) / (end - today)) * CHART_W;
 
-  function findTenderById(id: string): TenderItem | null {
-    for (const tenders of Object.values(tendersByStage)) {
-      const t = tenders.find(x => x.id === id);
-      if (t) return t;
-    }
-    return null;
-  }
-
-  function findStageForTender(id: string): string | null {
-    for (const [stage, tenders] of Object.entries(tendersByStage)) {
-      if (tenders.find(t => t.id === id)) return stage;
-    }
-    return null;
-  }
-
-  function handleDragStart(e: DragStartEvent) {
-    setActiveId(String(e.active.id));
-  }
-
-  async function handleDragEnd(e: DragEndEvent) {
-    const { active, over } = e;
-    setActiveId(null);
-    if (!over) return;
-    const tenderId = String(active.id);
-    const overId = String(over.id);
-    const fromStage = findStageForTender(tenderId);
-    // Check if over is a stage key or a tender id
-    const toStage = PIPELINE_STAGES.find(s => s.key === overId)?.key ?? findStageForTender(overId);
-    if (!fromStage || !toStage || fromStage === toStage) return;
-
-    // Optimistic update
-    setTendersByStage(prev => {
-      const tender = prev[fromStage].find(t => t.id === tenderId);
-      if (!tender) return prev;
-      return {
-        ...prev,
-        [fromStage]: prev[fromStage].filter(t => t.id !== tenderId),
-        [toStage]: [...prev[toStage], { ...tender, status: toStage }],
-      };
+  const ticks: { x: number; label: string }[] = [];
+  for (let d = 0; d <= DAYS; d += 7) {
+    const ms = today + d * 86_400_000;
+    ticks.push({
+      x: LABEL_W + (d / DAYS) * CHART_W,
+      label: new Date(ms).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit' }),
     });
-
-    try {
-      await authFetch('/api/v2/tenders/' + tenderId, {
-        method: 'PATCH',
-        body: JSON.stringify({ status: toStage }),
-      });
-      showToast('success', 'Status przetargu zaktualizowany');
-    } catch {
-      showToast('error', 'Błąd aktualizacji statusu');
-      fetchTenders();
-    }
   }
-
-  const activeTotal = Object.values(tendersByStage).reduce((s, arr) => s + arr.length, 0);
-  const goCount = tendersByStage['decided_go']?.length ?? 0;
-  const conversionRate = activeTotal > 0 ? ((goCount / activeTotal) * 100).toFixed(0) : '0';
-
-  const displayedByStage = urgentOnly
-    ? Object.fromEntries(Object.entries(tendersByStage).map(([k, v]) => [k, v.filter(t => {
-        const d = daysUntil(t.deadline_at);
-        return d !== null && d <= 7;
-      })]))
-    : tendersByStage;
-
-  if (error) return (
-    <div className="m-6 p-4 rounded-xl bg-accent-danger/10 border border-accent-danger/20 text-accent-danger text-sm flex gap-2">
-      <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />{error}
-    </div>
-  );
-
-  const activeTender = activeId ? findTenderById(activeId) : null;
 
   return (
-    <>
-      <div className="flex flex-col h-full overflow-hidden">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-earth-800/60 flex items-center justify-between shrink-0">
-          <div>
-            <h2 className="text-lg font-semibold text-earth-100">Pipeline przetargów</h2>
-            <p className="text-earth-500 text-xs mt-0.5">Przeciągnij karty między kolumnami</p>
-          </div>
-          <div className="flex items-center gap-3">
+    <div className="overflow-x-auto rounded-2xl border border-earth-800/60 bg-earth-950">
+      <svg width={TOTAL_W} height={HEIGHT} viewBox={`0 0 ${TOTAL_W} ${HEIGHT}`}>
+        {/* Background */}
+        <rect width={TOTAL_W} height={HEIGHT} fill="#0A0906" />
+        {/* Alternate row bg */}
+        {withDeadline.map((_, i) => i % 2 === 0 && (
+          <rect key={i} x={0} y={HEADER_H + i * ROW_H} width={TOTAL_W} height={ROW_H} fill="#0D0B08" />
+        ))}
+        {/* Tick lines */}
+        {ticks.map((tick, i) => (
+          <g key={i}>
+            <line x1={tick.x} y1={HEADER_H} x2={tick.x} y2={HEIGHT} stroke="#1E2A38" strokeWidth="1" />
+            <text x={tick.x + 3} y={HEADER_H - 8} fontSize="10" fill="#475569" fontFamily="monospace">{tick.label}</text>
+          </g>
+        ))}
+        {/* Chart area border */}
+        <rect x={LABEL_W} y={HEADER_H} width={CHART_W} height={HEIGHT - HEADER_H} fill="none" stroke="#1E2A38" strokeWidth="1" />
+
+        {/* Today line */}
+        <line x1={LABEL_W} y1={0} x2={LABEL_W} y2={HEIGHT} stroke="#EF4444" strokeWidth="1.5" strokeDasharray="5 3" />
+        <text x={LABEL_W + 4} y={16} fontSize="10" fill="#EF4444" fontWeight="600">Dziś</text>
+
+        {/* Tender rows */}
+        {withDeadline.map((t, i) => {
+          const y = HEADER_H + i * ROW_H;
+          const deadlineMs = new Date(t.deadline_at!).getTime();
+          const startMs = Math.max(today, today);
+          const endMs = deadlineMs;
+          const x1 = Math.max(LABEL_W, dateX(startMs));
+          const x2 = Math.min(LABEL_W + CHART_W, dateX(endMs));
+          const barW = Math.max(x2 - x1, 2);
+          const color = COL_COLOR_MAP[t.pipeline_status?.toUpperCase()] ?? '#94A3B8';
+          const overdue = deadlineMs < today;
+          const pad = 6;
+
+          return (
+            <g key={t.id}>
+              {/* Label */}
+              <text x={4} y={y + ROW_H / 2 + 4} fontSize="10" fill="#94A3B8">
+                {t.title.slice(0, 30)}{t.title.length > 30 ? '…' : ''}
+              </text>
+              {/* Bar */}
+              {!overdue && endMs <= end && (
+                <rect x={x1} y={y + pad} width={barW} height={ROW_H - pad * 2} rx="3"
+                  fill={color + '40'} stroke={color} strokeWidth="1" />
+              )}
+              {overdue && (
+                <rect x={LABEL_W + CHART_W - 40} y={y + pad} width={40} height={ROW_H - pad * 2} rx="3"
+                  fill="#EF444450" stroke="#EF4444" strokeWidth="1" />
+              )}
+              {/* Deadline dot */}
+              {!overdue && endMs <= end && (
+                <circle cx={x2} cy={y + ROW_H / 2} r="3.5" fill={color} />
+              )}
+              {/* Value */}
+              {t.value_pln != null && !overdue && endMs <= end && x2 + 50 < LABEL_W + CHART_W && (
+                <text x={x2 + 7} y={y + ROW_H / 2 + 4} fontSize="9" fill={color + 'AA'}>
+                  {fmtPLN(t.value_pln)}
+                </text>
+              )}
+            </g>
+          );
+        })}
+
+        {withDeadline.length === 0 && (
+          <text x={TOTAL_W / 2} y={HEIGHT / 2 + 6} textAnchor="middle" fontSize="13" fill="#475569">
+            Brak przetargów z terminem składania
+          </text>
+        )}
+      </svg>
+    </div>
+  );
+}
+
+// ── Add Modal ─────────────────────────────────────────────────────────────────
+
+function AddModal({
+  onClose, onAdd, authFetch,
+}: {
+  onClose: () => void;
+  onAdd: (t: TenderItem) => void;
+  authFetch: ReturnType<typeof useAuthFetch>;
+}) {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<TenderItem[]>([]);
+  const [searching, setSearching] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (query.trim().length < 2) { setResults([]); return; }
+    debounceRef.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const data = await authFetch(`/api/v2/tenders?q=${encodeURIComponent(query)}&limit=10`);
+        setResults(data?.items ?? []);
+      } catch { setResults([]); } finally { setSearching(false); }
+    }, 350);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [query, authFetch]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 8 }}
+        transition={{ duration: 0.2, ease: [0, 0, 0.2, 1] }}
+        className="w-full max-w-lg"
+      >
+        <GlassCard className="p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold text-earth-100">Dodaj przetarg do pipeline</h3>
             <button
-              onClick={() => setUrgentOnly(u => !u)}
-              className={"flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors " + (urgentOnly ? "bg-red-500/20 text-red-400" : "bg-earth-800 text-earth-400 hover:text-earth-200")}
+              onClick={onClose}
+              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-earth-800 transition-colors"
             >
-              <Filter className="w-3.5 h-3.5" /> Pilne
+              <X className="w-4 h-4 text-earth-400" />
             </button>
-            <div className="text-center">
-              <p className="text-xl font-bold text-earth-100 tabular-nums">{activeTotal}</p>
-              <p className="text-earth-600 text-xs">Aktywnych</p>
+          </div>
+
+          {/* Search */}
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-earth-500" />
+            <input
+              autoFocus
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Szukaj przetargu po tytule lub zamawiającym…"
+              className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-earth-800/60 border border-earth-700/50 text-earth-100 text-sm placeholder-earth-600 focus:outline-none focus:border-blue-500/60"
+            />
+            {searching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-earth-500 animate-spin" />}
+          </div>
+
+          {/* Results */}
+          <div className="space-y-2 max-h-72 overflow-y-auto">
+            {results.length === 0 && query.length >= 2 && !searching && (
+              <div className="py-8 text-center">
+                <Search className="w-8 h-8 text-earth-700 mx-auto mb-2" />
+                <p className="text-earth-500 text-sm">Brak wyników dla &ldquo;{query}&rdquo;</p>
+              </div>
+            )}
+            {query.length < 2 && (
+              <p className="text-center text-earth-600 text-sm py-6">Wpisz co najmniej 2 znaki aby wyszukać</p>
+            )}
+            {results.map(t => (
+              <button
+                key={t.id}
+                onClick={() => onAdd(t)}
+                className="w-full text-left p-3 rounded-xl bg-earth-800/40 hover:bg-earth-800/80 border border-earth-700/40 hover:border-blue-500/40 transition-all duration-150 group"
+              >
+                <p className="text-earth-100 text-sm font-medium line-clamp-1 group-hover:text-white">{t.title}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <p className="text-earth-500 text-xs truncate flex-1">{t.buyer ?? '—'}</p>
+                  <span className="text-earth-400 text-xs font-mono shrink-0">{fmtPLN(t.value_pln)}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </GlassCard>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ── KPI chip ──────────────────────────────────────────────────────────────────
+
+function KpiChip({ icon: Icon, label, value, color }: {
+  icon: React.ElementType;
+  label: string;
+  value: string;
+  color: string;
+}) {
+  return (
+    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-earth-900/60 border border-earth-800/60">
+      <Icon className="w-3.5 h-3.5" style={{ color }} />
+      <div>
+        <p className="text-[10px] text-earth-500 uppercase tracking-wider leading-none mb-0.5">{label}</p>
+        <p className="text-sm font-bold text-earth-100 tabular-nums leading-none">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+// ── Main export ───────────────────────────────────────────────────────────────
+
+export function PipelinePage() {
+  const { accessToken, setSelectedTender, setCurrentModule } = useStore();
+  const authFetch = useAuthFetch();
+
+  const [tendersByStatus, setTendersByStatus] = useState<Record<string, TenderItem[]>>({});
+  const [kpi, setKpi] = useState<PipelineKPI | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [view, setView] = useState<'kanban' | 'timeline'>('kanban');
+  const [dragOverCol, setDragOverCol] = useState<string | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+
+  // ── Fetch tenders ─────────────────────────────────────────────────────────
+  const fetchTenders = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await authFetch('/api/v2/tenders?limit=200&include_all_statuses=true');
+      const items: TenderItem[] = data?.items ?? [];
+      const byStatus: Record<string, TenderItem[]> = {};
+      for (const col of COLUMNS) byStatus[col.key] = [];
+      for (const t of items) {
+        const key = (t.pipeline_status ?? '').toUpperCase();
+        if (byStatus[key] !== undefined) byStatus[key].push(t);
+      }
+      setTendersByStatus(byStatus);
+    } catch {
+      // toast already shown by authFetch
+    } finally {
+      setLoading(false);
+    }
+  }, [authFetch]);
+
+  const fetchKpi = useCallback(async () => {
+    try {
+      const data = await authFetch('/api/v2/dashboard/pipeline-kpi');
+      setKpi(data);
+    } catch { /* non-critical */ }
+  }, [authFetch]);
+
+  useEffect(() => { fetchTenders(); fetchKpi(); }, [fetchTenders, fetchKpi]);
+
+  // ── Drag handlers ─────────────────────────────────────────────────────────
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, tender: TenderItem) => {
+    e.dataTransfer.setData('tenderId', tender.id);
+    e.dataTransfer.setData('fromStatus', (tender.pipeline_status ?? '').toUpperCase());
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragEnd = () => { setDragOverCol(null); };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>, colKey: string) => {
+    e.preventDefault();
+    setDragOverCol(colKey);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    const target = e.currentTarget as HTMLElement;
+    if (!target.contains(e.relatedTarget as Node)) {
+      // don't clear here — rely on dragEnd to avoid flicker
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>, toStatus: string) => {
+    e.preventDefault();
+    setDragOverCol(null);
+    const tenderId = e.dataTransfer.getData('tenderId');
+    const fromStatus = e.dataTransfer.getData('fromStatus');
+    if (!tenderId || fromStatus === toStatus) return;
+
+    // Find tender
+    const tender = (tendersByStatus[fromStatus] ?? []).find(t => t.id === tenderId);
+    if (!tender) return;
+
+    // Optimistic update
+    setTendersByStatus(prev => ({
+      ...prev,
+      [fromStatus]: (prev[fromStatus] ?? []).filter(t => t.id !== tenderId),
+      [toStatus]: [...(prev[toStatus] ?? []), { ...tender, pipeline_status: toStatus }],
+    }));
+
+    try {
+      await authFetch(`/api/v2/tenders/${tenderId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ pipeline_status: toStatus }),
+      });
+      const label = COLUMNS.find(c => c.key === toStatus)?.label ?? toStatus;
+      showToast('success', `Przeniesiono → ${label}`);
+    } catch {
+      fetchTenders(); // revert on error
+    }
+  };
+
+  // ── Add to pipeline ───────────────────────────────────────────────────────
+  const handleAddTender = async (tender: TenderItem) => {
+    try {
+      await authFetch(`/api/v2/tenders/${tender.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ pipeline_status: 'OBSERWOWANY' }),
+      });
+      showToast('success', 'Dodano do pipeline jako Obserwowany');
+      setShowAddModal(false);
+      fetchTenders();
+    } catch { /* toast handled */ }
+  };
+
+  // ── Card click → decyzja ──────────────────────────────────────────────────
+  const handleCardClick = (tender: TenderItem) => {
+    setSelectedTender(tender as unknown as Tender);
+    setCurrentModule('decyzja');
+  };
+
+  // ── Derived stats ─────────────────────────────────────────────────────────
+  const allFlat = Object.values(tendersByStatus).flat();
+  const totalCount = allFlat.length;
+  const totalValue = allFlat.reduce((s, t) => s + (t.value_pln ?? 0), 0);
+  const wonCount = (tendersByStatus['WON'] ?? []).length;
+  const closedCount = wonCount + (tendersByStatus['LOST'] ?? []).length;
+  const winRate = closedCount > 0 ? Math.round((wonCount / closedCount) * 100) : null;
+
+  // ── Render ────────────────────────────────────────────────────────────────
+  return (
+    <div className="flex flex-col h-full overflow-hidden bg-earth-950">
+
+      {/* ── Header ──────────────────────────────────────────────────────── */}
+      <div className="px-6 py-4 border-b border-earth-800/60 shrink-0 bg-earth-950/80 backdrop-blur-sm">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          {/* Title */}
+          <div>
+            <h2 className="text-xl font-bold text-earth-50 tracking-tight">Pipeline Przetargów</h2>
+            <p className="text-xs text-earth-500 mt-0.5">
+              {totalCount} przetargów · {fmtPLN(totalValue)} łączna wartość
+            </p>
+          </div>
+
+          {/* KPI chips */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {kpi ? (
+              <>
+                <KpiChip icon={Activity}     label="Aktywne"      value={String(kpi.active)}                     color="#3B82F6" />
+                <KpiChip icon={DollarSign}   label="Wartość"      value={fmtPLN(kpi.pipeline_value)}            color="#F97316" />
+                <KpiChip icon={Target}       label="Win Rate MTD" value={`${Math.round(kpi.win_rate_mtd * 100)}%`} color="#22C55E" />
+              </>
+            ) : (
+              <>
+                <KpiChip icon={Activity}     label="Aktywne"      value={String(totalCount)}    color="#3B82F6" />
+                <KpiChip icon={DollarSign}   label="Wartość"      value={fmtPLN(totalValue)}    color="#F97316" />
+                {winRate !== null && (
+                  <KpiChip icon={Target}     label="Win Rate"     value={`${winRate}%`}          color="#22C55E" />
+                )}
+              </>
+            )}
+
+            {/* View toggle */}
+            <div className="flex items-center rounded-lg bg-earth-900 border border-earth-800/60 p-0.5 ml-2">
+              <button
+                onClick={() => setView('kanban')}
+                className={[
+                  'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
+                  view === 'kanban' ? 'bg-earth-700 text-earth-100' : 'text-earth-500 hover:text-earth-300',
+                ].join(' ')}
+              >
+                <LayoutGrid className="w-3.5 h-3.5" /> Kanban
+              </button>
+              <button
+                onClick={() => setView('timeline')}
+                className={[
+                  'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
+                  view === 'timeline' ? 'bg-earth-700 text-earth-100' : 'text-earth-500 hover:text-earth-300',
+                ].join(' ')}
+              >
+                <CalendarDays className="w-3.5 h-3.5" /> Timeline
+              </button>
             </div>
-            <div className="w-px h-8 bg-earth-800" />
-            <div className="text-center">
-              <p className="text-xl font-bold text-accent-primary tabular-nums">{fmtPLN(totalValue)}</p>
-              <p className="text-earth-600 text-xs">Łączna wartość</p>
-            </div>
-            <div className="w-px h-8 bg-earth-800" />
-            <div className="text-center">
-              <p className="text-xl font-bold text-accent-info tabular-nums">{conversionRate}%</p>
-              <p className="text-earth-600 text-xs">Konwersja</p>
-            </div>
+
+            {/* Add button */}
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" /> Dodaj
+            </button>
           </div>
         </div>
-
-        {/* Kanban */}
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          <div className="flex-1 overflow-x-auto overflow-y-hidden">
-            <div className="flex gap-3 p-4 h-full min-w-max">
-              {PIPELINE_STAGES.map(stage => (
-                <DroppableColumn
-                  key={stage.key}
-                  stage={stage}
-                  tenders={displayedByStage[stage.key] ?? []}
-                  loading={loading}
-                  onOpen={setSelectedTender}
-                />
-              ))}
-            </div>
-          </div>
-          <DragOverlay>
-            {activeTender ? <DragCard tender={activeTender} /> : null}
-          </DragOverlay>
-        </DndContext>
       </div>
 
-      <TenderDetail tender={selectedTender} onClose={() => setSelectedTender(null)} />
-    </>
+      {/* ── Main content ─────────────────────────────────────────────────── */}
+      {view === 'kanban' ? (
+        <div className="flex-1 overflow-x-auto overflow-y-hidden">
+          <div className="flex gap-3 p-4 h-full" style={{ minWidth: 'max-content' }}>
+            {COLUMNS.map(col => (
+              <KanbanColumn
+                key={col.key}
+                col={col}
+                tenders={tendersByStatus[col.key] ?? []}
+                loading={loading}
+                isDragOver={dragOverCol === col.key}
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onCardClick={handleCardClick}
+                onCardDragStart={handleDragStart}
+                onCardDragEnd={handleDragEnd}
+              />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 overflow-auto p-6">
+          <div className="mb-3">
+            <h3 className="text-sm font-semibold text-earth-300">Harmonogram terminów — następne 60 dni</h3>
+            <p className="text-xs text-earth-500 mt-0.5">Poziome paski = czas do deadline, kolor = status pipeline</p>
+          </div>
+          {/* Legend */}
+          <div className="flex items-center gap-4 mb-4 flex-wrap">
+            {COLUMNS.map(c => (
+              <div key={c.key} className="flex items-center gap-1.5 text-xs text-earth-500">
+                <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: c.color }} />
+                {c.label}
+              </div>
+            ))}
+          </div>
+          <TimelineView tenders={allFlat} />
+        </div>
+      )}
+
+      {/* ── Add Modal ────────────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {showAddModal && (
+          <AddModal
+            onClose={() => setShowAddModal(false)}
+            onAdd={handleAddTender}
+            authFetch={authFetch}
+          />
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

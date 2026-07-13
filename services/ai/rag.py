@@ -61,7 +61,7 @@ def embed_document_chunks(
             conn.execute(
                 sa.text("""
                     INSERT INTO doc_chunks (id, tender_id, source_type, source_id, chunk_idx, text, embedding)
-                    VALUES (:id, :tid, :stype, :sid, :idx, :text, :emb::vector)
+                    VALUES (:id, :tid, :stype, :sid, :idx, :text, CAST(:emb AS vector))
                 """),
                 {
                     "id": str(uuid.uuid4()),
@@ -87,10 +87,10 @@ def rag_query(engine, query: str, tender_id: str, top_k: int = 5) -> list[dict]:
         rows = conn.execute(
             sa.text("""
                 SELECT id, chunk_idx, text,
-                       1 - (embedding <=> :emb::vector) as similarity
+                       1 - (embedding <=> CAST(:emb AS vector)) as similarity
                 FROM doc_chunks
                 WHERE tender_id = :tid AND embedding IS NOT NULL
-                ORDER BY embedding <=> :emb::vector
+                ORDER BY embedding <=> CAST(:emb AS vector)
                 LIMIT :topk
             """),
             {"emb": emb_str, "tid": tender_id, "topk": top_k},

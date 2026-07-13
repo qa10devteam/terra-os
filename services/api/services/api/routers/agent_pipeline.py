@@ -143,3 +143,73 @@ def get_brief(tender_id: str) -> dict:
         "score": output.get("score"),
         "finished_at": str(row[2]) if row[2] else None,
     }
+
+
+def _stream_analysis(tender_id: str):
+    """Generator: stream existing agent_run steps as SSE events."""
+    engine = get_engine()
+    with engine.connect() as conn:
+        row = conn.execute(sa.text("""
+            SELECT status, steps, result
+            FROM agent_run
+            WHERE tender_id = :tid
+            ORDER BY created_at DESC
+            LIMIT 1
+        """), {"tid": tender_id}).fetchone()
+
+    if not row:
+        yield f"data: {json.dumps({'step': 'no_analysis', 'status': 'waiting'})}\n\n"
+        return
+
+    status = row[0]
+    steps = row[1]
+    result = row[2]
+
+    # Normalise steps to a list
+    if steps is None:
+        steps_list = []
+    elif isinstance(steps, list):
+        steps_list = steps
+    elif isinstance(steps, str):
+        try:
+            steps_list = json.loads(steps)
+        except Exception:
+            steps_list = []
+    else:
+        steps_list = []
+
+    # Stream each recorded step
+    for step in steps_list:
+        if isinstance(step, dict):
+            yield f"data: {json.dumps({**step, 'status': 'done'})}\n\n"
+        else:
+            yield f"data: {json.dumps({'step': str(step), 'status': 'done'})}\n\n"
+
+    # If complete, also stream the decision_brief
+    if status == "complete" or status == "done":
+        if result:
+            result_dict = result if isinstance(result, dict) else (
+                json.loads(result) if isinstance(result, str) else {}
+            )
+            brief = result_dict.get("decision_brief")
+            if brief:
+                yield f"data: {json.dumps({'step': 'decision_brief', 'content': brief, 'status': 'done'})}\n\n"
+        yield f"data: {json.dumps({'event': 'done'})}\n\n"
+    elif status == "error":
+        yield f"data: {json.dumps({'event': 'error', 'status': status})}\n\n"
+    else:
+        # Still running or queued — inform client
+        yield f"data: {json.dumps({'event': 'pending', 'status': status})}\n\n"
+
+
+@router.get("/agent/analyze/{tender_id}/stream")
+def agent_analyze_stream(tender_id: str) -> StreamingResponse:
+    """Stream existing agent_run analysis as SSE events."""
+    return StreamingResponse(
+        _stream_analysis(tender_id),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )

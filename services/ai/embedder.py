@@ -70,7 +70,7 @@ def embed_tenders_batch(engine, tenant_id: Optional[str] = None, limit: int = 50
         for i, (tid, emb) in enumerate(zip(ids, embeddings)):
             emb_str = "[" + ",".join(str(x) for x in emb) + "]"
             conn.execute(
-                sa.text("UPDATE tender SET embedding = :emb::vector WHERE id = :id"),
+                sa.text("UPDATE tender SET embedding = CAST(:emb AS vector) WHERE id = :id"),
                 {"emb": emb_str, "id": tid},
             )
 
