@@ -6,6 +6,7 @@ import { useStore } from '@/store/useStore';
 import { useAuthFetch } from '@/lib/api-v2';
 import { showToast } from '@/components/Toast';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { PageShell } from '@/components/PageShell';
 import type { Tender } from '@/types';
 import {
   Scale, CheckCircle, XCircle, AlertCircle, Loader2,
@@ -74,13 +75,13 @@ const PROGRESS_STEPS: ProgressStep[] = [
 ];
 
 const STEP_LABELS: Record<ProgressStep, string> = {
-  fetching:          'Pobieranie danych',
-  analyzing:         'Analiza dokumentów',
-  scoring:           'Obliczanie Score',
-  icb_estimate:      'Szacowanie ICB',
-  ahp_eval:          'Ewaluacja AHP',
-  generating_brief:  'Generowanie briefu',
-  done:              'Ukończono',
+  fetching:         'Pobieranie danych',
+  analyzing:        'Analiza dokumentów',
+  scoring:          'Obliczanie Score',
+  icb_estimate:     'Szacowanie ICB',
+  ahp_eval:         'Ewaluacja AHP',
+  generating_brief: 'Generowanie briefu',
+  done:             'Ukończono',
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -118,10 +119,10 @@ function DeadlineBadge({ deadline }: { deadline: string | null }) {
   const days = daysUntil(deadline);
   if (days === null) return <span className="text-earth-600 text-xs">—</span>;
   const cls =
-    days < 0 ? 'text-red-400 bg-red-500/15 border-red-500/30' :
-    days <= 3 ? 'text-red-400 bg-red-500/15 border-red-500/30' :
-    days <= 7 ? 'text-orange-400 bg-orange-500/15 border-orange-500/30' :
-    days <= 14 ? 'text-yellow-400 bg-yellow-500/15 border-yellow-500/30' :
+    days < 0   ? 'text-accent-danger bg-accent-danger/15 border-accent-danger/30' :
+    days <= 3  ? 'text-accent-danger bg-accent-danger/15 border-accent-danger/30' :
+    days <= 7  ? 'text-orange-400 bg-orange-500/15 border-orange-500/30' :
+    days <= 14 ? 'text-accent-warning bg-accent-warning/15 border-accent-warning/30' :
     'text-earth-400 bg-earth-800/60 border-earth-700/40';
   return (
     <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${cls}`}>
@@ -134,9 +135,9 @@ function ScoreBadge({ score }: { score: number | null }) {
   if (score === null) return <span className="text-earth-600 text-xs">—</span>;
   const pct = Math.round(score * 100);
   const cls =
-    score >= 0.75 ? 'text-emerald-400 bg-emerald-500/15 border-emerald-500/30' :
-    score >= 0.5  ? 'text-yellow-400 bg-yellow-500/15 border-yellow-500/30' :
-    'text-red-400 bg-red-500/15 border-red-500/30';
+    score >= 0.75 ? 'text-accent-primary bg-accent-primary/15 border-accent-primary/30' :
+    score >= 0.5  ? 'text-accent-warning bg-accent-warning/15 border-accent-warning/30' :
+    'text-accent-danger bg-accent-danger/15 border-accent-danger/30';
   return (
     <span className={`text-xs px-2 py-0.5 rounded-full font-bold border ${cls}`}>
       {pct}%
@@ -158,10 +159,10 @@ function QueueCard({
       initial={{ opacity: 0, x: -6 }}
       animate={{ opacity: 1, x: 0 }}
       onClick={onClick}
-      className={`p-3 rounded-xl border cursor-pointer transition-all duration-200 ${
+      className={`p-3 rounded-token-lg border cursor-pointer transition-all duration-200 ${
         isSelected
-          ? 'bg-blue-500/10 border-blue-500/40 shadow-md shadow-blue-500/10'
-          : 'bg-earth-900/60 border-earth-800/60 hover:border-earth-700 hover:bg-earth-900/80'
+          ? 'bg-accent-info/10 border-accent-info/40 shadow-token-sm'
+          : 'card-hover'
       }`}
     >
       <div className="flex items-start justify-between gap-2">
@@ -388,7 +389,7 @@ export function DecyzjaPage() {
   const blockCount = engine?.violations?.filter((v) => v.severity === 'block').length ?? 0;
   const warnCount = engine?.violations?.filter((v) => v.severity !== 'block').length ?? 0;
 
-  // ── Queue panel (shared between both layouts) ─────────────────────────────
+  // ── Queue panel ───────────────────────────────────────────────────────────
   const QueuePanel = (
     <div className="w-80 shrink-0 border-r border-earth-800/60 flex flex-col overflow-hidden bg-earth-950">
       <div className="px-4 py-3 border-b border-earth-800/60 flex items-center justify-between">
@@ -401,7 +402,7 @@ export function DecyzjaPage() {
         <button
           onClick={fetchQueue}
           aria-label="Odśwież kolejkę"
-          className="p-1.5 rounded-lg hover:bg-earth-800 transition-colors"
+          className="btn-ghost p-1.5"
         >
           <RefreshCw className={`w-3.5 h-3.5 text-earth-500 ${queueLoading ? 'animate-spin' : ''}`} />
         </button>
@@ -410,7 +411,7 @@ export function DecyzjaPage() {
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {queueLoading
           ? Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="p-3 rounded-xl bg-earth-900/60 border border-earth-800/50 animate-pulse h-[80px]" />
+              <div key={i} className="p-3 rounded-token-lg bg-earth-900/60 border border-earth-800/50 animate-pulse h-[80px]" />
             ))
           : queue.length === 0
             ? (
@@ -436,434 +437,445 @@ export function DecyzjaPage() {
   // ── Empty state ───────────────────────────────────────────────────────────
   if (!tender) {
     return (
-      <div className="flex h-full overflow-hidden">
-        {QueuePanel}
-        <div className="flex-1 flex flex-col items-center justify-center gap-5 text-center p-8">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4 }}
-            className="w-16 h-16 rounded-2xl bg-earth-800 flex items-center justify-center border border-earth-700/40"
-          >
-            <Scale className="w-8 h-8 text-earth-500" />
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.1 }}
-          >
-            <p className="text-earth-200 font-semibold text-lg">Wybierz przetarg z kolejki</p>
-            <p className="text-earth-500 text-sm mt-1.5 max-w-xs leading-relaxed">
-              Kliknij przetarg po lewej stronie, aby zobaczyć analizę AI i podjąć decyzję GO / NO-GO
-            </p>
-          </motion.div>
+      <PageShell title="Decyzja" subtitle="AI rekomendacja GO/NO-GO" noPadding>
+        <div className="flex h-full overflow-hidden">
+          {QueuePanel}
+          <div className="flex-1 flex flex-col items-center justify-center gap-5 text-center p-8">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4 }}
+              className="w-16 h-16 rounded-token-xl bg-earth-800 flex items-center justify-center border border-earth-700/40"
+            >
+              <Scale className="w-8 h-8 text-earth-500" />
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+            >
+              <p className="text-earth-200 font-semibold text-lg">Wybierz przetarg z kolejki</p>
+              <p className="text-earth-500 text-sm mt-1.5 max-w-xs leading-relaxed">
+                Kliknij przetarg po lewej stronie, aby zobaczyć analizę AI i podjąć decyzję GO / NO-GO
+              </p>
+            </motion.div>
+          </div>
         </div>
-      </div>
+      </PageShell>
     );
   }
 
   // ── Full layout ───────────────────────────────────────────────────────────
   return (
-    <div className="flex h-full overflow-hidden">
-      {QueuePanel}
+    <PageShell title="Decyzja" subtitle="AI rekomendacja GO/NO-GO" noPadding>
+      <div className="flex h-full overflow-hidden">
+        {QueuePanel}
 
-      {/* Right panel */}
-      <div className="flex-1 overflow-y-auto bg-earth-950">
-        <div className="p-5 space-y-5 max-w-3xl mx-auto pb-12">
+        {/* Right panel */}
+        <div className="flex-1 overflow-y-auto bg-earth-950">
+          <div className="p-5 space-y-5 max-w-3xl mx-auto pb-12">
 
-          {/* ── Section B: Selected Tender ───────────────────── */}
-          <section>
-            <div className="flex items-center gap-2 mb-3">
-              <FileText className="w-4 h-4 text-blue-400" />
-              <h3 className="text-xs font-semibold text-earth-400 uppercase tracking-wider">Wybrany przetarg</h3>
-            </div>
-
-            <GlassCard className="p-4">
-              <h2 className="text-earth-100 font-semibold text-sm leading-snug mb-3">{tender.title}</h2>
-              <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-                <div>
-                  <p className="text-earth-600 text-xs mb-0.5">Zamawiający</p>
-                  <p className="text-earth-300 text-xs leading-snug flex items-start gap-1">
-                    <Building2 className="w-3 h-3 shrink-0 mt-0.5 text-earth-600" />
-                    <span className="truncate">{tender.buyer ?? '—'}</span>
-                  </p>
-                </div>
-                <div>
-                  <p className="text-earth-600 text-xs mb-0.5">Kod CPV</p>
-                  <p className="text-earth-300 text-xs font-mono flex items-center gap-1">
-                    <Hash className="w-3 h-3 text-earth-600" />
-                    {tender.cpv?.[0] ?? '—'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-earth-600 text-xs mb-0.5">Wartość szacunkowa</p>
-                  <p className="text-earth-300 text-sm font-mono font-semibold">{fmtPLN(tender.value_pln)}</p>
-                </div>
-                <div>
-                  <p className="text-earth-600 text-xs mb-0.5">Termin składania</p>
-                  <p className="text-earth-300 text-xs flex items-center gap-1.5">
-                    <Clock className="w-3 h-3 text-earth-600" />
-                    {tender.deadline_at
-                      ? new Date(tender.deadline_at).toLocaleDateString('pl-PL')
-                      : '—'}
-                    <DeadlineBadge deadline={tender.deadline_at} />
-                  </p>
-                </div>
+            {/* ── Section B: Selected Tender ───────────────────── */}
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <FileText className="w-4 h-4 text-accent-info" />
+                <h3 className="section-label">Wybrany przetarg</h3>
               </div>
-            </GlassCard>
 
-            {/* Loading skeleton for analysis data */}
-            {analysisLoading && (
-              <div className="flex items-center gap-2 p-3 mt-3 text-earth-500 text-xs">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                Ładowanie danych analizy…
-              </div>
-            )}
-
-            {/* Existing analysis summary */}
-            {!analysisLoading && analysis?.summary && (
-              <GlassCard className="p-4 mt-3">
-                <p className="text-earth-500 text-xs font-medium uppercase tracking-wider mb-2">Istniejąca analiza</p>
-                <p className="text-earth-300 text-xs leading-relaxed">{analysis.summary}</p>
-                <p className="text-earth-600 text-xs mt-2">
-                  {new Date(analysis.created_at).toLocaleString('pl-PL')}
-                </p>
-              </GlassCard>
-            )}
-
-            {/* Engine result */}
-            {!analysisLoading && engine && (
-              <GlassCard className="p-4 mt-3">
-                <div className="flex items-center justify-between mb-3">
-                  <p className="text-earth-500 text-xs font-medium uppercase tracking-wider">Silnik decyzyjny</p>
-                  <span
-                    className={`text-xs px-2.5 py-1 rounded-full font-bold border ${
-                      engine.feasible
-                        ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                        : 'bg-red-500/15 text-red-400 border-red-500/30'
-                    }`}
-                  >
-                    {engine.feasible ? '✓ Wykonalne' : '✗ Niewykonalne'}
-                  </span>
-                </div>
-
-                {engine.violations.length > 0 ? (
-                  <div className="space-y-1.5">
-                    <div className="flex gap-3 mb-2">
-                      {blockCount > 0 && (
-                        <span className="text-xs text-red-400">
-                          <span className="font-bold">{blockCount}</span> blokad
-                        </span>
-                      )}
-                      {warnCount > 0 && (
-                        <span className="text-xs text-yellow-400">
-                          <span className="font-bold">{warnCount}</span> ostrzeżeń
-                        </span>
-                      )}
-                    </div>
-                    {engine.violations.slice(0, 6).map((v, i) => (
-                      <div
-                        key={i}
-                        className={`flex items-start gap-2 text-xs px-3 py-2 rounded-lg ${
-                          v.severity === 'block'
-                            ? 'bg-red-500/10 text-red-300'
-                            : 'bg-yellow-500/10 text-yellow-300'
-                        }`}
-                      >
-                        {v.severity === 'block'
-                          ? <XCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                          : <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                        }
-                        {v.message}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-earth-500 text-xs flex items-center gap-1.5">
-                    <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
-                    Brak naruszeń reguł
-                  </p>
-                )}
-              </GlassCard>
-            )}
-
-            {/* Compare */}
-            {!analysisLoading && compare && (
-              <GlassCard className="p-4 mt-3">
-                <p className="text-earth-500 text-xs font-medium uppercase tracking-wider mb-3">Porównanie kosztorysów</p>
-                <div className="grid grid-cols-3 gap-4">
+              <GlassCard className="p-4">
+                <h2 className="text-earth-100 font-semibold text-sm leading-snug mb-3">{tender.title}</h2>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                   <div>
-                    <p className="text-earth-600 text-xs mb-1">Dokumentacja</p>
-                    <p className="text-earth-200 text-sm font-mono font-semibold">{fmtPLN(compare.doc_total)}</p>
-                  </div>
-                  <div>
-                    <p className="text-earth-600 text-xs mb-1">Wycena własna</p>
-                    <p className="text-earth-200 text-sm font-mono font-semibold">{fmtPLN(compare.owner_total)}</p>
-                  </div>
-                  <div>
-                    <p className="text-earth-600 text-xs mb-1">Delta B − A</p>
-                    <p className={`text-sm font-mono font-bold ${(delta ?? 0) > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
-                      {delta !== null ? `${delta > 0 ? '+' : ''}${fmtPLN(delta)}` : '—'}
+                    <p className="text-earth-600 text-xs mb-0.5">Zamawiający</p>
+                    <p className="text-earth-300 text-xs leading-snug flex items-start gap-1">
+                      <Building2 className="w-3 h-3 shrink-0 mt-0.5 text-earth-600" />
+                      <span className="truncate">{tender.buyer ?? '—'}</span>
                     </p>
-                    {headroom !== null && (
-                      <p className="text-xs text-earth-600 mt-0.5">
-                        Marża:{' '}
-                        <span className={headroom < 0 ? 'text-red-400' : 'text-emerald-400'}>
-                          {headroom.toFixed(1)}%
-                        </span>
-                      </p>
-                    )}
+                  </div>
+                  <div>
+                    <p className="text-earth-600 text-xs mb-0.5">Kod CPV</p>
+                    <p className="text-earth-300 text-xs font-mono flex items-center gap-1">
+                      <Hash className="w-3 h-3 text-earth-600" />
+                      {tender.cpv?.[0] ?? '—'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-earth-600 text-xs mb-0.5">Wartość szacunkowa</p>
+                    <p className="text-earth-300 text-sm font-mono font-semibold">{fmtPLN(tender.value_pln)}</p>
+                  </div>
+                  <div>
+                    <p className="text-earth-600 text-xs mb-0.5">Termin składania</p>
+                    <p className="text-earth-300 text-xs flex items-center gap-1.5">
+                      <Clock className="w-3 h-3 text-earth-600" />
+                      {tender.deadline_at
+                        ? new Date(tender.deadline_at).toLocaleDateString('pl-PL')
+                        : '—'}
+                      <DeadlineBadge deadline={tender.deadline_at} />
+                    </p>
                   </div>
                 </div>
-
-                {/* Visual delta bar */}
-                {delta !== null && (
-                  <div className="mt-3">
-                    <div className="h-1.5 bg-earth-800 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-700 ${delta > 0 ? 'bg-red-500' : 'bg-emerald-500'}`}
-                        style={{
-                          width: `${Math.min(Math.abs(delta) / Math.max(parseFloat(String(compare.doc_total)) || 1, 1) * 200, 100)}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                )}
               </GlassCard>
-            )}
-          </section>
 
-          {/* ── Section C: AI Analysis Runner ─────────────────── */}
-          <section>
-            <div className="flex items-center gap-2 mb-3">
-              <Brain className="w-4 h-4 text-blue-400" />
-              <h3 className="text-xs font-semibold text-earth-400 uppercase tracking-wider">AI Analiza</h3>
-            </div>
-
-            <GlassCard className="p-4">
-              {/* Run button */}
-              <button
-                onClick={runAnalysis}
-                disabled={running}
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-blue-500 hover:bg-blue-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm transition-all duration-200 shadow-lg shadow-blue-500/20"
-              >
-                {running
-                  ? <Loader2 className="w-4 h-4 animate-spin" />
-                  : <PlayCircle className="w-4 h-4" />
-                }
-                {running ? 'Analiza w toku…' : 'Uruchom AI Analizę'}
-              </button>
-
-              {/* Progress steps */}
-              <AnimatePresence>
-                {(running || currentStep === 'done') && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="mt-4 space-y-1 overflow-hidden"
-                  >
-                    {PROGRESS_STEPS.map((step, idx) => {
-                      const isDone = completedSteps.has(step);
-                      const isCurrent = currentStep === step && !isDone;
-                      return (
-                        <motion.div
-                          key={step}
-                          initial={{ opacity: 0, x: -8 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: idx * 0.04 }}
-                          className={`flex items-center gap-2 text-xs px-3 py-2 rounded-lg transition-colors ${
-                            isDone
-                              ? 'bg-emerald-500/10 text-emerald-400'
-                              : isCurrent
-                              ? 'bg-blue-500/10 text-blue-300'
-                              : 'text-earth-600'
-                          }`}
-                        >
-                          {isDone ? (
-                            <CheckCircle className="w-3.5 h-3.5 shrink-0" />
-                          ) : isCurrent ? (
-                            <Loader2 className="w-3.5 h-3.5 shrink-0 animate-spin" />
-                          ) : (
-                            <div className="w-3.5 h-3.5 shrink-0 rounded-full border border-earth-700" />
-                          )}
-                          <span className={isCurrent ? 'font-medium' : ''}>{STEP_LABELS[step]}</span>
-                        </motion.div>
-                      );
-                    })}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* GO/NO-GO verdict badge */}
-              <AnimatePresence>
-                {goNogo && (
-                  <motion.div
-                    key="verdict"
-                    initial={{ opacity: 0, scale: 0.9, y: 8 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                    className={`mt-4 flex items-center justify-center gap-4 py-6 rounded-xl border-2 ${
-                      goNogo === 'GO'
-                        ? 'bg-emerald-500/10 border-emerald-500/40'
-                        : 'bg-red-500/10 border-red-500/40'
-                    }`}
-                  >
-                    {goNogo === 'GO' ? (
-                      <CheckCircle className="w-7 h-7 text-emerald-400" />
-                    ) : (
-                      <XCircle className="w-7 h-7 text-red-400" />
-                    )}
-                    <span
-                      className={`text-6xl font-black tracking-tight leading-none ${
-                        goNogo === 'GO' ? 'text-emerald-400' : 'text-red-400'
-                      }`}
-                    >
-                      {goNogo}
-                    </span>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Decision brief markdown */}
-              <AnimatePresence>
-                {brief && (
-                  <motion.div
-                    key="brief"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.35 }}
-                    className="mt-4 p-4 rounded-xl bg-earth-950 border border-earth-800/60"
-                  >
-                    <p className="text-earth-500 text-xs font-medium uppercase tracking-wider mb-3">
-                      Decision Brief
-                    </p>
-                    <div
-                      className="space-y-1"
-                      dangerouslySetInnerHTML={{ __html: renderMarkdown(brief) }}
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </GlassCard>
-          </section>
-
-          {/* ── Section D: Decision Actions ───────────────────── */}
-          <section>
-            <div className="flex items-center gap-2 mb-3">
-              <Scale className="w-4 h-4 text-blue-400" />
-              <h3 className="text-xs font-semibold text-earth-400 uppercase tracking-wider">Decyzja</h3>
-            </div>
-
-            <GlassCard className="p-4">
-              <AnimatePresence mode="wait">
-                {decisionStatus === 'decided_go' ? (
-                  <motion.div
-                    key="confirmed-go"
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center gap-3 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400"
-                  >
-                    <CheckCircle className="w-5 h-5 shrink-0" />
-                    <div>
-                      <p className="font-semibold text-sm">Decyzja GO zapisana</p>
-                      <p className="text-xs text-emerald-600 mt-0.5">
-                        Przetarg przekazany do realizacji — pipeline_status: decided_go
-                      </p>
-                    </div>
-                  </motion.div>
-                ) : decisionStatus === 'decided_nogo' ? (
-                  <motion.div
-                    key="confirmed-nogo"
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400"
-                  >
-                    <XCircle className="w-5 h-5 shrink-0" />
-                    <div>
-                      <p className="font-semibold text-sm">Decyzja NO-GO zapisana</p>
-                      <p className="text-xs text-red-600 mt-0.5">
-                        Przetarg oznaczony jako odrzucony — pipeline_status: decided_nogo
-                      </p>
-                    </div>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="action-buttons"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex gap-3"
-                  >
-                    <button
-                      onClick={() => takeDecision('decided_go')}
-                      className="flex-1 flex items-center justify-center gap-2.5 py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white font-bold text-sm transition-all duration-200 shadow-lg shadow-emerald-500/20"
-                    >
-                      <ThumbsUp className="w-4 h-4" />
-                      GO — Złóż ofertę
-                    </button>
-                    <button
-                      onClick={() => takeDecision('decided_nogo')}
-                      className="flex-1 flex items-center justify-center gap-2.5 py-4 rounded-xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold text-sm transition-all duration-200"
-                    >
-                      <ThumbsDown className="w-4 h-4" />
-                      NO-GO — Odrzuć
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* History */}
-              {(historyGo.length > 0 || historyNogo.length > 0) && (
-                <div className="mt-4 pt-4 border-t border-earth-800/60">
-                  <div className="flex items-center gap-1.5 mb-3">
-                    <History className="w-3.5 h-3.5 text-earth-600" />
-                    <p className="text-earth-600 text-xs font-medium uppercase tracking-wider">
-                      Historia decyzji
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* GO history */}
-                    <div>
-                      <p className="text-emerald-500 text-xs font-semibold mb-2 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-                        GO ({historyGo.length})
-                      </p>
-                      <div className="space-y-1">
-                        {historyGo.map((t) => (
-                          <p
-                            key={t.id}
-                            className="text-earth-500 text-xs truncate py-0.5 border-l-2 border-emerald-500/40 pl-2"
-                          >
-                            {t.title}
-                          </p>
-                        ))}
-                      </div>
-                    </div>
-                    {/* NO-GO history */}
-                    <div>
-                      <p className="text-red-500 text-xs font-semibold mb-2 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
-                        NO-GO ({historyNogo.length})
-                      </p>
-                      <div className="space-y-1">
-                        {historyNogo.map((t) => (
-                          <p
-                            key={t.id}
-                            className="text-earth-500 text-xs truncate py-0.5 border-l-2 border-red-500/40 pl-2"
-                          >
-                            {t.title}
-                          </p>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+              {/* Loading skeleton for analysis data */}
+              {analysisLoading && (
+                <div className="flex items-center gap-2 p-3 mt-3 text-earth-500 text-xs">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Ładowanie danych analizy…
                 </div>
               )}
-            </GlassCard>
-          </section>
 
+              {/* Existing analysis summary */}
+              {!analysisLoading && analysis?.summary && (
+                <GlassCard className="p-4 mt-3">
+                  <p className="section-label mb-2">Istniejąca analiza</p>
+                  <p className="text-earth-300 text-xs leading-relaxed">{analysis.summary}</p>
+                  <p className="text-earth-600 text-xs mt-2">
+                    {new Date(analysis.created_at).toLocaleString('pl-PL')}
+                  </p>
+                </GlassCard>
+              )}
+
+              {/* Engine result */}
+              {!analysisLoading && engine && (
+                <GlassCard className="p-4 mt-3">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="section-label">Silnik decyzyjny</p>
+                    <span
+                      className={`text-xs px-2.5 py-1 rounded-full font-bold border ${
+                        engine.feasible
+                          ? 'bg-accent-primary/15 text-accent-primary border-accent-primary/30'
+                          : 'bg-accent-danger/15 text-accent-danger border-accent-danger/30'
+                      }`}
+                    >
+                      {engine.feasible ? '✓ Wykonalne' : '✗ Niewykonalne'}
+                    </span>
+                  </div>
+
+                  {engine.violations.length > 0 ? (
+                    <div className="space-y-1.5">
+                      <div className="flex gap-3 mb-2">
+                        {blockCount > 0 && (
+                          <span className="text-xs text-accent-danger">
+                            <span className="font-bold">{blockCount}</span> blokad
+                          </span>
+                        )}
+                        {warnCount > 0 && (
+                          <span className="text-xs text-accent-warning">
+                            <span className="font-bold">{warnCount}</span> ostrzeżeń
+                          </span>
+                        )}
+                      </div>
+                      {engine.violations.slice(0, 6).map((v, i) => (
+                        <div
+                          key={i}
+                          className={`flex items-start gap-2 text-xs px-3 py-2 rounded-token ${
+                            v.severity === 'block'
+                              ? 'bg-accent-danger/10 text-accent-danger'
+                              : 'bg-accent-warning/10 text-accent-warning'
+                          }`}
+                        >
+                          {v.severity === 'block'
+                            ? <XCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                            : <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                          }
+                          {v.message}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-earth-500 text-xs flex items-center gap-1.5">
+                      <CheckCircle className="w-3.5 h-3.5 text-accent-primary" />
+                      Brak naruszeń reguł
+                    </p>
+                  )}
+                </GlassCard>
+              )}
+
+              {/* Compare */}
+              {!analysisLoading && compare && (
+                <GlassCard className="p-4 mt-3">
+                  <p className="section-label mb-3">Porównanie kosztorysów</p>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-earth-600 text-xs mb-1">Dokumentacja</p>
+                      <p className="text-earth-200 text-sm font-mono font-semibold">{fmtPLN(compare.doc_total)}</p>
+                    </div>
+                    <div>
+                      <p className="text-earth-600 text-xs mb-1">Wycena własna</p>
+                      <p className="text-earth-200 text-sm font-mono font-semibold">{fmtPLN(compare.owner_total)}</p>
+                    </div>
+                    <div>
+                      <p className="text-earth-600 text-xs mb-1">Delta B − A</p>
+                      <p className={`text-sm font-mono font-bold ${(delta ?? 0) > 0 ? 'text-accent-danger' : 'text-accent-primary'}`}>
+                        {delta !== null ? `${delta > 0 ? '+' : ''}${fmtPLN(delta)}` : '—'}
+                      </p>
+                      {headroom !== null && (
+                        <p className="text-xs text-earth-600 mt-0.5">
+                          Marża:{' '}
+                          <span className={headroom < 0 ? 'text-accent-danger' : 'text-accent-primary'}>
+                            {headroom.toFixed(1)}%
+                          </span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Visual delta bar */}
+                  {delta !== null && (
+                    <div className="mt-3">
+                      <div className="h-1.5 bg-earth-800 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-700 ${delta > 0 ? 'bg-accent-danger' : 'bg-accent-primary'}`}
+                          style={{
+                            width: `${Math.min(Math.abs(delta) / Math.max(parseFloat(String(compare.doc_total)) || 1, 1) * 200, 100)}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </GlassCard>
+              )}
+            </section>
+
+            {/* ── Section C: AI Analysis Runner ─────────────────── */}
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <Brain className="w-4 h-4 text-accent-info" />
+                <h3 className="section-label">AI Analiza</h3>
+              </div>
+
+              <GlassCard className="p-4">
+                {/* Run button */}
+                <button
+                  onClick={runAnalysis}
+                  disabled={running}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-token-lg
+                             bg-accent-info hover:bg-accent-info/90
+                             disabled:opacity-50 disabled:cursor-not-allowed
+                             text-white font-semibold text-sm transition-all duration-200
+                             shadow-token-md"
+                >
+                  {running
+                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                    : <PlayCircle className="w-4 h-4" />
+                  }
+                  {running ? 'Analiza w toku…' : 'Uruchom AI Analizę'}
+                </button>
+
+                {/* Progress steps */}
+                <AnimatePresence>
+                  {(running || currentStep === 'done') && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="mt-4 space-y-1 overflow-hidden"
+                    >
+                      {PROGRESS_STEPS.map((step, idx) => {
+                        const isDone = completedSteps.has(step);
+                        const isCurrent = currentStep === step && !isDone;
+                        return (
+                          <motion.div
+                            key={step}
+                            initial={{ opacity: 0, x: -8 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: idx * 0.04 }}
+                            className={`flex items-center gap-2 text-xs px-3 py-2 rounded-token transition-colors ${
+                              isDone
+                                ? 'bg-accent-primary/10 text-accent-primary'
+                                : isCurrent
+                                ? 'bg-accent-info/10 text-accent-info'
+                                : 'text-earth-600'
+                            }`}
+                          >
+                            {isDone ? (
+                              <CheckCircle className="w-3.5 h-3.5 shrink-0" />
+                            ) : isCurrent ? (
+                              <Loader2 className="w-3.5 h-3.5 shrink-0 animate-spin" />
+                            ) : (
+                              <div className="w-3.5 h-3.5 shrink-0 rounded-full border border-earth-700" />
+                            )}
+                            <span className={isCurrent ? 'font-medium' : ''}>{STEP_LABELS[step]}</span>
+                          </motion.div>
+                        );
+                      })}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* GO/NO-GO verdict badge */}
+                <AnimatePresence>
+                  {goNogo && (
+                    <motion.div
+                      key="verdict"
+                      initial={{ opacity: 0, scale: 0.9, y: 8 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                      className={`mt-4 flex items-center justify-center gap-4 py-6 rounded-token-xl border-2 ${
+                        goNogo === 'GO'
+                          ? 'bg-accent-primary/10 border-accent-primary/40'
+                          : 'bg-accent-danger/10 border-accent-danger/40'
+                      }`}
+                    >
+                      {goNogo === 'GO' ? (
+                        <CheckCircle className="w-7 h-7 text-accent-primary" />
+                      ) : (
+                        <XCircle className="w-7 h-7 text-accent-danger" />
+                      )}
+                      <span
+                        className={`text-6xl font-black tracking-tight leading-none ${
+                          goNogo === 'GO' ? 'text-accent-primary' : 'text-accent-danger'
+                        }`}
+                      >
+                        {goNogo}
+                      </span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Decision brief markdown */}
+                <AnimatePresence>
+                  {brief && (
+                    <motion.div
+                      key="brief"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.35 }}
+                      className="mt-4 p-4 rounded-token-lg bg-earth-950 border border-earth-800/60"
+                    >
+                      <p className="section-label mb-3">Decision Brief</p>
+                      <div
+                        className="space-y-1"
+                        dangerouslySetInnerHTML={{ __html: renderMarkdown(brief) }}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </GlassCard>
+            </section>
+
+            {/* ── Section D: Decision Actions ───────────────────── */}
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <Scale className="w-4 h-4 text-accent-info" />
+                <h3 className="section-label">Decyzja</h3>
+              </div>
+
+              <GlassCard className="p-4">
+                <AnimatePresence mode="wait">
+                  {decisionStatus === 'decided_go' ? (
+                    <motion.div
+                      key="confirmed-go"
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex items-center gap-3 p-4 rounded-token-lg bg-accent-primary/10 border border-accent-primary/30 text-accent-primary"
+                    >
+                      <CheckCircle className="w-5 h-5 shrink-0" />
+                      <div>
+                        <p className="font-semibold text-sm">Decyzja GO zapisana</p>
+                        <p className="text-xs text-accent-primary/60 mt-0.5">
+                          Przetarg przekazany do realizacji — pipeline_status: decided_go
+                        </p>
+                      </div>
+                    </motion.div>
+                  ) : decisionStatus === 'decided_nogo' ? (
+                    <motion.div
+                      key="confirmed-nogo"
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex items-center gap-3 p-4 rounded-token-lg bg-accent-danger/10 border border-accent-danger/30 text-accent-danger"
+                    >
+                      <XCircle className="w-5 h-5 shrink-0" />
+                      <div>
+                        <p className="font-semibold text-sm">Decyzja NO-GO zapisana</p>
+                        <p className="text-xs text-accent-danger/60 mt-0.5">
+                          Przetarg oznaczony jako odrzucony — pipeline_status: decided_nogo
+                        </p>
+                      </div>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="action-buttons"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex gap-3"
+                    >
+                      <button
+                        onClick={() => takeDecision('decided_go')}
+                        className="flex-1 flex items-center justify-center gap-2.5 py-4 rounded-token-lg
+                                   bg-accent-primary hover:bg-accent-primary/90 active:bg-accent-primary/80
+                                   text-earth-950 font-bold text-sm
+                                   transition-all duration-200 shadow-token-md"
+                      >
+                        <ThumbsUp className="w-4 h-4" />
+                        GO — Złóż ofertę
+                      </button>
+                      <button
+                        onClick={() => takeDecision('decided_nogo')}
+                        className="flex-1 flex items-center justify-center gap-2.5 py-4 rounded-token-lg
+                                   border border-accent-danger/30 bg-accent-danger/10
+                                   hover:bg-accent-danger/20 hover:border-accent-danger/50
+                                   text-accent-danger font-bold text-sm
+                                   transition-all duration-200"
+                      >
+                        <ThumbsDown className="w-4 h-4" />
+                        NO-GO — Odrzuć
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* History */}
+                {(historyGo.length > 0 || historyNogo.length > 0) && (
+                  <div className="mt-4 pt-4 border-t border-earth-800/60">
+                    <div className="flex items-center gap-1.5 mb-3">
+                      <History className="w-3.5 h-3.5 text-earth-600" />
+                      <p className="section-label">Historia decyzji</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      {/* GO history */}
+                      <div>
+                        <p className="text-accent-primary text-xs font-semibold mb-2 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent-primary inline-block" />
+                          GO ({historyGo.length})
+                        </p>
+                        <div className="space-y-1">
+                          {historyGo.map((t) => (
+                            <p
+                              key={t.id}
+                              className="text-earth-500 text-xs truncate py-0.5 border-l-2 border-accent-primary/40 pl-2"
+                            >
+                              {t.title}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                      {/* NO-GO history */}
+                      <div>
+                        <p className="text-accent-danger text-xs font-semibold mb-2 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-accent-danger inline-block" />
+                          NO-GO ({historyNogo.length})
+                        </p>
+                        <div className="space-y-1">
+                          {historyNogo.map((t) => (
+                            <p
+                              key={t.id}
+                              className="text-earth-500 text-xs truncate py-0.5 border-l-2 border-accent-danger/40 pl-2"
+                            >
+                              {t.title}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </GlassCard>
+            </section>
+
+          </div>
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

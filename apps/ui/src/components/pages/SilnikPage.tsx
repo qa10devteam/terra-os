@@ -3,9 +3,15 @@ import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuthFetch } from '@/lib/api-v2';
 import { useStore } from '@/store/useStore';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { Button } from '@/components/ui/Button';
+import { MetricCard } from '@/components/ui/MetricCard';
+import { PageShell } from '@/components/PageShell';
 import { showToast } from '@/components/Toast';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sliders, BarChart3, Grid3X3, History, Save, RotateCcw, Target, TrendingUp } from 'lucide-react';
+import {
+  Sliders, BarChart3, Grid3X3, History, Save, RotateCcw,
+  Target, TrendingUp,
+} from 'lucide-react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -72,70 +78,70 @@ const WEIGHT_LABELS: Record<keyof ScoringWeights, string> = {
 };
 
 const TABS = [
-  { id: 'weights', label: 'Konfiguracja Wag', icon: Sliders },
-  { id: 'analytics', label: 'Score Analytics', icon: BarChart3 },
-  { id: 'heatmap', label: 'CPV Heatmap', icon: Grid3X3 },
-  { id: 'history', label: 'Historia Kalibracji', icon: History },
+  { id: 'weights',   label: 'Konfiguracja Wag',    icon: Sliders   },
+  { id: 'analytics', label: 'Score Analytics',      icon: BarChart3 },
+  { id: 'heatmap',   label: 'CPV Heatmap',          icon: Grid3X3   },
+  { id: 'history',   label: 'Historia Kalibracji',  icon: History   },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
 
 const SAMPLE_HEATMAP_DATA: CpvHeatmapCell[] = [
-  { cpv_code: '45000000', cpv_name: 'Roboty budowlane', quarter: 'Q1 2026', win_rate: 0.72, count: 34 },
-  { cpv_code: '45000000', cpv_name: 'Roboty budowlane', quarter: 'Q2 2026', win_rate: 0.68, count: 28 },
-  { cpv_code: '45000000', cpv_name: 'Roboty budowlane', quarter: 'Q3 2025', win_rate: 0.55, count: 41 },
-  { cpv_code: '45000000', cpv_name: 'Roboty budowlane', quarter: 'Q4 2025', win_rate: 0.61, count: 37 },
-  { cpv_code: '72000000', cpv_name: 'Usługi IT', quarter: 'Q1 2026', win_rate: 0.85, count: 22 },
-  { cpv_code: '72000000', cpv_name: 'Usługi IT', quarter: 'Q2 2026', win_rate: 0.79, count: 19 },
-  { cpv_code: '72000000', cpv_name: 'Usługi IT', quarter: 'Q3 2025', win_rate: 0.62, count: 25 },
-  { cpv_code: '72000000', cpv_name: 'Usługi IT', quarter: 'Q4 2025', win_rate: 0.71, count: 21 },
-  { cpv_code: '33000000', cpv_name: 'Urządzenia medyczne', quarter: 'Q1 2026', win_rate: 0.44, count: 12 },
-  { cpv_code: '33000000', cpv_name: 'Urządzenia medyczne', quarter: 'Q2 2026', win_rate: 0.51, count: 15 },
-  { cpv_code: '33000000', cpv_name: 'Urządzenia medyczne', quarter: 'Q3 2025', win_rate: 0.38, count: 10 },
-  { cpv_code: '33000000', cpv_name: 'Urządzenia medyczne', quarter: 'Q4 2025', win_rate: 0.42, count: 11 },
-  { cpv_code: '48000000', cpv_name: 'Oprogramowanie', quarter: 'Q1 2026', win_rate: 0.91, count: 18 },
-  { cpv_code: '48000000', cpv_name: 'Oprogramowanie', quarter: 'Q2 2026', win_rate: 0.88, count: 16 },
-  { cpv_code: '48000000', cpv_name: 'Oprogramowanie', quarter: 'Q3 2025', win_rate: 0.75, count: 20 },
-  { cpv_code: '48000000', cpv_name: 'Oprogramowanie', quarter: 'Q4 2025', win_rate: 0.82, count: 17 },
-  { cpv_code: '79000000', cpv_name: 'Usługi doradcze', quarter: 'Q1 2026', win_rate: 0.63, count: 29 },
-  { cpv_code: '79000000', cpv_name: 'Usługi doradcze', quarter: 'Q2 2026', win_rate: 0.59, count: 26 },
-  { cpv_code: '79000000', cpv_name: 'Usługi doradcze', quarter: 'Q3 2025', win_rate: 0.48, count: 33 },
-  { cpv_code: '79000000', cpv_name: 'Usługi doradcze', quarter: 'Q4 2025', win_rate: 0.54, count: 30 },
-  { cpv_code: '30000000', cpv_name: 'Maszyny biurowe', quarter: 'Q1 2026', win_rate: 0.35, count: 8 },
-  { cpv_code: '30000000', cpv_name: 'Maszyny biurowe', quarter: 'Q2 2026', win_rate: 0.41, count: 9 },
-  { cpv_code: '30000000', cpv_name: 'Maszyny biurowe', quarter: 'Q3 2025', win_rate: 0.28, count: 7 },
-  { cpv_code: '30000000', cpv_name: 'Maszyny biurowe', quarter: 'Q4 2025', win_rate: 0.32, count: 6 },
-  { cpv_code: '50000000', cpv_name: 'Usługi naprawcze', quarter: 'Q1 2026', win_rate: 0.56, count: 14 },
-  { cpv_code: '50000000', cpv_name: 'Usługi naprawcze', quarter: 'Q2 2026', win_rate: 0.52, count: 13 },
-  { cpv_code: '50000000', cpv_name: 'Usługi naprawcze', quarter: 'Q3 2025', win_rate: 0.45, count: 16 },
-  { cpv_code: '50000000', cpv_name: 'Usługi naprawcze', quarter: 'Q4 2025', win_rate: 0.49, count: 15 },
-  { cpv_code: '71000000', cpv_name: 'Usługi architektoniczne', quarter: 'Q1 2026', win_rate: 0.77, count: 11 },
-  { cpv_code: '71000000', cpv_name: 'Usługi architektoniczne', quarter: 'Q2 2026', win_rate: 0.73, count: 10 },
-  { cpv_code: '71000000', cpv_name: 'Usługi architektoniczne', quarter: 'Q3 2025', win_rate: 0.65, count: 13 },
-  { cpv_code: '71000000', cpv_name: 'Usługi architektoniczne', quarter: 'Q4 2025', win_rate: 0.69, count: 12 },
-  { cpv_code: '66000000', cpv_name: 'Usługi finansowe', quarter: 'Q1 2026', win_rate: 0.48, count: 7 },
-  { cpv_code: '66000000', cpv_name: 'Usługi finansowe', quarter: 'Q2 2026', win_rate: 0.44, count: 6 },
-  { cpv_code: '66000000', cpv_name: 'Usługi finansowe', quarter: 'Q3 2025', win_rate: 0.36, count: 9 },
-  { cpv_code: '66000000', cpv_name: 'Usługi finansowe', quarter: 'Q4 2025', win_rate: 0.40, count: 8 },
-  { cpv_code: '90000000', cpv_name: 'Usługi komunalne', quarter: 'Q1 2026', win_rate: 0.67, count: 19 },
-  { cpv_code: '90000000', cpv_name: 'Usługi komunalne', quarter: 'Q2 2026', win_rate: 0.63, count: 17 },
-  { cpv_code: '90000000', cpv_name: 'Usługi komunalne', quarter: 'Q3 2025', win_rate: 0.54, count: 22 },
-  { cpv_code: '90000000', cpv_name: 'Usługi komunalne', quarter: 'Q4 2025', win_rate: 0.58, count: 20 },
+  { cpv_code: '45000000', cpv_name: 'Roboty budowlane',       quarter: 'Q1 2026', win_rate: 0.72, count: 34 },
+  { cpv_code: '45000000', cpv_name: 'Roboty budowlane',       quarter: 'Q2 2026', win_rate: 0.68, count: 28 },
+  { cpv_code: '45000000', cpv_name: 'Roboty budowlane',       quarter: 'Q3 2025', win_rate: 0.55, count: 41 },
+  { cpv_code: '45000000', cpv_name: 'Roboty budowlane',       quarter: 'Q4 2025', win_rate: 0.61, count: 37 },
+  { cpv_code: '72000000', cpv_name: 'Usługi IT',              quarter: 'Q1 2026', win_rate: 0.85, count: 22 },
+  { cpv_code: '72000000', cpv_name: 'Usługi IT',              quarter: 'Q2 2026', win_rate: 0.79, count: 19 },
+  { cpv_code: '72000000', cpv_name: 'Usługi IT',              quarter: 'Q3 2025', win_rate: 0.62, count: 25 },
+  { cpv_code: '72000000', cpv_name: 'Usługi IT',              quarter: 'Q4 2025', win_rate: 0.71, count: 21 },
+  { cpv_code: '33000000', cpv_name: 'Urządzenia medyczne',    quarter: 'Q1 2026', win_rate: 0.44, count: 12 },
+  { cpv_code: '33000000', cpv_name: 'Urządzenia medyczne',    quarter: 'Q2 2026', win_rate: 0.51, count: 15 },
+  { cpv_code: '33000000', cpv_name: 'Urządzenia medyczne',    quarter: 'Q3 2025', win_rate: 0.38, count: 10 },
+  { cpv_code: '33000000', cpv_name: 'Urządzenia medyczne',    quarter: 'Q4 2025', win_rate: 0.42, count: 11 },
+  { cpv_code: '48000000', cpv_name: 'Oprogramowanie',         quarter: 'Q1 2026', win_rate: 0.91, count: 18 },
+  { cpv_code: '48000000', cpv_name: 'Oprogramowanie',         quarter: 'Q2 2026', win_rate: 0.88, count: 16 },
+  { cpv_code: '48000000', cpv_name: 'Oprogramowanie',         quarter: 'Q3 2025', win_rate: 0.75, count: 20 },
+  { cpv_code: '48000000', cpv_name: 'Oprogramowanie',         quarter: 'Q4 2025', win_rate: 0.82, count: 17 },
+  { cpv_code: '79000000', cpv_name: 'Usługi doradcze',        quarter: 'Q1 2026', win_rate: 0.63, count: 29 },
+  { cpv_code: '79000000', cpv_name: 'Usługi doradcze',        quarter: 'Q2 2026', win_rate: 0.59, count: 26 },
+  { cpv_code: '79000000', cpv_name: 'Usługi doradcze',        quarter: 'Q3 2025', win_rate: 0.48, count: 33 },
+  { cpv_code: '79000000', cpv_name: 'Usługi doradcze',        quarter: 'Q4 2025', win_rate: 0.54, count: 30 },
+  { cpv_code: '30000000', cpv_name: 'Maszyny biurowe',        quarter: 'Q1 2026', win_rate: 0.35, count:  8 },
+  { cpv_code: '30000000', cpv_name: 'Maszyny biurowe',        quarter: 'Q2 2026', win_rate: 0.41, count:  9 },
+  { cpv_code: '30000000', cpv_name: 'Maszyny biurowe',        quarter: 'Q3 2025', win_rate: 0.28, count:  7 },
+  { cpv_code: '30000000', cpv_name: 'Maszyny biurowe',        quarter: 'Q4 2025', win_rate: 0.32, count:  6 },
+  { cpv_code: '50000000', cpv_name: 'Usługi naprawcze',       quarter: 'Q1 2026', win_rate: 0.56, count: 14 },
+  { cpv_code: '50000000', cpv_name: 'Usługi naprawcze',       quarter: 'Q2 2026', win_rate: 0.52, count: 13 },
+  { cpv_code: '50000000', cpv_name: 'Usługi naprawcze',       quarter: 'Q3 2025', win_rate: 0.45, count: 16 },
+  { cpv_code: '50000000', cpv_name: 'Usługi naprawcze',       quarter: 'Q4 2025', win_rate: 0.49, count: 15 },
+  { cpv_code: '71000000', cpv_name: 'Usługi architektoniczne',quarter: 'Q1 2026', win_rate: 0.77, count: 11 },
+  { cpv_code: '71000000', cpv_name: 'Usługi architektoniczne',quarter: 'Q2 2026', win_rate: 0.73, count: 10 },
+  { cpv_code: '71000000', cpv_name: 'Usługi architektoniczne',quarter: 'Q3 2025', win_rate: 0.65, count: 13 },
+  { cpv_code: '71000000', cpv_name: 'Usługi architektoniczne',quarter: 'Q4 2025', win_rate: 0.69, count: 12 },
+  { cpv_code: '66000000', cpv_name: 'Usługi finansowe',       quarter: 'Q1 2026', win_rate: 0.48, count:  7 },
+  { cpv_code: '66000000', cpv_name: 'Usługi finansowe',       quarter: 'Q2 2026', win_rate: 0.44, count:  6 },
+  { cpv_code: '66000000', cpv_name: 'Usługi finansowe',       quarter: 'Q3 2025', win_rate: 0.36, count:  9 },
+  { cpv_code: '66000000', cpv_name: 'Usługi finansowe',       quarter: 'Q4 2025', win_rate: 0.40, count:  8 },
+  { cpv_code: '90000000', cpv_name: 'Usługi komunalne',       quarter: 'Q1 2026', win_rate: 0.67, count: 19 },
+  { cpv_code: '90000000', cpv_name: 'Usługi komunalne',       quarter: 'Q2 2026', win_rate: 0.63, count: 17 },
+  { cpv_code: '90000000', cpv_name: 'Usługi komunalne',       quarter: 'Q3 2025', win_rate: 0.54, count: 22 },
+  { cpv_code: '90000000', cpv_name: 'Usługi komunalne',       quarter: 'Q4 2025', win_rate: 0.58, count: 20 },
 ];
 
 const DEADLINE_BONUS_DATA = [
-  { days: 0, bonus: 50 },
-  { days: 7, bonus: 30 },
+  { days: 0,  bonus: 50 },
+  { days: 7,  bonus: 30 },
   { days: 14, bonus: 15 },
-  { days: 30, bonus: 5 },
-  { days: 60, bonus: 0 },
+  { days: 30, bonus: 5  },
+  { days: 60, bonus: 0  },
 ];
 
 // ─── Utility Functions ───────────────────────────────────────────────────────
 
 function interpolateColor(value: number): string {
-  const cold = { r: 30, g: 41, b: 59 };  // #1E293B
-  const hot = { r: 59, g: 130, b: 246 }; // #3B82F6
+  const cold = { r: 30, g: 41, b: 59  };  // #1E293B (earth-800)
+  const hot  = { r: 16, g: 185,b: 129 };  // #10b981 (accent-primary)
   const t = Math.max(0, Math.min(1, value));
   const r = Math.round(cold.r + (hot.r - cold.r) * t);
   const g = Math.round(cold.g + (hot.g - cold.g) * t);
@@ -147,11 +153,8 @@ function formatTimestamp(ts: string): string {
   try {
     const d = new Date(ts);
     return d.toLocaleString('pl-PL', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
     });
   } catch {
     return ts;
@@ -161,31 +164,28 @@ function formatTimestamp(ts: string): string {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export function SilnikPage() {
-  const authFetch = useAuthFetch();
+  const authFetch       = useAuthFetch();
   const setCurrentModule = useStore((s) => s.setCurrentModule);
 
-  const [activeTab, setActiveTab] = useState<TabId>('weights');
-  const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab]   = useState<TabId>('weights');
+  const [loading,   setLoading]     = useState(false);
 
   // Tab 1 state
-  const [weights, setWeights] = useState<ScoringWeights>({
-    cpv_match: 30,
-    value_range: 20,
-    deadline_pressure: 20,
-    buyer_history: 15,
-    document_quality: 15,
+  const [weights, setWeights]       = useState<ScoringWeights>({
+    cpv_match: 30, value_range: 20, deadline_pressure: 20,
+    buyer_history: 15, document_quality: 15,
   });
   const [originalWeights, setOriginalWeights] = useState<ScoringWeights | null>(null);
-  const [topTenders, setTopTenders] = useState<TenderPreview[]>([]);
-  const [saving, setSaving] = useState(false);
+  const [topTenders,  setTopTenders]  = useState<TenderPreview[]>([]);
+  const [saving,      setSaving]      = useState(false);
 
   // Tab 2 state
-  const [tenderList, setTenderList] = useState<{ id: string; title: string }[]>([]);
+  const [tenderList,      setTenderList]      = useState<{ id: string; title: string }[]>([]);
   const [selectedTenderId, setSelectedTenderId] = useState<string>('');
-  const [analysis, setAnalysis] = useState<TenderAnalysis | null>(null);
+  const [analysis,        setAnalysis]        = useState<TenderAnalysis | null>(null);
 
   // Tab 3 state
-  const [heatmapData, setHeatmapData] = useState<CpvHeatmapCell[]>([]);
+  const [heatmapData,    setHeatmapData]    = useState<CpvHeatmapCell[]>([]);
   const [heatmapTooltip, setHeatmapTooltip] = useState<{ cell: CpvHeatmapCell; x: number; y: number } | null>(null);
 
   // Tab 4 state
@@ -193,10 +193,7 @@ export function SilnikPage() {
 
   // ─── Computed values ─────────────────────────────────────────────────────
 
-  const weightSum = useMemo(() => {
-    return Object.values(weights).reduce((sum, v) => sum + v, 0);
-  }, [weights]);
-
+  const weightSum  = useMemo(() => Object.values(weights).reduce((sum, v) => sum + v, 0), [weights]);
   const isValidSum = weightSum === 100;
 
   // ─── Data fetching ───────────────────────────────────────────────────────
@@ -208,9 +205,7 @@ export function SilnikPage() {
         setWeights(data.weights);
         setOriginalWeights(data.weights);
       }
-    } catch (err) {
-      console.error('Failed to fetch scoring config:', err);
-    }
+    } catch (err) { console.error('Failed to fetch scoring config:', err); }
   }, [authFetch]);
 
   const fetchTopTenders = useCallback(async () => {
@@ -218,9 +213,7 @@ export function SilnikPage() {
       const data = await authFetch('/api/v2/tenders?sort=match_score&limit=10') as { items?: TenderPreview[]; data?: TenderPreview[] };
       const items = data?.items || data?.data || [];
       setTopTenders(Array.isArray(items) ? items : []);
-    } catch (err) {
-      console.error('Failed to fetch top tenders:', err);
-    }
+    } catch (err) { console.error('Failed to fetch top tenders:', err); }
   }, [authFetch]);
 
   const fetchTenderList = useCallback(async () => {
@@ -228,9 +221,7 @@ export function SilnikPage() {
       const data = await authFetch('/api/v2/tenders?limit=50') as { items?: { id: string; title: string }[]; data?: { id: string; title: string }[] };
       const items = data?.items || data?.data || [];
       setTenderList(Array.isArray(items) ? items : []);
-    } catch (err) {
-      console.error('Failed to fetch tender list:', err);
-    }
+    } catch (err) { console.error('Failed to fetch tender list:', err); }
   }, [authFetch]);
 
   const fetchAnalysis = useCallback(async (tenderId: string) => {
@@ -242,20 +233,14 @@ export function SilnikPage() {
     } catch (err) {
       console.error('Failed to fetch analysis:', err);
       setAnalysis(null);
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   }, [authFetch]);
 
   const fetchHeatmap = useCallback(async () => {
     try {
       const data = await authFetch('/api/v2/market/cpv-heatmap') as CpvHeatmapCell[] | { data?: CpvHeatmapCell[] };
       const cells = Array.isArray(data) ? data : data?.data;
-      if (cells && cells.length > 0) {
-        setHeatmapData(cells);
-      } else {
-        setHeatmapData(SAMPLE_HEATMAP_DATA);
-      }
+      setHeatmapData(cells && cells.length > 0 ? cells : SAMPLE_HEATMAP_DATA);
     } catch {
       setHeatmapData(SAMPLE_HEATMAP_DATA);
     }
@@ -277,29 +262,19 @@ export function SilnikPage() {
 
   // ─── Effects ─────────────────────────────────────────────────────────────
 
-  useEffect(() => {
-    setCurrentModule('silnik');
-  }, [setCurrentModule]);
+  useEffect(() => { setCurrentModule('silnik'); }, [setCurrentModule]);
 
   useEffect(() => {
-    if (activeTab === 'weights') {
-      fetchScoringConfig();
-      fetchTopTenders();
-    } else if (activeTab === 'analytics') {
-      fetchTenderList();
-    } else if (activeTab === 'heatmap') {
-      fetchHeatmap();
-    } else if (activeTab === 'history') {
-      fetchAuditHistory();
-    }
+    if      (activeTab === 'weights')   { fetchScoringConfig(); fetchTopTenders(); }
+    else if (activeTab === 'analytics') { fetchTenderList(); }
+    else if (activeTab === 'heatmap')   { fetchHeatmap(); }
+    else if (activeTab === 'history')   { fetchAuditHistory(); }
   }, [activeTab, fetchScoringConfig, fetchTopTenders, fetchTenderList, fetchHeatmap, fetchAuditHistory]);
 
   // Debounced refetch on weight change
   useEffect(() => {
     if (activeTab !== 'weights') return;
-    const timer = setTimeout(() => {
-      fetchTopTenders();
-    }, 500);
+    const timer = setTimeout(() => { fetchTopTenders(); }, 500);
     return () => clearTimeout(timer);
   }, [weights, activeTab, fetchTopTenders]);
 
@@ -323,15 +298,11 @@ export function SilnikPage() {
     } catch (err) {
       console.error('Failed to save weights:', err);
       showToast('error', 'Błąd zapisu konfiguracji');
-    } finally {
-      setSaving(false);
-    }
+    } finally { setSaving(false); }
   }, [authFetch, weights, isValidSum]);
 
   const handleResetWeights = useCallback(() => {
-    if (originalWeights) {
-      setWeights(originalWeights);
-    }
+    if (originalWeights) setWeights(originalWeights);
   }, [originalWeights]);
 
   const handleRestoreConfig = useCallback(async (entry: AuditEntry) => {
@@ -355,26 +326,24 @@ export function SilnikPage() {
     if (id) fetchAnalysis(id);
   }, [fetchAnalysis]);
 
-  // ─── Render helpers ──────────────────────────────────────────────────────
+  // ─── Tab Bar ─────────────────────────────────────────────────────────────
 
   const renderTabBar = () => (
-    <div className="flex gap-1 p-1 bg-earth-900/60 rounded-xl border border-earth-800 mb-6">
+    <div className="flex gap-1 p-1 bg-earth-900/60 rounded-token-xl border border-earth-800 mb-6">
       {TABS.map((tab) => {
-        const Icon = tab.icon;
+        const Icon     = tab.icon;
         const isActive = activeTab === tab.id;
         return (
-          <button
+          <Button
             key={tab.id}
+            variant={isActive ? 'primary' : 'secondary'}
+            size="sm"
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 flex-1 justify-center ${
-              isActive
-                ? 'bg-[#3B82F6]/20 text-[#3B82F6] border border-[#3B82F6]/30'
-                : 'text-earth-100/60 hover:text-earth-100 hover:bg-earth-800/50'
-            }`}
+            iconLeft={<Icon size={15} />}
+            className="flex-1 justify-center"
           >
-            <Icon size={16} />
             <span className="hidden md:inline">{tab.label}</span>
-          </button>
+          </Button>
         );
       })}
     </div>
@@ -388,35 +357,37 @@ export function SilnikPage() {
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#3B82F6]/20 flex items-center justify-center">
-                <Target size={20} className="text-[#3B82F6]" />
+              <div className="w-10 h-10 rounded-token-lg bg-accent-primary/20 flex items-center justify-center">
+                <Target size={20} className="text-accent-primary" />
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-earth-100">Wagi Scoringowe</h2>
-                <p className="text-sm text-earth-100/60">Dostosuj priorytety algorytmu oceny</p>
+                <p className="text-sm text-earth-500">Dostosuj priorytety algorytmu oceny</p>
               </div>
             </div>
-            <div className={`px-4 py-2 rounded-lg text-sm font-bold ${
+            {/* Sum badge */}
+            <div className={[
+              'px-4 py-2 rounded-token text-sm font-bold border',
               isValidSum
-                ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                : 'bg-red-500/20 text-red-400 border border-red-500/30'
-            }`}>
+                ? 'bg-accent-success/15 text-accent-success border-accent-success/30'
+                : 'bg-accent-danger/15 text-accent-danger border-accent-danger/30',
+            ].join(' ')}>
               Suma: {weightSum}/100
               {!isValidSum && <span className="ml-2">⚠️</span>}
             </div>
           </div>
 
+          {/* Sliders */}
           <div className="space-y-5">
             {(Object.keys(WEIGHT_LABELS) as (keyof ScoringWeights)[]).map((key) => (
               <div key={key} className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-earth-100/80">
-                    {WEIGHT_LABELS[key]}
-                  </label>
-                  <span className="px-2.5 py-0.5 rounded-md bg-[#3B82F6]/20 text-[#3B82F6] text-sm font-bold min-w-[3rem] text-center">
+                  <label className="label-base text-sm">{WEIGHT_LABELS[key]}</label>
+                  <span className="px-2.5 py-0.5 rounded-token bg-accent-primary/20 text-accent-primary text-sm font-bold min-w-[3rem] text-center">
                     {weights[key]}
                   </span>
                 </div>
+                {/* Range slider — accent-primary thumb via Tailwind arbitrary + CSS var */}
                 <div className="relative">
                   <input
                     type="range"
@@ -427,14 +398,15 @@ export function SilnikPage() {
                     className="w-full h-2 rounded-full appearance-none cursor-pointer
                       [&::-webkit-slider-track]:rounded-full [&::-webkit-slider-track]:bg-earth-800
                       [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
-                      [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#3B82F6]
-                      [&::-webkit-slider-thumb]:shadow-[0_0_8px_rgba(59,130,246,0.5)]
+                      [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent-primary
+                      [&::-webkit-slider-thumb]:shadow-token-glow
                       [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-earth-800
                       [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4
-                      [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-[#3B82F6] [&::-moz-range-thumb]:border-0"
+                      [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-accent-primary [&::-moz-range-thumb]:border-0"
                   />
+                  {/* Progress fill */}
                   <div
-                    className="absolute top-0 left-0 h-2 rounded-full bg-[#3B82F6]/40 pointer-events-none"
+                    className="absolute top-0 left-0 h-2 rounded-full bg-accent-primary/40 pointer-events-none"
                     style={{ width: `${weights[key]}%` }}
                   />
                 </div>
@@ -442,26 +414,26 @@ export function SilnikPage() {
             ))}
           </div>
 
+          {/* Action buttons */}
           <div className="flex gap-3 mt-6 pt-6 border-t border-earth-800">
-            <button
+            <Button
+              variant="primary"
+              size="md"
               onClick={handleSaveWeights}
-              disabled={!isValidSum || saving}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                isValidSum && !saving
-                  ? 'bg-[#3B82F6] text-white hover:bg-[#3B82F6]/80 shadow-lg shadow-[#3B82F6]/20'
-                  : 'bg-earth-800 text-earth-100/40 cursor-not-allowed'
-              }`}
+              disabled={!isValidSum}
+              loading={saving}
+              iconLeft={<Save size={15} />}
             >
-              <Save size={16} />
-              {saving ? 'Zapisywanie...' : 'Zapisz konfigurację'}
-            </button>
-            <button
+              {saving ? 'Zapisywanie…' : 'Zapisz konfigurację'}
+            </Button>
+            <Button
+              variant="secondary"
+              size="md"
               onClick={handleResetWeights}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium bg-earth-800 text-earth-100/80 hover:bg-earth-800/80 transition-all"
+              iconLeft={<RotateCcw size={15} />}
             >
-              <RotateCcw size={16} />
               Resetuj
-            </button>
+            </Button>
           </div>
         </div>
       </GlassCard>
@@ -470,9 +442,9 @@ export function SilnikPage() {
       <GlassCard>
         <div className="p-6">
           <div className="flex items-center gap-3 mb-4">
-            <TrendingUp size={18} className="text-[#3B82F6]" />
+            <TrendingUp size={18} className="text-accent-primary" />
             <h3 className="text-base font-semibold text-earth-100">Podgląd Top 10</h3>
-            <span className="text-xs text-earth-100/40">(live preview)</span>
+            <span className="text-xs text-earth-600">(live preview)</span>
           </div>
 
           {topTenders.length > 0 ? (
@@ -486,26 +458,26 @@ export function SilnikPage() {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: idx * 0.05 }}
-                    className="flex items-center gap-3 px-3 py-2 rounded-lg bg-earth-900/40 hover:bg-earth-900/60 transition-colors"
+                    className="flex items-center gap-3 px-3 py-2 rounded-token-lg bg-earth-900/40 hover:bg-earth-900/60 transition-colors"
                   >
-                    <span className="text-xs font-bold text-[#3B82F6] w-6 text-center">
+                    <span className="text-xs font-bold text-accent-primary w-6 text-center">
                       #{idx + 1}
                     </span>
-                    <span className="text-sm text-earth-100/80 flex-1 truncate">
+                    <span className="text-sm text-earth-200 flex-1 truncate">
                       {tender.title || `Przetarg ${tender.id}`}
                     </span>
                     <div className="flex items-center gap-2 min-w-[140px]">
                       <div className="flex-1 h-2 bg-earth-800 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-[#3B82F6]/60 to-[#3B82F6] rounded-full transition-all duration-500"
+                          className="h-full bg-gradient-to-r from-accent-primary/60 to-accent-primary rounded-full transition-all duration-500"
                           style={{ width: `${Math.min(100, score)}%` }}
                         />
                       </div>
-                      <span className="text-xs font-mono text-earth-100/60 w-8 text-right">
+                      <span className="text-xs font-mono text-earth-500 w-8 text-right">
                         {score.toFixed(0)}
                       </span>
                       {delta !== 0 && (
-                        <span className={`text-xs font-bold ${delta > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        <span className={`text-xs font-bold ${delta > 0 ? 'text-accent-success' : 'text-accent-danger'}`}>
                           {delta > 0 ? '↑' : '↓'}{Math.abs(delta).toFixed(1)}
                         </span>
                       )}
@@ -515,7 +487,7 @@ export function SilnikPage() {
               })}
             </div>
           ) : (
-            <div className="text-center py-8 text-earth-100/40 text-sm">
+            <div className="text-center py-8 text-earth-600 text-sm">
               Brak danych przetargów do wyświetlenia
             </div>
           )}
@@ -527,9 +499,8 @@ export function SilnikPage() {
   // ─── Tab 2: Score Analytics ──────────────────────────────────────────────
 
   const renderAnalyticsTab = () => {
-    const breakdown = analysis?.score_breakdown || [];
+    const breakdown  = analysis?.score_breakdown || [];
     const totalScore = analysis?.total_score || 0;
-    const avgScore = analysis?.average_score || 50;
     const percentile = analysis?.percentile || Math.max(1, Math.round((1 - totalScore / 100) * 100));
 
     return (
@@ -540,13 +511,11 @@ export function SilnikPage() {
             <select
               value={selectedTenderId}
               onChange={(e) => handleSelectTender(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-lg bg-earth-900/60 border border-earth-800 text-earth-100 text-sm focus:outline-none focus:border-[#3B82F6]/50 transition-colors"
+              className="w-full px-4 py-2.5 rounded-token-lg bg-earth-900/60 border border-earth-800 text-earth-100 text-sm focus:outline-none focus:border-accent-primary/50 transition-colors"
             >
               <option value="">— Wybierz przetarg —</option>
               {tenderList.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.title || t.id}
-                </option>
+                <option key={t.id} value={t.id}>{t.title || t.id}</option>
               ))}
             </select>
           </div>
@@ -554,7 +523,7 @@ export function SilnikPage() {
 
         {loading && (
           <div className="flex items-center justify-center py-12">
-            <div className="w-8 h-8 border-2 border-[#3B82F6] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-accent-primary border-t-transparent rounded-full animate-spin" />
           </div>
         )}
 
@@ -566,8 +535,8 @@ export function SilnikPage() {
               animate={{ opacity: 1, scale: 1 }}
               className="flex items-center justify-center"
             >
-              <div className="px-6 py-3 rounded-full bg-[#3B82F6]/15 border border-[#3B82F6]/30">
-                <span className="text-[#3B82F6] font-bold text-lg">
+              <div className="px-6 py-3 rounded-full bg-accent-primary/15 border border-accent-primary/30">
+                <span className="text-accent-primary font-bold text-lg">
                   Top {percentile}% w kategorii CPV
                 </span>
               </div>
@@ -586,22 +555,15 @@ export function SilnikPage() {
                       <g key={item.criterion || idx}>
                         <defs>
                           <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.4" />
-                            <stop offset="100%" stopColor="#3B82F6" stopOpacity="1" />
+                            <stop offset="0%"   stopColor="#10b981" stopOpacity="0.4" />
+                            <stop offset="100%" stopColor="#10b981" stopOpacity="1"   />
                           </linearGradient>
                         </defs>
-                        <rect
-                          x={130}
-                          y={y}
-                          width={barWidth}
-                          height={32}
-                          rx={6}
-                          fill={`url(#${gradientId})`}
-                        />
+                        <rect x={130} y={y} width={barWidth} height={32} rx={6} fill={`url(#${gradientId})`} />
                         <text x={4} y={y + 20} fontSize="11" fill="#e2e8f0" fontWeight="500">
                           {item.criterion}
                         </text>
-                        <text x={135 + barWidth + 8} y={y + 20} fontSize="11" fill="#3B82F6" fontWeight="700">
+                        <text x={135 + barWidth + 8} y={y + 20} fontSize="11" fill="#10b981" fontWeight="700">
                           +{item.contribution.toFixed(1)}
                         </text>
                       </g>
@@ -611,7 +573,6 @@ export function SilnikPage() {
                       Brak danych breakdown
                     </text>
                   )}
-                  {/* Total line */}
                   {breakdown.length > 0 && (
                     <g>
                       <line x1={130} y1={250} x2={580} y2={250} stroke="#334155" strokeWidth="1" />
@@ -651,44 +612,38 @@ export function SilnikPage() {
                   {/* Area fill */}
                   <path
                     d={(() => {
-                      const points = DEADLINE_BONUS_DATA.map((pt, idx) => {
-                        const x = 60 + (idx / (DEADLINE_BONUS_DATA.length - 1)) * 500;
-                        const y = 20 + (1 - pt.bonus / 50) * 160;
-                        return { x, y };
-                      });
-                      const pathParts = [`M ${points[0].x} ${points[0].y}`];
+                      const points = DEADLINE_BONUS_DATA.map((pt, idx) => ({
+                        x: 60 + (idx / (DEADLINE_BONUS_DATA.length - 1)) * 500,
+                        y: 20 + (1 - pt.bonus / 50) * 160,
+                      }));
+                      const parts = [`M ${points[0].x} ${points[0].y}`];
                       for (let i = 1; i < points.length; i++) {
                         const cp1x = points[i - 1].x + (points[i].x - points[i - 1].x) * 0.5;
-                        const cp1y = points[i - 1].y;
-                        const cp2x = points[i - 1].x + (points[i].x - points[i - 1].x) * 0.5;
-                        const cp2y = points[i].y;
-                        pathParts.push(`C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${points[i].x} ${points[i].y}`);
+                        const cp2x = cp1x;
+                        parts.push(`C ${cp1x} ${points[i - 1].y} ${cp2x} ${points[i].y} ${points[i].x} ${points[i].y}`);
                       }
-                      pathParts.push(`L ${points[points.length - 1].x} 180 L ${points[0].x} 180 Z`);
-                      return pathParts.join(' ');
+                      parts.push(`L ${points[points.length - 1].x} 180 L ${points[0].x} 180 Z`);
+                      return parts.join(' ');
                     })()}
                     fill="url(#areaGradient)"
                   />
                   {/* Curve line */}
                   <path
                     d={(() => {
-                      const points = DEADLINE_BONUS_DATA.map((pt, idx) => {
-                        const x = 60 + (idx / (DEADLINE_BONUS_DATA.length - 1)) * 500;
-                        const y = 20 + (1 - pt.bonus / 50) * 160;
-                        return { x, y };
-                      });
-                      const pathParts = [`M ${points[0].x} ${points[0].y}`];
+                      const points = DEADLINE_BONUS_DATA.map((pt, idx) => ({
+                        x: 60 + (idx / (DEADLINE_BONUS_DATA.length - 1)) * 500,
+                        y: 20 + (1 - pt.bonus / 50) * 160,
+                      }));
+                      const parts = [`M ${points[0].x} ${points[0].y}`];
                       for (let i = 1; i < points.length; i++) {
                         const cp1x = points[i - 1].x + (points[i].x - points[i - 1].x) * 0.5;
-                        const cp1y = points[i - 1].y;
-                        const cp2x = points[i - 1].x + (points[i].x - points[i - 1].x) * 0.5;
-                        const cp2y = points[i].y;
-                        pathParts.push(`C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${points[i].x} ${points[i].y}`);
+                        const cp2x = cp1x;
+                        parts.push(`C ${cp1x} ${points[i - 1].y} ${cp2x} ${points[i].y} ${points[i].x} ${points[i].y}`);
                       }
-                      return pathParts.join(' ');
+                      return parts.join(' ');
                     })()}
                     fill="none"
-                    stroke="#3B82F6"
+                    stroke="#10b981"
                     strokeWidth="2.5"
                     strokeLinecap="round"
                   />
@@ -696,14 +651,12 @@ export function SilnikPage() {
                   {DEADLINE_BONUS_DATA.map((pt, idx) => {
                     const x = 60 + (idx / (DEADLINE_BONUS_DATA.length - 1)) * 500;
                     const y = 20 + (1 - pt.bonus / 50) * 160;
-                    return (
-                      <circle key={idx} cx={x} cy={y} r={4} fill="#3B82F6" stroke="#0f172a" strokeWidth="2" />
-                    );
+                    return <circle key={idx} cx={x} cy={y} r={4} fill="#10b981" stroke="#0f172a" strokeWidth="2" />;
                   })}
                   <defs>
                     <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.3" />
-                      <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.02" />
+                      <stop offset="0%"   stopColor="#10b981" stopOpacity="0.3" />
+                      <stop offset="100%" stopColor="#10b981" stopOpacity="0.02" />
                     </linearGradient>
                   </defs>
                 </svg>
@@ -713,7 +666,7 @@ export function SilnikPage() {
         )}
 
         {!loading && !analysis && selectedTenderId && (
-          <div className="text-center py-12 text-earth-100/40 text-sm">
+          <div className="text-center py-12 text-earth-600 text-sm">
             Brak danych analizy dla wybranego przetargu
           </div>
         )}
@@ -724,6 +677,7 @@ export function SilnikPage() {
   // ─── Tab 3: CPV Heatmap ──────────────────────────────────────────────────
 
   const renderHeatmapTab = () => {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const uniqueCpv = useMemo(() => {
       const seen = new Map<string, string>();
       heatmapData.forEach((cell) => {
@@ -732,29 +686,30 @@ export function SilnikPage() {
       return Array.from(seen.entries()).slice(0, 10);
     }, [heatmapData]);
 
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const quarters = useMemo(() => {
       const qs = new Set<string>();
       heatmapData.forEach((cell) => qs.add(cell.quarter));
       return Array.from(qs).sort().slice(-4);
     }, [heatmapData]);
 
-    const cellSize = 56;
-    const labelWidth = 180;
+    const cellSize    = 56;
+    const labelWidth  = 180;
     const headerHeight = 40;
-    const svgWidth = labelWidth + quarters.length * (cellSize + 4) + 20;
-    const svgHeight = headerHeight + uniqueCpv.length * (cellSize + 4) + 20;
+    const svgWidth    = labelWidth + quarters.length * (cellSize + 4) + 20;
+    const svgHeight   = headerHeight + uniqueCpv.length * (cellSize + 4) + 20;
 
     return (
       <div className="space-y-6">
         <GlassCard>
           <div className="p-6">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-lg bg-[#3B82F6]/20 flex items-center justify-center">
-                <Grid3X3 size={20} className="text-[#3B82F6]" />
+              <div className="w-10 h-10 rounded-token-lg bg-accent-primary/20 flex items-center justify-center">
+                <Grid3X3 size={20} className="text-accent-primary" />
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-earth-100">CPV Win Rate Heatmap</h2>
-                <p className="text-sm text-earth-100/60">Analiza skuteczności w kategoriach CPV</p>
+                <p className="text-sm text-earth-500">Analiza skuteczności w kategoriach CPV</p>
               </div>
             </div>
 
@@ -793,19 +748,15 @@ export function SilnikPage() {
                       {name.length > 20 ? name.slice(0, 20) + '…' : name}
                     </text>
                     {quarters.map((q, colIdx) => {
-                      const cell = heatmapData.find(
-                        (c) => c.cpv_code === code && c.quarter === q
-                      );
+                      const cell    = heatmapData.find((c) => c.cpv_code === code && c.quarter === q);
                       const winRate = cell?.win_rate || 0;
                       const x = labelWidth + colIdx * (cellSize + 4);
                       const y = headerHeight + rowIdx * (cellSize + 4);
                       return (
                         <rect
                           key={`${code}-${q}`}
-                          x={x}
-                          y={y}
-                          width={cellSize}
-                          height={cellSize}
+                          x={x} y={y}
+                          width={cellSize} height={cellSize}
                           rx={8}
                           fill={interpolateColor(winRate)}
                           className="cursor-pointer transition-opacity hover:opacity-80"
@@ -826,18 +777,18 @@ export function SilnikPage() {
               {/* Tooltip */}
               {heatmapTooltip && (
                 <div
-                  className="fixed z-50 px-3 py-2 rounded-lg bg-earth-950 border border-earth-800 shadow-xl pointer-events-none"
+                  className="fixed z-50 px-3 py-2 rounded-token-lg bg-earth-950 border border-earth-800 shadow-token-lg pointer-events-none"
                   style={{
                     left: heatmapTooltip.x,
-                    top: heatmapTooltip.y,
+                    top:  heatmapTooltip.y,
                     transform: 'translate(-50%, -100%)',
                   }}
                 >
                   <div className="text-xs font-semibold text-earth-100">{heatmapTooltip.cell.cpv_name}</div>
-                  <div className="text-xs text-[#3B82F6] font-bold">
+                  <div className="text-xs text-accent-primary font-bold">
                     Win rate: {(heatmapTooltip.cell.win_rate * 100).toFixed(0)}%
                   </div>
-                  <div className="text-xs text-earth-100/50">
+                  <div className="text-xs text-earth-500">
                     Przetargów: {heatmapTooltip.cell.count}
                   </div>
                 </div>
@@ -846,18 +797,14 @@ export function SilnikPage() {
 
             {/* Color Legend */}
             <div className="mt-6 flex items-center gap-3">
-              <span className="text-xs text-earth-100/50">Niska</span>
+              <span className="text-xs text-earth-600">Niska</span>
               <div className="flex-1 h-3 rounded-full overflow-hidden flex">
                 {Array.from({ length: 20 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="flex-1 h-full"
-                    style={{ backgroundColor: interpolateColor(i / 19) }}
-                  />
+                  <div key={i} className="flex-1 h-full" style={{ backgroundColor: interpolateColor(i / 19) }} />
                 ))}
               </div>
-              <span className="text-xs text-earth-100/50">Wysoka</span>
-              <span className="text-xs text-earth-100/30 ml-2">Win Rate</span>
+              <span className="text-xs text-earth-600">Wysoka</span>
+              <span className="text-xs text-earth-700 ml-2">Win Rate</span>
             </div>
           </div>
         </GlassCard>
@@ -872,20 +819,20 @@ export function SilnikPage() {
       <GlassCard>
         <div className="p-6">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-lg bg-[#3B82F6]/20 flex items-center justify-center">
-              <History size={20} className="text-[#3B82F6]" />
+            <div className="w-10 h-10 rounded-token-lg bg-accent-primary/20 flex items-center justify-center">
+              <History size={20} className="text-accent-primary" />
             </div>
             <div>
               <h2 className="text-lg font-semibold text-earth-100">Historia Kalibracji</h2>
-              <p className="text-sm text-earth-100/60">Zmiany konfiguracji wag scoringowych</p>
+              <p className="text-sm text-earth-500">Zmiany konfiguracji wag scoringowych</p>
             </div>
           </div>
 
           {auditHistory.length === 0 ? (
             <div className="text-center py-16">
-              <History size={48} className="mx-auto mb-4 text-earth-100/20" />
-              <p className="text-earth-100/40 text-sm">Brak historii kalibracji</p>
-              <p className="text-earth-100/30 text-xs mt-1">Zmiany wag będą rejestrowane tutaj</p>
+              <History size={48} className="mx-auto mb-4 text-earth-800" />
+              <p className="text-earth-600 text-sm">Brak historii kalibracji</p>
+              <p className="text-earth-700 text-xs mt-1">Zmiany wag będą rejestrowane tutaj</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -898,25 +845,26 @@ export function SilnikPage() {
                   className="relative pl-8 pb-4 border-l-2 border-earth-800 last:border-l-transparent"
                 >
                   {/* Timeline dot */}
-                  <div className="absolute left-[-5px] top-1 w-2.5 h-2.5 rounded-full bg-[#3B82F6] border-2 border-earth-950" />
+                  <div className="absolute left-[-5px] top-1 w-2.5 h-2.5 rounded-full bg-accent-primary border-2 border-earth-950" />
 
-                  <div className="bg-earth-900/40 rounded-lg p-4 border border-earth-800/50">
+                  <div className="bg-earth-900/40 rounded-token-lg p-4 border border-earth-800/50">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-earth-100/50">
+                        <span className="text-xs font-mono text-earth-500">
                           {formatTimestamp(entry.timestamp)}
                         </span>
-                        <span className="px-2 py-0.5 rounded text-xs bg-earth-800 text-earth-100/60">
+                        <span className="section-label px-2 py-0.5 rounded-token">
                           {entry.user || 'system'}
                         </span>
                       </div>
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => handleRestoreConfig(entry)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#3B82F6]/10 text-[#3B82F6] hover:bg-[#3B82F6]/20 border border-[#3B82F6]/20 transition-all"
+                        iconLeft={<RotateCcw size={12} />}
                       >
-                        <RotateCcw size={12} />
                         Przywróć
-                      </button>
+                      </Button>
                     </div>
 
                     {/* Changes summary */}
@@ -928,10 +876,10 @@ export function SilnikPage() {
                           if (oldVal === undefined || newVal === undefined || oldVal === newVal) return null;
                           return (
                             <div key={key} className="flex items-center gap-1 text-xs">
-                              <span className="text-earth-100/50">{WEIGHT_LABELS[key]}:</span>
-                              <span className="text-red-400/70">{oldVal}</span>
-                              <span className="text-earth-100/30">→</span>
-                              <span className="text-green-400">{newVal}</span>
+                              <span className="text-earth-500">{WEIGHT_LABELS[key]}:</span>
+                              <span className="text-accent-danger/70">{oldVal}</span>
+                              <span className="text-earth-700">→</span>
+                              <span className="text-accent-success">{newVal}</span>
                             </div>
                           );
                         })}
@@ -949,47 +897,43 @@ export function SilnikPage() {
 
   // ─── Main Render ─────────────────────────────────────────────────────────
 
-  return (
-    <div className="min-h-screen bg-earth-950 p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6"
-        >
-          <div className="flex items-center gap-4 mb-2">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#3B82F6]/30 to-[#3B82F6]/10 flex items-center justify-center border border-[#3B82F6]/20">
-              <Target size={24} className="text-[#3B82F6]" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-earth-100">Silnik Scoringowy AI</h1>
-              <p className="text-sm text-earth-100/50">
-                Konfiguracja algorytmu oceny przetargów i analiza wyników
-              </p>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Tab Bar */}
-        {renderTabBar()}
-
-        {/* Tab Content */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-          >
-            {activeTab === 'weights' && renderWeightsTab()}
-            {activeTab === 'analytics' && renderAnalyticsTab()}
-            {activeTab === 'heatmap' && renderHeatmapTab()}
-            {activeTab === 'history' && renderHistoryTab()}
-          </motion.div>
-        </AnimatePresence>
-      </div>
+  // KPI metrics for header (sum indicator)
+  const kpiActions = (
+    <div className={[
+      'px-4 py-2 rounded-token text-sm font-bold border',
+      isValidSum
+        ? 'bg-accent-success/15 text-accent-success border-accent-success/30'
+        : 'bg-accent-danger/15 text-accent-danger border-accent-danger/30',
+    ].join(' ')}>
+      Suma wag: {weightSum}/100
+      {!isValidSum && <span className="ml-2">⚠️</span>}
     </div>
+  );
+
+  return (
+    <PageShell
+      title="Silnik Decyzyjny"
+      subtitle="Konfiguracja i kalibracja AI scoring"
+      actions={activeTab === 'weights' ? kpiActions : undefined}
+    >
+      {/* Tab Bar */}
+      {renderTabBar()}
+
+      {/* Tab Content */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.2 }}
+        >
+          {activeTab === 'weights'   && renderWeightsTab()}
+          {activeTab === 'analytics' && renderAnalyticsTab()}
+          {activeTab === 'heatmap'   && renderHeatmapTab()}
+          {activeTab === 'history'   && renderHistoryTab()}
+        </motion.div>
+      </AnimatePresence>
+    </PageShell>
   );
 }

@@ -13,6 +13,7 @@ import { useAuthFetch } from '@/lib/api-v2';
 import { useStore } from '@/store/useStore';
 import { showToast } from '@/components/Toast';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { PageShell } from '@/components/PageShell';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -100,27 +101,27 @@ const STATUS_CONFIG = {
   },
   ready: {
     label: 'Gotowa',
-    color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+    color: 'bg-accent-success/15 text-green-400 border-green-500/30',
     icon: FileCheck,
   },
   submitted: {
     label: 'Złożona',
-    color: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
+    color: 'bg-accent-info/15 text-blue-400 border-blue-500/30',
     icon: Send,
   },
   won: {
     label: 'Wygrana',
-    color: 'bg-green-500/15 text-green-400 border-green-500/30',
+    color: 'bg-accent-success/15 text-green-400 border-green-500/30',
     icon: Trophy,
   },
   lost: {
     label: 'Przegrana',
-    color: 'bg-red-500/15 text-red-400 border-red-500/30',
+    color: 'bg-accent-danger/15 text-red-400 border-red-500/30',
     icon: XCircle,
   },
 } as const;
 
-function StatusBadge({ status }: { status: Offer['status'] }) {
+function OfferStatusBadge({ status }: { status: Offer['status'] }) {
   const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.draft;
   const Icon = cfg.icon;
   return (
@@ -140,14 +141,14 @@ type WizardStep = 0 | 1 | 2 | 3;
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 
-function SkeletonCard() {
+function SkeletonOfferCard() {
   return (
-    <div className="animate-pulse rounded-xl border border-earth-800/40 bg-earth-900/40 p-3 mb-2 space-y-2">
-      <div className="h-3 bg-earth-800 rounded w-3/4" />
-      <div className="h-2.5 bg-earth-800 rounded w-1/2" />
+    <div className="animate-shimmer rounded-token-lg border border-earth-800/40 bg-earth-900/40 p-3 mb-2 space-y-2">
+      <div className="h-3 bg-earth-800 rounded-token w-3/4" />
+      <div className="h-2.5 bg-earth-800 rounded-token w-1/2" />
       <div className="flex justify-between">
-        <div className="h-4 bg-earth-800 rounded w-20" />
-        <div className="h-3 bg-earth-800 rounded w-16" />
+        <div className="h-4 bg-earth-800 rounded-token w-20" />
+        <div className="h-3 bg-earth-800 rounded-token w-16" />
       </div>
     </div>
   );
@@ -174,20 +175,20 @@ function StepperBar({
                 if (done) setStep(i as WizardStep);
               }}
               disabled={!done && !active}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-token-lg text-xs font-semibold transition-all duration-200 ${
                 active
-                  ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                  ? 'bg-accent-primary/15 text-accent-primary border border-accent-primary/30'
                   : done
-                  ? 'text-emerald-500 hover:bg-emerald-500/10 cursor-pointer'
+                  ? 'text-accent-primary hover:bg-accent-primary/10 cursor-pointer'
                   : 'text-earth-600 cursor-default'
               }`}
             >
               <span
                 className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 transition-all ${
                   done
-                    ? 'bg-emerald-500 text-earth-950'
+                    ? 'bg-accent-primary text-earth-950'
                     : active
-                    ? 'bg-emerald-500/20 border border-emerald-500/50 text-emerald-400'
+                    ? 'bg-accent-primary/20 border border-accent-primary/50 text-accent-primary'
                     : 'bg-earth-800 text-earth-600 border border-earth-700'
                 }`}
               >
@@ -198,7 +199,7 @@ function StepperBar({
             {i < STEPS.length - 1 && (
               <div
                 className={`flex-1 h-px mx-1 transition-colors ${
-                  done ? 'bg-emerald-500/40' : 'bg-earth-800'
+                  done ? 'bg-accent-primary/40' : 'bg-earth-800'
                 }`}
               />
             )}
@@ -268,7 +269,7 @@ function Step1Przetarg({
     <div className="space-y-5">
       {/* Tender select */}
       <div>
-        <label className="block text-xs text-earth-400 mb-1.5 font-medium">
+        <label className="label-base">
           Przetarg <span className="text-red-400">*</span>
         </label>
         <div className="relative" ref={dropRef}>
@@ -278,7 +279,7 @@ function Step1Przetarg({
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setDropOpen((v) => !v); }}
             onClick={() => setDropOpen((v) => !v)}
-            className="flex items-center gap-2 w-full px-3 py-2.5 bg-earth-800/60 border border-earth-700/50 rounded-xl text-earth-200 text-sm cursor-pointer hover:border-emerald-500/40 focus:outline-none focus:border-emerald-500/50 transition-colors"
+            className="flex items-center gap-2 w-full px-3 py-2.5 bg-earth-800/60 border border-earth-700/50 rounded-token-lg text-earth-200 text-sm cursor-pointer hover:border-accent-primary/40 focus:outline-none focus:border-accent-primary/50 transition-colors"
           >
             {selectedTender ? (
               <span className="flex-1 truncate">{selectedTender.title}</span>
@@ -298,7 +299,7 @@ function Step1Przetarg({
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -6, scale: 0.98 }}
                 transition={{ duration: 0.14 }}
-                className="absolute z-30 top-full mt-1.5 left-0 right-0 bg-earth-900 border border-earth-700/60 rounded-xl shadow-2xl shadow-black/50 overflow-hidden"
+                className="absolute z-30 top-full mt-1.5 left-0 right-0 bg-earth-900 border border-earth-700/60 rounded-token-lg shadow-token-lg overflow-hidden"
               >
                 <div className="p-2 border-b border-earth-800/60">
                   <div className="relative">
@@ -308,7 +309,7 @@ function Step1Przetarg({
                       onChange={(e) => setQuery(e.target.value)}
                       autoFocus
                       placeholder="Szukaj przetargu…"
-                      className="w-full pl-8 pr-3 py-1.5 text-xs bg-earth-800/60 border border-earth-700/50 rounded-lg text-earth-200 placeholder-earth-600 focus:outline-none focus:border-emerald-500/40"
+                      className="input-base w-full pl-8 text-xs"
                     />
                   </div>
                 </div>
@@ -328,7 +329,7 @@ function Step1Przetarg({
                           key={t.id}
                           onClick={() => selectTender(t)}
                           className={`px-3 py-2.5 cursor-pointer hover:bg-earth-800/40 transition-colors border-b border-earth-800/20 last:border-b-0 ${
-                            t.id === selectedTenderId ? 'bg-emerald-500/10' : ''
+                            t.id === selectedTenderId ? 'bg-accent-primary/10' : ''
                           }`}
                         >
                           <div className="text-xs font-medium text-earth-200 line-clamp-2 leading-snug">
@@ -341,7 +342,7 @@ function Step1Przetarg({
                             {t.value_pln != null && (
                               <>
                                 <span className="text-earth-700">·</span>
-                                <span className="text-emerald-400 text-[10px] font-mono">
+                                <span className="text-accent-primary text-[10px] font-mono">
                                   {fmtPLN(t.value_pln)}
                                 </span>
                               </>
@@ -377,8 +378,8 @@ function Step1Przetarg({
           >
             <GlassCard className="p-4">
               <div className="flex items-center gap-2 mb-3">
-                <Building2 className="w-4 h-4 text-emerald-400" />
-                <span className="text-xs font-semibold text-earth-300 uppercase tracking-wide">
+                <Building2 className="w-4 h-4 text-accent-primary" />
+                <span className="section-label">
                   Dane przetargu
                 </span>
               </div>
@@ -392,7 +393,7 @@ function Step1Przetarg({
                 {selectedTender.value_pln != null && (
                   <div>
                     <div className="text-earth-500 mb-0.5">Wartość szacunkowa</div>
-                    <div className="text-emerald-400 font-mono font-semibold">
+                    <div className="text-accent-primary font-mono font-semibold">
                       {fmtPLN(selectedTender.value_pln)}
                     </div>
                   </div>
@@ -420,20 +421,20 @@ function Step1Przetarg({
 
       {/* Offer title */}
       <div>
-        <label className="block text-xs text-earth-400 mb-1.5 font-medium">
+        <label className="label-base">
           Tytuł oferty <span className="text-red-400">*</span>
         </label>
         <input
           value={offerTitle}
           onChange={(e) => setOfferTitle(e.target.value)}
           placeholder="np. Oferta nr 1/2026 – budowa drogi gminnej"
-          className="w-full px-3 py-2.5 bg-earth-800/60 border border-earth-700/50 rounded-xl text-earth-100 text-sm placeholder-earth-600 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/10 transition-colors"
+          className="input-base w-full"
         />
       </div>
 
       {/* Helper note when no tenders */}
       {!loadingTenders && tenders.length === 0 && (
-        <div className="flex items-start gap-2 px-3 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-400">
+        <div className="flex items-start gap-2 px-3 py-2.5 rounded-token-lg bg-accent-warning/10 border border-accent-warning/20 text-xs text-amber-400">
           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
           <span>
             Brak aktywnych przetargów. Możesz mimo to wpisać tytuł oferty ręcznie i przejść do
@@ -446,7 +447,7 @@ function Step1Przetarg({
         <button
           onClick={onNext}
           disabled={!offerTitle.trim()}
-          className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed text-earth-950 rounded-xl text-sm font-semibold transition-colors"
+          className="btn-primary flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           Dalej — Kosztorys <ChevronRight className="w-4 h-4" />
         </button>
@@ -545,11 +546,11 @@ function Step2Kosztorys({
         {[
           { label: 'Netto', value: fmtPLN(netTotal), color: 'text-earth-200' },
           { label: `VAT ${vatPct}%`, value: fmtPLN(vatTotal), color: 'text-amber-400' },
-          { label: 'Brutto', value: fmtPLN(grossTotal), color: 'text-emerald-400' },
+          { label: 'Brutto', value: fmtPLN(grossTotal), color: 'text-accent-primary' },
         ].map(({ label, value, color }) => (
           <div
             key={label}
-            className="rounded-xl bg-earth-800/40 border border-earth-700/40 px-4 py-3 text-center"
+            className="card px-4 py-3 text-center"
           >
             <div className="text-xs text-earth-500 mb-0.5">{label}</div>
             <div className={`text-sm font-bold font-mono ${color}`}>{value}</div>
@@ -564,9 +565,9 @@ function Step2Kosztorys({
           <button
             key={v}
             onClick={() => setVatPct(v)}
-            className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-colors ${
+            className={`px-3 py-1 rounded-token text-xs font-semibold border transition-colors ${
               vatPct === v
-                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                ? 'bg-accent-primary/20 text-accent-primary border-accent-primary/40'
                 : 'text-earth-400 border-earth-700/40 hover:border-earth-600 hover:text-earth-200'
             }`}
           >
@@ -578,12 +579,12 @@ function Step2Kosztorys({
       {/* Table */}
       <GlassCard className="overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 border-b border-earth-800/60">
-          <span className="text-xs font-semibold text-earth-300">
+          <span className="section-label">
             {items.length} pozycji kosztorysu
           </span>
           <button
             onClick={addRow}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 rounded-lg transition-colors"
+            className="btn-secondary flex items-center gap-1.5 !text-xs"
           >
             <Plus className="w-3.5 h-3.5" /> Dodaj pozycję
           </button>
@@ -591,14 +592,14 @@ function Step2Kosztorys({
 
         {loadingItems ? (
           <div className="flex items-center justify-center py-10 gap-2 text-earth-500 text-sm">
-            <Loader2 className="w-5 h-5 animate-spin text-emerald-400" />
+            <Loader2 className="w-5 h-5 animate-spin text-accent-primary" />
             Pobieranie kosztorysu…
           </div>
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 gap-2 text-earth-500">
             <Package className="w-8 h-8 opacity-30" />
             <p className="text-sm">Brak pozycji kosztorysu.</p>
-            <button onClick={addRow} className="text-xs text-emerald-400 hover:underline">
+            <button onClick={addRow} className="text-xs text-accent-primary hover:underline">
               Dodaj pierwszą pozycję
             </button>
           </div>
@@ -632,7 +633,7 @@ function Step2Kosztorys({
                       <input
                         value={it.description}
                         onChange={(e) => updateDesc(it.id, e.target.value)}
-                        className="w-full bg-transparent text-earth-200 focus:outline-none focus:bg-earth-800/30 rounded px-1 py-0.5 min-w-[120px]"
+                        className="w-full bg-transparent text-earth-200 focus:outline-none focus:bg-earth-800/30 rounded-token px-1 py-0.5 min-w-[120px]"
                       />
                     </td>
                     {/* Unit */}
@@ -640,7 +641,7 @@ function Step2Kosztorys({
                       <input
                         value={it.unit}
                         onChange={(e) => updateUnit(it.id, e.target.value)}
-                        className="w-full text-right bg-transparent text-earth-400 focus:outline-none focus:bg-earth-800/30 rounded px-1 py-0.5"
+                        className="w-full text-right bg-transparent text-earth-400 focus:outline-none focus:bg-earth-800/30 rounded-token px-1 py-0.5"
                       />
                     </td>
                     {/* Quantity */}
@@ -656,12 +657,12 @@ function Step2Kosztorys({
                             if (e.key === 'Enter') commitEdit();
                             if (e.key === 'Escape') setEditCell(null);
                           }}
-                          className="w-full text-right bg-earth-800 border border-emerald-500/40 rounded px-1 py-0.5 text-earth-100 focus:outline-none text-xs"
+                          className="w-full text-right bg-earth-800 border border-accent-primary/40 rounded-token px-1 py-0.5 text-earth-100 focus:outline-none text-xs"
                         />
                       ) : (
                         <span
                           onClick={() => startEdit(it.id, 'quantity', it.quantity)}
-                          className="cursor-text text-earth-300 hover:text-emerald-300 px-1 transition-colors"
+                          className="cursor-text text-earth-300 hover:text-accent-primary px-1 transition-colors"
                         >
                           {it.quantity}
                         </span>
@@ -680,12 +681,12 @@ function Step2Kosztorys({
                             if (e.key === 'Enter') commitEdit();
                             if (e.key === 'Escape') setEditCell(null);
                           }}
-                          className="w-full text-right bg-earth-800 border border-emerald-500/40 rounded px-1 py-0.5 text-earth-100 focus:outline-none text-xs"
+                          className="w-full text-right bg-earth-800 border border-accent-primary/40 rounded-token px-1 py-0.5 text-earth-100 focus:outline-none text-xs"
                         />
                       ) : (
                         <span
                           onClick={() => startEdit(it.id, 'unit_price', it.unit_price)}
-                          className="cursor-text text-earth-300 hover:text-emerald-300 font-mono px-1 transition-colors"
+                          className="cursor-text text-earth-300 hover:text-accent-primary font-mono px-1 transition-colors"
                         >
                           {it.unit_price.toLocaleString('pl-PL', { minimumFractionDigits: 2 })}
                         </span>
@@ -698,10 +699,10 @@ function Step2Kosztorys({
                     <td className="px-2 py-2">
                       <button
                         onClick={() => removeRow(it.id)}
-                        className="opacity-0 group-hover:opacity-100 p-1 rounded text-earth-600 hover:text-red-400 transition-all"
+                        className="btn-ghost opacity-0 group-hover:opacity-100 !p-1"
                         title="Usuń pozycję"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-3.5 h-3.5 text-red-400" />
                       </button>
                     </td>
                   </tr>
@@ -729,14 +730,14 @@ function Step2Kosztorys({
                   </td>
                   <td />
                 </tr>
-                <tr className="bg-earth-900/50 border-t border-emerald-500/20">
+                <tr className="bg-earth-900/50 border-t border-accent-primary/20">
                   <td
                     colSpan={5}
-                    className="px-4 py-3 text-sm font-bold text-emerald-300 text-right"
+                    className="px-4 py-3 text-sm font-bold text-accent-primary text-right"
                   >
                     RAZEM BRUTTO
                   </td>
-                  <td className="px-3 py-3 text-right text-base font-bold text-emerald-400 font-mono">
+                  <td className="px-3 py-3 text-right text-base font-bold text-accent-primary font-mono">
                     {fmtPLN(grossTotal)}
                   </td>
                   <td />
@@ -750,13 +751,13 @@ function Step2Kosztorys({
       <div className="flex justify-between pt-2">
         <button
           onClick={onBack}
-          className="flex items-center gap-2 px-4 py-2.5 text-sm text-earth-400 hover:text-earth-200 border border-earth-700/50 hover:border-earth-600 rounded-xl transition-colors"
+          className="btn-secondary flex items-center gap-2"
         >
           <ChevronLeft className="w-4 h-4" /> Wstecz
         </button>
         <button
           onClick={onNext}
-          className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-earth-950 rounded-xl text-sm font-semibold transition-colors"
+          className="btn-primary flex items-center gap-2"
         >
           Dalej — Finalizacja <ChevronRight className="w-4 h-4" />
         </button>
@@ -805,54 +806,54 @@ function Step3Finalizacja({
   return (
     <div className="space-y-5">
       {/* Gross total banner */}
-      <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-5 py-4 flex items-center justify-between">
+      <div className="rounded-token-lg bg-accent-primary/10 border border-accent-primary/20 px-5 py-4 flex items-center justify-between">
         <div>
-          <div className="text-xs text-emerald-500 mb-0.5 font-medium">
+          <div className="text-xs text-accent-primary mb-0.5 font-medium">
             Wartość oferty brutto
           </div>
-          <div className="text-2xl font-bold text-emerald-300 font-mono">
+          <div className="text-2xl font-bold text-accent-primary font-mono">
             {fmtPLN(grossTotal)}
           </div>
         </div>
-        <FileCheck className="w-9 h-9 text-emerald-400/30" />
+        <FileCheck className="w-9 h-9 text-accent-primary/30" />
       </div>
 
       {/* Contractor data */}
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <Building2 className="w-4 h-4 text-emerald-400" />
-          <span className="text-xs font-semibold text-earth-300 uppercase tracking-wide">
+          <Building2 className="w-4 h-4 text-accent-primary" />
+          <span className="section-label">
             Dane wykonawcy
           </span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="sm:col-span-2">
-            <label className="block text-xs text-earth-400 mb-1">
+            <label className="label-base">
               Nazwa firmy <span className="text-red-400">*</span>
             </label>
             <input
               value={data.name}
               onChange={(e) => set('name', e.target.value)}
               placeholder="Firma Budowlana Sp. z o.o."
-              className="w-full px-3 py-2.5 bg-earth-800/60 border border-earth-700/50 rounded-xl text-earth-100 text-sm placeholder-earth-600 focus:outline-none focus:border-emerald-500/50 transition-colors"
+              className="input-base w-full"
             />
           </div>
           <div>
-            <label className="block text-xs text-earth-400 mb-1">NIP</label>
+            <label className="label-base">NIP</label>
             <input
               value={data.nip}
               onChange={(e) => set('nip', e.target.value)}
               placeholder="123-456-78-90"
-              className="w-full px-3 py-2.5 bg-earth-800/60 border border-earth-700/50 rounded-xl text-earth-100 text-sm placeholder-earth-600 focus:outline-none focus:border-emerald-500/50 transition-colors"
+              className="input-base w-full"
             />
           </div>
           <div>
-            <label className="block text-xs text-earth-400 mb-1">Adres</label>
+            <label className="label-base">Adres</label>
             <input
               value={data.address}
               onChange={(e) => set('address', e.target.value)}
               placeholder="ul. Budowlana 1, 00-001 Warszawa"
-              className="w-full px-3 py-2.5 bg-earth-800/60 border border-earth-700/50 rounded-xl text-earth-100 text-sm placeholder-earth-600 focus:outline-none focus:border-emerald-500/50 transition-colors"
+              className="input-base w-full"
             />
           </div>
         </div>
@@ -861,8 +862,8 @@ function Step3Finalizacja({
       {/* Offer terms */}
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <SlidersHorizontal className="w-4 h-4 text-emerald-400" />
-          <span className="text-xs font-semibold text-earth-300 uppercase tracking-wide">
+          <SlidersHorizontal className="w-4 h-4 text-accent-primary" />
+          <span className="section-label">
             Warunki oferty
           </span>
         </div>
@@ -870,8 +871,8 @@ function Step3Finalizacja({
           {/* Delivery slider */}
           <div className="sm:col-span-2">
             <div className="flex items-center justify-between mb-2">
-              <label className="text-xs text-earth-400 font-medium">Termin realizacji</label>
-              <span className="text-sm font-bold text-emerald-300 tabular-nums">
+              <label className="label-base mb-0">Termin realizacji</label>
+              <span className="text-sm font-bold text-accent-primary tabular-nums">
                 {data.delivery_days} dni
               </span>
             </div>
@@ -893,11 +894,11 @@ function Step3Finalizacja({
 
           {/* Warranty */}
           <div>
-            <label className="block text-xs text-earth-400 mb-1.5 font-medium">Gwarancja</label>
+            <label className="label-base">Gwarancja</label>
             <select
               value={data.warranty_months}
               onChange={(e) => set('warranty_months', parseInt(e.target.value))}
-              className="w-full px-3 py-2.5 bg-earth-800/60 border border-earth-700/50 rounded-xl text-earth-100 text-sm focus:outline-none focus:border-emerald-500/50 transition-colors cursor-pointer"
+              className="input-base w-full cursor-pointer"
             >
               {WARRANTY_OPTIONS.map((m) => (
                 <option key={m} value={m}>
@@ -909,13 +910,13 @@ function Step3Finalizacja({
 
           {/* Payment terms */}
           <div>
-            <label className="block text-xs text-earth-400 mb-1.5 font-medium">
+            <label className="label-base">
               Warunki płatności
             </label>
             <select
               value={data.payment_terms}
               onChange={(e) => set('payment_terms', e.target.value)}
-              className="w-full px-3 py-2.5 bg-earth-800/60 border border-earth-700/50 rounded-xl text-earth-100 text-sm focus:outline-none focus:border-emerald-500/50 transition-colors cursor-pointer"
+              className="input-base w-full cursor-pointer"
             >
               {PAYMENT_TERMS_OPTIONS.map((opt) => (
                 <option key={opt} value={opt}>
@@ -929,7 +930,7 @@ function Step3Finalizacja({
 
       {/* Notes */}
       <div>
-        <label className="block text-xs text-earth-400 mb-1.5 font-medium">
+        <label className="label-base">
           Uwagi / notatki
         </label>
         <textarea
@@ -937,7 +938,7 @@ function Step3Finalizacja({
           onChange={(e) => set('notes', e.target.value)}
           rows={3}
           placeholder="Dodatkowe informacje, zastrzeżenia, uwagi do oferty…"
-          className="w-full px-3 py-2.5 bg-earth-800/60 border border-earth-700/50 rounded-xl text-earth-100 text-sm placeholder-earth-600 focus:outline-none focus:border-emerald-500/50 resize-none transition-colors"
+          className="input-base w-full resize-none"
         />
       </div>
 
@@ -945,7 +946,7 @@ function Step3Finalizacja({
       <div className="flex items-center justify-between pt-2 gap-3 flex-wrap">
         <button
           onClick={onBack}
-          className="flex items-center gap-2 px-4 py-2.5 text-sm text-earth-400 hover:text-earth-200 border border-earth-700/50 hover:border-earth-600 rounded-xl transition-colors"
+          className="btn-secondary flex items-center gap-2"
         >
           <ChevronLeft className="w-4 h-4" /> Wstecz
         </button>
@@ -953,7 +954,7 @@ function Step3Finalizacja({
           <button
             onClick={onSaveDraft}
             disabled={saving}
-            className="flex items-center gap-2 px-4 py-2.5 text-sm text-earth-300 border border-earth-700/50 hover:border-earth-600 hover:text-earth-100 rounded-xl transition-colors disabled:opacity-50"
+            className="btn-ghost flex items-center gap-2 disabled:opacity-50"
           >
             {saving ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -965,7 +966,7 @@ function Step3Finalizacja({
           <button
             onClick={onGeneratePDF}
             disabled={saving || !data.name.trim()}
-            className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed text-earth-950 rounded-xl text-sm font-semibold transition-colors"
+            className="btn-primary flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {saving ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -998,9 +999,9 @@ function Step4PDF({ offerTitle, saving, onDownloadAgain, onNewOffer }: Step4Prop
         initial={{ scale: 0.6, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: 'spring', damping: 14, stiffness: 200 }}
-        className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center"
+        className="w-16 h-16 rounded-full bg-accent-primary/20 border border-accent-primary/30 flex items-center justify-center shadow-token-glow"
       >
-        <Check className="w-8 h-8 text-emerald-400" />
+        <Check className="w-8 h-8 text-accent-primary" />
       </motion.div>
       <div>
         <h3 className="text-lg font-bold text-earth-100 mb-1">Oferta gotowa!</h3>
@@ -1011,14 +1012,14 @@ function Step4PDF({ offerTitle, saving, onDownloadAgain, onNewOffer }: Step4Prop
         <button
           onClick={onDownloadAgain}
           disabled={saving}
-          className="flex items-center gap-2 px-4 py-2.5 text-sm text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/10 rounded-xl transition-colors disabled:opacity-50"
+          className="btn-secondary flex items-center gap-2 disabled:opacity-50"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
           Pobierz ponownie
         </button>
         <button
           onClick={onNewOffer}
-          className="flex items-center gap-2 px-4 py-2.5 text-sm bg-emerald-500 hover:bg-emerald-400 text-earth-950 rounded-xl font-semibold transition-colors"
+          className="btn-primary flex items-center gap-2"
         >
           <Plus className="w-4 h-4" /> Nowa oferta
         </button>
@@ -1231,7 +1232,7 @@ export function OfertaPage() {
 
       // Fetch PDF blob via raw fetch (authFetch parses JSON)
       const res = await fetch(`/api/v1/offers/${offerId}/pdf`, {
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+        headers: accessToken ? { Authorization: *** ${accessToken}` } : {},
       });
 
       if (!res.ok) {
@@ -1262,323 +1263,329 @@ export function OfertaPage() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="flex h-full min-h-screen bg-earth-950">
-      {/* ── Left panel — offer list ─────────────────────────────────────────── */}
-      <div className="w-80 shrink-0 flex flex-col border-r border-earth-800/60 bg-earth-900/30 h-screen sticky top-0">
-        {/* Panel header */}
-        <div className="px-4 pt-5 pb-3 border-b border-earth-800/60 shrink-0">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-emerald-400" />
-              <h2 className="text-sm font-bold text-earth-100">Oferty</h2>
-              <span className="px-1.5 py-0.5 rounded-full bg-earth-800 text-earth-500 text-xs tabular-nums">
-                {offers.length}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={loadOffers}
-                title="Odśwież"
-                className="p-1.5 rounded-lg text-earth-500 hover:text-earth-200 hover:bg-earth-800 transition-colors"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={openNewWizard}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-semibold transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" /> Nowa
-              </button>
-            </div>
-          </div>
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-earth-500 pointer-events-none" />
-            <input
-              value={offerSearch}
-              onChange={(e) => setOfferSearch(e.target.value)}
-              placeholder="Szukaj oferty…"
-              className="w-full pl-8 pr-3 py-2 text-xs bg-earth-800/60 border border-earth-700/50 rounded-lg text-earth-200 placeholder-earth-600 focus:outline-none focus:border-emerald-500/40 transition-colors"
-            />
-          </div>
-        </div>
-
-        {/* Status legend */}
-        <div className="flex items-center gap-2 px-4 py-2 border-b border-earth-800/40 flex-wrap">
-          {(Object.keys(STATUS_CONFIG) as Offer['status'][]).map((key) => {
-            const cfg = STATUS_CONFIG[key];
-            return (
-              <span
-                key={key}
-                className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-medium border ${cfg.color}`}
-              >
-                {cfg.label}
-              </span>
-            );
-          })}
-        </div>
-
-        {/* Offer cards */}
-        <div className="flex-1 overflow-y-auto py-2 px-2">
-          {loadingOffers ? (
-            <div className="space-y-0">
-              {[1, 2, 3].map((i) => (
-                <SkeletonCard key={i} />
-              ))}
-            </div>
-          ) : filteredOffers.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 gap-3 text-earth-600 px-4">
-              <FileText className="w-10 h-10 opacity-20" />
-              <p className="text-xs text-center leading-relaxed">
-                {offerSearch
-                  ? `Brak wyników dla "${offerSearch}"`
-                  : 'Brak ofert.\nUtwórz pierwszą ofertę przetargową.'}
-              </p>
-              {!offerSearch && (
+    <PageShell
+      title="Kreator Oferty"
+      subtitle="Generowanie oferty PDF"
+      noPadding
+    >
+      <div className="flex h-full min-h-[calc(100vh-8rem)]">
+        {/* ── Left panel — offer list ─────────────────────────────────────────── */}
+        <div className="w-80 shrink-0 flex flex-col border-r border-earth-800/60 bg-earth-900/30 h-full">
+          {/* Panel header */}
+          <div className="px-4 pt-5 pb-3 border-b border-earth-800/60 shrink-0">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-accent-primary" />
+                <h2 className="text-sm font-bold text-earth-100">Oferty</h2>
+                <span className="px-1.5 py-0.5 rounded-full bg-earth-800 text-earth-500 text-xs tabular-nums">
+                  {offers.length}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={loadOffers}
+                  title="Odśwież"
+                  className="btn-ghost !p-1.5"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </button>
                 <button
                   onClick={openNewWizard}
-                  className="text-xs text-emerald-400 hover:underline transition-colors"
+                  className="btn-primary flex items-center gap-1.5 !text-xs"
                 >
-                  Utwórz ofertę →
+                  <Plus className="w-3.5 h-3.5" /> Nowa
                 </button>
-              )}
+              </div>
             </div>
-          ) : (
-            <AnimatePresence initial={false}>
-              {filteredOffers.map((offer, i) => (
-                <motion.div
-                  key={offer.id}
-                  initial={{ opacity: 0, x: -12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -12 }}
-                  transition={{ delay: i * 0.03, duration: 0.18 }}
-                  className={`group relative rounded-xl border p-3 mb-2 cursor-pointer transition-all duration-200 ${
-                    editingOfferId === offer.id
-                      ? 'bg-emerald-500/10 border-emerald-500/30'
-                      : 'bg-earth-900/40 border-earth-800/40 hover:bg-earth-800/30 hover:border-earth-700/50'
-                  }`}
-                  onClick={() => openEditWizard(offer)}
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-earth-500 pointer-events-none" />
+              <input
+                value={offerSearch}
+                onChange={(e) => setOfferSearch(e.target.value)}
+                placeholder="Szukaj oferty…"
+                className="input-base w-full pl-8 text-xs"
+              />
+            </div>
+          </div>
+
+          {/* Status legend */}
+          <div className="flex items-center gap-2 px-4 py-2 border-b border-earth-800/40 flex-wrap">
+            {(Object.keys(STATUS_CONFIG) as Offer['status'][]).map((key) => {
+              const cfg = STATUS_CONFIG[key];
+              return (
+                <span
+                  key={key}
+                  className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-medium border ${cfg.color}`}
                 >
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <p className="text-xs font-semibold text-earth-200 leading-snug line-clamp-2 flex-1 min-w-0">
-                      {offer.title}
-                    </p>
-                    <StatusBadge status={offer.status} />
-                  </div>
-                  <div className="flex items-center justify-between gap-1">
-                    {offer.price_gross_pln != null ? (
-                      <span className="text-xs font-mono text-emerald-400 font-semibold">
-                        {fmtPLN(offer.price_gross_pln)}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-earth-600">—</span>
-                    )}
-                    <span className="text-[10px] text-earth-600 shrink-0">
-                      {fmtDate(offer.created_at)}
-                    </span>
-                  </div>
-                  {/* Hover edit icon */}
+                  {cfg.label}
+                </span>
+              );
+            })}
+          </div>
+
+          {/* Offer cards */}
+          <div className="flex-1 overflow-y-auto py-2 px-2">
+            {loadingOffers ? (
+              <div className="space-y-0">
+                {[1, 2, 3].map((i) => (
+                  <SkeletonOfferCard key={i} />
+                ))}
+              </div>
+            ) : filteredOffers.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-3 text-earth-600 px-4">
+                <FileText className="w-10 h-10 opacity-20" />
+                <p className="text-xs text-center leading-relaxed">
+                  {offerSearch
+                    ? `Brak wyników dla "${offerSearch}"`
+                    : 'Brak ofert.\nUtwórz pierwszą ofertę przetargową.'}
+                </p>
+                {!offerSearch && (
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openEditWizard(offer);
-                    }}
-                    title="Edytuj"
-                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 rounded-md bg-earth-700/80 text-earth-400 hover:text-earth-200 transition-all"
+                    onClick={openNewWizard}
+                    className="text-xs text-accent-primary hover:underline transition-colors"
                   >
-                    <Edit2 className="w-3 h-3" />
+                    Utwórz ofertę →
                   </button>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          )}
+                )}
+              </div>
+            ) : (
+              <AnimatePresence initial={false}>
+                {filteredOffers.map((offer, i) => (
+                  <motion.div
+                    key={offer.id}
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -12 }}
+                    transition={{ delay: i * 0.03, duration: 0.18 }}
+                    className={`group relative rounded-token-lg border p-3 mb-2 cursor-pointer transition-all duration-200 ${
+                      editingOfferId === offer.id
+                        ? 'bg-accent-primary/10 border-accent-primary/30'
+                        : 'bg-earth-900/40 border-earth-800/40 hover:bg-earth-800/30 hover:border-earth-700/50'
+                    }`}
+                    onClick={() => openEditWizard(offer)}
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <p className="text-xs font-semibold text-earth-200 leading-snug line-clamp-2 flex-1 min-w-0">
+                        {offer.title}
+                      </p>
+                      <OfferStatusBadge status={offer.status} />
+                    </div>
+                    <div className="flex items-center justify-between gap-1">
+                      {offer.price_gross_pln != null ? (
+                        <span className="text-xs font-mono text-accent-primary font-semibold">
+                          {fmtPLN(offer.price_gross_pln)}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-earth-600">—</span>
+                      )}
+                      <span className="text-[10px] text-earth-600 shrink-0">
+                        {fmtDate(offer.created_at)}
+                      </span>
+                    </div>
+                    {/* Hover edit icon */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openEditWizard(offer);
+                      }}
+                      title="Edytuj"
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 p-1 rounded-token bg-earth-700/80 text-earth-400 hover:text-earth-200 transition-all"
+                    >
+                      <Edit2 className="w-3 h-3" />
+                    </button>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            )}
+          </div>
+        </div>
+
+        {/* ── Right panel — wizard or landing ──────────────────────────────── */}
+        <div className="flex-1 flex flex-col min-w-0 overflow-auto">
+          <AnimatePresence mode="wait">
+            {!wizardOpen ? (
+              /* Landing / empty state */
+              <motion.div
+                key="landing"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="flex-1 flex flex-col items-center justify-center p-8 text-earth-600"
+              >
+                <div className="w-24 h-24 rounded-token-xl bg-earth-900/60 border border-earth-800/60 flex items-center justify-center mb-5">
+                  <FileText className="w-10 h-10 opacity-25" />
+                </div>
+                <h3 className="text-base font-semibold text-earth-400 mb-2">
+                  Kreator oferty PDF
+                </h3>
+                <p className="text-sm text-earth-600 text-center max-w-xs leading-relaxed mb-6">
+                  Utwórz nową ofertę przetargową lub wybierz istniejącą z listy po lewej stronie.
+                  Wizard poprowadzi Cię przez 3 kroki.
+                </p>
+                <button
+                  onClick={openNewWizard}
+                  className="btn-primary flex items-center gap-2 shadow-token-glow"
+                >
+                  <Plus className="w-4 h-4" /> Nowa oferta
+                </button>
+
+                {/* Quick stats */}
+                {offers.length > 0 && (
+                  <div className="mt-10 grid grid-cols-3 gap-4 max-w-sm w-full">
+                    {(
+                      [
+                        {
+                          label: 'Szkice',
+                          count: offers.filter((o) => o.status === 'draft').length,
+                          color: 'text-earth-400',
+                        },
+                        {
+                          label: 'Złożone',
+                          count: offers.filter((o) => o.status === 'submitted').length,
+                          color: 'text-blue-400',
+                        },
+                        {
+                          label: 'Wygrane',
+                          count: offers.filter((o) => o.status === 'won').length,
+                          color: 'text-accent-primary',
+                        },
+                      ] as const
+                    ).map(({ label, count, color }) => (
+                      <div
+                        key={label}
+                        className="card px-3 py-3 text-center"
+                      >
+                        <div className={`text-xl font-bold tabular-nums ${color}`}>{count}</div>
+                        <div className="text-[10px] text-earth-600 mt-0.5">{label}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            ) : (
+              /* Wizard */
+              <motion.div
+                key="wizard"
+                initial={{ opacity: 0, x: 24 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 24 }}
+                transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                className="flex-1 flex flex-col p-6"
+              >
+                {/* Wizard header */}
+                <div className="flex items-start justify-between mb-4 gap-4">
+                  <div>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <ClipboardList className="w-4 h-4 text-accent-primary" />
+                      <h2 className="text-base font-bold text-earth-100">
+                        {editingOfferId ? 'Edytuj ofertę' : 'Nowa oferta przetargowa'}
+                      </h2>
+                    </div>
+                    <p className="text-xs text-earth-500">
+                      {editingOfferId
+                        ? offerTitle
+                        : 'Wypełnij 3 kroki, aby wygenerować ofertę PDF'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setWizardOpen(false)}
+                    className="btn-ghost !p-2 shrink-0"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Stepper */}
+                <StepperBar step={wizardStep} setStep={setWizardStep} />
+
+                {/* Step content */}
+                <GlassCard className="p-6 flex-1 max-w-3xl w-full">
+                  <AnimatePresence mode="wait">
+                    {wizardStep === 0 && (
+                      <motion.div
+                        key="s0"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.18 }}
+                      >
+                        <Step1Przetarg
+                          tenders={tenders}
+                          loadingTenders={loadingTenders}
+                          selectedTenderId={selectedTenderId}
+                          setSelectedTenderId={setSelectedTenderId}
+                          offerTitle={offerTitle}
+                          setOfferTitle={setOfferTitle}
+                          onNext={() => setWizardStep(1)}
+                        />
+                      </motion.div>
+                    )}
+
+                    {wizardStep === 1 && (
+                      <motion.div
+                        key="s1"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.18 }}
+                      >
+                        <Step2Kosztorys
+                          items={items}
+                          setItems={setItems}
+                          vatPct={vatPct}
+                          setVatPct={setVatPct}
+                          loadingItems={loadingItems}
+                          onNext={() => setWizardStep(2)}
+                          onBack={() => setWizardStep(0)}
+                        />
+                      </motion.div>
+                    )}
+
+                    {wizardStep === 2 && (
+                      <motion.div
+                        key="s2"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.18 }}
+                      >
+                        <Step3Finalizacja
+                          data={finData}
+                          setData={setFinData}
+                          grossTotal={grossTotal}
+                          saving={saving}
+                          onSaveDraft={saveDraft}
+                          onGeneratePDF={generatePDF}
+                          onBack={() => setWizardStep(1)}
+                        />
+                      </motion.div>
+                    )}
+
+                    {wizardStep === 3 && (
+                      <motion.div
+                        key="s3"
+                        initial={{ opacity: 0, scale: 0.96 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.22 }}
+                      >
+                        <Step4PDF
+                          offerTitle={offerTitle}
+                          saving={saving}
+                          onDownloadAgain={generatePDF}
+                          onNewOffer={openNewWizard}
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </GlassCard>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
-
-      {/* ── Right panel — wizard or landing ──────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-auto">
-        <AnimatePresence mode="wait">
-          {!wizardOpen ? (
-            /* Landing / empty state */
-            <motion.div
-              key="landing"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="flex-1 flex flex-col items-center justify-center p-8 text-earth-600"
-            >
-              <div className="w-24 h-24 rounded-2xl bg-earth-900/60 border border-earth-800/60 flex items-center justify-center mb-5">
-                <FileText className="w-10 h-10 opacity-25" />
-              </div>
-              <h3 className="text-base font-semibold text-earth-400 mb-2">
-                Kreator oferty PDF
-              </h3>
-              <p className="text-sm text-earth-600 text-center max-w-xs leading-relaxed mb-6">
-                Utwórz nową ofertę przetargową lub wybierz istniejącą z listy po lewej stronie.
-                Wizard poprowadzi Cię przez 3 kroki.
-              </p>
-              <button
-                onClick={openNewWizard}
-                className="flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-earth-950 rounded-xl text-sm font-bold transition-colors shadow-lg shadow-emerald-500/20"
-              >
-                <Plus className="w-4 h-4" /> Nowa oferta
-              </button>
-
-              {/* Quick stats */}
-              {offers.length > 0 && (
-                <div className="mt-10 grid grid-cols-3 gap-4 max-w-sm w-full">
-                  {(
-                    [
-                      {
-                        label: 'Szkice',
-                        count: offers.filter((o) => o.status === 'draft').length,
-                        color: 'text-earth-400',
-                      },
-                      {
-                        label: 'Złożone',
-                        count: offers.filter((o) => o.status === 'submitted').length,
-                        color: 'text-blue-400',
-                      },
-                      {
-                        label: 'Wygrane',
-                        count: offers.filter((o) => o.status === 'won').length,
-                        color: 'text-emerald-400',
-                      },
-                    ] as const
-                  ).map(({ label, count, color }) => (
-                    <div
-                      key={label}
-                      className="rounded-xl bg-earth-900/60 border border-earth-800/50 px-3 py-3 text-center"
-                    >
-                      <div className={`text-xl font-bold tabular-nums ${color}`}>{count}</div>
-                      <div className="text-[10px] text-earth-600 mt-0.5">{label}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </motion.div>
-          ) : (
-            /* Wizard */
-            <motion.div
-              key="wizard"
-              initial={{ opacity: 0, x: 24 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 24 }}
-              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-              className="flex-1 flex flex-col p-6"
-            >
-              {/* Wizard header */}
-              <div className="flex items-start justify-between mb-4 gap-4">
-                <div>
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <ClipboardList className="w-4 h-4 text-emerald-400" />
-                    <h2 className="text-base font-bold text-earth-100">
-                      {editingOfferId ? 'Edytuj ofertę' : 'Nowa oferta przetargowa'}
-                    </h2>
-                  </div>
-                  <p className="text-xs text-earth-500">
-                    {editingOfferId
-                      ? offerTitle
-                      : 'Wypełnij 3 kroki, aby wygenerować ofertę PDF'}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setWizardOpen(false)}
-                  className="p-2 rounded-xl text-earth-500 hover:text-earth-200 hover:bg-earth-800 transition-colors shrink-0"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* Stepper */}
-              <StepperBar step={wizardStep} setStep={setWizardStep} />
-
-              {/* Step content */}
-              <GlassCard className="p-6 flex-1 max-w-3xl w-full">
-                <AnimatePresence mode="wait">
-                  {wizardStep === 0 && (
-                    <motion.div
-                      key="s0"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      transition={{ duration: 0.18 }}
-                    >
-                      <Step1Przetarg
-                        tenders={tenders}
-                        loadingTenders={loadingTenders}
-                        selectedTenderId={selectedTenderId}
-                        setSelectedTenderId={setSelectedTenderId}
-                        offerTitle={offerTitle}
-                        setOfferTitle={setOfferTitle}
-                        onNext={() => setWizardStep(1)}
-                      />
-                    </motion.div>
-                  )}
-
-                  {wizardStep === 1 && (
-                    <motion.div
-                      key="s1"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      transition={{ duration: 0.18 }}
-                    >
-                      <Step2Kosztorys
-                        items={items}
-                        setItems={setItems}
-                        vatPct={vatPct}
-                        setVatPct={setVatPct}
-                        loadingItems={loadingItems}
-                        onNext={() => setWizardStep(2)}
-                        onBack={() => setWizardStep(0)}
-                      />
-                    </motion.div>
-                  )}
-
-                  {wizardStep === 2 && (
-                    <motion.div
-                      key="s2"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -20 }}
-                      transition={{ duration: 0.18 }}
-                    >
-                      <Step3Finalizacja
-                        data={finData}
-                        setData={setFinData}
-                        grossTotal={grossTotal}
-                        saving={saving}
-                        onSaveDraft={saveDraft}
-                        onGeneratePDF={generatePDF}
-                        onBack={() => setWizardStep(1)}
-                      />
-                    </motion.div>
-                  )}
-
-                  {wizardStep === 3 && (
-                    <motion.div
-                      key="s3"
-                      initial={{ opacity: 0, scale: 0.96 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.22 }}
-                    >
-                      <Step4PDF
-                        offerTitle={offerTitle}
-                        saving={saving}
-                        onDownloadAgain={generatePDF}
-                        onNewOffer={openNewWizard}
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </GlassCard>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </div>
+    </PageShell>
   );
 }

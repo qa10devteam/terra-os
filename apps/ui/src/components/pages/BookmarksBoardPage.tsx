@@ -64,7 +64,7 @@ function BookmarkCard({
     <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="touch-manipulation">
       <motion.div
         layout
-        className="bg-earth-950 border border-earth-800 rounded-xl p-3 cursor-grab active:cursor-grabbing hover:border-earth-700 transition-all group"
+        className="card-hover p-3 cursor-grab active:cursor-grabbing transition-all group"
         style={{ borderLeftWidth: 3, borderLeftColor: color }}
       >
         <div className="flex items-start justify-between gap-2 mb-2">
@@ -227,7 +227,7 @@ function AlertForm({ onClose, onCreate }: { onClose: () => void; onCreate: (body
     }
   };
 
-  const field = 'w-full bg-earth-800 border border-earth-700 rounded-lg px-3 py-2 text-sm text-earth-100 placeholder-earth-500 focus:outline-none focus:border-emerald-500';
+  const field = 'input-base';
 
   return (
     <motion.div
@@ -242,14 +242,14 @@ function AlertForm({ onClose, onCreate }: { onClose: () => void; onCreate: (body
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.95 }}
         onClick={e => e.stopPropagation()}
-        className="bg-earth-900 border border-earth-700 rounded-2xl w-full max-w-lg p-6 shadow-2xl max-h-[90vh] overflow-y-auto"
+        className="bg-earth-900 border border-earth-800/50 rounded-token-xl w-full max-w-lg p-6 shadow-token-lg max-h-[90vh] overflow-y-auto"
       >
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-base font-bold text-earth-50 flex items-center gap-2">
             <Bell size={16} className="text-emerald-400" />
             Nowy Alert
           </h3>
-          <button onClick={onClose} className="p-1.5 hover:bg-earth-800 rounded-lg">
+          <button onClick={onClose} className="btn-ghost p-1.5">
             <X size={16} className="text-earth-400" />
           </button>
         </div>
@@ -345,13 +345,13 @@ function AlertForm({ onClose, onCreate }: { onClose: () => void; onCreate: (body
         </div>
 
         <div className="flex gap-3 mt-6">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-lg border border-earth-700 text-earth-400 text-sm hover:border-earth-600">
+          <button onClick={onClose} className="btn-secondary flex-1 py-2.5">
             Anuluj
           </button>
           <button
             onClick={handleSubmit}
             disabled={saving || !form.name.trim()}
-            className="flex-1 py-2.5 rounded-lg bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-400 disabled:opacity-40 flex items-center justify-center gap-2"
+            className="btn-primary flex-1 py-2.5"
           >
             {saving ? <RefreshCw size={14} className="animate-spin" /> : <BellPlus size={14} />}
             Utwórz alert
@@ -379,7 +379,7 @@ function AlertsList() {
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 rounded-lg text-xs font-medium hover:bg-emerald-500/30 transition-colors"
+          className="btn-secondary flex items-center gap-1.5 text-xs"
         >
           <Plus size={13} />
           Nowy alert
@@ -401,7 +401,7 @@ function AlertsList() {
             layout
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex items-center gap-3 p-3 bg-earth-900 border border-earth-800 rounded-xl hover:border-earth-700 transition-colors"
+            className="flex items-center gap-3 p-3 bg-earth-900 border border-earth-800/50 rounded-token hover:border-earth-700 transition-colors"
           >
             <button
               onClick={() => toggle(alert.id, !alert.is_active)}
@@ -493,11 +493,11 @@ export function BookmarksBoardPage() {
 
   return (
     <PageShell
-      title="Pipeline Zakładek"
-      subtitle="Kanban + alerty przetargowe"
+      title="Tablica Przetargów Ofertowych"
+      subtitle="Zarządzaj etapami ofertowania i konfiguruj alerty branżowe"
       actions={
         <div className="flex items-center gap-2 text-xs text-earth-500">
-          <Bookmark size={12} className="text-blue-400" />
+          <Bookmark size={12} className="text-accent-info" />
           <span>{totalCount} zakładek</span>
           {overdueTotal > 0 && (
             <span className="flex items-center gap-1 text-red-400">
@@ -516,8 +516,8 @@ export function BookmarksBoardPage() {
             {STAGES.map(s => {
               const st = statsMap[s.key];
               return (
-                <div key={s.key} className="bg-earth-900 border border-earth-800 rounded-xl p-2.5 text-center">
-                  <div className="text-xs" style={{ color: s.color }}>{s.label}</div>
+                <div key={s.key} className="card p-2.5 text-center">
+                  <div className="text-xs section-label" style={{ color: s.color }}>{s.label}</div>
                   <div className="text-xl font-bold text-earth-100 mt-0.5">{st?.count ?? 0}</div>
                   {(st?.overdue ?? 0) > 0 && (
                     <div className="text-xs text-red-400 flex items-center justify-center gap-0.5 mt-0.5">
@@ -531,7 +531,7 @@ export function BookmarksBoardPage() {
         )}
 
         {/* ── Tabs ─────────────────────────────────────────────────────────── */}
-        <div className="flex gap-1 bg-earth-900 rounded-lg p-1 w-fit border border-earth-700">
+        <div className="flex gap-1 bg-earth-900/40 rounded-token-lg p-1 w-fit border border-earth-700/50">
           {[
             { key: 'kanban', label: 'Kanban', icon: Filter },
             { key: 'alerts', label: 'Alerty', icon: Bell },
@@ -539,8 +539,10 @@ export function BookmarksBoardPage() {
             <button
               key={key}
               onClick={() => setActiveTab(key as typeof activeTab)}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                activeTab === key ? 'bg-earth-700 text-earth-50' : 'text-earth-400 hover:text-earth-200'
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-token text-sm font-medium transition-all ${
+                activeTab === key
+                  ? 'bg-earth-700 text-earth-50'
+                  : 'text-earth-400 hover:text-earth-200'
               }`}
             >
               <Icon size={14} />
@@ -604,7 +606,7 @@ export function BookmarksBoardPage() {
 
         {/* ── Alerts ───────────────────────────────────────────────────────── */}
         {activeTab === 'alerts' && (
-          <div className="bg-earth-900 border border-earth-700 rounded-xl p-5">
+          <div className="card p-5">
             <AlertsList />
           </div>
         )}

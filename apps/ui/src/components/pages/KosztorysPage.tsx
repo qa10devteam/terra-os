@@ -18,6 +18,7 @@ import { useStore } from '@/store/useStore';
 import { useAuthFetch } from '@/lib/api-v2';
 import { showToast } from '@/components/Toast';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { PageShell } from '@/components/PageShell';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -138,9 +139,9 @@ const DEFAULT_NARZUTY: Narzuty = { ko_r_pct: 70, ko_s_pct: 30, z_pct: 12.5, kz_p
 // ── Badge helpers ──────────────────────────────────────────────────────────────
 
 function WinBadge({ p }: { p: number }) {
-  const cls = p > 0.6 ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-    : p > 0.35 ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-    : 'bg-red-500/15 text-red-400 border-red-500/30';
+  const cls = p > 0.6 ? 'bg-accent-success/15 text-green-400 border-green-500/30'
+    : p > 0.35 ? 'bg-accent-warning/15 text-amber-400 border-amber-500/30'
+    : 'bg-accent-danger/15 text-red-400 border-red-500/30';
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${cls}`}>
       <Target className="w-3 h-3" />
@@ -150,9 +151,9 @@ function WinBadge({ p }: { p: number }) {
 }
 
 function PercentileBadge({ p }: { p: number }) {
-  const cls = p < 50 ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-    : p < 75 ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-    : 'bg-red-500/15 text-red-400 border-red-500/30';
+  const cls = p < 50 ? 'bg-accent-success/15 text-green-400 border-green-500/30'
+    : p < 75 ? 'bg-accent-warning/15 text-amber-400 border-amber-500/30'
+    : 'bg-accent-danger/15 text-red-400 border-red-500/30';
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${cls}`}>
       <BarChart2 className="w-3 h-3" />
@@ -162,9 +163,9 @@ function PercentileBadge({ p }: { p: number }) {
 }
 
 function AnomalyBadge({ score }: { score: number }) {
-  const cls = score < 0.1 ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-    : score < 0.25 ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-    : 'bg-red-500/15 text-red-400 border-red-500/30';
+  const cls = score < 0.1 ? 'bg-accent-success/15 text-green-400 border-green-500/30'
+    : score < 0.25 ? 'bg-accent-warning/15 text-amber-400 border-amber-500/30'
+    : 'bg-accent-danger/15 text-red-400 border-red-500/30';
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${cls}`}>
       <Shield className="w-3 h-3" />
@@ -216,7 +217,7 @@ function IcbSidebar({
 
   const RMS_COLORS: Record<string, string> = {
     R: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
-    M: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20',
+    M: 'text-accent-primary bg-accent-primary/10 border-accent-primary/20',
     S: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
   };
 
@@ -226,7 +227,7 @@ function IcbSidebar({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 24 }}
       transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
-      className="w-80 shrink-0 flex flex-col gap-0 bg-earth-900/70 border border-earth-800/60 rounded-2xl overflow-hidden"
+      className="w-80 shrink-0 flex flex-col gap-0 bg-earth-900/70 border border-earth-800/60 rounded-token-xl overflow-hidden shadow-token-md"
     >
       <div className="flex items-center justify-between px-4 py-3 border-b border-earth-800/60 bg-earth-900/80">
         <div className="flex items-center gap-2">
@@ -234,7 +235,7 @@ function IcbSidebar({
           <span className="text-earth-200 text-sm font-semibold">ICB — Baza Cen</span>
           <span className="px-1.5 py-0.5 rounded-full bg-earth-800 text-earth-500 text-[10px]">784k pozycji</span>
         </div>
-        <button onClick={onClose} className="w-6 h-6 rounded flex items-center justify-center text-earth-500 hover:text-earth-300 transition-colors">
+        <button onClick={onClose} className="btn-ghost w-6 h-6 !p-0 flex items-center justify-center">
           <X className="w-3.5 h-3.5" />
         </button>
       </div>
@@ -246,7 +247,7 @@ function IcbSidebar({
             <button
               key={t}
               onClick={() => setSelectedType(t)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors border ${
+              className={`px-2.5 py-1 rounded-token text-xs font-semibold transition-colors border ${
                 selectedType === t
                   ? t === 'all' ? 'bg-earth-700 border-earth-600 text-earth-200'
                     : RMS_COLORS[t]
@@ -263,7 +264,7 @@ function IcbSidebar({
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder="Szukaj w bazie ICB…"
-            className="w-full pl-8 pr-3 py-2 rounded-lg bg-earth-800/60 border border-earth-700/50 text-earth-200 placeholder-earth-600 text-xs focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-colors"
+            className="input-base w-full pl-8 text-xs"
           />
         </div>
       </div>
@@ -293,7 +294,7 @@ function IcbSidebar({
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 mb-0.5">
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${RMS_COLORS[item.typ_rms]}`}>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-token border ${RMS_COLORS[item.typ_rms]}`}>
                         {item.typ_rms}
                       </span>
                       <span className="text-earth-600 text-xs font-mono truncate max-w-[80px]">{item.symbol}</span>
@@ -312,7 +313,7 @@ function IcbSidebar({
                       <button
                         key={f}
                         onClick={() => onSelect(item, f)}
-                        className={`px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors ${RMS_COLORS[f]}`}
+                        className={`px-1.5 py-0.5 rounded-token text-[10px] font-bold border transition-colors ${RMS_COLORS[f]}`}
                       >
                         → {f}
                       </button>
@@ -344,14 +345,14 @@ function NarzutyEditor({
   function field(key: keyof Narzuty, label: string, desc: string) {
     return (
       <div>
-        <label className="text-earth-500 text-xs font-semibold uppercase tracking-wide">{label}</label>
+        <label className="label-base">{label}</label>
         <p className="text-earth-700 text-[10px] mb-1">{desc}</p>
         <div className="relative">
           <input
             type="number" min={0} max={200} step={0.1}
             value={local[key]}
             onChange={e => setLocal(prev => ({ ...prev, [key]: parseFloat(e.target.value) || 0 }))}
-            className="w-full px-3 py-1.5 pr-8 rounded-lg bg-earth-800/60 border border-earth-700/50 text-earth-200 text-xs focus:outline-none focus:border-blue-500/50 tabular-nums"
+            className="input-base w-full pr-8 tabular-nums"
           />
           <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-earth-600 text-xs">%</span>
         </div>
@@ -367,13 +368,13 @@ function NarzutyEditor({
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-earth-950 border border-earth-800/60 rounded-2xl shadow-2xl w-full max-w-md p-6">
+      <div className="bg-earth-950 border border-earth-800/60 rounded-token-xl shadow-token-lg w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
             <SlidersHorizontal className="w-4 h-4 text-blue-400" />
             <h3 className="text-earth-100 text-sm font-bold">Narzuty kosztorysu</h3>
           </div>
-          <button onClick={onClose} className="text-earth-500 hover:text-earth-300 transition-colors">
+          <button onClick={onClose} className="btn-ghost !p-1">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -386,20 +387,20 @@ function NarzutyEditor({
           {field('vat_pct', 'VAT', 'Stawka podatku')}
         </div>
 
-        <div className="bg-earth-900/60 rounded-lg px-3 py-2.5 mb-5 text-xs text-earth-500">
+        <div className="bg-earth-900/60 rounded-token px-3 py-2.5 mb-5 text-xs text-earth-500">
           <span className="font-mono text-earth-400">CJ = R + M + S + Ko·(R·ko_r + S·ko_s) + Kz·M + Z·(R+M+S+Ko+Kz)</span>
         </div>
 
         <div className="flex gap-3">
           <button
             onClick={() => setLocal({ ...DEFAULT_NARZUTY })}
-            className="px-4 py-2 rounded-lg border border-earth-700 text-earth-400 text-xs hover:border-earth-600 transition-colors"
+            className="btn-secondary px-4 py-2 text-xs"
           >
             Domyślne
           </button>
           <button
             onClick={() => { onChange(local); onClose(); }}
-            className="flex-1 px-4 py-2 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-500 transition-colors"
+            className="btn-primary flex-1 text-xs"
           >
             Zastosuj
           </button>
@@ -477,12 +478,12 @@ function IntelligencePanel({
     <GlassCard className="p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Zap className="w-4 h-4 text-purple-400" />
+          <Zap className="w-4 h-4 text-accent-violet" />
           <span className="text-earth-200 text-sm font-semibold">Intelligence</span>
         </div>
         <div className="flex items-center gap-2">
-          {loading && <Loader2 className="w-3.5 h-3.5 text-purple-400 animate-spin" />}
-          <button onClick={() => setExpanded(e => !e)} className="text-earth-600 hover:text-earth-400 transition-colors">
+          {loading && <Loader2 className="w-3.5 h-3.5 text-accent-violet animate-spin" />}
+          <button onClick={() => setExpanded(e => !e)} className="btn-ghost !p-1">
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
         </div>
@@ -528,7 +529,7 @@ function IntelligencePanel({
                   />
                   {/* Our price needle */}
                   <div
-                    className="absolute top-0 bottom-0 w-1 bg-emerald-400 rounded-full"
+                    className="absolute top-0 bottom-0 w-1 bg-accent-primary rounded-full"
                     style={{ left: `${Math.min(98, (sumaNet / (benchmark.p75_value * 1.5)) * 100)}%` }}
                   />
                 </div>
@@ -554,7 +555,7 @@ function IntelligencePanel({
                       labelStyle={{ color: '#888' }}
                     />
                     <Line type="monotone" dataKey="R" stroke="#60a5fa" dot={false} strokeWidth={1.5} name="Robocizna" />
-                    <Line type="monotone" dataKey="M" stroke="#34d399" dot={false} strokeWidth={1.5} name="Materiały" />
+                    <Line type="monotone" dataKey="M" stroke="#10b981" dot={false} strokeWidth={1.5} name="Materiały" />
                     <Line type="monotone" dataKey="S" stroke="#fbbf24" dot={false} strokeWidth={1.5} name="Sprzęt" />
                   </LineChart>
                 </ResponsiveContainer>
@@ -570,12 +571,12 @@ function IntelligencePanel({
                     <div key={r.category} className="flex items-center justify-between">
                       <span className="text-earth-500 text-xs truncate max-w-[140px]">{r.category}</span>
                       <div className="flex items-center gap-2">
-                        <span className={`text-xs tabular-nums ${r.change_yoy_pct > 5 ? 'text-red-400' : r.change_yoy_pct < -2 ? 'text-emerald-400' : 'text-earth-400'}`}>
+                        <span className={`text-xs tabular-nums ${r.change_yoy_pct > 5 ? 'text-red-400' : r.change_yoy_pct < -2 ? 'text-accent-primary' : 'text-earth-400'}`}>
                           {r.change_yoy_pct > 0 ? '+' : ''}{r.change_yoy_pct.toFixed(1)}%
                         </span>
                         <div className="w-12 h-1.5 bg-earth-800 rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full ${r.risk_score > 0.6 ? 'bg-red-400' : r.risk_score > 0.3 ? 'bg-amber-400' : 'bg-emerald-400'}`}
+                            className={`h-full rounded-full ${r.risk_score > 0.6 ? 'bg-red-400' : r.risk_score > 0.3 ? 'bg-amber-400' : 'bg-accent-primary'}`}
                             style={{ width: `${r.risk_score * 100}%` }}
                           />
                         </div>
@@ -637,7 +638,7 @@ function PozycjaRow({
             onChange={e => setEditValue(e.target.value)}
             onBlur={commitEdit}
             onKeyDown={e => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') setEditField(null); }}
-            className="w-full px-2 py-0.5 rounded bg-earth-800 border border-blue-500/40 text-earth-200 text-xs focus:outline-none tabular-nums"
+            className="w-full px-2 py-0.5 rounded-token bg-earth-800 border border-blue-500/40 text-earth-200 text-xs focus:outline-none tabular-nums"
             style={{ minWidth: 60 }}
           />
         </td>
@@ -645,7 +646,7 @@ function PozycjaRow({
     }
     return (
       <td
-        className="px-2 py-1.5 text-right text-earth-400 text-xs tabular-nums cursor-pointer hover:text-earth-200 hover:bg-earth-800/30 rounded transition-colors"
+        className="px-2 py-1.5 text-right text-earth-400 text-xs tabular-nums cursor-pointer hover:text-earth-200 hover:bg-earth-800/30 rounded-token transition-colors"
         onClick={() => startEdit(field, poz[field] as number | string)}
       >
         {display}
@@ -669,13 +670,13 @@ function PozycjaRow({
             onChange={e => setEditValue(e.target.value)}
             onBlur={commitEdit}
             onKeyDown={e => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') setEditField(null); }}
-            className="w-full px-2 py-0.5 rounded bg-earth-800 border border-blue-500/40 text-earth-200 text-xs focus:outline-none"
+            className="w-full px-2 py-0.5 rounded-token bg-earth-800 border border-blue-500/40 text-earth-200 text-xs focus:outline-none"
           />
         ) : (
           <span className={poz.is_anomaly ? 'text-red-300' : ''}>
             {poz.is_anomaly && (
               <span className="inline-flex items-center mr-1.5" title="Anomalia cenowa - wartość odbiega od bazy rynkowej">
-                <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse inline-block" />
+                <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse-soft inline-block" />
               </span>
             )}
             {poz.opis}
@@ -696,7 +697,7 @@ function PozycjaRow({
       <td className="px-2 py-1.5 w-8">
         <button
           onClick={onDelete}
-          className="opacity-0 group-hover:opacity-100 w-5 h-5 rounded flex items-center justify-center text-earth-700 hover:text-red-400 transition-all"
+          className="opacity-0 group-hover:opacity-100 w-5 h-5 rounded-token flex items-center justify-center text-earth-700 hover:text-red-400 transition-all"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
@@ -1067,7 +1068,7 @@ export function KosztorysPage() {
     setAlertsLoading(true);
     try {
       const res = await authFetch('/api/v2/market/materials');
-      const data = await res.json();
+      const data = await (res as unknown as Response).json();
       setAlertsData(Array.isArray(data) ? data : data.alerts ?? []);
     } catch {
       setAlertsData([]);
@@ -1172,35 +1173,38 @@ export function KosztorysPage() {
     }
   }
 
+  // ── Header actions ─────────────────────────────────────────────────────────
+  const headerActions = (
+    <>
+      <button
+        onClick={() => setShowIcb(v => !v)}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-token border text-xs font-medium transition-colors ${
+          showIcb
+            ? 'bg-blue-600/15 border-blue-600/30 text-blue-400'
+            : 'btn-secondary'
+        }`}
+      >
+        <Database className="w-3.5 h-3.5" />
+        ICB
+      </button>
+      <button
+        onClick={() => setShowNarzuty(true)}
+        className="btn-secondary flex items-center gap-1.5 text-xs"
+      >
+        <SlidersHorizontal className="w-3.5 h-3.5" />
+        Narzuty
+      </button>
+    </>
+  );
+
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col gap-4 h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between shrink-0">
-        <div>
-          <h1 className="text-lg font-bold text-earth-100">Kosztorys</h1>
-          <p className="text-earth-600 text-xs">Engine KNB · ICB 784k · Intelligence</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowIcb(v => !v)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
-              showIcb ? 'bg-blue-600/15 border-blue-600/30 text-blue-400' : 'bg-earth-800/40 border-earth-700/50 text-earth-400 hover:border-earth-600'
-            }`}
-          >
-            <Database className="w-3.5 h-3.5" />
-            ICB
-          </button>
-          <button
-            onClick={() => setShowNarzuty(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-earth-800/40 border border-earth-700/50 text-earth-400 text-xs font-medium hover:border-earth-600 transition-colors"
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            Narzuty
-          </button>
-        </div>
-      </div>
-
+    <PageShell
+      title="Kosztorys"
+      subtitle="Kalkulacja KNR z bazą cen ICB"
+      actions={headerActions}
+      noPadding={false}
+    >
       <div className="flex gap-4 flex-1 min-h-0">
         {/* Main content */}
         <div className="flex-1 flex flex-col gap-4 min-w-0">
@@ -1216,13 +1220,13 @@ export function KosztorysPage() {
                   onFocus={() => setTenderDropdown(true)}
                   onBlur={() => setTimeout(() => setTenderDropdown(false), 150)}
                   placeholder="Wybierz przetarg lub wpisz nazwę…"
-                  className="w-full px-3 py-2 rounded-lg bg-earth-800/60 border border-earth-700/50 text-earth-200 placeholder-earth-600 text-sm focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-colors"
+                  className="input-base w-full"
                 />
                 {tendersLoading && (
                   <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-earth-600 animate-spin" />
                 )}
                 {tenderDropdown && filteredTenders.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 z-40 mt-1 bg-earth-900 border border-earth-700/60 rounded-xl shadow-2xl overflow-hidden max-h-60 overflow-y-auto">
+                  <div className="absolute top-full left-0 right-0 z-40 mt-1 bg-earth-900 border border-earth-700/60 rounded-token-lg shadow-token-lg overflow-hidden max-h-60 overflow-y-auto">
                     {filteredTenders.slice(0, 20).map(t => (
                       <button
                         key={t.id}
@@ -1243,7 +1247,7 @@ export function KosztorysPage() {
               {tender && (
                 <button
                   onClick={() => { setTender(null); setTenderSearch(''); setPozycje([]); setKosztorysId(null); }}
-                  className="shrink-0 text-earth-600 hover:text-earth-400 transition-colors"
+                  className="btn-ghost shrink-0 !p-1"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1262,21 +1266,28 @@ export function KosztorysPage() {
           {/* Add row form */}
           <GlassCard className="p-3 shrink-0">
             <div className="flex items-center gap-2 mb-2">
-              <Plus className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="text-earth-300 text-xs font-semibold uppercase tracking-wide">Nowa pozycja</span>
+              <Plus className="w-3.5 h-3.5 text-accent-primary" />
+              <span className="section-label">Nowa pozycja</span>
             </div>
             <div className="grid grid-cols-12 gap-2">
-              <input value={addKst} onChange={e => setAddKst(e.target.value)} placeholder="KNR/kod" className="col-span-2 input-xs" />
-              <input value={addOpis} onChange={e => setAddOpis(e.target.value)} placeholder="Opis pozycji *" className="col-span-4 input-xs" />
-              <input value={addJm} onChange={e => setAddJm(e.target.value)} placeholder="Jm" className="col-span-1 input-xs" />
-              <input value={addIlosc} onChange={e => setAddIlosc(e.target.value)} type="number" placeholder="Ilość" className="col-span-1 input-xs" />
-              <input value={addR} onChange={e => setAddR(e.target.value)} type="number" placeholder="R zł" className="col-span-1 input-xs" />
-              <input value={addM} onChange={e => setAddM(e.target.value)} type="number" placeholder="M zł" className="col-span-1 input-xs" />
-              <input value={addS} onChange={e => setAddS(e.target.value)} type="number" placeholder="S zł" className="col-span-1 input-xs" />
+              <input value={addKst} onChange={e => setAddKst(e.target.value)} placeholder="KNR/kod"
+                className="col-span-2 px-2 py-1.5 rounded-token bg-earth-800/60 border border-earth-700/50 text-earth-200 placeholder-earth-600 text-xs focus:outline-none focus:border-accent-primary/50 transition-colors" />
+              <input value={addOpis} onChange={e => setAddOpis(e.target.value)} placeholder="Opis pozycji *"
+                className="col-span-4 px-2 py-1.5 rounded-token bg-earth-800/60 border border-earth-700/50 text-earth-200 placeholder-earth-600 text-xs focus:outline-none focus:border-accent-primary/50 transition-colors" />
+              <input value={addJm} onChange={e => setAddJm(e.target.value)} placeholder="Jm"
+                className="col-span-1 px-2 py-1.5 rounded-token bg-earth-800/60 border border-earth-700/50 text-earth-200 placeholder-earth-600 text-xs focus:outline-none focus:border-accent-primary/50 transition-colors" />
+              <input value={addIlosc} onChange={e => setAddIlosc(e.target.value)} type="number" placeholder="Ilość"
+                className="col-span-1 px-2 py-1.5 rounded-token bg-earth-800/60 border border-earth-700/50 text-earth-200 placeholder-earth-600 text-xs focus:outline-none focus:border-accent-primary/50 transition-colors" />
+              <input value={addR} onChange={e => setAddR(e.target.value)} type="number" placeholder="R zł"
+                className="col-span-1 px-2 py-1.5 rounded-token bg-earth-800/60 border border-earth-700/50 text-earth-200 placeholder-earth-600 text-xs focus:outline-none focus:border-accent-primary/50 transition-colors" />
+              <input value={addM} onChange={e => setAddM(e.target.value)} type="number" placeholder="M zł"
+                className="col-span-1 px-2 py-1.5 rounded-token bg-earth-800/60 border border-earth-700/50 text-earth-200 placeholder-earth-600 text-xs focus:outline-none focus:border-accent-primary/50 transition-colors" />
+              <input value={addS} onChange={e => setAddS(e.target.value)} type="number" placeholder="S zł"
+                className="col-span-1 px-2 py-1.5 rounded-token bg-earth-800/60 border border-earth-700/50 text-earth-200 placeholder-earth-600 text-xs focus:outline-none focus:border-accent-primary/50 transition-colors" />
               <button
                 onClick={addPozycja}
                 disabled={addLoading || !addOpis.trim()}
-                className="col-span-1 flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-500 disabled:opacity-50 transition-colors"
+                className="col-span-1 btn-primary flex items-center justify-center gap-1 !text-xs disabled:opacity-50"
               >
                 {addLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
               </button>
@@ -1298,7 +1309,7 @@ export function KosztorysPage() {
                       setActiveKTab(t.key);
                       if (t.key === 'ryzyko' && alertsData.length === 0) loadAlerts();
                     }}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs transition-colors ${
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-token text-xs transition-colors ${
                       activeKTab === t.key
                         ? 'bg-earth-700/60 text-earth-200'
                         : 'text-earth-500 hover:text-earth-300 hover:bg-earth-800/40'
@@ -1314,7 +1325,7 @@ export function KosztorysPage() {
                 <button
                   onClick={recalc}
                   disabled={recalcLoading}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-600/10 border border-blue-600/20 text-blue-400 text-xs hover:bg-blue-600/20 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-token bg-blue-600/10 border border-blue-600/20 text-blue-400 text-xs hover:bg-blue-600/20 transition-colors disabled:opacity-50"
                 >
                   {recalcLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                   Przelicz
@@ -1322,7 +1333,7 @@ export function KosztorysPage() {
                 <button
                   onClick={() => exportFile('pdf')}
                   disabled={exportLoading === 'pdf'}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-600/10 border border-red-600/20 text-red-400 text-xs hover:bg-red-600/20 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-token bg-red-600/10 border border-red-600/20 text-red-400 text-xs hover:bg-red-600/20 transition-colors disabled:opacity-50"
                 >
                   {exportLoading === 'pdf' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
                   PDF
@@ -1330,7 +1341,7 @@ export function KosztorysPage() {
                 <button
                   onClick={() => exportFile('ath')}
                   disabled={exportLoading === 'ath'}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-purple-600/10 border border-purple-600/20 text-purple-400 text-xs hover:bg-purple-600/20 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-token bg-purple-600/10 border border-purple-600/20 text-purple-400 text-xs hover:bg-purple-600/20 transition-colors disabled:opacity-50"
                 >
                   {exportLoading === 'ath' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                   ATH
@@ -1338,7 +1349,7 @@ export function KosztorysPage() {
                 <button
                   onClick={() => exportFile('xlsx')}
                   disabled={exportLoading === 'xlsx'}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-green-600/10 border border-green-600/20 text-green-400 text-xs hover:bg-green-600/20 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-token bg-green-600/10 border border-green-600/20 text-green-400 text-xs hover:bg-green-600/20 transition-colors disabled:opacity-50"
                 >
                   {exportLoading === 'xlsx' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileSpreadsheet className="w-3.5 h-3.5" />}
                   CSV
@@ -1355,7 +1366,7 @@ export function KosztorysPage() {
                   onClick={() => athFileInputRef.current?.click()}
                   disabled={athImportLoading || !tender}
                   title="Importuj plik ATH"
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-orange-600/10 border border-orange-600/20 text-orange-400 text-xs hover:bg-orange-600/20 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-token bg-orange-600/10 border border-orange-600/20 text-orange-400 text-xs hover:bg-orange-600/20 transition-colors disabled:opacity-50"
                 >
                   {athImportLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
                   Import ATH
@@ -1364,7 +1375,7 @@ export function KosztorysPage() {
                   onClick={handleAiWycena}
                   disabled={aiWycenaLoading || !kosztorysId}
                   title="Automatyczna wycena AI na podstawie cen KNR"
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-violet-600/10 border border-violet-600/20 text-violet-400 text-xs hover:bg-violet-600/20 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-token bg-accent-violet/10 border border-accent-violet/20 text-accent-violet text-xs hover:bg-accent-violet/20 transition-colors disabled:opacity-50"
                 >
                   {aiWycenaLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bot className="w-3.5 h-3.5" />}
                   AI Wycena
@@ -1397,7 +1408,7 @@ export function KosztorysPage() {
                       <th className="px-2 py-2 text-center text-earth-600 font-medium w-12">Jm</th>
                       <th className="px-2 py-2 text-right text-earth-600 font-medium w-16">Ilość</th>
                       <th className="px-2 py-2 text-right text-blue-600 font-medium w-16">R jcena</th>
-                      <th className="px-2 py-2 text-right text-emerald-600 font-medium w-16">M jcena</th>
+                      <th className="px-2 py-2 text-right text-accent-primary font-medium w-16">M jcena</th>
                       <th className="px-2 py-2 text-right text-amber-600 font-medium w-16">S jcena</th>
                       <th className="px-2 py-2 text-right text-earth-600 font-medium w-24">CJ netto</th>
                       <th className="px-2 py-2 text-right text-earth-400 font-medium w-28">Wartość</th>
@@ -1423,7 +1434,7 @@ export function KosztorysPage() {
             {activeKTab === 'ryzyko' && (
             <div className="flex-1 overflow-auto p-4 space-y-4">
               {/* Anomaly analysis */}
-              <div className="rounded-xl border border-earth-800/60 bg-earth-900/40 p-4">
+              <div className="rounded-token-lg border border-earth-800/60 bg-earth-900/40 p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-amber-500" />
@@ -1432,7 +1443,7 @@ export function KosztorysPage() {
                   <button
                     onClick={runAnomaly}
                     disabled={anomalyLoading || !kosztorysId}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600/10 border border-amber-600/20 text-amber-400 text-xs hover:bg-amber-600/20 transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-token bg-amber-600/10 border border-amber-600/20 text-amber-400 text-xs hover:bg-amber-600/20 transition-colors disabled:opacity-50"
                   >
                     {anomalyLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                     Analizuj
@@ -1441,13 +1452,13 @@ export function KosztorysPage() {
                 {anomalyData ? (
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="rounded-lg bg-earth-800/40 p-3 text-center">
+                      <div className="rounded-token bg-earth-800/40 p-3 text-center">
                         <p className="text-earth-500 text-xs mb-1">Pozycje z anomaliami</p>
-                        <p className={`text-lg font-bold tabular-nums ${anomalyData.count > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                        <p className={`text-lg font-bold tabular-nums ${anomalyData.count > 0 ? 'text-red-400' : 'text-accent-primary'}`}>
                           {anomalyData.count}
                         </p>
                       </div>
-                      <div className="rounded-lg bg-earth-800/40 p-3 text-center">
+                      <div className="rounded-token bg-earth-800/40 p-3 text-center">
                         <p className="text-earth-500 text-xs mb-1">Łącznie pozycji</p>
                         <p className="text-lg font-bold tabular-nums text-earth-300">{pozycje.length}</p>
                       </div>
@@ -1457,7 +1468,7 @@ export function KosztorysPage() {
                         <p className="text-earth-500 text-xs mb-2">Pozycje z anomaliami cenowymi:</p>
                         <div className="space-y-1">
                           {anomalyData.anomalies.map(a => (
-                            <div key={a.id} className="flex items-center gap-2 rounded-lg bg-red-900/10 border border-red-800/30 px-3 py-2">
+                            <div key={a.id} className="flex items-center gap-2 rounded-token bg-red-900/10 border border-red-800/30 px-3 py-2">
                               <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />
                               <span className="text-earth-300 text-xs flex-1 truncate">{a.opis}</span>
                               {a.kst_code && <span className="text-earth-600 text-xs ml-auto shrink-0">{a.kst_code}</span>}
@@ -1467,7 +1478,7 @@ export function KosztorysPage() {
                       </div>
                     )}
                     {anomalyData.count === 0 && (
-                      <p className="text-emerald-400 text-xs text-center py-2">Brak anomalii cenowych w tym kosztorysie</p>
+                      <p className="text-accent-primary text-xs text-center py-2">Brak anomalii cenowych w tym kosztorysie</p>
                     )}
                   </div>
                 ) : (
@@ -1478,7 +1489,7 @@ export function KosztorysPage() {
               </div>
 
               {/* Material alerts */}
-              <div className="rounded-xl border border-earth-800/60 bg-earth-900/40 p-4">
+              <div className="rounded-token-lg border border-earth-800/60 bg-earth-900/40 p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <Package className="w-4 h-4 text-blue-400" />
@@ -1490,7 +1501,7 @@ export function KosztorysPage() {
                   <button
                     onClick={loadAlerts}
                     disabled={alertsLoading}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-600/10 border border-blue-600/20 text-blue-400 text-xs hover:bg-blue-600/20 transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-token bg-blue-600/10 border border-blue-600/20 text-blue-400 text-xs hover:bg-blue-600/20 transition-colors disabled:opacity-50"
                   >
                     {alertsLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                     Odśwież
@@ -1503,7 +1514,7 @@ export function KosztorysPage() {
                 ) : (
                   <div className="space-y-1.5">
                     {alertsData.map(alert => (
-                      <div key={alert.id} className={`flex items-center gap-3 rounded-lg px-3 py-2.5 border ${
+                      <div key={alert.id} className={`flex items-center gap-3 rounded-token px-3 py-2.5 border ${
                         alert.severity === 'critical' ? 'bg-red-900/10 border-red-800/30' :
                         alert.severity === 'high' ? 'bg-orange-900/10 border-orange-800/30' :
                         'bg-amber-900/10 border-amber-800/30'
@@ -1515,7 +1526,7 @@ export function KosztorysPage() {
                           </p>
                         </div>
                         <div className="text-right shrink-0">
-                          <p className={`text-sm font-bold tabular-nums ${alert.change_pct > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                          <p className={`text-sm font-bold tabular-nums ${alert.change_pct > 0 ? 'text-red-400' : 'text-accent-primary'}`}>
                             {alert.change_pct > 0 ? '+' : ''}{alert.change_pct?.toFixed(1)}%
                           </p>
                           <span className={`text-xs px-1.5 py-0.5 rounded-full ${
@@ -1542,7 +1553,7 @@ export function KosztorysPage() {
                   <select
                     value={forecastCategory}
                     onChange={e => setForecastCategory(e.target.value)}
-                    className="text-xs bg-earth-800/60 border border-earth-700/60 rounded-lg px-2 py-1.5 text-earth-200 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                    className="text-xs bg-earth-800/60 border border-earth-700/60 rounded-token px-2 py-1.5 text-earth-200 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
                   >
                     {['murarstwo','beton_cement','stal_konstrukcyjna','dach_pokrycia','drewno',
                       'kruszywa_ziemne','nawierzchnie','instalacje_wod_kan','ogrzewanie',
@@ -1557,7 +1568,7 @@ export function KosztorysPage() {
                   <select
                     value={forecastHorizon}
                     onChange={e => setForecastHorizon(Number(e.target.value))}
-                    className="text-xs bg-earth-800/60 border border-earth-700/60 rounded-lg px-2 py-1.5 text-earth-200 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                    className="text-xs bg-earth-800/60 border border-earth-700/60 rounded-token px-2 py-1.5 text-earth-200 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
                   >
                     {[2,4,6,8,12].map(h => <option key={h} value={h}>{h} kw.</option>)}
                   </select>
@@ -1565,7 +1576,7 @@ export function KosztorysPage() {
                 <button
                   onClick={runForecast}
                   disabled={forecastLoading}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600/80 hover:bg-blue-600 text-white text-xs font-medium transition-colors disabled:opacity-50"
+                  className="btn-primary flex items-center gap-1.5 !text-xs disabled:opacity-50"
                 >
                   {forecastLoading
                     ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1577,7 +1588,7 @@ export function KosztorysPage() {
 
               {/* Error */}
               {forecastError && (
-                <div className="flex items-center gap-2 text-xs text-red-400 bg-red-900/20 border border-red-800/40 rounded-lg px-3 py-2">
+                <div className="flex items-center gap-2 text-xs text-red-400 bg-red-900/20 border border-red-800/40 rounded-token px-3 py-2">
                   <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                   {forecastError}
                 </div>
@@ -1585,7 +1596,7 @@ export function KosztorysPage() {
 
               {/* Wykres */}
               {forecastData.length > 0 ? (
-                <div className="rounded-xl border border-earth-800/60 bg-earth-900/40 p-4">
+                <div className="rounded-token-lg border border-earth-800/60 bg-earth-900/40 p-4">
                   <p className="text-xs text-earth-500 mb-3 font-medium">
                     Cena średnia [PLN/jm] — {forecastCategory.replace(/_/g,' ')} · historia + prognoza {forecastHorizon} kw.
                   </p>
@@ -1635,7 +1646,7 @@ export function KosztorysPage() {
                   </div>
                 </div>
               ) : !forecastLoading && (
-                <div className="rounded-xl border border-earth-800/60 bg-earth-900/40 p-8 flex flex-col items-center gap-3">
+                <div className="rounded-token-lg border border-earth-800/60 bg-earth-900/40 p-8 flex flex-col items-center gap-3">
                   <TrendingUp className="w-10 h-10 text-earth-700" />
                   <p className="text-earth-400 text-sm font-medium">Wybierz kategorię i kliknij „Generuj prognozę"</p>
                   <p className="text-earth-600 text-xs text-center max-w-xs">
@@ -1656,7 +1667,7 @@ export function KosztorysPage() {
                     <p className="text-earth-700">{pct(sumaR, sumaNetto)}</p>
                   </div>
                   <div>
-                    <p className="text-emerald-600 font-medium mb-0.5">Materiały (M)</p>
+                    <p className="text-accent-primary font-medium mb-0.5">Materiały (M)</p>
                     <p className="text-earth-300 tabular-nums font-semibold">{fmtPLN(sumaM)}</p>
                     <p className="text-earth-700">{pct(sumaM, sumaNetto)}</p>
                   </div>
@@ -1708,9 +1719,9 @@ export function KosztorysPage() {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Wrench className="w-4 h-4 text-earth-500" />
-                <span className="text-earth-300 text-sm font-semibold">Narzuty</span>
+                <span className="section-label">Narzuty</span>
               </div>
-              <button onClick={() => setShowNarzuty(true)} className="text-earth-600 hover:text-earth-400 transition-colors">
+              <button onClick={() => setShowNarzuty(true)} className="btn-ghost !p-1">
                 <Edit2 className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -1722,7 +1733,7 @@ export function KosztorysPage() {
                 ['Kz', narzuty.kz_pct + '%'],
                 ['VAT', narzuty.vat_pct + '%'],
               ] as [string, string][]).map(([k, v]) => (
-                <div key={k} className="flex items-center justify-between bg-earth-800/30 rounded-lg px-2.5 py-1.5">
+                <div key={k} className="flex items-center justify-between bg-earth-800/30 rounded-token px-2.5 py-1.5">
                   <span className="text-earth-600 text-xs">{k}</span>
                   <span className="text-earth-300 text-xs font-bold tabular-nums">{v}</span>
                 </div>
@@ -1733,11 +1744,11 @@ export function KosztorysPage() {
           {/* RMS chart */}
           {pozycje.length > 0 && (
             <GlassCard className="p-4">
-              <p className="text-earth-500 text-xs font-semibold uppercase tracking-wide mb-3">Struktura kosztów</p>
+              <p className="section-label mb-3">Struktura kosztów</p>
               <ResponsiveContainer width="100%" height={120}>
                 <BarChart data={[
                   { name: 'R', value: sumaR, fill: '#60a5fa' },
-                  { name: 'M', value: sumaM, fill: '#34d399' },
+                  { name: 'M', value: sumaM, fill: '#10b981' },
                   { name: 'S', value: sumaS, fill: '#fbbf24' },
                   { name: 'Ko', value: sumaKo, fill: '#8b5cf6' },
                   { name: 'Z+Kz', value: sumaZ + sumaKz, fill: '#f97316' },
@@ -1751,7 +1762,7 @@ export function KosztorysPage() {
                   />
                   <Bar dataKey="value" radius={[3, 3, 0, 0]}>
                     {[
-                      { fill: '#60a5fa' }, { fill: '#34d399' }, { fill: '#fbbf24' },
+                      { fill: '#60a5fa' }, { fill: '#10b981' }, { fill: '#fbbf24' },
                       { fill: '#8b5cf6' }, { fill: '#f97316' },
                     ].map((entry, i) => <Cell key={i} fill={entry.fill} />)}
                   </Bar>
@@ -1772,6 +1783,6 @@ export function KosztorysPage() {
           />
         )}
       </AnimatePresence>
-    </div>
+    </PageShell>
   );
 }

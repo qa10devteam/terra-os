@@ -206,7 +206,7 @@ function AddCompetitorModal({ onClose, onAdd }: { onClose: () => void; onAdd: (n
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.95, y: 16 }}
         onClick={e => e.stopPropagation()}
-        className="bg-earth-900 border border-earth-700 rounded-2xl w-full max-w-md p-6 shadow-2xl"
+        className="bg-earth-900 border border-earth-800/50 rounded-token-xl w-full max-w-md p-6 shadow-token-lg"
       >
         <h3 className="text-base font-bold text-earth-50 mb-4">Dodaj do obserwowanych</h3>
 
@@ -217,7 +217,7 @@ function AddCompetitorModal({ onClose, onAdd }: { onClose: () => void; onAdd: (n
             value={q}
             onChange={e => { setQ(e.target.value); setSelected(null); }}
             placeholder="Nazwa firmy lub NIP (10 cyfr)…"
-            className="w-full bg-earth-800 border border-earth-700 rounded-lg pl-9 pr-4 py-2.5 text-sm text-earth-100 placeholder-earth-500 focus:outline-none focus:border-emerald-500"
+            className="w-full bg-earth-800 border border-earth-700/50 rounded-token pl-9 pr-4 py-2.5 text-sm text-earth-100 placeholder-earth-500 focus:outline-none focus:border-accent-primary/60 transition-colors"
           />
           {loading && <RefreshCw size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-earth-400 animate-spin" />}
         </div>
@@ -258,7 +258,7 @@ function AddCompetitorModal({ onClose, onAdd }: { onClose: () => void; onAdd: (n
           onChange={e => setNotes(e.target.value)}
           placeholder="Notatka (opcjonalnie)…"
           rows={2}
-          className="w-full bg-earth-800 border border-earth-700 rounded-lg px-3 py-2 text-sm text-earth-100 placeholder-earth-500 focus:outline-none focus:border-emerald-500 resize-none mb-4"
+          className="w-full bg-earth-800 border border-earth-700/50 rounded-token px-3 py-2 text-sm text-earth-100 placeholder-earth-500 focus:outline-none focus:border-accent-primary/60 focus:ring-1 focus:ring-accent-primary/20 resize-none mb-4 transition-colors"
         />
 
         <div className="flex gap-3">
@@ -293,7 +293,7 @@ function CompetitorCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -16 }}
-      className="bg-earth-900 border border-earth-700 rounded-xl p-4 hover:border-earth-600 transition-all group"
+      className="bg-earth-900 border border-earth-800/50 rounded-token-xl p-4 hover:border-earth-700 transition-all group"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
@@ -395,12 +395,12 @@ export function CompetitorPage() {
   return (
     <>
       <PageShell
-        title="Obserwowani Konkurenci"
-        subtitle="Śledzenie aktywności rynkowej i win-rate firm"
+        title="Monitoring Konkurencji Przetargowej"
+        subtitle="Śledź aktywność rynkową i win-rate kluczowych firm w sektorze"
         actions={
           <button
             onClick={() => setShowAdd(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-400 transition-colors"
+            className="btn-primary"
           >
             <Plus size={15} />
             Dodaj firmę
@@ -417,7 +417,7 @@ export function CompetitorPage() {
                 { label: 'Łączne wygrane', value: totalWins.toLocaleString('pl-PL'), icon: Award, color: '#3b82f6' },
                 { label: 'Łączna wartość', value: fmtMln(totalValue), icon: TrendingUp, color: '#f59e0b' },
               ].map(({ label, value, icon: Icon, color }) => (
-                <div key={label} className="bg-earth-900 border border-earth-700 rounded-xl p-4 flex items-center gap-3">
+                <div key={label} className="card-hover p-4 flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: color + '22' }}>
                     <Icon size={18} style={{ color }} />
                   </div>
@@ -438,7 +438,7 @@ export function CompetitorPage() {
                 value={searchQ}
                 onChange={e => setSearchQ(e.target.value)}
                 placeholder="Filtruj po nazwie lub NIP…"
-                className="w-full bg-earth-900 border border-earth-700 rounded-lg pl-9 pr-4 py-2.5 text-sm text-earth-100 placeholder-earth-500 focus:outline-none focus:border-emerald-500 transition-colors"
+                className="input-base pl-9"
               />
             </div>
           )}
@@ -461,7 +461,7 @@ export function CompetitorPage() {
               <p className="text-sm text-earth-600 mb-6">Dodaj konkurentów, żeby śledzić ich aktywność przetargową</p>
               <button
                 onClick={() => setShowAdd(true)}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-400 transition-colors"
+                className="inline-flex items-center gap-2 px-5 py-2.5 btn-primary"
               >
                 <Plus size={15} />
                 Dodaj pierwszą firmę

@@ -4,12 +4,15 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Plus, LayoutGrid, CalendarDays, Search, X, TrendingUp,
-  AlertTriangle, Loader2, DollarSign, Target, CheckCircle2, Activity,
+  Loader2, DollarSign, Target, Activity,
 } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { useAuthFetch } from '@/lib/api-v2';
 import { showToast } from '@/components/Toast';
 import { GlassCard } from '@/components/ui/GlassCard';
+import { MetricCard } from '@/components/ui/MetricCard';
+import { Button } from '@/components/ui/Button';
+import { PageShell } from '@/components/PageShell';
 import type { Tender } from '@/types';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -108,7 +111,7 @@ function KanbanCard({
       onDragEnd={onDragEnd}
       onClick={() => onClick(tender)}
       className={[
-        'p-3 rounded-xl bg-earth-900/70 border cursor-grab active:cursor-grabbing',
+        'p-3 rounded-token-xl bg-earth-900/70 border cursor-grab active:cursor-grabbing',
         'hover:bg-earth-900 transition-all duration-150 group select-none',
         isUrgent ? 'border-l-2 border-red-500/50 border-earth-800/50' : 'border-earth-800/50 hover:border-earth-700/70',
       ].join(' ')}
@@ -166,6 +169,7 @@ function KanbanColumn({
   onCardDragEnd: () => void;
 }) {
   const totalVal = tenders.reduce((s, t) => s + (t.value_pln ?? 0), 0);
+  // Dynamic colors are intentionally inline — col.color and col.ring are runtime values
   const colStyle: React.CSSProperties = isDragOver
     ? { boxShadow: `0 0 0 2px ${col.ring}, inset 0 0 20px ${col.ring}` }
     : {};
@@ -178,12 +182,12 @@ function KanbanColumn({
       onDragLeave={onDragLeave}
       style={colStyle}
       className={[
-        'flex flex-col w-[220px] shrink-0 rounded-2xl border transition-all duration-150',
+        'flex flex-col w-[220px] shrink-0 rounded-token-xl border transition-all duration-150',
         'bg-earth-900/20',
         isDragOver ? 'scale-[1.01]' : '',
       ].join(' ')}
     >
-      {/* Header */}
+      {/* Header — dynamic col.color stays inline */}
       <div
         className="px-3 py-2.5 rounded-t-2xl shrink-0"
         style={{ borderBottom: `1px solid ${col.color}22`, backgroundColor: col.color + '12' }}
@@ -203,10 +207,10 @@ function KanbanColumn({
       </div>
 
       {/* Cards */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-[120px]" style={{ maxHeight: 'calc(100vh - 220px)' }}>
+      <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-[120px]" style={{ maxHeight: 'calc(100vh - 280px)' }}>
         {loading ? (
           [0, 1].map(i => (
-            <div key={i} className="p-3 rounded-xl bg-earth-900/60 border border-earth-800/50 animate-pulse">
+            <div key={i} className="p-3 rounded-token-xl bg-earth-900/60 border border-earth-800/50 animate-pulse-soft">
               <div className="h-3 bg-earth-800 rounded w-full mb-1.5" />
               <div className="h-3 bg-earth-800 rounded w-3/4 mb-3" />
               <div className="h-2 bg-earth-800 rounded w-1/2" />
@@ -265,7 +269,7 @@ function TimelineView({ tenders }: { tenders: TenderItem[] }) {
   }
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-earth-800/60 bg-earth-950">
+    <div className="overflow-x-auto rounded-token-xl border border-earth-800/60 bg-earth-950">
       <svg width={TOTAL_W} height={HEIGHT} viewBox={`0 0 ${TOTAL_W} ${HEIGHT}`}>
         {/* Background */}
         <rect width={TOTAL_W} height={HEIGHT} fill="#0A0906" />
@@ -386,7 +390,7 @@ function AddModal({
             <h3 className="text-base font-semibold text-earth-100">Dodaj przetarg do pipeline</h3>
             <button
               onClick={onClose}
-              className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-earth-800 transition-colors"
+              className="w-7 h-7 flex items-center justify-center rounded-token-lg hover:bg-earth-800 transition-colors"
             >
               <X className="w-4 h-4 text-earth-400" />
             </button>
@@ -400,7 +404,7 @@ function AddModal({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Szukaj przetargu po tytule lub zamawiającym…"
-              className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-earth-800/60 border border-earth-700/50 text-earth-100 text-sm placeholder-earth-600 focus:outline-none focus:border-blue-500/60"
+              className="input-base w-full pl-9 pr-4 py-2.5"
             />
             {searching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-earth-500 animate-spin" />}
           </div>
@@ -420,7 +424,7 @@ function AddModal({
               <button
                 key={t.id}
                 onClick={() => onAdd(t)}
-                className="w-full text-left p-3 rounded-xl bg-earth-800/40 hover:bg-earth-800/80 border border-earth-700/40 hover:border-blue-500/40 transition-all duration-150 group"
+                className="w-full text-left p-3 rounded-token-xl bg-earth-800/40 hover:bg-earth-800/80 border border-earth-700/40 hover:border-accent-primary/40 transition-all duration-150 group"
               >
                 <p className="text-earth-100 text-sm font-medium line-clamp-1 group-hover:text-white">{t.title}</p>
                 <div className="flex items-center gap-2 mt-1">
@@ -433,25 +437,6 @@ function AddModal({
         </GlassCard>
       </motion.div>
     </motion.div>
-  );
-}
-
-// ── KPI chip ──────────────────────────────────────────────────────────────────
-
-function KpiChip({ icon: Icon, label, value, color }: {
-  icon: React.ElementType;
-  label: string;
-  value: string;
-  color: string;
-}) {
-  return (
-    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-earth-900/60 border border-earth-800/60">
-      <Icon className="w-3.5 h-3.5" style={{ color }} />
-      <div>
-        <p className="text-[10px] text-earth-500 uppercase tracking-wider leading-none mb-0.5">{label}</p>
-        <p className="text-sm font-bold text-earth-100 tabular-nums leading-none">{value}</p>
-      </div>
-    </div>
   );
 }
 
@@ -580,76 +565,104 @@ export function PipelinePage() {
   const closedCount = wonCount + (tendersByStatus['LOST'] ?? []).length;
   const winRate = closedCount > 0 ? Math.round((wonCount / closedCount) * 100) : null;
 
+  // ── Actions bar ───────────────────────────────────────────────────────────
+  const actions = (
+    <div className="flex items-center gap-2 flex-wrap">
+      {/* View toggle */}
+      <div className="flex items-center rounded-token bg-earth-900 border border-earth-800/60 p-0.5">
+        <Button
+          variant={view === 'kanban' ? 'primary' : 'secondary'}
+          size="sm"
+          onClick={() => setView('kanban')}
+          iconLeft={<LayoutGrid className="w-3.5 h-3.5" />}
+        >
+          Kanban
+        </Button>
+        <Button
+          variant={view === 'timeline' ? 'primary' : 'secondary'}
+          size="sm"
+          onClick={() => setView('timeline')}
+          iconLeft={<CalendarDays className="w-3.5 h-3.5" />}
+        >
+          Timeline
+        </Button>
+      </div>
+      {/* Add button */}
+      <Button
+        variant="primary"
+        size="sm"
+        onClick={() => setShowAddModal(true)}
+        iconLeft={<Plus className="w-3.5 h-3.5" />}
+      >
+        Dodaj
+      </Button>
+    </div>
+  );
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-earth-950">
-
-      {/* ── Header ──────────────────────────────────────────────────────── */}
-      <div className="px-6 py-4 border-b border-earth-800/60 shrink-0 bg-earth-950/80 backdrop-blur-sm">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          {/* Title */}
-          <div>
-            <h2 className="text-xl font-bold text-earth-50 tracking-tight">Pipeline Przetargów</h2>
-            <p className="text-xs text-earth-500 mt-0.5">
-              {totalCount} przetargów · {fmtPLN(totalValue)} łączna wartość
-            </p>
-          </div>
-
-          {/* KPI chips */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {kpi ? (
-              <>
-                <KpiChip icon={Activity}     label="Aktywne"      value={String(kpi.active)}                     color="#3B82F6" />
-                <KpiChip icon={DollarSign}   label="Wartość"      value={fmtPLN(kpi.pipeline_value)}            color="#F97316" />
-                <KpiChip icon={Target}       label="Win Rate MTD" value={`${Math.round(kpi.win_rate_mtd * 100)}%`} color="#22C55E" />
-              </>
-            ) : (
-              <>
-                <KpiChip icon={Activity}     label="Aktywne"      value={String(totalCount)}    color="#3B82F6" />
-                <KpiChip icon={DollarSign}   label="Wartość"      value={fmtPLN(totalValue)}    color="#F97316" />
-                {winRate !== null && (
-                  <KpiChip icon={Target}     label="Win Rate"     value={`${winRate}%`}          color="#22C55E" />
-                )}
-              </>
-            )}
-
-            {/* View toggle */}
-            <div className="flex items-center rounded-lg bg-earth-900 border border-earth-800/60 p-0.5 ml-2">
-              <button
-                onClick={() => setView('kanban')}
-                className={[
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
-                  view === 'kanban' ? 'bg-earth-700 text-earth-100' : 'text-earth-500 hover:text-earth-300',
-                ].join(' ')}
-              >
-                <LayoutGrid className="w-3.5 h-3.5" /> Kanban
-              </button>
-              <button
-                onClick={() => setView('timeline')}
-                className={[
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
-                  view === 'timeline' ? 'bg-earth-700 text-earth-100' : 'text-earth-500 hover:text-earth-300',
-                ].join(' ')}
-              >
-                <CalendarDays className="w-3.5 h-3.5" /> Timeline
-              </button>
-            </div>
-
-            {/* Add button */}
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-colors"
-            >
-              <Plus className="w-3.5 h-3.5" /> Dodaj
-            </button>
-          </div>
-        </div>
+    <PageShell
+      title="Lejek Ofertowy"
+      subtitle={`${totalCount} przetargów · ${fmtPLN(totalValue)} łączna wartość`}
+      actions={actions}
+    >
+      {/* ── KPI metrics ───────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+        {kpi ? (
+          <>
+            <MetricCard
+              icon={Activity}
+              label="Aktywne przetargi"
+              value={String(kpi.active)}
+              iconColor="text-accent-info"
+              loading={loading}
+            />
+            <MetricCard
+              icon={DollarSign}
+              label="Wartość pipeline"
+              value={fmtPLN(kpi.pipeline_value)}
+              iconColor="text-orange-400"
+              loading={loading}
+            />
+            <MetricCard
+              icon={Target}
+              label="Win Rate MTD"
+              value={`${Math.round(kpi.win_rate_mtd * 100)}%`}
+              iconColor="text-accent-success"
+              loading={loading}
+            />
+          </>
+        ) : (
+          <>
+            <MetricCard
+              icon={Activity}
+              label="Aktywne przetargi"
+              value={String(totalCount)}
+              iconColor="text-accent-info"
+              loading={loading}
+            />
+            <MetricCard
+              icon={DollarSign}
+              label="Wartość pipeline"
+              value={fmtPLN(totalValue)}
+              iconColor="text-orange-400"
+              loading={loading}
+            />
+            <MetricCard
+              icon={Target}
+              label="Win Rate"
+              value={winRate !== null ? `${winRate}%` : '—'}
+              iconColor="text-accent-success"
+              loading={loading}
+            />
+          </>
+        )}
       </div>
 
-      {/* ── Main content ─────────────────────────────────────────────────── */}
+      {/* ── Kanban / Timeline ─────────────────────────────────────────── */}
       {view === 'kanban' ? (
-        <div className="flex-1 overflow-x-auto overflow-y-hidden">
-          <div className="flex gap-3 p-4 h-full" style={{ minWidth: 'max-content' }}>
+        <div className="overflow-x-auto">
+          <div className="flex gap-3 pb-4" style={{ minWidth: 'max-content' }}>
             {COLUMNS.map(col => (
               <KanbanColumn
                 key={col.key}
@@ -669,7 +682,7 @@ export function PipelinePage() {
           </div>
         </div>
       ) : (
-        <div className="flex-1 overflow-auto p-6">
+        <div>
           <div className="mb-3">
             <h3 className="text-sm font-semibold text-earth-300">Harmonogram terminów — następne 60 dni</h3>
             <p className="text-xs text-earth-500 mt-0.5">Poziome paski = czas do deadline, kolor = status pipeline</p>
@@ -687,7 +700,7 @@ export function PipelinePage() {
         </div>
       )}
 
-      {/* ── Add Modal ────────────────────────────────────────────────────── */}
+      {/* ── Add Modal ─────────────────────────────────────────────────── */}
       <AnimatePresence>
         {showAddModal && (
           <AddModal
@@ -697,6 +710,6 @@ export function PipelinePage() {
           />
         )}
       </AnimatePresence>
-    </div>
+    </PageShell>
   );
 }
