@@ -88,7 +88,8 @@ def _fetch_page(date_from: str, date_to: str, page: int, size: int = 50) -> list
         r.raise_for_status()
         data = r.json()
         return data if isinstance(data, list) else []
-    except Exception:
+    except Exception as exc:
+        logger.warning("source=bzp_router _fetch_page page=%d: %s", page, exc)
         return []
 
 

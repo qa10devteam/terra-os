@@ -302,8 +302,8 @@ def node_score_tender(state: AgentState) -> AgentState:
             dl = datetime.fromisoformat(str(dl_str).replace("Z", "+00:00"))
             days_left = (dl - datetime.now(timezone.utc)).days
             deadline_score = min(1.0, max(0.0, days_left / 30))
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("source=langgraph node=score deadline_parse: %s", exc)
     breakdown["deadline"] = round(deadline_score * deadline_weight, 4)
 
     # Historical win (placeholder — no CPV join available easily)
