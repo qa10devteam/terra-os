@@ -383,10 +383,14 @@ def refresh_krs_stale_buyers(db_dsn: str = DEFAULT_DSN) -> dict:
             nip = row["buyer_nip"]
             try:
                 import httpx
-                r = httpx.get(
-                    f"https://api-krs.ms.gov.pl/api/krs/OdpisAktualny/podmiot/nip/{nip}",
-                    headers={"Accept": "application/json"}, timeout=10,
-                )
+                with httpx.Client(
+                    timeout=httpx.Timeout(connect=5.0, read=10.0, write=5.0, pool=3.0),
+                    follow_redirects=True,
+                    headers={"Accept": "application/json"},
+                ) as _krs_client:
+                    r = _krs_client.get(
+                        f"https://api-krs.ms.gov.pl/api/krs/OdpisAktualny/podmiot/nip/{nip}",
+                    )
                 name = ""
                 if r.status_code == 200:
                     d = r.json()

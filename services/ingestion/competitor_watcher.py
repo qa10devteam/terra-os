@@ -37,7 +37,7 @@ def run_competitor_watch(engine: Engine, tenant_id: str | None = None) -> int:
                 """)
             )
         except Exception:
-            pass  # column likely exists
+            pass  # column likely exists — DDL error expected on re-run
 
         query = """
             SELECT id, tenant_id, competitor_nip, competitor_name, last_checked_at, notify_on_win
