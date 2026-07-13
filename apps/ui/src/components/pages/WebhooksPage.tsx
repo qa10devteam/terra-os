@@ -222,7 +222,7 @@ export default function WebhooksPage() {
                     className={`relative h-6 w-11 rounded-full transition-colors ${webhook.enabled ? "bg-accent-primary" : "bg-earth-700"}`}
                     aria-label={webhook.enabled ? 'Wyłącz' : 'Włącz'}
                   >
-                    <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${webhook.enabled ? "left-[22px]" : "left-0.5"}`} />
+                    <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-earth-100 transition-transform ${webhook.enabled ? "left-[22px]" : "left-0.5"}`} />
                   </button>
                   <button
                     onClick={() => deleteWebhook(webhook.id)}

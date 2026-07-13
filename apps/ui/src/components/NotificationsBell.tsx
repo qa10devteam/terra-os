@@ -15,10 +15,10 @@ interface Notification {
 }
 
 const TYPE_CONFIG = {
-  deadline:      { icon: Clock, color: 'text-red-400', bg: 'bg-red-500/15' },
-  new_match:     { icon: Star, color: 'text-green-400', bg: 'bg-green-500/15' },
-  status_change: { icon: ArrowRight, color: 'text-blue-400', bg: 'bg-blue-500/15' },
-  mention:       { icon: AtSign, color: 'text-purple-400', bg: 'bg-purple-500/15' },
+  deadline:      { icon: Clock,       color: 'text-accent-danger',   bg: 'bg-accent-danger/15' },
+  new_match:     { icon: Star,        color: 'text-accent-primary',  bg: 'bg-accent-primary/15' },
+  status_change: { icon: ArrowRight,  color: 'text-accent-info',     bg: 'bg-accent-info/15' },
+  mention:       { icon: AtSign,      color: 'text-accent-violet',   bg: 'bg-accent-violet/15' },
 };
 
 const MOCK_NOTIFICATIONS: Notification[] = [
@@ -92,7 +92,7 @@ export function NotificationsBell() {
       >
         <Bell className="w-4 h-4" />
         {unread > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full text-white text-[9px] font-bold flex items-center justify-center">
+          <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-accent-danger rounded-full text-earth-50 text-[9px] font-bold flex items-center justify-center">
             {unread > 9 ? '9+' : unread}
           </span>
         )}

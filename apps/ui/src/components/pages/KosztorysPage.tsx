@@ -216,7 +216,7 @@ function IcbSidebar({
   }, [query, doSearch]);
 
   const RMS_COLORS: Record<string, string> = {
-    R: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
+    R: 'text-accent-info bg-accent-info/10 border-accent-info/20',
     M: 'text-accent-primary bg-accent-primary/10 border-accent-primary/20',
     S: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
   };
@@ -516,7 +516,7 @@ function IntelligencePanel({
                 <div className="relative h-5 bg-earth-800/60 rounded-full overflow-hidden">
                   {/* P25–P75 range */}
                   <div
-                    className="absolute top-0 h-full bg-blue-500/20"
+                    className="absolute top-0 h-full bg-accent-info/20"
                     style={{
                       left: `${Math.min(100, (benchmark.p25_value / (benchmark.p75_value * 1.5)) * 100)}%`,
                       width: `${Math.min(100, ((benchmark.p75_value - benchmark.p25_value) / (benchmark.p75_value * 1.5)) * 100)}%`,
@@ -524,7 +524,7 @@ function IntelligencePanel({
                   />
                   {/* Median line */}
                   <div
-                    className="absolute top-0 bottom-0 w-0.5 bg-blue-400/60"
+                    className="absolute top-0 bottom-0 w-0.5 bg-accent-info/60"
                     style={{ left: `${Math.min(100, (benchmark.median_value / (benchmark.p75_value * 1.5)) * 100)}%` }}
                   />
                   {/* Our price needle */}
@@ -576,7 +576,7 @@ function IntelligencePanel({
                         </span>
                         <div className="w-12 h-1.5 bg-earth-800 rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full ${r.risk_score > 0.6 ? 'bg-red-400' : r.risk_score > 0.3 ? 'bg-amber-400' : 'bg-accent-primary'}`}
+                            className={`h-full rounded-full ${r.risk_score > 0.6 ? 'bg-accent-danger' : r.risk_score > 0.3 ? 'bg-amber-400' : 'bg-accent-primary'}`}
                             style={{ width: `${r.risk_score * 100}%` }}
                           />
                         </div>
@@ -655,7 +655,7 @@ function PozycjaRow({
   }
 
   return (
-    <tr className={`border-b border-earth-800/30 hover:bg-earth-900/40 transition-colors group ${poz.is_anomaly ? 'bg-red-950/20' : ''}`}>
+    <tr className={`border-b border-earth-800/30 hover:bg-earth-900/40 transition-colors group ${poz.is_anomaly ? 'bg-accent-danger/5' : ''}`}>
       <td className="px-2 py-1.5 text-earth-700 text-xs w-8">{poz.lp}</td>
       <td className="px-2 py-1.5 text-earth-600 text-xs font-mono w-28 truncate">{poz.kst_code || '—'}</td>
       <td
@@ -676,7 +676,7 @@ function PozycjaRow({
           <span className={poz.is_anomaly ? 'text-red-300' : ''}>
             {poz.is_anomaly && (
               <span className="inline-flex items-center mr-1.5" title="Anomalia cenowa - wartość odbiega od bazy rynkowej">
-                <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse-soft inline-block" />
+                <span className="w-2 h-2 rounded-full bg-accent-danger animate-pulse-soft inline-block" />
               </span>
             )}
             {poz.opis}
@@ -1180,7 +1180,7 @@ export function KosztorysPage() {
         onClick={() => setShowIcb(v => !v)}
         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-token border text-xs font-medium transition-colors ${
           showIcb
-            ? 'bg-blue-600/15 border-blue-600/30 text-blue-400'
+            ? 'bg-accent-info/15 border-accent-info/30 text-accent-info'
             : 'btn-secondary'
         }`}
       >
@@ -1258,7 +1258,7 @@ export function KosztorysPage() {
                 <span className="text-earth-600 text-xs">{tender.buyer}</span>
                 {tender.cpv?.[0] && <span className="text-earth-700 text-xs font-mono">CPV {tender.cpv[0]}</span>}
                 {tender.value_pln && <span className="text-earth-500 text-xs tabular-nums">{fmtPLN(Number(tender.value_pln))}</span>}
-                {kosztorysId && <span className="text-blue-700 text-xs font-mono">v2:{kosztorysId.slice(0, 8)}</span>}
+                {kosztorysId && <span className="text-accent-info/70 text-xs font-mono">v2:{kosztorysId.slice(0, 8)}</span>}
               </div>
             )}
           </GlassCard>
@@ -1317,7 +1317,7 @@ export function KosztorysPage() {
                   >
                     {t.icon}{t.label}
                     {t.key === 'pozycje' && <span className="px-1.5 py-0.5 rounded-full bg-earth-800 text-earth-500 text-xs">{pozycje.length}</span>}
-                    {t.key === 'ryzyko' && alertsData.length > 0 && <span className="px-1.5 py-0.5 rounded-full bg-red-900/60 text-red-400 text-xs">{alertsData.length}</span>}
+                    {t.key === 'ryzyko' && alertsData.length > 0 && <span className="px-1.5 py-0.5 rounded-full bg-accent-danger/30 text-accent-danger text-xs">{alertsData.length}</span>}
                   </button>
                 ))}
               </div>
@@ -1325,7 +1325,7 @@ export function KosztorysPage() {
                 <button
                   onClick={recalc}
                   disabled={recalcLoading}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-token bg-blue-600/10 border border-blue-600/20 text-blue-400 text-xs hover:bg-blue-600/20 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-token bg-accent-info/10 border border-accent-info/20 text-accent-info text-xs hover:bg-accent-info/20 transition-colors disabled:opacity-50"
                 >
                   {recalcLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                   Przelicz
@@ -1333,7 +1333,7 @@ export function KosztorysPage() {
                 <button
                   onClick={() => exportFile('pdf')}
                   disabled={exportLoading === 'pdf'}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-token bg-red-600/10 border border-red-600/20 text-red-400 text-xs hover:bg-red-600/20 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-token bg-accent-danger/10 border border-accent-danger/20 text-accent-danger text-xs hover:bg-accent-danger/20 transition-colors disabled:opacity-50"
                 >
                   {exportLoading === 'pdf' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
                   PDF
@@ -1341,7 +1341,7 @@ export function KosztorysPage() {
                 <button
                   onClick={() => exportFile('ath')}
                   disabled={exportLoading === 'ath'}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-token bg-purple-600/10 border border-purple-600/20 text-purple-400 text-xs hover:bg-purple-600/20 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-token bg-accent-violet/10 border border-accent-violet/20 text-accent-violet text-xs hover:bg-accent-violet/20 transition-colors disabled:opacity-50"
                 >
                   {exportLoading === 'ath' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                   ATH
@@ -1349,7 +1349,7 @@ export function KosztorysPage() {
                 <button
                   onClick={() => exportFile('xlsx')}
                   disabled={exportLoading === 'xlsx'}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-token bg-green-600/10 border border-green-600/20 text-green-400 text-xs hover:bg-green-600/20 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-token bg-accent-success/10 border border-accent-success/20 text-accent-success text-xs hover:bg-accent-success/20 transition-colors disabled:opacity-50"
                 >
                   {exportLoading === 'xlsx' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileSpreadsheet className="w-3.5 h-3.5" />}
                   CSV
@@ -1468,7 +1468,7 @@ export function KosztorysPage() {
                         <p className="text-earth-500 text-xs mb-2">Pozycje z anomaliami cenowymi:</p>
                         <div className="space-y-1">
                           {anomalyData.anomalies.map(a => (
-                            <div key={a.id} className="flex items-center gap-2 rounded-token bg-red-900/10 border border-red-800/30 px-3 py-2">
+                            <div key={a.id} className="flex items-center gap-2 rounded-token bg-accent-danger/5 border border-accent-danger/20 px-3 py-2">
                               <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />
                               <span className="text-earth-300 text-xs flex-1 truncate">{a.opis}</span>
                               {a.kst_code && <span className="text-earth-600 text-xs ml-auto shrink-0">{a.kst_code}</span>}
@@ -1495,13 +1495,13 @@ export function KosztorysPage() {
                     <Package className="w-4 h-4 text-blue-400" />
                     <span className="text-earth-300 text-sm font-semibold">Alerty cen materiałów</span>
                     {alertsData.length > 0 && (
-                      <span className="px-1.5 py-0.5 rounded-full bg-red-900/60 text-red-400 text-xs">{alertsData.length}</span>
+                      <span className="px-1.5 py-0.5 rounded-full bg-accent-danger/30 text-accent-danger text-xs">{alertsData.length}</span>
                     )}
                   </div>
                   <button
                     onClick={loadAlerts}
                     disabled={alertsLoading}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-token bg-blue-600/10 border border-blue-600/20 text-blue-400 text-xs hover:bg-blue-600/20 transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-token bg-accent-info/10 border border-accent-info/20 text-accent-info text-xs hover:bg-accent-info/20 transition-colors disabled:opacity-50"
                   >
                     {alertsLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                     Odśwież
@@ -1515,7 +1515,7 @@ export function KosztorysPage() {
                   <div className="space-y-1.5">
                     {alertsData.map(alert => (
                       <div key={alert.id} className={`flex items-center gap-3 rounded-token px-3 py-2.5 border ${
-                        alert.severity === 'critical' ? 'bg-red-900/10 border-red-800/30' :
+                        alert.severity === 'critical' ? 'bg-accent-danger/5 border-accent-danger/20' :
                         alert.severity === 'high' ? 'bg-orange-900/10 border-orange-800/30' :
                         'bg-amber-900/10 border-amber-800/30'
                       }`}>
@@ -1530,7 +1530,7 @@ export function KosztorysPage() {
                             {alert.change_pct > 0 ? '+' : ''}{alert.change_pct?.toFixed(1)}%
                           </p>
                           <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                            alert.severity === 'critical' ? 'bg-red-900/60 text-red-300' :
+                            alert.severity === 'critical' ? 'bg-accent-danger/30 text-accent-danger' :
                             alert.severity === 'high' ? 'bg-orange-900/60 text-orange-300' :
                             'bg-amber-900/60 text-amber-300'
                           }`}>{alert.severity}</span>
@@ -1588,7 +1588,7 @@ export function KosztorysPage() {
 
               {/* Error */}
               {forecastError && (
-                <div className="flex items-center gap-2 text-xs text-red-400 bg-red-900/20 border border-red-800/40 rounded-token px-3 py-2">
+                <div className="flex items-center gap-2 text-xs text-accent-danger bg-accent-danger/10 border border-accent-danger/30 rounded-token px-3 py-2">
                   <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                   {forecastError}
                 </div>

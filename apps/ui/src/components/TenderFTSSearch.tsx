@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { motion } from 'motion/react';
-import { Search, FileText, MapPin, Calendar, DollarSign, ExternalLink } from 'lucide-react';
+import { Search, FileText, MapPin, Calendar, DollarSign } from 'lucide-react';
 import { useAuthFetch } from '@/lib/api-v2';
 
 interface FTSResult {
@@ -49,31 +49,31 @@ export default function TenderFTSSearch() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4"
+      className="card"
     >
       <div className="flex items-center gap-2 mb-4">
-        <FileText className="w-4 h-4 text-emerald-400" />
-        <h3 className="text-sm font-medium text-zinc-200">Wyszukiwarka przetargów</h3>
-        <span className="text-xs text-zinc-500 ml-auto">1.4M rekordów · full-text + GIN</span>
+        <FileText className="w-4 h-4 text-accent-primary" />
+        <h3 className="section-label">Wyszukiwarka przetargów</h3>
+        <span className="text-xs text-earth-500 ml-auto">1.4M rekordów · full-text + GIN</span>
       </div>
 
       {/* Search */}
       <div className="flex gap-2 mb-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-2.5 w-4 h-4 text-zinc-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-earth-500 pointer-events-none" />
           <input
             type="text"
             placeholder="Szukaj w 1.4M przetargów: 'budowa drogi', 'remont szkoły'..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && search()}
-            className="w-full pl-9 pr-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-600"
+            className="input-base pl-9"
           />
         </div>
         <button
           onClick={search}
           disabled={loading}
-          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 rounded-lg text-sm text-white font-medium transition-colors"
+          className="btn-primary px-4 py-2 text-sm disabled:opacity-50"
         >
           {loading ? '...' : 'Szukaj'}
         </button>
@@ -82,16 +82,16 @@ export default function TenderFTSSearch() {
       {/* Results */}
       {results.length > 0 && (
         <div>
-          <p className="text-xs text-zinc-500 mb-2">{total.toLocaleString()} wyników</p>
+          <p className="text-xs text-earth-500 mb-2">{total.toLocaleString()} wyników</p>
           <div className="space-y-2 max-h-[500px] overflow-y-auto">
             {results.map((r, i) => (
-              <div key={r.id || i} className="p-3 rounded-lg bg-zinc-800/50 hover:bg-zinc-800 transition-colors">
-                <p className="text-sm text-zinc-200 font-medium line-clamp-2">
+              <div key={r.id || i} className="p-3 rounded-token bg-earth-800/50 hover:bg-earth-800 transition-colors">
+                <p className="text-sm text-earth-100 font-medium line-clamp-2">
                   {r.headline ? (
                     <span dangerouslySetInnerHTML={{ __html: r.headline }} />
                   ) : r.title}
                 </p>
-                <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-zinc-500">
+                <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-earth-500">
                   {r.buyer_name && (
                     <span className="flex items-center gap-0.5">
                       <MapPin className="w-3 h-3" />{r.buyer_name}
@@ -99,7 +99,7 @@ export default function TenderFTSSearch() {
                   )}
                   {r.province && <span>{r.province}</span>}
                   {r.value_pln && (
-                    <span className="text-emerald-400 flex items-center gap-0.5">
+                    <span className="text-accent-primary flex items-center gap-0.5">
                       <DollarSign className="w-3 h-3" />{fmtPLN(r.value_pln)}
                     </span>
                   )}
@@ -117,7 +117,7 @@ export default function TenderFTSSearch() {
       )}
 
       {searched && results.length === 0 && !loading && (
-        <p className="text-xs text-zinc-500 text-center py-4">Brak wyników</p>
+        <p className="text-xs text-earth-500 text-center py-4">Brak wyników</p>
       )}
     </motion.div>
   );

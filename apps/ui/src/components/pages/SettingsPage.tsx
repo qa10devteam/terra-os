@@ -441,7 +441,7 @@ function ZespolSection() {
                         <span className="text-xs text-earth-600 bg-earth-800 px-1.5 py-0.5 rounded-md border border-earth-700/60 shrink-0">Ty</span>
                       )}
                       {!member.is_active && (
-                        <span className="text-xs text-zinc-500 bg-zinc-800/60 px-1.5 py-0.5 rounded-md border border-zinc-700/50 shrink-0">Nieaktywny</span>
+                        <span className="text-xs text-earth-500 bg-earth-800/60 px-1.5 py-0.5 rounded-md border border-earth-700/50 shrink-0">Nieaktywny</span>
                       )}
                     </div>
                     <p className="text-xs text-earth-600 truncate">{member.email}</p>
@@ -492,7 +492,7 @@ function ZespolSection() {
 const STATUS_BADGE: Record<string, string> = {
   pending:  'bg-amber-500/15 text-amber-400 border-amber-500/25',
   accepted: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
-  expired:  'bg-zinc-700/50 text-zinc-500 border-zinc-600/30',
+  expired:  'bg-earth-800/50 text-earth-500 border-earth-700/30',
 };
 const STATUS_LABEL: Record<string, string> = {
   pending:  'Oczekuje',

@@ -37,9 +37,9 @@ export function ConfirmDialog({
   }, [open, onCancel]);
 
   const variantStyles = {
-    danger:  { icon: 'text-red-400',    btn: 'bg-red-600 hover:bg-red-500 text-white',    ring: 'ring-red-500/30' },
-    warning: { icon: 'text-amber-400',  btn: 'bg-amber-600 hover:bg-amber-500 text-white', ring: 'ring-amber-500/30' },
-    info:    { icon: 'text-blue-400',   btn: 'bg-blue-600 hover:bg-blue-500 text-white',   ring: 'ring-blue-500/30' },
+    danger:  { icon: 'text-accent-danger',   btn: 'bg-accent-danger hover:opacity-90 text-earth-50',   ring: 'ring-accent-danger/30' },
+    warning: { icon: 'text-accent-warning',  btn: 'bg-accent-warning hover:opacity-90 text-earth-950', ring: 'ring-accent-warning/30' },
+    info:    { icon: 'text-accent-info',     btn: 'bg-accent-info hover:opacity-90 text-earth-50',     ring: 'ring-accent-info/30' },
   }[variant];
 
   return (
@@ -68,7 +68,7 @@ export function ConfirmDialog({
             aria-modal="true"
             aria-labelledby="confirm-title"
             className={`fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-              w-full max-w-md bg-earth-950 border border-earth-800 rounded-2xl shadow-2xl
+              w-full max-w-md bg-earth-950 border border-earth-800 rounded-token-xl shadow-token-lg
               ring-1 ${variantStyles.ring} p-6`}
           >
             {/* Header */}
@@ -96,14 +96,14 @@ export function ConfirmDialog({
               <button
                 onClick={onCancel}
                 className="px-4 py-2 text-sm font-medium text-earth-300 bg-earth-800/50
-                  hover:bg-earth-800 border border-earth-700/50 rounded-lg transition-colors"
+                  hover:bg-earth-800 border border-earth-700/50 rounded-token transition-colors"
               >
                 {cancelLabel}
               </button>
               <button
                 ref={confirmRef}
                 onClick={onConfirm}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${variantStyles.btn}`}
+                className={`px-4 py-2 text-sm font-medium rounded-token transition-colors ${variantStyles.btn}`}
               >
                 {confirmLabel}
               </button>

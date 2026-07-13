@@ -441,7 +441,7 @@ function SprzętTab() {
                       onChange={e => setForm(f => ({ ...f, active: e.target.checked }))}
                       className="sr-only peer"
                     />
-                    <div className="w-9 h-5 bg-earth-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-accent-primary" />
+                    <div className="w-9 h-5 bg-earth-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-earth-100 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-accent-primary" />
                     <span className="ml-2 text-sm text-earth-300">Aktywny</span>
                   </label>
                 </div>

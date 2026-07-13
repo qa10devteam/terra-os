@@ -68,7 +68,7 @@ function fmtPct(v: number | null): string {
 
 // ── Mini chart (sparkline) ─────────────────────────────────────────────────────
 
-function Sparkline({ data, color = '#22c55e' }: { data: number[]; color?: string }) {
+function Sparkline({ data, color = '#10b981' }: { data: number[]; color?: string }) {
   if (!data.length) return null;
   const max = Math.max(...data);
   const min = Math.min(...data);
@@ -87,7 +87,7 @@ function Sparkline({ data, color = '#22c55e' }: { data: number[]; color?: string
 
 function Card({ title, icon: Icon, children, className = '' }: {
   title: string;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<{ className?: string }>;
   children: React.ReactNode;
   className?: string;
 }) {
@@ -95,11 +95,11 @@ function Card({ title, icon: Icon, children, className = '' }: {
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`bg-zinc-900/80 border border-zinc-800 rounded-xl p-4 ${className}`}
+      className={`card ${className}`}
     >
       <div className="flex items-center gap-2 mb-3">
-        <Icon className="w-4 h-4 text-emerald-400" />
-        <h3 className="text-sm font-medium text-zinc-200">{title}</h3>
+        <Icon className="w-4 h-4 text-accent-primary" />
+        <h3 className="section-label">{title}</h3>
       </div>
       {children}
     </motion.div>
@@ -138,8 +138,8 @@ export default function MarketIntelligenceDashboard() {
       if (iRes.status === 'fulfilled') setInflation(iRes.value?.data || []);
       if (wRes.status === 'fulfilled') setWinRates(wRes.value?.data || []);
       if (pRes.status === 'fulfilled') setIcbPrices(pRes.value?.data || pRes.value?.items || []);
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Nieznany błąd');
     } finally {
       setLoading(false);
     }
@@ -151,7 +151,7 @@ export default function MarketIntelligenceDashboard() {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 animate-pulse">
         {[...Array(6)].map((_, i) => (
-          <div key={i} className="h-48 bg-zinc-900/50 rounded-xl border border-zinc-800" />
+          <div key={i} className="h-48 bg-earth-900/50 rounded-token-lg border border-earth-700/50" />
         ))}
       </div>
     );
@@ -160,8 +160,8 @@ export default function MarketIntelligenceDashboard() {
   if (error) {
     return (
       <div className="text-center py-8">
-        <p className="text-red-400 text-sm">{error}</p>
-        <button onClick={load} className="mt-2 text-xs text-emerald-400 hover:underline">
+        <p className="text-accent-danger text-sm">{error}</p>
+        <button onClick={load} className="mt-2 text-xs text-accent-primary hover:underline">
           Spróbuj ponownie
         </button>
       </div>
@@ -173,17 +173,17 @@ export default function MarketIntelligenceDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-            <Activity className="w-5 h-5 text-emerald-400" />
+          <h2 className="text-lg font-semibold text-earth-100 flex items-center gap-2">
+            <Activity className="w-5 h-5 text-accent-primary" />
             Market Intelligence
           </h2>
-          <p className="text-xs text-zinc-500 mt-0.5">
+          <p className="text-xs text-earth-500 mt-0.5">
             Dane: 1.4M przetargów · 784k cen ICB · 81k wykonawców
           </p>
         </div>
         <button
           onClick={load}
-          className="text-xs px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition-colors"
+          className="btn-ghost text-xs px-3 py-1.5"
         >
           Odśwież
         </button>
@@ -197,21 +197,21 @@ export default function MarketIntelligenceDashboard() {
             <div className="space-y-2">
               <Sparkline
                 data={trends.map(t => t.avg_value_pln)}
-                color={trends[trends.length - 1]?.yoy_change_pct && trends[trends.length - 1].yoy_change_pct! > 0 ? '#22c55e' : '#ef4444'}
+                color={trends[trends.length - 1]?.yoy_change_pct && trends[trends.length - 1].yoy_change_pct! > 0 ? '#10b981' : '#ef4444'}
               />
               <div className="grid grid-cols-2 gap-2 mt-2">
                 {trends.slice(-4).map(t => (
                   <div key={t.quarter} className="text-xs">
-                    <span className="text-zinc-500">{t.quarter}</span>
-                    <div className="text-zinc-200 font-medium">{fmtPLN(t.avg_value_pln)}</div>
-                    <span className={t.yoy_change_pct && t.yoy_change_pct > 0 ? 'text-emerald-400' : 'text-red-400'}>
+                    <span className="text-earth-500">{t.quarter}</span>
+                    <div className="text-earth-100 font-medium">{fmtPLN(t.avg_value_pln)}</div>
+                    <span className={t.yoy_change_pct && t.yoy_change_pct > 0 ? 'text-accent-primary' : 'text-accent-danger'}>
                       {fmtPct(t.yoy_change_pct)}
                     </span>
                   </div>
                 ))}
               </div>
             </div>
-          ) : <p className="text-xs text-zinc-500">Brak danych trendów</p>}
+          ) : <p className="text-xs text-earth-500">Brak danych trendów</p>}
         </Card>
 
         {/* 2. Top Contractors */}
@@ -220,16 +220,16 @@ export default function MarketIntelligenceDashboard() {
             {contractors.slice(0, 10).map((c, i) => (
               <div key={i} className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-zinc-600 w-4">{i + 1}.</span>
-                  <span className="text-zinc-300 truncate max-w-[140px]">{c.name}</span>
+                  <span className="text-earth-600 w-4">{i + 1}.</span>
+                  <span className="text-earth-300 truncate max-w-[140px]">{c.name}</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-emerald-400 font-medium">{c.wins}</span>
-                  <span className="text-zinc-600 ml-1">wygranych</span>
+                  <span className="text-accent-primary font-medium">{c.wins}</span>
+                  <span className="text-earth-600 ml-1">wygranych</span>
                 </div>
               </div>
             ))}
-            {contractors.length === 0 && <p className="text-xs text-zinc-500">Brak danych</p>}
+            {contractors.length === 0 && <p className="text-xs text-earth-500">Brak danych</p>}
           </div>
         </Card>
 
@@ -238,11 +238,11 @@ export default function MarketIntelligenceDashboard() {
           <div className="space-y-1.5 max-h-48 overflow-y-auto">
             {buyers.slice(0, 10).map((b, i) => (
               <div key={i} className="flex items-center justify-between text-xs">
-                <span className="text-zinc-300 truncate max-w-[160px]">{b.name}</span>
-                <span className="text-zinc-400">{fmtPLN(b.total_value_pln)}</span>
+                <span className="text-earth-300 truncate max-w-[160px]">{b.name}</span>
+                <span className="text-earth-400">{fmtPLN(b.total_value_pln)}</span>
               </div>
             ))}
-            {buyers.length === 0 && <p className="text-xs text-zinc-500">Brak danych</p>}
+            {buyers.length === 0 && <p className="text-xs text-earth-500">Brak danych</p>}
           </div>
         </Card>
 
@@ -250,15 +250,16 @@ export default function MarketIntelligenceDashboard() {
         <Card title="Indeks inflacji robocizny" icon={Flame}>
           {inflation.length > 0 ? (
             <div className="space-y-2">
+              {/* accent-warning = #f59e0b */}
               <Sparkline data={inflation.map(i => i.index_value)} color="#f59e0b" />
               <div className="flex items-center justify-between text-xs mt-2">
-                <span className="text-zinc-500">Ostatni kwartał</span>
-                <span className={inflation[inflation.length - 1]?.yoy_pct > 0 ? 'text-red-400' : 'text-emerald-400'}>
+                <span className="text-earth-500">Ostatni kwartał</span>
+                <span className={inflation[inflation.length - 1]?.yoy_pct > 0 ? 'text-accent-danger' : 'text-accent-primary'}>
                   {fmtPct(inflation[inflation.length - 1]?.yoy_pct)}
                 </span>
               </div>
             </div>
-          ) : <p className="text-xs text-zinc-500">Brak danych inflacji</p>}
+          ) : <p className="text-xs text-earth-500">Brak danych inflacji</p>}
         </Card>
 
         {/* 5. Win Rates by CPV */}
@@ -266,19 +267,19 @@ export default function MarketIntelligenceDashboard() {
           <div className="space-y-1.5 max-h-48 overflow-y-auto">
             {winRates.slice(0, 8).map((w, i) => (
               <div key={i} className="flex items-center justify-between text-xs">
-                <span className="text-zinc-400 font-mono">{w.cpv_prefix}</span>
+                <span className="text-earth-400 font-mono">{w.cpv_prefix}</span>
                 <div className="flex items-center gap-2">
-                  <div className="w-16 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                  <div className="w-16 h-1.5 bg-earth-800 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-emerald-500 rounded-full"
+                      className="h-full bg-accent-primary rounded-full"
                       style={{ width: `${w.rate * 100}%` }}
                     />
                   </div>
-                  <span className="text-zinc-300 w-10 text-right">{(w.rate * 100).toFixed(0)}%</span>
+                  <span className="text-earth-300 w-10 text-right">{(w.rate * 100).toFixed(0)}%</span>
                 </div>
               </div>
             ))}
-            {winRates.length === 0 && <p className="text-xs text-zinc-500">Brak danych</p>}
+            {winRates.length === 0 && <p className="text-xs text-earth-500">Brak danych</p>}
           </div>
         </Card>
 
@@ -287,11 +288,11 @@ export default function MarketIntelligenceDashboard() {
           <div className="space-y-1.5 max-h-48 overflow-y-auto">
             {icbPrices.slice(0, 8).map((p, i) => (
               <div key={i} className="flex items-center justify-between text-xs">
-                <span className="text-zinc-300 truncate max-w-[140px]">{p.nazwa || p.symbol}</span>
-                <span className="text-emerald-400 font-medium">{p.cena_netto?.toFixed(2)} PLN/{p.jm}</span>
+                <span className="text-earth-300 truncate max-w-[140px]">{p.nazwa || p.symbol}</span>
+                <span className="text-accent-primary font-medium">{p.cena_netto?.toFixed(2)} PLN/{p.jm}</span>
               </div>
             ))}
-            {icbPrices.length === 0 && <p className="text-xs text-zinc-500">Brak danych ICB</p>}
+            {icbPrices.length === 0 && <p className="text-xs text-earth-500">Brak danych ICB</p>}
           </div>
         </Card>
       </div>

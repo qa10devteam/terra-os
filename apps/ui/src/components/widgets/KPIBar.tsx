@@ -43,11 +43,11 @@ export default function KPIBar() {
 
   if (loading) {
     return (
-      <div className="flex h-12 items-center gap-6 overflow-x-auto border-b border-white/10 bg-[#0A1628] px-6">
+      <div className="flex h-12 items-center gap-6 overflow-x-auto border-b border-earth-800 bg-earth-950 px-6">
         {[...Array(5)].map((_, i) => (
           <div key={i} className="flex items-center gap-2">
-            <div className="h-3 w-16 animate-pulse rounded bg-white/10" />
-            <div className="h-4 w-12 animate-pulse rounded bg-white/10" />
+            <div className="h-3 w-16 animate-shimmer rounded-token bg-earth-800/50" />
+            <div className="h-4 w-12 animate-shimmer rounded-token bg-earth-800/50" />
           </div>
         ))}
       </div>
@@ -56,25 +56,29 @@ export default function KPIBar() {
 
   if (metrics.length === 0) {
     return (
-      <div className="flex h-12 items-center border-b border-white/10 bg-[#0A1628] px-6">
-        <span className="text-xs text-gray-500">No KPI data available</span>
+      <div className="flex h-12 items-center border-b border-earth-800 bg-earth-950 px-6">
+        <span className="text-xs text-earth-500">No KPI data available</span>
       </div>
     );
   }
 
   return (
-    <div className="flex h-12 items-center gap-6 overflow-x-auto border-b border-white/10 bg-[#0A1628] px-6">
+    <div className="flex h-12 items-center gap-6 overflow-x-auto border-b border-earth-800 bg-earth-950 px-6">
       {metrics.map((metric) => (
         <div key={metric.id} className="flex shrink-0 items-center gap-2">
-          <span className="text-xs text-gray-400">{metric.label}</span>
-          <span className="text-sm font-semibold text-white">
+          <span className="text-xs text-earth-400">{metric.label}</span>
+          <span className="text-sm font-semibold text-earth-100">
             {metric.value}
-            {metric.unit && <span className="ml-0.5 text-xs text-gray-400">{metric.unit}</span>}
+            {metric.unit && <span className="ml-0.5 text-xs text-earth-400">{metric.unit}</span>}
           </span>
           {metric.change !== undefined && (
             <span
               className={`text-xs font-medium ${
-                metric.change > 0 ? "text-emerald-400" : metric.change < 0 ? "text-red-400" : "text-gray-400"
+                metric.change > 0
+                  ? "text-accent-primary"
+                  : metric.change < 0
+                  ? "text-accent-danger"
+                  : "text-earth-400"
               }`}
             >
               {metric.change > 0 ? "+" : ""}

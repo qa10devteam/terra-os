@@ -71,17 +71,17 @@ export function PolandHeatmap({ data }: PolandHeatmapProps) {
         const intensity = n / maxN; // 0..1
         const label = NUTS2_NAMES[code] ?? code;
         const tooltipText = label + ': ' + n.toLocaleString('pl-PL') + ' przetargów';
-        // emerald-500 RGBA overlay: base opacity 0.08 + up to 0.72 based on intensity
+        // accent-primary (#10b981) RGBA overlay: base opacity 0.08 + up to 0.72 based on intensity
         const overlayOpacity = n > 0 ? (0.08 + intensity * 0.72).toFixed(3) : '0';
         const boxShadow = n > 0
-          ? 'inset 0 0 0 100px rgba(16,185,129,' + overlayOpacity + ')'
+          ? `inset 0 0 0 100px rgba(16,185,129,${overlayOpacity})`
           : undefined;
 
         return (
           <div
             key={code}
             title={tooltipText}
-            className="relative flex flex-col items-center justify-center rounded-md border border-earth-800/40 p-1 cursor-default select-none transition-all duration-200 hover:scale-105 hover:z-10 bg-earth-900/60"
+            className="relative flex flex-col items-center justify-center rounded-token border border-earth-700/40 p-1 cursor-default select-none transition-all duration-200 hover:scale-105 hover:z-10 bg-earth-900/60"
             style={{ boxShadow, minHeight: '3rem' }}
           >
             <span className="text-[8px] font-medium leading-tight text-center text-earth-300 drop-shadow-sm">

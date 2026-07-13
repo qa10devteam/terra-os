@@ -652,7 +652,7 @@ export function DecyzjaPage() {
                   className="w-full flex items-center justify-center gap-2 py-3.5 rounded-token-lg
                              bg-accent-info hover:bg-accent-info/90
                              disabled:opacity-50 disabled:cursor-not-allowed
-                             text-white font-semibold text-sm transition-all duration-200
+                             text-earth-950 font-semibold text-sm transition-all duration-200
                              shadow-token-md"
                 >
                   {running

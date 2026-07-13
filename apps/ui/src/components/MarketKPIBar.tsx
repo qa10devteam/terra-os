@@ -43,7 +43,9 @@ export default function MarketKPIBar() {
   if (loading) {
     return (
       <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-3 animate-pulse">
-        {[...Array(6)].map((_, i) => <div key={i} className="h-20 bg-zinc-900/50 rounded-xl border border-zinc-800" />)}
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="h-20 bg-earth-900/50 rounded-token-lg border border-earth-800" />
+        ))}
       </div>
     );
   }
@@ -56,42 +58,42 @@ export default function MarketKPIBar() {
       label: 'Przetargów w bazie',
       value: kpi.total_tenders?.toLocaleString() || '—',
       sub: `${kpi.tenders_this_month || 0} w tym miesiącu`,
-      color: 'text-emerald-400',
+      colorCls: 'text-accent-primary',
     },
     {
       icon: DollarSign,
       label: 'Łączna wartość',
       value: fmtPLN(kpi.total_value_pln || 0),
       sub: `Śr. ${fmtPLN(kpi.avg_value_pln || 0)}`,
-      color: 'text-emerald-400',
+      colorCls: 'text-accent-primary',
     },
     {
       icon: kpi.month_change_pct >= 0 ? TrendingUp : TrendingDown,
       label: 'Zmiana m/m',
       value: `${kpi.month_change_pct >= 0 ? '+' : ''}${kpi.month_change_pct?.toFixed(1) || 0}%`,
       sub: `vs poprzedni miesiąc`,
-      color: kpi.month_change_pct >= 0 ? 'text-emerald-400' : 'text-red-400',
+      colorCls: kpi.month_change_pct >= 0 ? 'text-accent-primary' : 'text-accent-danger',
     },
     {
       icon: Users,
       label: 'Zamawiający',
       value: kpi.active_buyers?.toLocaleString() || '—',
       sub: 'aktywnych',
-      color: 'text-blue-400',
+      colorCls: 'text-accent-info',
     },
     {
       icon: Activity,
       label: 'Wykonawcy',
       value: kpi.active_contractors?.toLocaleString() || '—',
       sub: 'aktywnych',
-      color: 'text-purple-400',
+      colorCls: 'text-accent-violet',
     },
     {
       icon: Zap,
       label: 'Top CPV',
       value: kpi.top_cpv_code || '—',
       sub: `${kpi.top_cpv_count || 0} przetargów`,
-      color: 'text-amber-400',
+      colorCls: 'text-accent-warning',
     },
   ];
 
@@ -103,14 +105,14 @@ export default function MarketKPIBar() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: i * 0.05 }}
-          className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-3"
+          className="bg-earth-900/80 border border-earth-700/50 rounded-token-lg p-3"
         >
           <div className="flex items-center gap-1.5 mb-1">
-            <card.icon className={`w-3.5 h-3.5 ${card.color}`} />
-            <span className="text-xs text-zinc-500 truncate">{card.label}</span>
+            <card.icon className={`w-3.5 h-3.5 ${card.colorCls}`} />
+            <span className="text-xs text-earth-500 truncate">{card.label}</span>
           </div>
-          <p className={`text-lg font-bold ${card.color}`}>{card.value}</p>
-          <p className="text-xs text-zinc-600 mt-0.5">{card.sub}</p>
+          <p className={`text-lg font-bold ${card.colorCls}`}>{card.value}</p>
+          <p className="text-xs text-earth-600 mt-0.5">{card.sub}</p>
         </motion.div>
       ))}
     </div>

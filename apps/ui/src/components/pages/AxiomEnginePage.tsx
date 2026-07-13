@@ -178,7 +178,7 @@ export default function AxiomEnginePage() {
                     className={`relative h-6 w-11 rounded-full transition-colors ${axiom.enabled ? "bg-accent-primary" : "bg-earth-700"}`}
                     aria-label={axiom.enabled ? 'Wyłącz' : 'Włącz'}
                   >
-                    <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${axiom.enabled ? "left-[22px]" : "left-0.5"}`} />
+                    <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-earth-100 transition-transform ${axiom.enabled ? "left-[22px]" : "left-0.5"}`} />
                   </button>
                   <button
                     onClick={() => deleteAxiom(axiom.id)}

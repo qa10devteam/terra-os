@@ -64,7 +64,7 @@ export function DemoTour() {
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-earth-950/60 backdrop-blur-sm" onClick={dismiss} />
-      <div className="relative z-10 w-full max-w-md bg-earth-900 border border-earth-700/60 rounded-2xl shadow-2xl p-6">
+      <div className="relative z-10 w-full max-w-md bg-earth-900 border border-earth-700/60 rounded-token-xl shadow-token-lg p-6">
         <button onClick={dismiss} className="absolute top-4 right-4 text-earth-500 hover:text-earth-200">
           <X className="w-5 h-5" />
         </button>
@@ -94,7 +94,7 @@ export function DemoTour() {
             )}
             <button
               onClick={next}
-              className="flex items-center gap-1 px-4 py-1.5 bg-accent-primary text-earth-950 text-sm font-semibold rounded-lg hover:bg-accent-primary/90"
+              className="flex items-center gap-1 px-4 py-1.5 bg-accent-primary text-earth-950 text-sm font-semibold rounded-token-lg hover:bg-accent-primary/90"
             >
               {step === TOUR_STEPS.length - 1 ? 'Rozpocznij' : 'Dalej'} <ChevronRight className="w-4 h-4" />
             </button>

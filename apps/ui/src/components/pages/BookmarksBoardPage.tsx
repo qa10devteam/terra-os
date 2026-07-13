@@ -407,7 +407,7 @@ function AlertsList() {
               onClick={() => toggle(alert.id, !alert.is_active)}
               className={`shrink-0 w-9 h-5 rounded-full transition-colors relative ${alert.is_active ? 'bg-emerald-500' : 'bg-earth-700'}`}
             >
-              <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${alert.is_active ? 'translate-x-4' : 'translate-x-0.5'}`} />
+              <span className={`absolute top-0.5 w-4 h-4 bg-earth-100 rounded-full shadow transition-transform ${alert.is_active ? 'translate-x-4' : 'translate-x-0.5'}`} />
             </button>
             <div className="flex-1 min-w-0">
               <div className="text-sm text-earth-100 font-medium truncate">{alert.name}</div>

@@ -1782,31 +1782,31 @@ export function ZwiadPage() {
             {filterSource && (
               <span className="flex items-center gap-1 text-[11px] bg-sky-500/10 border border-sky-500/30 text-sky-400 px-2 py-1 rounded-full">
                 {filterSource.toUpperCase()}
-                <button onClick={() => setFilterSource('')} className="hover:text-white"><X size={10} /></button>
+                <button onClick={() => setFilterSource('')} className="hover:text-earth-100"><X size={10} /></button>
               </span>
             )}
             {filterStatus && (
               <span className="flex items-center gap-1 text-[11px] bg-accent-primary/10 border border-accent-primary/30 text-accent-primary px-2 py-1 rounded-full">
                 Status: {STATUS_OPTS.find(s => s.value === filterStatus)?.label}
-                <button onClick={() => setFilterStatus('')} className="hover:text-white"><X size={10} /></button>
+                <button onClick={() => setFilterStatus('')} className="hover:text-earth-100"><X size={10} /></button>
               </span>
             )}
             {filterVoivodeship && (
               <span className="flex items-center gap-1 text-[11px] bg-accent-info/10 border border-accent-info/30 text-accent-info px-2 py-1 rounded-full">
                 {filterVoivodeship}
-                <button onClick={() => setFilterVoivodeship('')} className="hover:text-white"><X size={10} /></button>
+                <button onClick={() => setFilterVoivodeship('')} className="hover:text-earth-100"><X size={10} /></button>
               </span>
             )}
             {filterCpv && (
               <span className="flex items-center gap-1 text-[11px] bg-accent-violet/10 border border-accent-violet/30 text-accent-violet px-2 py-1 rounded-full">
                 CPV: {filterCpv}
-                <button onClick={() => setFilterCpv('')} className="hover:text-white"><X size={10} /></button>
+                <button onClick={() => setFilterCpv('')} className="hover:text-earth-100"><X size={10} /></button>
               </span>
             )}
             {(filterMinValue || filterMaxValue) && (
               <span className="flex items-center gap-1 text-[11px] bg-accent-warning/10 border border-accent-warning/30 text-accent-warning px-2 py-1 rounded-full">
                 {filterMinValue ? fmtPLN(Number(filterMinValue)) : '0'} – {filterMaxValue ? fmtPLN(Number(filterMaxValue)) : '∞'}
-                <button onClick={() => { setFilterMinValue(''); setFilterMaxValue(''); }} className="hover:text-white"><X size={10} /></button>
+                <button onClick={() => { setFilterMinValue(''); setFilterMaxValue(''); }} className="hover:text-earth-100"><X size={10} /></button>
               </span>
             )}
           </div>

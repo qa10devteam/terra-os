@@ -57,22 +57,22 @@ const STAGES: Array<{ id: CRMStage; label: string }> = [
 ];
 
 const STAGE_COLORS: Record<CRMStage, string> = {
-  prospect:  'bg-zinc-700 text-zinc-300 border-zinc-600',
-  contacted: 'bg-blue-500/20 text-blue-300 border-blue-500/40',
-  demo:      'bg-purple-500/20 text-purple-300 border-purple-500/40',
+  prospect:  'bg-earth-800 text-earth-300 border-earth-700',
+  contacted: 'bg-accent-info/20 text-accent-info border-accent-info/40',
+  demo:      'bg-accent-violet/20 text-accent-violet border-accent-violet/40',
   active:    'bg-accent-primary/20 text-accent-primary border-accent-primary/40',
-  churned:   'bg-red-500/20 text-red-300 border-red-500/40',
+  churned:   'bg-accent-danger/20 text-accent-danger border-accent-danger/40',
 };
 
 const STAGE_DOT: Record<CRMStage, string> = {
-  prospect:  'bg-zinc-400',
-  contacted: 'bg-blue-400',
-  demo:      'bg-purple-400',
+  prospect:  'bg-earth-500',
+  contacted: 'bg-accent-info',
+  demo:      'bg-accent-violet',
   active:    'bg-accent-primary',
-  churned:   'bg-red-400',
+  churned:   'bg-accent-danger',
 };
 
-const PRIORITY_COLORS = ['', 'bg-zinc-500', 'bg-yellow-600', 'bg-yellow-400', 'bg-orange-400', 'bg-red-500'];
+const PRIORITY_COLORS = ['', 'bg-earth-600', 'bg-accent-warning/70', 'bg-accent-warning', 'bg-accent-warning/90', 'bg-accent-danger'];
 const CPV_BAR_COLORS  = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4'];
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -103,10 +103,10 @@ function cityLabel(item: BuyerCRMItem): string {
 function StageBadge({ stage }: { stage: string }) {
   const s = stage as CRMStage;
   const found = STAGES.find(x => x.id === s);
-  const cls = STAGE_COLORS[s] ?? 'bg-zinc-700 text-zinc-300 border-zinc-600';
+  const cls = STAGE_COLORS[s] ?? 'bg-earth-800 text-earth-300 border-earth-700';
   return (
     <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-0.5 rounded-full border ${cls}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${STAGE_DOT[s] ?? 'bg-zinc-400'}`} />
+      <span className={`w-1.5 h-1.5 rounded-full ${STAGE_DOT[s] ?? 'bg-earth-500'}`} />
       {found?.label ?? stage}
     </span>
   );
@@ -226,7 +226,7 @@ function BuyerCard({
             <span className="text-earth-400">{item.total_tenders} przetargów</span>
           )}
           {(item.total_value != null || item.annual_budget_est != null) && (
-            <span className="text-emerald-400 font-mono">
+            <span className="text-accent-success font-mono">
               {fmtPLN(item.annual_budget_est ?? item.total_value ?? 0)}
             </span>
           )}
@@ -304,12 +304,12 @@ function TendersTab({ itemId }: { itemId: string }) {
             {t.status && (
               <span className={`text-xs px-1.5 py-0.5 rounded-full ${
                 t.status === 'completed' ? 'bg-accent-primary/15 text-accent-primary' :
-                t.status === 'cancelled' ? 'bg-red-500/15 text-red-400' :
+                t.status === 'cancelled' ? 'bg-accent-danger/15 text-accent-danger' :
                 'bg-earth-700 text-earth-400'
               }`}>{t.status}</span>
             )}
             {t.value != null && (
-              <span className="text-xs text-emerald-400 font-mono ml-auto">
+              <span className="text-xs text-accent-success font-mono ml-auto">
                 {fmtMln(t.value / 1_000_000)}
               </span>
             )}
@@ -482,8 +482,8 @@ function BuyerProfilePanel({
               onClick={handleDelete}
               className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs transition-colors border
                 ${deleting
-                  ? 'bg-red-500/20 border-red-500/50 text-red-300'
-                  : 'bg-earth-800 hover:bg-red-500/10 border-earth-700 text-earth-500 hover:text-red-400 hover:border-red-500/30'}`}
+                  ? 'bg-accent-danger/20 border-accent-danger/50 text-accent-danger'
+                  : 'bg-earth-800 hover:bg-accent-danger/10 border-earth-700 text-earth-500 hover:text-accent-danger hover:border-accent-danger/30'}`}
             >
               <Trash2 size={12} />
               {deleting ? 'Potwierdź' : 'Usuń'}
@@ -680,7 +680,7 @@ function BuyerProfilePanel({
             <motion.div key="followup" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
               <div className={`p-4 rounded-xl border ${
                 isOverdue(item.next_followup)
-                  ? 'bg-red-500/10 border-red-500/30'
+                  ? 'bg-accent-danger/10 border-accent-danger/30'
                   : item.next_followup
                     ? 'bg-amber-500/10 border-amber-500/30'
                     : 'bg-earth-900 border-earth-700'
@@ -877,11 +877,11 @@ function AddBuyerModal({
 
           {/* Selected buyer info */}
           {selected && (
-            <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+            <div className="p-3 bg-accent-success/10 border border-accent-success/30 rounded-xl">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <div className="text-sm text-emerald-300 font-medium">{selected.name}</div>
-                  <div className="text-xs text-emerald-600 font-mono mt-0.5">
+                  <div className="text-sm text-accent-success font-medium">{selected.name}</div>
+                  <div className="text-xs text-accent-success/60 font-mono mt-0.5">
                     {selected.nip} {selected.city ? `· ${selected.city}` : ''}
                   </div>
                   <div className="text-xs text-earth-400 mt-1">
@@ -958,7 +958,7 @@ function AddBuyerModal({
             <button
               onClick={handleCreate}
               disabled={saving || (!selected && !q.match(/^\d{10}$/))}
-              className="flex-1 py-2.5 bg-emerald-500 text-white text-sm font-medium rounded-lg hover:bg-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
+              className="flex-1 py-2.5 bg-accent-success text-earth-950 text-sm font-medium rounded-lg hover:bg-accent-success/80 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
             >
               {saving ? <RefreshCw size={13} className="animate-spin" /> : <Plus size={13} />}
               Dodaj do CRM

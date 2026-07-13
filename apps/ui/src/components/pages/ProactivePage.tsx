@@ -126,7 +126,7 @@ export function ProactivePage() {
             <t.icon size={14} />
             {t.label}
             {'count' in t && t.count! > 0 && (
-              <span className="ml-1 px-1.5 py-0.5 bg-danger text-white text-xs rounded-full">{t.count}</span>
+              <span className="ml-1 px-1.5 py-0.5 bg-accent-danger text-earth-100 text-xs rounded-full">{t.count}</span>
             )}
           </button>
         ))}

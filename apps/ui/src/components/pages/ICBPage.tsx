@@ -219,7 +219,7 @@ function HBarChart({
               x={paddingLeft - 8}
               y={y + rowH / 2 + 4}
               textAnchor="end"
-              fill="#9ca3af"
+              fill="#a0aec0"
               fontSize={10}
             >
               {d[labelKey]}
@@ -378,9 +378,9 @@ function BandChartSVG({ data }: { data: ForecastRow[] }) {
       )}
       {/* Legend */}
       <rect x={pad.left} y={6} width={10} height={10} fill="#3B82F6" opacity={0.3} rx={1} />
-      <text x={pad.left + 14} y={15} fill="#9ca3af" fontSize={9}>Przedział ufności</text>
+      <text x={pad.left + 14} y={15} fill="#a0aec0" fontSize={9}>Przedział ufności</text>
       <line x1={pad.left + 110} y1={11} x2={pad.left + 130} y2={11} stroke="#3B82F6" strokeWidth={2} />
-      <text x={pad.left + 134} y={15} fill="#9ca3af" fontSize={9}>Prognoza</text>
+      <text x={pad.left + 134} y={15} fill="#a0aec0" fontSize={9}>Prognoza</text>
     </svg>
   );
 }
@@ -959,7 +959,7 @@ function ProgNozaTab({ categories }: { categories: CategoryItem[] }) {
               <button
                 onClick={computeForecast}
                 disabled={computing}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-accent-info hover:bg-accent-info/80 disabled:opacity-60 rounded-token text-sm font-semibold text-white transition-colors"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-accent-info hover:bg-accent-info/80 disabled:opacity-60 rounded-token text-sm font-semibold text-earth-950 transition-colors"
               >
                 {computing ? <Spinner size={16} /> : <Zap size={16} />}
                 {computing ? 'Obliczanie…' : 'Oblicz prognozy'}
@@ -1382,7 +1382,7 @@ export function ICBPage() {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-token text-xs font-medium whitespace-nowrap transition-all flex-shrink-0 ${
                 active
-                  ? 'bg-accent-info text-white shadow-token-md'
+                  ? 'bg-accent-info text-earth-950 shadow-token-md'
                   : 'text-earth-400 hover:text-earth-200 hover:bg-earth-800/60'
               }`}
             >

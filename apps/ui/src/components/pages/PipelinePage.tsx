@@ -117,7 +117,7 @@ function KanbanCard({
       ].join(' ')}
     >
       {/* Title */}
-      <p className="text-earth-100 text-xs font-medium leading-snug line-clamp-2 group-hover:text-white">
+      <p className="text-earth-100 text-xs font-medium leading-snug line-clamp-2 group-hover:text-earth-100">
         {tender.title}
       </p>
       {/* Buyer */}
@@ -426,7 +426,7 @@ function AddModal({
                 onClick={() => onAdd(t)}
                 className="w-full text-left p-3 rounded-token-xl bg-earth-800/40 hover:bg-earth-800/80 border border-earth-700/40 hover:border-accent-primary/40 transition-all duration-150 group"
               >
-                <p className="text-earth-100 text-sm font-medium line-clamp-1 group-hover:text-white">{t.title}</p>
+                <p className="text-earth-100 text-sm font-medium line-clamp-1 group-hover:text-earth-100">{t.title}</p>
                 <div className="flex items-center gap-2 mt-1">
                   <p className="text-earth-500 text-xs truncate flex-1">{t.buyer ?? '—'}</p>
                   <span className="text-earth-400 text-xs font-mono shrink-0">{fmtPLN(t.value_pln)}</span>

@@ -3,6 +3,9 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useAuthFetch } from "@/lib/api-v2";
 
+// ── Colour constants ───────────────────────────────────────────────────────────
+const INFO = '#3b82f6';
+
 interface Message {
   role: "user" | "assistant";
   content: string;
@@ -103,7 +106,7 @@ export function ChatWidget() {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-[#3B82F6] px-5 py-3 text-white shadow-lg hover:bg-[#2563EB] transition-all"
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-full bg-accent-info px-5 py-3 text-earth-50 shadow-token-lg hover:opacity-90 transition-all"
       >
         <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -114,15 +117,15 @@ export function ChatWidget() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col w-[380px] h-[520px] rounded-2xl border border-[#1E293B] bg-[#0A1628] shadow-2xl overflow-hidden">
+    <div className="fixed bottom-6 right-6 z-50 flex flex-col w-[380px] h-[520px] rounded-token-xl border border-earth-800 bg-earth-950 shadow-token-lg overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#1E293B] bg-[#0F1D32]">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-earth-800 bg-earth-900">
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-          <span className="font-semibold text-white text-sm">budos</span>
-          <span className="text-xs text-gray-400">AI asystent</span>
+          <div className="w-2 h-2 rounded-full bg-accent-success animate-pulse-soft" />
+          <span className="font-semibold text-earth-100 text-sm">budos</span>
+          <span className="text-xs text-earth-400">AI asystent</span>
         </div>
-        <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-white">
+        <button onClick={() => setOpen(false)} className="text-earth-500 hover:text-earth-200 transition-colors">
           <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
@@ -132,7 +135,7 @@ export function ChatWidget() {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
         {messages.length === 0 && (
-          <div className="text-center text-gray-500 text-sm mt-8">
+          <div className="text-center text-earth-500 text-sm mt-8">
             <p className="text-lg mb-2">👋</p>
             <p>Cześć! Jestem <strong>budos</strong>.</p>
             <p className="mt-1">Zapytaj mnie o przetargi, analizy, kosztorysy...</p>
@@ -144,10 +147,10 @@ export function ChatWidget() {
             className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
           >
             <div
-              className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
+              className={`max-w-[85%] rounded-token-lg px-3 py-2 text-sm ${
                 msg.role === "user"
-                  ? "bg-[#3B82F6] text-white"
-                  : "bg-[#1E293B] text-gray-200"
+                  ? "bg-accent-info/20 text-earth-100 border border-accent-info/20"
+                  : "bg-earth-800 text-earth-200 border border-earth-700/40"
               }`}
             >
               {msg.content || (
@@ -164,7 +167,7 @@ export function ChatWidget() {
       </div>
 
       {/* Input */}
-      <div className="border-t border-[#1E293B] p-3 bg-[#0F1D32]">
+      <div className="border-t border-earth-800 p-3 bg-earth-900">
         <div className="flex gap-2">
           <input
             type="text"
@@ -173,12 +176,12 @@ export function ChatWidget() {
             onKeyDown={(e) => e.key === "Enter" && sendMessage()}
             placeholder="Napisz wiadomość..."
             disabled={loading}
-            className="flex-1 rounded-lg bg-[#1E293B] border border-[#334155] px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-[#3B82F6] disabled:opacity-50"
+            className="input-base flex-1 text-sm disabled:opacity-50"
           />
           <button
             onClick={sendMessage}
             disabled={loading || !input.trim()}
-            className="rounded-lg bg-[#3B82F6] px-3 py-2 text-white hover:bg-[#2563EB] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="rounded-token-lg bg-accent-info px-3 py-2 text-earth-50 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />

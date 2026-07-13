@@ -108,7 +108,7 @@ export function DocumentViewer({ pdfUrl, tenderTitle, tenderId }: DocumentViewer
   if (fetched && docs.length === 0 && !pdfUrl) {
     return (
       <GlassCard className="p-6 text-center">
-        <FileText className="w-10 h-10 text-amber-500/50 mx-auto mb-3" />
+        <FileText className="w-10 h-10 text-accent-warning/50 mx-auto mb-3" />
         <p className="text-sm text-earth-400">Dokumenty nie są jeszcze dostępne w API BZP</p>
         <p className="text-xs text-earth-600 mt-1">Spróbuj ponownie później lub dodaj dokumenty ręcznie</p>
         <button
