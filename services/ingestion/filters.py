@@ -32,9 +32,20 @@ def passes_cpv_filter(tender: TenderIn) -> bool:
 
 
 def passes_geo_filter(tender: TenderIn, *, target_voivodeships: set[str] | None = None) -> bool:
-    """Return True if tender is in target voivodeship (or all-Poland mode)."""
-    target = target_voivodeships or TARGET_VOIVODESHIPS
-    if not target:  # empty = all Poland
+    """Return True if tender is in target voivodeship (or all-Poland mode).
+
+    Args:
+        tender: normalised TenderIn object
+        target_voivodeships: explicit set → filter to those voivodeships;
+                             None → use module-level TARGET_VOIVODESHIPS;
+                             empty set() → all-Poland mode (accept all)
+    """
+    # None means "use default config"
+    if target_voivodeships is None:
+        target = TARGET_VOIVODESHIPS
+    else:
+        target = target_voivodeships  # may be empty set (all-Poland)
+    if not target:  # empty set = all Poland
         return True
     if not tender.voivodeship:
         return True  # unknown location — pass (don't drop)

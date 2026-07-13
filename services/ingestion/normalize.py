@@ -54,8 +54,20 @@ def normalize_cpv(raw_cpv: Any) -> list[str]:
         # BZP format: "45000000-7 (Roboty budowlane),45400000-1 (Roboty wykończeniowe)"
         # Split by comma, then extract leading digits-dash-digit pattern
         codes_raw = [c.strip() for c in raw_cpv.split(",")]
+    elif isinstance(raw_cpv, dict):
+        # Dict with "code" key (older API format): {"code": "45233120-6", "name": "..."}
+        code = raw_cpv.get("code") or raw_cpv.get("cpvCode") or ""
+        codes_raw = [str(code).strip()] if code else []
     elif isinstance(raw_cpv, list):
-        codes_raw = [str(c).strip() for c in raw_cpv]
+        # List may contain strings or dicts
+        codes_raw = []
+        for item in raw_cpv:
+            if isinstance(item, dict):
+                c = item.get("code") or item.get("cpvCode") or ""
+                if c:
+                    codes_raw.append(str(c).strip())
+            else:
+                codes_raw.append(str(item).strip())
     else:
         return []
     # Extract numeric CPV code from each entry (ignore description in parentheses)
