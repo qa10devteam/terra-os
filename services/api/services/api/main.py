@@ -155,6 +155,11 @@ try:
 except Exception as e:
     logging.getLogger(__name__).warning("agent_pipeline router: %s", e)
 try:
+    from .routers import scoring
+    _optional_routers.append(('scoring', scoring))
+except Exception as e:
+    logging.getLogger(__name__).warning("scoring router: %s", e)
+try:
     from .routers import chat_v2
     _optional_routers.append(('chat_v2', chat_v2))
 except Exception as e:
@@ -526,6 +531,8 @@ if 'm7_advanced' in _opt_map:
     app.include_router(_opt_map['m7_advanced'].router)
 if 'icb_advanced' in _opt_map:
     app.include_router(_opt_map['icb_advanced'].router)
+if 'scoring' in _opt_map:
+    app.include_router(_opt_map['scoring'].router)
 
 # ── v1 compat aliases — frontend używa /api/v1/tenders ──────────────────────
 from fastapi import Request as _Request

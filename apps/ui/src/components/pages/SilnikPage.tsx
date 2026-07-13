@@ -1,450 +1,995 @@
 'use client';
-
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useAuthFetch } from '@/lib/api-v2';
 import { useStore } from '@/store/useStore';
-import {
-  Brain, AlertTriangle, CheckCircle, XCircle, Play, ArrowRight,
-  BarChart2, Zap, ShieldAlert, Info, FileText,
-} from 'lucide-react';
-import {
-  ResponsiveContainer, ComposedChart, Bar, Cell, XAxis, YAxis,
-  CartesianGrid, Tooltip as RechartsTooltip, ReferenceLine,
-} from 'recharts';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { showToast } from '@/components/Toast';
+import { motion, AnimatePresence } from 'motion/react';
+import { Sliders, BarChart3, Grid3X3, History, Save, RotateCcw, Target, TrendingUp } from 'lucide-react';
 
-interface Violation {
-  axiom_code: string;
-  severity: string;
-  message: string;
-  provenance: Record<string, unknown>;
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+interface ScoringWeights {
+  cpv_match: number;
+  value_range: number;
+  deadline_pressure: number;
+  buyer_history: number;
+  document_quality: number;
 }
 
-interface Driver {
-  factor: string;
-  S1: number;
-  ST: number;
+interface ScoringConfig {
+  weights: ScoringWeights;
 }
 
-interface RiskData {
-  margin_p10: number;
-  margin_p50: number;
-  margin_p90: number;
-  drivers: Driver[];
-  n_samples_used: number;
+interface TenderPreview {
+  id: string;
+  title: string;
+  match_score: number;
+  prev_score?: number;
 }
 
-interface EngineResult {
-  feasible: boolean;
-  violations: Violation[];
-  risk: RiskData | null;
-  explanation_md: string;
+interface ScoreBreakdown {
+  criterion: string;
+  weight: number;
+  score: number;
+  contribution: number;
 }
 
-const SEVERITY_ORDER = ['block', 'warn', 'info'];
+interface TenderAnalysis {
+  score_breakdown: ScoreBreakdown[];
+  total_score: number;
+  percentile?: number;
+  average_score?: number;
+}
 
-const SEVERITY_META: Record<string, { label: string; classes: string; icon: React.ReactNode }> = {
-  block: {
-    label: 'BLOKADA',
-    classes: 'text-red-400 bg-red-500/10 border-red-500/30',
-    icon: <XCircle className="w-4 h-4 text-red-400 shrink-0" />,
-  },
-  warn: {
-    label: 'OSTRZEŻENIE',
-    classes: 'text-amber-400 bg-amber-500/10 border-amber-500/30',
-    icon: <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />,
-  },
-  info: {
-    label: 'INFO',
-    classes: 'text-blue-400 bg-blue-500/10 border-blue-500/30',
-    icon: <Info className="w-4 h-4 text-blue-400 shrink-0" />,
-  },
+interface CpvHeatmapCell {
+  cpv_code: string;
+  cpv_name: string;
+  quarter: string;
+  win_rate: number;
+  count: number;
+}
+
+interface AuditEntry {
+  id: string;
+  timestamp: string;
+  user: string;
+  action: string;
+  details: {
+    old_weights?: ScoringWeights;
+    new_weights?: ScoringWeights;
+  };
+}
+
+// ─── Constants ───────────────────────────────────────────────────────────────
+
+const WEIGHT_LABELS: Record<keyof ScoringWeights, string> = {
+  cpv_match: 'Dopasowanie CPV',
+  value_range: 'Zakres wartości',
+  deadline_pressure: 'Presja terminowa',
+  buyer_history: 'Historia zamawiającego',
+  document_quality: 'Jakość dokumentacji',
 };
 
-function pct(v: number) { return (v * 100).toFixed(1) + '%'; }
+const TABS = [
+  { id: 'weights', label: 'Konfiguracja Wag', icon: Sliders },
+  { id: 'analytics', label: 'Score Analytics', icon: BarChart3 },
+  { id: 'heatmap', label: 'CPV Heatmap', icon: Grid3X3 },
+  { id: 'history', label: 'Historia Kalibracji', icon: History },
+] as const;
 
-// ── Tabs ──────────────────────────────────────────────────────────────────────
-type TabId = 'wyniki' | 'czynniki' | 'wyjasnienie';
+type TabId = (typeof TABS)[number]['id'];
 
-const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
-  { id: 'wyniki', label: 'Wyniki', icon: <BarChart2 className="w-3.5 h-3.5" /> },
-  { id: 'czynniki', label: 'Czynniki (waterfall)', icon: <Zap className="w-3.5 h-3.5" /> },
-  { id: 'wyjasnienie', label: 'Wyjaśnienie', icon: <FileText className="w-3.5 h-3.5" /> },
+const SAMPLE_HEATMAP_DATA: CpvHeatmapCell[] = [
+  { cpv_code: '45000000', cpv_name: 'Roboty budowlane', quarter: 'Q1 2026', win_rate: 0.72, count: 34 },
+  { cpv_code: '45000000', cpv_name: 'Roboty budowlane', quarter: 'Q2 2026', win_rate: 0.68, count: 28 },
+  { cpv_code: '45000000', cpv_name: 'Roboty budowlane', quarter: 'Q3 2025', win_rate: 0.55, count: 41 },
+  { cpv_code: '45000000', cpv_name: 'Roboty budowlane', quarter: 'Q4 2025', win_rate: 0.61, count: 37 },
+  { cpv_code: '72000000', cpv_name: 'Usługi IT', quarter: 'Q1 2026', win_rate: 0.85, count: 22 },
+  { cpv_code: '72000000', cpv_name: 'Usługi IT', quarter: 'Q2 2026', win_rate: 0.79, count: 19 },
+  { cpv_code: '72000000', cpv_name: 'Usługi IT', quarter: 'Q3 2025', win_rate: 0.62, count: 25 },
+  { cpv_code: '72000000', cpv_name: 'Usługi IT', quarter: 'Q4 2025', win_rate: 0.71, count: 21 },
+  { cpv_code: '33000000', cpv_name: 'Urządzenia medyczne', quarter: 'Q1 2026', win_rate: 0.44, count: 12 },
+  { cpv_code: '33000000', cpv_name: 'Urządzenia medyczne', quarter: 'Q2 2026', win_rate: 0.51, count: 15 },
+  { cpv_code: '33000000', cpv_name: 'Urządzenia medyczne', quarter: 'Q3 2025', win_rate: 0.38, count: 10 },
+  { cpv_code: '33000000', cpv_name: 'Urządzenia medyczne', quarter: 'Q4 2025', win_rate: 0.42, count: 11 },
+  { cpv_code: '48000000', cpv_name: 'Oprogramowanie', quarter: 'Q1 2026', win_rate: 0.91, count: 18 },
+  { cpv_code: '48000000', cpv_name: 'Oprogramowanie', quarter: 'Q2 2026', win_rate: 0.88, count: 16 },
+  { cpv_code: '48000000', cpv_name: 'Oprogramowanie', quarter: 'Q3 2025', win_rate: 0.75, count: 20 },
+  { cpv_code: '48000000', cpv_name: 'Oprogramowanie', quarter: 'Q4 2025', win_rate: 0.82, count: 17 },
+  { cpv_code: '79000000', cpv_name: 'Usługi doradcze', quarter: 'Q1 2026', win_rate: 0.63, count: 29 },
+  { cpv_code: '79000000', cpv_name: 'Usługi doradcze', quarter: 'Q2 2026', win_rate: 0.59, count: 26 },
+  { cpv_code: '79000000', cpv_name: 'Usługi doradcze', quarter: 'Q3 2025', win_rate: 0.48, count: 33 },
+  { cpv_code: '79000000', cpv_name: 'Usługi doradcze', quarter: 'Q4 2025', win_rate: 0.54, count: 30 },
+  { cpv_code: '30000000', cpv_name: 'Maszyny biurowe', quarter: 'Q1 2026', win_rate: 0.35, count: 8 },
+  { cpv_code: '30000000', cpv_name: 'Maszyny biurowe', quarter: 'Q2 2026', win_rate: 0.41, count: 9 },
+  { cpv_code: '30000000', cpv_name: 'Maszyny biurowe', quarter: 'Q3 2025', win_rate: 0.28, count: 7 },
+  { cpv_code: '30000000', cpv_name: 'Maszyny biurowe', quarter: 'Q4 2025', win_rate: 0.32, count: 6 },
+  { cpv_code: '50000000', cpv_name: 'Usługi naprawcze', quarter: 'Q1 2026', win_rate: 0.56, count: 14 },
+  { cpv_code: '50000000', cpv_name: 'Usługi naprawcze', quarter: 'Q2 2026', win_rate: 0.52, count: 13 },
+  { cpv_code: '50000000', cpv_name: 'Usługi naprawcze', quarter: 'Q3 2025', win_rate: 0.45, count: 16 },
+  { cpv_code: '50000000', cpv_name: 'Usługi naprawcze', quarter: 'Q4 2025', win_rate: 0.49, count: 15 },
+  { cpv_code: '71000000', cpv_name: 'Usługi architektoniczne', quarter: 'Q1 2026', win_rate: 0.77, count: 11 },
+  { cpv_code: '71000000', cpv_name: 'Usługi architektoniczne', quarter: 'Q2 2026', win_rate: 0.73, count: 10 },
+  { cpv_code: '71000000', cpv_name: 'Usługi architektoniczne', quarter: 'Q3 2025', win_rate: 0.65, count: 13 },
+  { cpv_code: '71000000', cpv_name: 'Usługi architektoniczne', quarter: 'Q4 2025', win_rate: 0.69, count: 12 },
+  { cpv_code: '66000000', cpv_name: 'Usługi finansowe', quarter: 'Q1 2026', win_rate: 0.48, count: 7 },
+  { cpv_code: '66000000', cpv_name: 'Usługi finansowe', quarter: 'Q2 2026', win_rate: 0.44, count: 6 },
+  { cpv_code: '66000000', cpv_name: 'Usługi finansowe', quarter: 'Q3 2025', win_rate: 0.36, count: 9 },
+  { cpv_code: '66000000', cpv_name: 'Usługi finansowe', quarter: 'Q4 2025', win_rate: 0.40, count: 8 },
+  { cpv_code: '90000000', cpv_name: 'Usługi komunalne', quarter: 'Q1 2026', win_rate: 0.67, count: 19 },
+  { cpv_code: '90000000', cpv_name: 'Usługi komunalne', quarter: 'Q2 2026', win_rate: 0.63, count: 17 },
+  { cpv_code: '90000000', cpv_name: 'Usługi komunalne', quarter: 'Q3 2025', win_rate: 0.54, count: 22 },
+  { cpv_code: '90000000', cpv_name: 'Usługi komunalne', quarter: 'Q4 2025', win_rate: 0.58, count: 20 },
 ];
 
-// ── Waterfall Chart Component ─────────────────────────────────────────────────
-function WaterfallChart({ drivers }: { drivers: Driver[] }) {
-  const data = drivers.slice(0, 12).map(d => ({
-    name: d.factor.length > 18 ? d.factor.slice(0, 16) + '…' : d.factor,
-    fullName: d.factor,
-    value: d.ST,
-    fill: d.ST >= 0 ? '#10b981' : '#EF4444',
-  }));
+const DEADLINE_BONUS_DATA = [
+  { days: 0, bonus: 50 },
+  { days: 7, bonus: 30 },
+  { days: 14, bonus: 15 },
+  { days: 30, bonus: 5 },
+  { days: 60, bonus: 0 },
+];
 
-  return (
-    <ResponsiveContainer width="100%" height={300}>
-      <ComposedChart data={data} margin={{ bottom: 70, left: 10, right: 10, top: 10 }}>
-        <CartesianGrid stroke="#27272a" strokeDasharray="3 3" />
-        <XAxis
-          dataKey="name"
-          tick={{ fill: '#71717a', fontSize: 11 }}
-          angle={-45}
-          textAnchor="end"
-          interval={0}
-        />
-        <YAxis
-          tick={{ fill: '#71717a', fontSize: 11 }}
-          tickFormatter={(v: number) => `${(v * 100).toFixed(0)}%`}
-        />
-        <RechartsTooltip
-          contentStyle={{ background: '#1A1712', border: '1px solid #2D2820', borderRadius: 8 }}
-          labelStyle={{ color: '#F5F0EB' }}
-          formatter={(value: number) => [`${(value * 100).toFixed(1)}%`, 'Wpływ ST']}
-          labelFormatter={(label: string, payload: Array<{ payload?: { fullName?: string } }>) =>
-            payload?.[0]?.payload?.fullName ?? label
-          }
-        />
-        <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-          {data.map((entry, i) => (
-            <Cell key={i} fill={entry.fill} />
-          ))}
-        </Bar>
-        <ReferenceLine y={0} stroke="#52525b" strokeDasharray="3 3" />
-      </ComposedChart>
-    </ResponsiveContainer>
-  );
+// ─── Utility Functions ───────────────────────────────────────────────────────
+
+function interpolateColor(value: number): string {
+  const cold = { r: 30, g: 41, b: 59 };  // #1E293B
+  const hot = { r: 59, g: 130, b: 246 }; // #3B82F6
+  const t = Math.max(0, Math.min(1, value));
+  const r = Math.round(cold.r + (hot.r - cold.r) * t);
+  const g = Math.round(cold.g + (hot.g - cold.g) * t);
+  const b = Math.round(cold.b + (hot.b - cold.b) * t);
+  return `rgb(${r}, ${g}, ${b})`;
 }
 
-// ── Markdown renderer (simple, no external dep) ───────────────────────────────
-function SimpleMarkdown({ text }: { text: string }) {
-  const lines = text.split('\n');
-  return (
-    <div className="prose prose-invert prose-sm max-w-none text-earth-300 leading-relaxed space-y-2">
-      {lines.map((line, i) => {
-        if (line.startsWith('### ')) return <h3 key={i} className="text-earth-100 text-base font-semibold mt-4">{line.slice(4)}</h3>;
-        if (line.startsWith('## ')) return <h2 key={i} className="text-earth-100 text-lg font-bold mt-4">{line.slice(3)}</h2>;
-        if (line.startsWith('# ')) return <h1 key={i} className="text-earth-50 text-xl font-bold mt-4">{line.slice(2)}</h1>;
-        if (line.startsWith('- ')) return <li key={i} className="ml-4 list-disc text-earth-300 text-sm">{line.slice(2)}</li>;
-        if (line.startsWith('**') && line.endsWith('**')) return <p key={i} className="font-semibold text-earth-200">{line.slice(2, -2)}</p>;
-        if (line.trim() === '') return <div key={i} className="h-2" />;
-        return <p key={i} className="text-earth-300 text-sm">{line}</p>;
+function formatTimestamp(ts: string): string {
+  try {
+    const d = new Date(ts);
+    return d.toLocaleString('pl-PL', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return ts;
+  }
+}
+
+// ─── Component ───────────────────────────────────────────────────────────────
+
+export function SilnikPage() {
+  const authFetch = useAuthFetch();
+  const setCurrentModule = useStore((s) => s.setCurrentModule);
+
+  const [activeTab, setActiveTab] = useState<TabId>('weights');
+  const [loading, setLoading] = useState(false);
+
+  // Tab 1 state
+  const [weights, setWeights] = useState<ScoringWeights>({
+    cpv_match: 30,
+    value_range: 20,
+    deadline_pressure: 20,
+    buyer_history: 15,
+    document_quality: 15,
+  });
+  const [originalWeights, setOriginalWeights] = useState<ScoringWeights | null>(null);
+  const [topTenders, setTopTenders] = useState<TenderPreview[]>([]);
+  const [saving, setSaving] = useState(false);
+
+  // Tab 2 state
+  const [tenderList, setTenderList] = useState<{ id: string; title: string }[]>([]);
+  const [selectedTenderId, setSelectedTenderId] = useState<string>('');
+  const [analysis, setAnalysis] = useState<TenderAnalysis | null>(null);
+
+  // Tab 3 state
+  const [heatmapData, setHeatmapData] = useState<CpvHeatmapCell[]>([]);
+  const [heatmapTooltip, setHeatmapTooltip] = useState<{ cell: CpvHeatmapCell; x: number; y: number } | null>(null);
+
+  // Tab 4 state
+  const [auditHistory, setAuditHistory] = useState<AuditEntry[]>([]);
+
+  // ─── Computed values ─────────────────────────────────────────────────────
+
+  const weightSum = useMemo(() => {
+    return Object.values(weights).reduce((sum, v) => sum + v, 0);
+  }, [weights]);
+
+  const isValidSum = weightSum === 100;
+
+  // ─── Data fetching ───────────────────────────────────────────────────────
+
+  const fetchScoringConfig = useCallback(async () => {
+    try {
+      const data = await authFetch('/api/v2/scoring/config') as ScoringConfig;
+      if (data?.weights) {
+        setWeights(data.weights);
+        setOriginalWeights(data.weights);
+      }
+    } catch (err) {
+      console.error('Failed to fetch scoring config:', err);
+    }
+  }, [authFetch]);
+
+  const fetchTopTenders = useCallback(async () => {
+    try {
+      const data = await authFetch('/api/v2/tenders?sort=match_score&limit=10') as { items?: TenderPreview[]; data?: TenderPreview[] };
+      const items = data?.items || data?.data || [];
+      setTopTenders(Array.isArray(items) ? items : []);
+    } catch (err) {
+      console.error('Failed to fetch top tenders:', err);
+    }
+  }, [authFetch]);
+
+  const fetchTenderList = useCallback(async () => {
+    try {
+      const data = await authFetch('/api/v2/tenders?limit=50') as { items?: { id: string; title: string }[]; data?: { id: string; title: string }[] };
+      const items = data?.items || data?.data || [];
+      setTenderList(Array.isArray(items) ? items : []);
+    } catch (err) {
+      console.error('Failed to fetch tender list:', err);
+    }
+  }, [authFetch]);
+
+  const fetchAnalysis = useCallback(async (tenderId: string) => {
+    if (!tenderId) return;
+    setLoading(true);
+    try {
+      const data = await authFetch(`/api/v2/tenders/${tenderId}/analysis`) as TenderAnalysis;
+      setAnalysis(data || null);
+    } catch (err) {
+      console.error('Failed to fetch analysis:', err);
+      setAnalysis(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [authFetch]);
+
+  const fetchHeatmap = useCallback(async () => {
+    try {
+      const data = await authFetch('/api/v2/market/cpv-heatmap') as CpvHeatmapCell[] | { data?: CpvHeatmapCell[] };
+      const cells = Array.isArray(data) ? data : data?.data;
+      if (cells && cells.length > 0) {
+        setHeatmapData(cells);
+      } else {
+        setHeatmapData(SAMPLE_HEATMAP_DATA);
+      }
+    } catch {
+      setHeatmapData(SAMPLE_HEATMAP_DATA);
+    }
+  }, [authFetch]);
+
+  const fetchAuditHistory = useCallback(async () => {
+    try {
+      const data = await authFetch('/api/v2/audit/recent?limit=20') as { items?: AuditEntry[]; data?: AuditEntry[] };
+      const items = data?.items || data?.data || [];
+      const filtered = (Array.isArray(items) ? items : []).filter(
+        (entry) => entry.action === 'scoring_config_update'
+      );
+      setAuditHistory(filtered);
+    } catch (err) {
+      console.error('Failed to fetch audit history:', err);
+      setAuditHistory([]);
+    }
+  }, [authFetch]);
+
+  // ─── Effects ─────────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    setCurrentModule('silnik');
+  }, [setCurrentModule]);
+
+  useEffect(() => {
+    if (activeTab === 'weights') {
+      fetchScoringConfig();
+      fetchTopTenders();
+    } else if (activeTab === 'analytics') {
+      fetchTenderList();
+    } else if (activeTab === 'heatmap') {
+      fetchHeatmap();
+    } else if (activeTab === 'history') {
+      fetchAuditHistory();
+    }
+  }, [activeTab, fetchScoringConfig, fetchTopTenders, fetchTenderList, fetchHeatmap, fetchAuditHistory]);
+
+  // Debounced refetch on weight change
+  useEffect(() => {
+    if (activeTab !== 'weights') return;
+    const timer = setTimeout(() => {
+      fetchTopTenders();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [weights, activeTab, fetchTopTenders]);
+
+  // ─── Handlers ────────────────────────────────────────────────────────────
+
+  const handleWeightChange = useCallback((key: keyof ScoringWeights, value: number) => {
+    setWeights((prev) => ({ ...prev, [key]: value }));
+  }, []);
+
+  const handleSaveWeights = useCallback(async () => {
+    if (!isValidSum) return;
+    setSaving(true);
+    try {
+      await authFetch('/api/v2/scoring/config', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ weights }),
+      });
+      setOriginalWeights(weights);
+      showToast('success', 'Konfiguracja wag zapisana pomyślnie');
+    } catch (err) {
+      console.error('Failed to save weights:', err);
+      showToast('error', 'Błąd zapisu konfiguracji');
+    } finally {
+      setSaving(false);
+    }
+  }, [authFetch, weights, isValidSum]);
+
+  const handleResetWeights = useCallback(() => {
+    if (originalWeights) {
+      setWeights(originalWeights);
+    }
+  }, [originalWeights]);
+
+  const handleRestoreConfig = useCallback(async (entry: AuditEntry) => {
+    if (!entry.details?.new_weights) return;
+    try {
+      await authFetch('/api/v2/scoring/config', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ weights: entry.details.new_weights }),
+      });
+      setWeights(entry.details.new_weights);
+      setOriginalWeights(entry.details.new_weights);
+      showToast('success', 'Przywrócono konfigurację z ' + formatTimestamp(entry.timestamp));
+    } catch {
+      showToast('error', 'Błąd przywracania konfiguracji');
+    }
+  }, [authFetch]);
+
+  const handleSelectTender = useCallback((id: string) => {
+    setSelectedTenderId(id);
+    if (id) fetchAnalysis(id);
+  }, [fetchAnalysis]);
+
+  // ─── Render helpers ──────────────────────────────────────────────────────
+
+  const renderTabBar = () => (
+    <div className="flex gap-1 p-1 bg-earth-900/60 rounded-xl border border-earth-800 mb-6">
+      {TABS.map((tab) => {
+        const Icon = tab.icon;
+        const isActive = activeTab === tab.id;
+        return (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 flex-1 justify-center ${
+              isActive
+                ? 'bg-[#3B82F6]/20 text-[#3B82F6] border border-[#3B82F6]/30'
+                : 'text-earth-100/60 hover:text-earth-100 hover:bg-earth-800/50'
+            }`}
+          >
+            <Icon size={16} />
+            <span className="hidden md:inline">{tab.label}</span>
+          </button>
+        );
       })}
     </div>
   );
-}
 
-export function SilnikPage() {
-  const { selectedTender, setCurrentModule, accessToken } = useStore();
-  const tender = selectedTender as any;
+  // ─── Tab 1: Konfiguracja Wag ─────────────────────────────────────────────
 
-  const [result, setResult] = useState<EngineResult | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [running, setRunning] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabId>('wyniki');
-  const abortRef = useRef<AbortController | null>(null);
-
-  const fetchResult = (id: string) => {
-    // Abort previous request if still pending
-    if (abortRef.current) abortRef.current.abort();
-    const ctrl = new AbortController();
-    abortRef.current = ctrl;
-
-    setLoading(true);
-    setError(null);
-    const headers: Record<string, string> = {};
-    if (accessToken) headers['Authorization'] = 'Bearer ' + accessToken;
-    fetch(`/api/v1/tenders/${id}/engine`, { signal: ctrl.signal, headers })
-      .then(r => {
-        if (r.status === 404) return null;
-        if (!r.ok) throw new Error(`Błąd ${r.status}`);
-        return r.json();
-      })
-      .then(data => { if (!ctrl.signal.aborted) { setResult(data); setLoading(false); } })
-      .catch(e => {
-        if (e.name === 'AbortError') return;
-        if (!ctrl.signal.aborted) { setError(e.message); setLoading(false); }
-      });
-  };
-
-  useEffect(() => {
-    if (tender?.id) fetchResult(tender.id);
-    return () => { abortRef.current?.abort(); };
-  }, [tender?.id, accessToken]);
-
-  const runEngine = () => {
-    if (!tender?.id) return;
-    setRunning(true);
-    setError(null);
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (accessToken) headers['Authorization'] = 'Bearer ' + accessToken;
-    fetch(`/api/v1/tenders/${tender.id}/engine/run`, { method: 'POST', headers })
-      .then(r => { if (!r.ok) throw new Error(`Błąd ${r.status}`); return r.json(); })
-      .then(data => { setResult(data); setRunning(false); })
-      .catch(e => { setError(e.message); setRunning(false); });
-  };
-
-  if (!tender) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-6 text-center">
-        <div className="w-20 h-20 rounded-2xl bg-earth-800 flex items-center justify-center border border-earth-700/40">
-          <Brain className="w-10 h-10 text-earth-500" />
-        </div>
-        <div>
-          <p className="text-earth-200 font-semibold text-xl">Nie wybrano przetargu</p>
-          <p className="text-earth-500 text-sm mt-2 max-w-xs mx-auto leading-relaxed">
-            Uruchom silnik kalkulacji dla wybranego przetargu
-          </p>
-        </div>
-        <button
-          onClick={() => setCurrentModule('zwiad')}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent-primary/10 text-accent-primary hover:bg-accent-primary/20 transition-colors text-sm font-medium border border-accent-primary/20"
-        >
-          Przejdź do Zwiadu <ArrowRight className="w-4 h-4" />
-        </button>
-      </div>
-    );
-  }
-
-  // Group violations by severity
-  const violationsBySeverity: Record<string, Violation[]> = {};
-  if (result?.violations) {
-    for (const v of result.violations) {
-      if (!violationsBySeverity[v.severity]) violationsBySeverity[v.severity] = [];
-      violationsBySeverity[v.severity].push(v);
-    }
-  }
-
-  return (
-    <div className="flex flex-col gap-6 p-6 h-full overflow-y-auto">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-semibold text-earth-100">Silnik decyzyjny</h2>
-          <p className="text-earth-500 text-sm mt-0.5 line-clamp-1">{tender.title}</p>
-        </div>
-        <button
-          onClick={runEngine}
-          disabled={running || loading}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-accent-primary text-earth-950 font-semibold text-sm hover:bg-emerald-400 transition-colors disabled:opacity-50 shrink-0"
-        >
-          {running
-            ? <><div className="w-4 h-4 border-2 border-earth-900 border-t-transparent rounded-full animate-spin" /> Analizuję…</>
-            : <><Play className="w-4 h-4" /> {result ? 'Przelicz ponownie' : 'Uruchom analizę'}</>}
-        </button>
-      </div>
-
-      {loading && (
-        <div className="flex items-center gap-3 text-earth-500">
-          <div className="w-4 h-4 border-2 border-earth-700 border-t-accent-primary rounded-full animate-spin" />
-          Ładowanie wyników…
-        </div>
-      )}
-
-      {error && (
-        <div className="flex items-center gap-3 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400">
-          <AlertTriangle className="w-5 h-5 shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
-
-      {!loading && result && (
-        <>
-          {/* Verdict Banner */}
-          <div className={`rounded-2xl p-6 flex items-center gap-5 border-2 ${
-            result.feasible
-              ? 'bg-emerald-500/10 border-emerald-500/40'
-              : 'bg-red-500/10 border-red-500/40'
-          }`}>
-            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 ${
-              result.feasible ? 'bg-emerald-500/20' : 'bg-red-500/20'
+  const renderWeightsTab = () => (
+    <div className="space-y-6">
+      <GlassCard>
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-[#3B82F6]/20 flex items-center justify-center">
+                <Target size={20} className="text-[#3B82F6]" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-earth-100">Wagi Scoringowe</h2>
+                <p className="text-sm text-earth-100/60">Dostosuj priorytety algorytmu oceny</p>
+              </div>
+            </div>
+            <div className={`px-4 py-2 rounded-lg text-sm font-bold ${
+              isValidSum
+                ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                : 'bg-red-500/20 text-red-400 border border-red-500/30'
             }`}>
-              {result.feasible
-                ? <CheckCircle className="w-9 h-9 text-emerald-400" />
-                : <XCircle className="w-9 h-9 text-red-400" />}
-            </div>
-            <div className="flex-1">
-              <p className="text-earth-500 text-xs font-medium uppercase tracking-wider mb-0.5">Werdykt silnika</p>
-              <p className={`text-4xl font-black tracking-tight ${result.feasible ? 'text-emerald-400' : 'text-red-400'}`}>
-                {result.feasible ? 'GO' : 'NO-GO'}
-              </p>
-              <p className="text-earth-400 text-sm mt-1">
-                {result.feasible
-                  ? 'Rekomendacja AI — wymaga akceptacji kierownika. Przetarg WYKONALNY — kwalifikuje się do złożenia oferty.'
-                  : 'Rekomendacja AI — wymaga akceptacji kierownika. Przetarg NIEWYKONALNY — wykryto blokady, nie należy składać oferty.'}
-              </p>
-            </div>
-            <div className="text-right shrink-0">
-              <p className="text-earth-500 text-xs">Naruszenia</p>
-              <p className={`text-3xl font-bold ${(result.violations?.length ?? 0) > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
-                {result.violations?.length ?? 0}
-              </p>
+              Suma: {weightSum}/100
+              {!isValidSum && <span className="ml-2">⚠️</span>}
             </div>
           </div>
 
-          {/* Tab Navigation */}
-          <div className="flex gap-1 p-1 rounded-xl bg-earth-900 border border-earth-800/60">
-            {TABS.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium transition-all ${
-                  activeTab === tab.id
-                    ? 'bg-earth-800 text-earth-100 shadow-sm'
-                    : 'text-earth-500 hover:text-earth-300 hover:bg-earth-800/40'
-                }`}
-              >
-                {tab.icon}
-                {tab.label}
-              </button>
+          <div className="space-y-5">
+            {(Object.keys(WEIGHT_LABELS) as (keyof ScoringWeights)[]).map((key) => (
+              <div key={key} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-earth-100/80">
+                    {WEIGHT_LABELS[key]}
+                  </label>
+                  <span className="px-2.5 py-0.5 rounded-md bg-[#3B82F6]/20 text-[#3B82F6] text-sm font-bold min-w-[3rem] text-center">
+                    {weights[key]}
+                  </span>
+                </div>
+                <div className="relative">
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={weights[key]}
+                    onChange={(e) => handleWeightChange(key, parseInt(e.target.value))}
+                    className="w-full h-2 rounded-full appearance-none cursor-pointer
+                      [&::-webkit-slider-track]:rounded-full [&::-webkit-slider-track]:bg-earth-800
+                      [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
+                      [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#3B82F6]
+                      [&::-webkit-slider-thumb]:shadow-[0_0_8px_rgba(59,130,246,0.5)]
+                      [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-earth-800
+                      [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4
+                      [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-[#3B82F6] [&::-moz-range-thumb]:border-0"
+                  />
+                  <div
+                    className="absolute top-0 left-0 h-2 rounded-full bg-[#3B82F6]/40 pointer-events-none"
+                    style={{ width: `${weights[key]}%` }}
+                  />
+                </div>
+              </div>
             ))}
           </div>
 
-          {/* TAB: Wyniki */}
-          {activeTab === 'wyniki' && (
-            <>
-              {/* Risk Gauges: P10/P50/P90 */}
-              {result.risk && (
-                <div className="grid grid-cols-3 gap-4">
-                  {[
-                    { label: 'Marża P10', sublabel: 'Scenariusz pesymistyczny', val: result.risk.margin_p10, bg: 'bg-red-500/10 border-red-500/30', text: 'text-red-400', bar: 'bg-red-400' },
-                    { label: 'Marża P50', sublabel: 'Najbardziej prawdopodobny', val: result.risk.margin_p50, bg: 'bg-yellow-500/10 border-yellow-500/30', text: 'text-yellow-400', bar: 'bg-yellow-400' },
-                    { label: 'Marża P90', sublabel: 'Scenariusz optymistyczny', val: result.risk.margin_p90, bg: 'bg-emerald-500/10 border-emerald-500/30', text: 'text-emerald-400', bar: 'bg-emerald-400' },
-                  ].map(({ label, sublabel, val, bg, text, bar }) => (
-                    <div key={label} className={`glass-card rounded-xl p-5 border ${bg}`}>
-                      <p className="text-earth-500 text-xs mb-0.5">{label}</p>
-                      <p className="text-earth-600 text-xs mb-3">{sublabel}</p>
-                      <p className={`text-3xl font-black ${text}`}>{pct(val)}</p>
-                      <div className="mt-3 h-1.5 bg-earth-800 rounded-full overflow-hidden">
-                        <div className={`h-full ${bar} rounded-full transition-all`} style={{ width: `${Math.min(Math.max(val * 100, 0), 100)}%` }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Violations grouped by severity */}
-              {(result.violations?.length ?? 0) > 0 && (
-                <div className="glass-card rounded-xl overflow-hidden">
-                  <div className="px-4 py-3 border-b border-earth-800/60 flex items-center gap-2">
-                    <ShieldAlert className="w-4 h-4 text-red-400" />
-                    <span className="text-sm font-medium text-earth-200">Naruszenia reguł</span>
-                    <span className="ml-auto text-xs text-earth-500">{result.violations?.length ?? 0} naruszeń</span>
-                  </div>
-                  <div>
-                    {SEVERITY_ORDER.filter(sev => violationsBySeverity[sev]?.length).map(sev => {
-                      const meta = SEVERITY_META[sev] || SEVERITY_META.info;
-                      return (
-                        <div key={sev}>
-                          <div className={`px-4 py-2 flex items-center gap-2 text-xs font-semibold border-b border-earth-800/40 ${meta.classes}`}>
-                            {meta.icon}
-                            <span>{meta.label} ({violationsBySeverity[sev].length})</span>
-                          </div>
-                          <div className="divide-y divide-earth-800/30">
-                            {violationsBySeverity[sev].map((v, i) => (
-                              <div key={i} className="px-4 py-3 flex items-start gap-3 hover:bg-earth-800/15">
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-earth-200 text-sm">{v.message}</p>
-                                  <p className="text-earth-600 text-xs mt-0.5 font-mono">Reguła: {v.axiom_code}</p>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Drivers table */}
-              {result.risk && result.risk.drivers.length > 0 && (
-                <div className="glass-card rounded-xl overflow-hidden">
-                  <div className="px-4 py-3 border-b border-earth-800/60 flex items-center gap-2">
-                    <Zap className="w-4 h-4 text-accent-primary" />
-                    <span className="text-sm font-medium text-earth-200">Czynniki ryzyka</span>
-                    <span className="text-earth-600 text-xs ml-auto">{result.risk.n_samples_used.toLocaleString()} próbek Monte Carlo</span>
-                  </div>
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="border-b border-earth-800/40">
-                        <th className="text-left px-4 py-2 text-earth-500 font-medium">Czynnik ryzyka</th>
-                        <th className="text-right px-3 py-2 text-earth-500 font-medium w-20" title="Efekt pierwszego rzędu">S1</th>
-                        <th className="text-right px-3 py-2 text-earth-500 font-medium w-20" title="Efekt całkowity">ST</th>
-                        <th className="px-4 py-2 text-earth-500 font-medium w-40">Wpływ</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-earth-800/30">
-                      {result.risk.drivers.slice(0, 10).map((d, i) => (
-                        <tr key={i} className="hover:bg-earth-800/20">
-                          <td className="px-4 py-2.5 text-earth-300">{d.factor}</td>
-                          <td className="px-3 py-2.5 text-earth-500 text-right font-mono">{pct(d.S1)}</td>
-                          <td className="px-3 py-2.5 text-earth-400 text-right font-mono font-semibold">{pct(d.ST)}</td>
-                          <td className="px-4 py-2.5">
-                            <div className="h-1.5 bg-earth-800 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-accent-primary rounded-full"
-                                style={{ width: `${Math.min(d.ST * 100, 100)}%` }}
-                              />
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
-              {/* No risk data */}
-              {!result.risk && (
-                <div className="glass-card rounded-xl p-6 flex items-center gap-4 text-earth-500 border border-earth-800/40">
-                  <BarChart2 className="w-8 h-8 shrink-0" />
-                  <div>
-                    <p className="text-earth-300 text-sm font-medium">Brak danych ryzyka</p>
-                    <p className="text-xs mt-0.5">Uruchom analizę ponownie aby wygenerować scenariusze Monte Carlo</p>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-
-          {/* TAB: Czynniki (Waterfall) */}
-          {activeTab === 'czynniki' && (
-            <div className="glass-card rounded-xl p-5 border border-earth-800/40">
-              <h3 className="text-sm font-semibold text-earth-200 mb-4">Waterfall — Wpływ czynników na marżę (ST)</h3>
-              {result.risk && result.risk.drivers.length > 0 ? (
-                <WaterfallChart drivers={result.risk.drivers} />
-              ) : (
-                <p className="text-earth-500 text-sm">Brak danych czynników ryzyka. Uruchom analizę.</p>
-              )}
-            </div>
-          )}
-
-          {/* TAB: Wyjaśnienie */}
-          {activeTab === 'wyjasnienie' && (
-            <div className="glass-card rounded-xl p-6 border border-earth-800/40">
-              <h3 className="text-sm font-semibold text-earth-200 mb-4">Wyjaśnienie AI</h3>
-              {result.explanation_md ? (
-                <SimpleMarkdown text={result.explanation_md} />
-              ) : (
-                <p className="text-earth-500 text-sm">Brak treści wyjaśnienia. Uruchom analizę aby wygenerować opis.</p>
-              )}
-            </div>
-          )}
-        </>
-      )}
-
-      {!loading && !result && !error && (
-        <div className="flex flex-col items-center justify-center flex-1 gap-5 text-center py-16">
-          <div className="w-16 h-16 rounded-2xl bg-earth-800 flex items-center justify-center border border-earth-700/40">
-            <Brain className="w-8 h-8 text-earth-600" />
-          </div>
-          <div>
-            <p className="text-earth-300 font-medium text-lg">Uruchom silnik kalkulacji</p>
-            <p className="text-earth-500 text-sm mt-1 max-w-xs mx-auto leading-relaxed">
-              Kliknij <strong className="text-earth-200">Uruchom analizę</strong>, aby sprawdzić wykonalność przetargu i zobaczyć rekomendację GO / NO-GO
-            </p>
+          <div className="flex gap-3 mt-6 pt-6 border-t border-earth-800">
+            <button
+              onClick={handleSaveWeights}
+              disabled={!isValidSum || saving}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                isValidSum && !saving
+                  ? 'bg-[#3B82F6] text-white hover:bg-[#3B82F6]/80 shadow-lg shadow-[#3B82F6]/20'
+                  : 'bg-earth-800 text-earth-100/40 cursor-not-allowed'
+              }`}
+            >
+              <Save size={16} />
+              {saving ? 'Zapisywanie...' : 'Zapisz konfigurację'}
+            </button>
+            <button
+              onClick={handleResetWeights}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium bg-earth-800 text-earth-100/80 hover:bg-earth-800/80 transition-all"
+            >
+              <RotateCcw size={16} />
+              Resetuj
+            </button>
           </div>
         </div>
-      )}
+      </GlassCard>
+
+      {/* Top 10 Preview */}
+      <GlassCard>
+        <div className="p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <TrendingUp size={18} className="text-[#3B82F6]" />
+            <h3 className="text-base font-semibold text-earth-100">Podgląd Top 10</h3>
+            <span className="text-xs text-earth-100/40">(live preview)</span>
+          </div>
+
+          {topTenders.length > 0 ? (
+            <div className="space-y-2">
+              {topTenders.map((tender, idx) => {
+                const score = tender.match_score || 0;
+                const delta = tender.prev_score ? score - tender.prev_score : 0;
+                return (
+                  <motion.div
+                    key={tender.id || idx}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg bg-earth-900/40 hover:bg-earth-900/60 transition-colors"
+                  >
+                    <span className="text-xs font-bold text-[#3B82F6] w-6 text-center">
+                      #{idx + 1}
+                    </span>
+                    <span className="text-sm text-earth-100/80 flex-1 truncate">
+                      {tender.title || `Przetarg ${tender.id}`}
+                    </span>
+                    <div className="flex items-center gap-2 min-w-[140px]">
+                      <div className="flex-1 h-2 bg-earth-800 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-[#3B82F6]/60 to-[#3B82F6] rounded-full transition-all duration-500"
+                          style={{ width: `${Math.min(100, score)}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-mono text-earth-100/60 w-8 text-right">
+                        {score.toFixed(0)}
+                      </span>
+                      {delta !== 0 && (
+                        <span className={`text-xs font-bold ${delta > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          {delta > 0 ? '↑' : '↓'}{Math.abs(delta).toFixed(1)}
+                        </span>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-earth-100/40 text-sm">
+              Brak danych przetargów do wyświetlenia
+            </div>
+          )}
+        </div>
+      </GlassCard>
+    </div>
+  );
+
+  // ─── Tab 2: Score Analytics ──────────────────────────────────────────────
+
+  const renderAnalyticsTab = () => {
+    const breakdown = analysis?.score_breakdown || [];
+    const totalScore = analysis?.total_score || 0;
+    const avgScore = analysis?.average_score || 50;
+    const percentile = analysis?.percentile || Math.max(1, Math.round((1 - totalScore / 100) * 100));
+
+    return (
+      <div className="space-y-6">
+        <GlassCard>
+          <div className="p-6">
+            <h3 className="text-base font-semibold text-earth-100 mb-4">Wybierz przetarg do analizy</h3>
+            <select
+              value={selectedTenderId}
+              onChange={(e) => handleSelectTender(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-lg bg-earth-900/60 border border-earth-800 text-earth-100 text-sm focus:outline-none focus:border-[#3B82F6]/50 transition-colors"
+            >
+              <option value="">— Wybierz przetarg —</option>
+              {tenderList.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.title || t.id}
+                </option>
+              ))}
+            </select>
+          </div>
+        </GlassCard>
+
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <div className="w-8 h-8 border-2 border-[#3B82F6] border-t-transparent rounded-full animate-spin" />
+          </div>
+        )}
+
+        {!loading && analysis && (
+          <>
+            {/* Percentile Badge */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex items-center justify-center"
+            >
+              <div className="px-6 py-3 rounded-full bg-[#3B82F6]/15 border border-[#3B82F6]/30">
+                <span className="text-[#3B82F6] font-bold text-lg">
+                  Top {percentile}% w kategorii CPV
+                </span>
+              </div>
+            </motion.div>
+
+            {/* Waterfall Chart */}
+            <GlassCard>
+              <div className="p-6">
+                <h3 className="text-base font-semibold text-earth-100 mb-4">Rozkład Score — Waterfall</h3>
+                <svg viewBox="0 0 600 260" className="w-full" role="img" aria-label="Score waterfall chart">
+                  {breakdown.length > 0 ? breakdown.map((item, idx) => {
+                    const barWidth = Math.max(10, (item.contribution / 100) * 450);
+                    const y = 10 + idx * 48;
+                    const gradientId = `grad-${idx}`;
+                    return (
+                      <g key={item.criterion || idx}>
+                        <defs>
+                          <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.4" />
+                            <stop offset="100%" stopColor="#3B82F6" stopOpacity="1" />
+                          </linearGradient>
+                        </defs>
+                        <rect
+                          x={130}
+                          y={y}
+                          width={barWidth}
+                          height={32}
+                          rx={6}
+                          fill={`url(#${gradientId})`}
+                        />
+                        <text x={4} y={y + 20} fontSize="11" fill="#e2e8f0" fontWeight="500">
+                          {item.criterion}
+                        </text>
+                        <text x={135 + barWidth + 8} y={y + 20} fontSize="11" fill="#3B82F6" fontWeight="700">
+                          +{item.contribution.toFixed(1)}
+                        </text>
+                      </g>
+                    );
+                  }) : (
+                    <text x={300} y={130} textAnchor="middle" fontSize="13" fill="#64748b">
+                      Brak danych breakdown
+                    </text>
+                  )}
+                  {/* Total line */}
+                  {breakdown.length > 0 && (
+                    <g>
+                      <line x1={130} y1={250} x2={580} y2={250} stroke="#334155" strokeWidth="1" />
+                      <text x={130} y={248} fontSize="12" fill="#94a3b8" fontWeight="600">
+                        Total: {totalScore.toFixed(1)} / 100
+                      </text>
+                    </g>
+                  )}
+                </svg>
+              </div>
+            </GlassCard>
+
+            {/* Deadline Bonus Chart */}
+            <GlassCard>
+              <div className="p-6">
+                <h3 className="text-base font-semibold text-earth-100 mb-4">Deadline Bonus — Krzywa czasowa</h3>
+                <svg viewBox="0 0 600 220" className="w-full" role="img" aria-label="Deadline bonus curve">
+                  {/* Grid lines */}
+                  {[0, 25, 50].map((v) => {
+                    const y = 20 + (1 - v / 50) * 160;
+                    return (
+                      <g key={v}>
+                        <line x1={60} y1={y} x2={560} y2={y} stroke="#334155" strokeWidth="0.5" strokeDasharray="4,4" />
+                        <text x={50} y={y + 4} textAnchor="end" fontSize="10" fill="#64748b">{v}%</text>
+                      </g>
+                    );
+                  })}
+                  {/* X axis labels */}
+                  {DEADLINE_BONUS_DATA.map((pt, idx) => {
+                    const x = 60 + (idx / (DEADLINE_BONUS_DATA.length - 1)) * 500;
+                    return (
+                      <text key={pt.days} x={x} y={205} textAnchor="middle" fontSize="10" fill="#64748b">
+                        {pt.days}d
+                      </text>
+                    );
+                  })}
+                  {/* Area fill */}
+                  <path
+                    d={(() => {
+                      const points = DEADLINE_BONUS_DATA.map((pt, idx) => {
+                        const x = 60 + (idx / (DEADLINE_BONUS_DATA.length - 1)) * 500;
+                        const y = 20 + (1 - pt.bonus / 50) * 160;
+                        return { x, y };
+                      });
+                      const pathParts = [`M ${points[0].x} ${points[0].y}`];
+                      for (let i = 1; i < points.length; i++) {
+                        const cp1x = points[i - 1].x + (points[i].x - points[i - 1].x) * 0.5;
+                        const cp1y = points[i - 1].y;
+                        const cp2x = points[i - 1].x + (points[i].x - points[i - 1].x) * 0.5;
+                        const cp2y = points[i].y;
+                        pathParts.push(`C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${points[i].x} ${points[i].y}`);
+                      }
+                      pathParts.push(`L ${points[points.length - 1].x} 180 L ${points[0].x} 180 Z`);
+                      return pathParts.join(' ');
+                    })()}
+                    fill="url(#areaGradient)"
+                  />
+                  {/* Curve line */}
+                  <path
+                    d={(() => {
+                      const points = DEADLINE_BONUS_DATA.map((pt, idx) => {
+                        const x = 60 + (idx / (DEADLINE_BONUS_DATA.length - 1)) * 500;
+                        const y = 20 + (1 - pt.bonus / 50) * 160;
+                        return { x, y };
+                      });
+                      const pathParts = [`M ${points[0].x} ${points[0].y}`];
+                      for (let i = 1; i < points.length; i++) {
+                        const cp1x = points[i - 1].x + (points[i].x - points[i - 1].x) * 0.5;
+                        const cp1y = points[i - 1].y;
+                        const cp2x = points[i - 1].x + (points[i].x - points[i - 1].x) * 0.5;
+                        const cp2y = points[i].y;
+                        pathParts.push(`C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${points[i].x} ${points[i].y}`);
+                      }
+                      return pathParts.join(' ');
+                    })()}
+                    fill="none"
+                    stroke="#3B82F6"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                  />
+                  {/* Dots */}
+                  {DEADLINE_BONUS_DATA.map((pt, idx) => {
+                    const x = 60 + (idx / (DEADLINE_BONUS_DATA.length - 1)) * 500;
+                    const y = 20 + (1 - pt.bonus / 50) * 160;
+                    return (
+                      <circle key={idx} cx={x} cy={y} r={4} fill="#3B82F6" stroke="#0f172a" strokeWidth="2" />
+                    );
+                  })}
+                  <defs>
+                    <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.3" />
+                      <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.02" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </div>
+            </GlassCard>
+          </>
+        )}
+
+        {!loading && !analysis && selectedTenderId && (
+          <div className="text-center py-12 text-earth-100/40 text-sm">
+            Brak danych analizy dla wybranego przetargu
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // ─── Tab 3: CPV Heatmap ──────────────────────────────────────────────────
+
+  const renderHeatmapTab = () => {
+    const uniqueCpv = useMemo(() => {
+      const seen = new Map<string, string>();
+      heatmapData.forEach((cell) => {
+        if (!seen.has(cell.cpv_code)) seen.set(cell.cpv_code, cell.cpv_name);
+      });
+      return Array.from(seen.entries()).slice(0, 10);
+    }, [heatmapData]);
+
+    const quarters = useMemo(() => {
+      const qs = new Set<string>();
+      heatmapData.forEach((cell) => qs.add(cell.quarter));
+      return Array.from(qs).sort().slice(-4);
+    }, [heatmapData]);
+
+    const cellSize = 56;
+    const labelWidth = 180;
+    const headerHeight = 40;
+    const svgWidth = labelWidth + quarters.length * (cellSize + 4) + 20;
+    const svgHeight = headerHeight + uniqueCpv.length * (cellSize + 4) + 20;
+
+    return (
+      <div className="space-y-6">
+        <GlassCard>
+          <div className="p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-lg bg-[#3B82F6]/20 flex items-center justify-center">
+                <Grid3X3 size={20} className="text-[#3B82F6]" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-earth-100">CPV Win Rate Heatmap</h2>
+                <p className="text-sm text-earth-100/60">Analiza skuteczności w kategoriach CPV</p>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto relative">
+              <svg
+                viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+                className="w-full min-w-[500px]"
+                role="img"
+                aria-label="CPV heatmap"
+              >
+                {/* Quarter headers */}
+                {quarters.map((q, colIdx) => (
+                  <text
+                    key={q}
+                    x={labelWidth + colIdx * (cellSize + 4) + cellSize / 2}
+                    y={25}
+                    textAnchor="middle"
+                    fontSize="10"
+                    fill="#94a3b8"
+                    fontWeight="600"
+                  >
+                    {q}
+                  </text>
+                ))}
+
+                {/* Rows */}
+                {uniqueCpv.map(([code, name], rowIdx) => (
+                  <g key={code}>
+                    <text
+                      x={labelWidth - 8}
+                      y={headerHeight + rowIdx * (cellSize + 4) + cellSize / 2 + 4}
+                      textAnchor="end"
+                      fontSize="10"
+                      fill="#cbd5e1"
+                    >
+                      {name.length > 20 ? name.slice(0, 20) + '…' : name}
+                    </text>
+                    {quarters.map((q, colIdx) => {
+                      const cell = heatmapData.find(
+                        (c) => c.cpv_code === code && c.quarter === q
+                      );
+                      const winRate = cell?.win_rate || 0;
+                      const x = labelWidth + colIdx * (cellSize + 4);
+                      const y = headerHeight + rowIdx * (cellSize + 4);
+                      return (
+                        <rect
+                          key={`${code}-${q}`}
+                          x={x}
+                          y={y}
+                          width={cellSize}
+                          height={cellSize}
+                          rx={8}
+                          fill={interpolateColor(winRate)}
+                          className="cursor-pointer transition-opacity hover:opacity-80"
+                          onMouseEnter={(e) => {
+                            if (cell) {
+                              const rect = (e.target as SVGRectElement).getBoundingClientRect();
+                              setHeatmapTooltip({ cell, x: rect.left + rect.width / 2, y: rect.top - 10 });
+                            }
+                          }}
+                          onMouseLeave={() => setHeatmapTooltip(null)}
+                        />
+                      );
+                    })}
+                  </g>
+                ))}
+              </svg>
+
+              {/* Tooltip */}
+              {heatmapTooltip && (
+                <div
+                  className="fixed z-50 px-3 py-2 rounded-lg bg-earth-950 border border-earth-800 shadow-xl pointer-events-none"
+                  style={{
+                    left: heatmapTooltip.x,
+                    top: heatmapTooltip.y,
+                    transform: 'translate(-50%, -100%)',
+                  }}
+                >
+                  <div className="text-xs font-semibold text-earth-100">{heatmapTooltip.cell.cpv_name}</div>
+                  <div className="text-xs text-[#3B82F6] font-bold">
+                    Win rate: {(heatmapTooltip.cell.win_rate * 100).toFixed(0)}%
+                  </div>
+                  <div className="text-xs text-earth-100/50">
+                    Przetargów: {heatmapTooltip.cell.count}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Color Legend */}
+            <div className="mt-6 flex items-center gap-3">
+              <span className="text-xs text-earth-100/50">Niska</span>
+              <div className="flex-1 h-3 rounded-full overflow-hidden flex">
+                {Array.from({ length: 20 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="flex-1 h-full"
+                    style={{ backgroundColor: interpolateColor(i / 19) }}
+                  />
+                ))}
+              </div>
+              <span className="text-xs text-earth-100/50">Wysoka</span>
+              <span className="text-xs text-earth-100/30 ml-2">Win Rate</span>
+            </div>
+          </div>
+        </GlassCard>
+      </div>
+    );
+  };
+
+  // ─── Tab 4: Historia Kalibracji ──────────────────────────────────────────
+
+  const renderHistoryTab = () => (
+    <div className="space-y-6">
+      <GlassCard>
+        <div className="p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-lg bg-[#3B82F6]/20 flex items-center justify-center">
+              <History size={20} className="text-[#3B82F6]" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-earth-100">Historia Kalibracji</h2>
+              <p className="text-sm text-earth-100/60">Zmiany konfiguracji wag scoringowych</p>
+            </div>
+          </div>
+
+          {auditHistory.length === 0 ? (
+            <div className="text-center py-16">
+              <History size={48} className="mx-auto mb-4 text-earth-100/20" />
+              <p className="text-earth-100/40 text-sm">Brak historii kalibracji</p>
+              <p className="text-earth-100/30 text-xs mt-1">Zmiany wag będą rejestrowane tutaj</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {auditHistory.map((entry, idx) => (
+                <motion.div
+                  key={entry.id || idx}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                  className="relative pl-8 pb-4 border-l-2 border-earth-800 last:border-l-transparent"
+                >
+                  {/* Timeline dot */}
+                  <div className="absolute left-[-5px] top-1 w-2.5 h-2.5 rounded-full bg-[#3B82F6] border-2 border-earth-950" />
+
+                  <div className="bg-earth-900/40 rounded-lg p-4 border border-earth-800/50">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-earth-100/50">
+                          {formatTimestamp(entry.timestamp)}
+                        </span>
+                        <span className="px-2 py-0.5 rounded text-xs bg-earth-800 text-earth-100/60">
+                          {entry.user || 'system'}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleRestoreConfig(entry)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#3B82F6]/10 text-[#3B82F6] hover:bg-[#3B82F6]/20 border border-[#3B82F6]/20 transition-all"
+                      >
+                        <RotateCcw size={12} />
+                        Przywróć
+                      </button>
+                    </div>
+
+                    {/* Changes summary */}
+                    {entry.details?.old_weights && entry.details?.new_weights && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 mt-2">
+                        {(Object.keys(WEIGHT_LABELS) as (keyof ScoringWeights)[]).map((key) => {
+                          const oldVal = entry.details.old_weights?.[key];
+                          const newVal = entry.details.new_weights?.[key];
+                          if (oldVal === undefined || newVal === undefined || oldVal === newVal) return null;
+                          return (
+                            <div key={key} className="flex items-center gap-1 text-xs">
+                              <span className="text-earth-100/50">{WEIGHT_LABELS[key]}:</span>
+                              <span className="text-red-400/70">{oldVal}</span>
+                              <span className="text-earth-100/30">→</span>
+                              <span className="text-green-400">{newVal}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+      </GlassCard>
+    </div>
+  );
+
+  // ─── Main Render ─────────────────────────────────────────────────────────
+
+  return (
+    <div className="min-h-screen bg-earth-950 p-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6"
+        >
+          <div className="flex items-center gap-4 mb-2">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#3B82F6]/30 to-[#3B82F6]/10 flex items-center justify-center border border-[#3B82F6]/20">
+              <Target size={24} className="text-[#3B82F6]" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-earth-100">Silnik Scoringowy AI</h1>
+              <p className="text-sm text-earth-100/50">
+                Konfiguracja algorytmu oceny przetargów i analiza wyników
+              </p>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Tab Bar */}
+        {renderTabBar()}
+
+        {/* Tab Content */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            {activeTab === 'weights' && renderWeightsTab()}
+            {activeTab === 'analytics' && renderAnalyticsTab()}
+            {activeTab === 'heatmap' && renderHeatmapTab()}
+            {activeTab === 'history' && renderHistoryTab()}
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

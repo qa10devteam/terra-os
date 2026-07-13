@@ -1,468 +1,867 @@
 'use client';
-
-import { motion } from 'motion/react';
+import { useEffect, useState, useCallback } from 'react';
+import { useAuthFetch } from '@/lib/api-v2';
+import type { Tender } from '@/types';
 import { useStore } from '@/store/useStore';
-import { useDashboardStats, useTenders } from '@/lib/api';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
-import MarketKPIBar from '@/components/MarketKPIBar';
-import {
-  TrendingUp,
-  FileText,
-  AlertTriangle,
-  Target,
-  Zap,
-  ArrowRight,
-  Clock,
-  Radar,
-  Calculator,
-  Brain,
-  BarChart3,
-  Info,
-} from 'lucide-react';
-import { LineChart, Line, ResponsiveContainer } from 'recharts';
+import { GlassCard } from '@/components/ui/GlassCard';
+import { showToast } from '@/components/Toast';
+import { motion, AnimatePresence } from 'motion/react';
+import { Activity, TrendingUp, Target, Zap, Bell, ArrowRight, RefreshCw, BarChart3, Search, Package } from 'lucide-react';
 
-// ── Spark data ────────────────────────────────────────────────────────────────
-// sparkData now comes from API (weekly_activity)
+// ─────────────────────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────────────────────
 
-// ── Animation variants ────────────────────────────────────────────────────────
-const container = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.07 } },
-};
-const item = {
-  hidden: { opacity: 0, y: 14 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.38, ease: [0, 0, 0.2, 1] as const } },
-};
-
-// ── Pipeline stages config ────────────────────────────────────────────────────
-const pipelineStages = [
-  { key: 'new',          label: 'Nowy',        color: '#3B82F6' },
-  { key: 'matched',      label: 'Dopasowany',  color: '#8B5CF6' },
-  { key: 'watching',     label: 'Obserwowany', color: '#0EA5E9' },
-  { key: 'analyzing',    label: 'Analiza',     color: '#F59E0B' },
-  { key: 'estimated',    label: 'Wyceniony',   color: '#10b981' },
-  { key: 'decided_go',   label: 'GO ✓',        color: '#22C55E' },
-  { key: 'decided_nogo', label: 'NO-GO ✗',     color: '#EF4444' },
-];
-
-// ── Status badge config ───────────────────────────────────────────────────────
-const STATUS_COLORS: Record<string, string> = {
-  new:          'bg-accent-info/15 text-accent-info',
-  matched:      'bg-accent-violet/15 text-accent-violet',
-  watching:     'bg-sky-500/15 text-sky-400',
-  analyzing:    'bg-accent-warning/15 text-accent-warning',
-  estimated:    'bg-accent-primary/15 text-accent-primary',
-  decided_go:   'bg-accent-primary/20 text-accent-primary',
-  decided_nogo: 'bg-accent-danger/15 text-accent-danger',
-  archived:     'bg-earth-700/40 text-earth-500',
-};
-const STATUS_LABELS: Record<string, string> = {
-  new:          'Nowy',
-  matched:      'Dopasowany',
-  watching:     'Obserwowany',
-  analyzing:    'Analiza',
-  estimated:    'Wyceniony',
-  decided_go:   'GO ✓',
-  decided_nogo: 'NO-GO ✗',
-  archived:     'Archiwum',
-};
-
-// ── Formatters ────────────────────────────────────────────────────────────────
-/** Formatuje liczbę jako polską wartość PLN: 1 200 000 zł */
-function fmtPLN(v: number | null | undefined): string {
-  if (v === null || v === undefined) return '—';
-  if (v >= 1_000_000) return (v / 1_000_000).toFixed(1).replace('.0', '') + ' M zł';
-  if (v >= 1_000) return (v / 1_000).toFixed(0) + ' tys. zł';
-  return v.toFixed(0) + ' zł';
+interface DashboardKPI {
+  active_tenders: number;
+  pipeline_value: number;
+  win_rate_mtd: number;
+  avg_deal_size: number;
+  new_today: number;
 }
 
-/** Formatuje datę w formacie DD.MM.YYYY */
-function fmtDate(s: string | null | undefined): string {
-  if (!s) return '—';
-  return new Date(s).toLocaleDateString('pl-PL', {
-    day:   '2-digit',
-    month: '2-digit',
-    year:  'numeric',
+interface DashboardTender {
+  id: string;
+  title: string;
+  buyer: string;
+  deadline: string;
+  match_score: number;
+  value: number;
+}
+
+interface AuditEntry {
+  id: string;
+  action_type: 'create' | 'update' | 'delete' | 'login';
+  user_email: string;
+  action: string;
+  created_at: string;
+}
+
+interface DigestData {
+  content: string;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+function formatPLN(value: number): string {
+  return value.toLocaleString('pl-PL', { style: 'currency', currency: 'PLN', maximumFractionDigits: 0 });
+}
+
+function formatPLNMillions(value: number): string {
+  const millions = value / 1_000_000;
+  return millions.toLocaleString('pl-PL', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' M PLN';
+}
+
+function truncate(text: string, max: number): string {
+  if (text.length <= max) return text;
+  return text.slice(0, max) + '…';
+}
+
+function daysUntil(dateStr: string): number {
+  const now = new Date();
+  const target = new Date(dateStr);
+  const diff = target.getTime() - now.getTime();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
+function deadlineBadgeColor(days: number): string {
+  if (days < 7) return 'bg-red-500/20 text-red-400 border-red-500/30';
+  if (days < 14) return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+  return 'bg-green-500/20 text-green-400 border-green-500/30';
+}
+
+function relativeTime(dateStr: string): string {
+  const now = new Date();
+  const date = new Date(dateStr);
+  const diffMs = now.getTime() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffH = Math.floor(diffMin / 60);
+  const diffD = Math.floor(diffH / 24);
+
+  if (diffMin < 1) return 'teraz';
+  if (diffMin < 60) return `${diffMin}m temu`;
+  if (diffH < 24) return `${diffH}h temu`;
+  if (diffD === 1) return 'wczoraj';
+  if (diffD < 7) return `${diffD}d temu`;
+  return date.toLocaleDateString('pl-PL');
+}
+
+function renderSimpleMarkdown(content: string): React.ReactNode[] {
+  const lines = content.split('\n');
+  return lines.map((line, i) => {
+    if (line.startsWith('## ')) {
+      return (
+        <h2 key={i} className="text-lg font-semibold text-earth-100 mt-4 mb-2">
+          {line.slice(3)}
+        </h2>
+      );
+    }
+    if (line.startsWith('# ')) {
+      return (
+        <h1 key={i} className="text-xl font-bold text-earth-100 mt-4 mb-2">
+          {line.slice(2)}
+        </h1>
+      );
+    }
+    // Handle **bold**
+    const parts = line.split(/\*\*(.*?)\*\*/g);
+    const rendered = parts.map((part, j) =>
+      j % 2 === 1 ? (
+        <strong key={j} className="font-semibold text-earth-100">{part}</strong>
+      ) : (
+        <span key={j}>{part}</span>
+      )
+    );
+    return (
+      <p key={i} className="text-earth-300 text-sm leading-relaxed">
+        {rendered}
+      </p>
+    );
   });
 }
 
-/** Kolor match score: >=80% zielony, 60-79% żółty, <60% czerwony */
-function matchColor(score: number): string {
-  if (score >= 80) return '#10b981';   // zielony
-  if (score >= 60) return '#F59E0B';   // żółty
-  return '#EF4444';                    // czerwony
+// ─────────────────────────────────────────────────────────────────────────────
+// Animated Counter Hook
+// ─────────────────────────────────────────────────────────────────────────────
+
+function useAnimatedCounter(target: number, duration: number = 1200): number {
+  const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    if (target === 0) {
+      setCurrent(0);
+      return;
+    }
+    const startTime = Date.now();
+    const startValue = 0;
+
+    const tick = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // Ease out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const value = Math.round(startValue + (target - startValue) * eased);
+      setCurrent(value);
+      if (progress < 1) {
+        requestAnimationFrame(tick);
+      }
+    };
+
+    requestAnimationFrame(tick);
+  }, [target, duration]);
+
+  return current;
 }
 
-// ── Tooltip ───────────────────────────────────────────────────────────────────
-function Tooltip({ text }: { text: string }) {
+// ─────────────────────────────────────────────────────────────────────────────
+// KPI Card Component
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface KPICardProps {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  rawValue: number;
+  trend?: number;
+  delay: number;
+  color: string;
+}
+
+function KPICard({ icon, label, value, trend, delay, color }: KPICardProps) {
   return (
-    <span
-      className="relative group inline-flex items-center"
-      title={text}
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: delay * 0.1 }}
     >
-      <Info className="w-3 h-3 text-earth-600 hover:text-earth-400 cursor-help transition-colors" />
-    </span>
+      <GlassCard className="p-5 hover:border-[#3B82F6]/30 transition-all duration-300">
+        <div className="flex items-start justify-between">
+          <div className={`p-2.5 rounded-xl ${color}`}>
+            {icon}
+          </div>
+          {trend !== undefined && (
+            <div className={`flex items-center gap-1 text-xs font-medium ${
+              trend >= 0 ? 'text-green-400' : 'text-red-400'
+            }`}>
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
+                className={trend < 0 ? 'rotate-180' : ''}
+              >
+                <path
+                  d="M6 2L10 7H2L6 2Z"
+                  fill="currentColor"
+                />
+              </svg>
+              <span>{Math.abs(trend)}%</span>
+            </div>
+          )}
+        </div>
+        <div className="mt-4">
+          <p className="text-2xl font-bold text-earth-100 tracking-tight">
+            {value}
+          </p>
+          <p className="text-sm text-earth-400 mt-1">{label}</p>
+        </div>
+      </GlassCard>
+    </motion.div>
   );
 }
 
-// ── Skeleton cards ────────────────────────────────────────────────────────────
-function SkeletonStatCard() {
+// ─────────────────────────────────────────────────────────────────────────────
+// Tender Card Component
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface TenderCardProps {
+  tender: DashboardTender;
+  index: number;
+  onClick: () => void;
+}
+
+function TenderCard({ tender, index, onClick }: TenderCardProps) {
+  const days = daysUntil(tender.deadline);
+  const badgeColor = deadlineBadgeColor(days);
+
   return (
-    <div className="glass-card p-5 animate-pulse">
-      <div className="flex items-center justify-between mb-4">
-        <div className="h-3 bg-earth-700 rounded w-24" />
-        <div className="w-4 h-4 bg-earth-700 rounded" />
+    <motion.div
+      initial={{ opacity: 0, x: -16 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.4, delay: index * 0.08 }}
+      onClick={onClick}
+      className="group p-4 rounded-xl bg-earth-900/40 border border-earth-800/50 hover:border-[#3B82F6]/40 cursor-pointer transition-all duration-300 hover:bg-earth-900/60"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <h4 className="text-sm font-medium text-earth-100 group-hover:text-[#3B82F6] transition-colors truncate">
+            {truncate(tender.title, 60)}
+          </h4>
+          <p className="text-xs text-earth-400 mt-1">{tender.buyer}</p>
+        </div>
+        <span className={`shrink-0 px-2 py-0.5 text-xs font-medium rounded-full border ${badgeColor}`}>
+          {days}d
+        </span>
       </div>
-      <div className="flex items-end justify-between gap-4">
-        <div className="h-8 bg-earth-700 rounded w-16" />
-        <div className="w-16 h-8 bg-earth-800 rounded" />
+
+      {/* Match score bar */}
+      <div className="mt-3">
+        <div className="flex items-center justify-between text-xs mb-1.5">
+          <span className="text-earth-400">Dopasowanie</span>
+          <span className="text-earth-200 font-medium">{tender.match_score}%</span>
+        </div>
+        <div className="h-1.5 bg-earth-800 rounded-full overflow-hidden">
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${tender.match_score}%` }}
+            transition={{ duration: 0.8, delay: index * 0.1 + 0.3 }}
+            className="h-full rounded-full"
+            style={{
+              background: `linear-gradient(90deg, #3B82F6, ${
+                tender.match_score > 80 ? '#10B981' : tender.match_score > 60 ? '#F59E0B' : '#EF4444'
+              })`,
+            }}
+          />
+        </div>
       </div>
+
+      {/* Value */}
+      <div className="mt-2 flex items-center justify-between">
+        <span className="text-xs text-earth-300">
+          {formatPLN(tender.value)}
+        </span>
+        <ArrowRight className="w-3.5 h-3.5 text-earth-500 group-hover:text-[#3B82F6] transition-colors" />
+      </div>
+    </motion.div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Activity Feed Item
+// ─────────────────────────────────────────────────────────────────────────────
+
+function ActivityIcon({ type }: { type: string }) {
+  const baseClass = 'w-3.5 h-3.5';
+  switch (type) {
+    case 'create':
+      return (
+        <svg className={baseClass} viewBox="0 0 16 16" fill="none">
+          <path d="M8 3v10M3 8h10" stroke="#10B981" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      );
+    case 'update':
+      return (
+        <svg className={baseClass} viewBox="0 0 16 16" fill="none">
+          <path d="M11.5 1.5l3 3-9 9H2.5v-3l9-9z" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    case 'delete':
+      return (
+        <svg className={baseClass} viewBox="0 0 16 16" fill="none">
+          <path d="M2 4h12M5.33 4V2.67a1.33 1.33 0 011.34-1.34h2.66a1.33 1.33 0 011.34 1.34V4m2 0v9.33a1.33 1.33 0 01-1.34 1.34H4.67a1.33 1.33 0 01-1.34-1.34V4" stroke="#EF4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    case 'login':
+      return (
+        <svg className={baseClass} viewBox="0 0 16 16" fill="none">
+          <path d="M10 2h2.67A1.33 1.33 0 0114 3.33v9.34A1.33 1.33 0 0112.67 14H10M6.67 11.33L10 8 6.67 4.67M10 8H2" stroke="#3B82F6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    default:
+      return <Activity className={`${baseClass} text-earth-400`} />;
+  }
+}
+
+interface ActivityItemProps {
+  entry: AuditEntry;
+  index: number;
+  isLast: boolean;
+}
+
+function ActivityItem({ entry, index, isLast }: ActivityItemProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3, delay: index * 0.05 }}
+      className="flex gap-3 relative"
+    >
+      {/* Timeline */}
+      <div className="flex flex-col items-center">
+        <div className="w-7 h-7 rounded-full bg-earth-800/80 border border-earth-700 flex items-center justify-center shrink-0">
+          <ActivityIcon type={entry.action_type} />
+        </div>
+        {!isLast && (
+          <div className="w-px flex-1 bg-earth-800 mt-1" />
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="pb-4 flex-1 min-w-0">
+        <p className="text-xs text-earth-200 leading-relaxed">
+          <span className="font-medium text-earth-100">
+            {entry.user_email.split('@')[0]}
+          </span>
+          {' '}
+          <span className="text-earth-400">{entry.action}</span>
+        </p>
+        <p className="text-[11px] text-earth-500 mt-0.5">
+          {relativeTime(entry.created_at)}
+        </p>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Quick Action Card
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface QuickActionProps {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  delay: number;
+}
+
+function QuickActionCard({ icon, label, onClick, delay }: QuickActionProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.4, delay }}
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.97 }}
+      onClick={onClick}
+      className="group relative cursor-pointer"
+    >
+      {/* Gradient border on hover */}
+      <div className="absolute -inset-[1px] rounded-xl bg-gradient-to-br from-[#3B82F6]/0 via-[#3B82F6]/0 to-[#3B82F6]/0 group-hover:from-[#3B82F6]/50 group-hover:via-[#3B82F6]/20 group-hover:to-[#3B82F6]/50 transition-all duration-500 rounded-xl" />
+      <div className="relative p-6 rounded-xl bg-earth-900/60 border border-earth-800 group-hover:border-transparent transition-all duration-300">
+        <div className="flex flex-col items-center gap-3">
+          <div className="p-3 rounded-xl bg-earth-800/60 group-hover:bg-[#3B82F6]/10 transition-colors duration-300">
+            {icon}
+          </div>
+          <span className="text-sm font-medium text-earth-200 group-hover:text-earth-100 transition-colors">
+            {label}
+          </span>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sparkline SVG Component
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SparklineSVG({ data, color }: { data: number[]; color: string }) {
+  if (data.length < 2) return null;
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+  const w = 80;
+  const h = 28;
+  const points = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * w;
+    const y = h - ((v - min) / range) * h;
+    return `${x},${y}`;
+  });
+  const pathD = `M${points.join(' L')}`;
+
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="opacity-60">
+      <path d={pathD} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Loading Skeleton
+// ─────────────────────────────────────────────────────────────────────────────
+
+function KPISkeleton() {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="p-5 rounded-xl bg-earth-900/60 border border-earth-800 animate-pulse">
+          <div className="w-10 h-10 rounded-xl bg-earth-800" />
+          <div className="mt-4 h-7 w-20 bg-earth-800 rounded" />
+          <div className="mt-2 h-4 w-24 bg-earth-800/60 rounded" />
+        </div>
+      ))}
     </div>
   );
 }
 
-// ── Main Component ────────────────────────────────────────────────────────────
+function TenderSkeleton() {
+  return (
+    <div className="space-y-3">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="p-4 rounded-xl bg-earth-900/40 border border-earth-800/50 animate-pulse">
+          <div className="h-4 w-3/4 bg-earth-800 rounded" />
+          <div className="mt-2 h-3 w-1/2 bg-earth-800/60 rounded" />
+          <div className="mt-3 h-1.5 w-full bg-earth-800 rounded-full" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main Dashboard Component
+// ─────────────────────────────────────────────────────────────────────────────
+
 export function DashboardPage() {
+  const authFetch = useAuthFetch();
   const { setCurrentModule, setSelectedTender } = useStore();
-  const { data: stats, isLoading, error: statsError } = useDashboardStats();
-  const { data: tenders } = useTenders();
 
-  const pipelineCounts = stats?.pipelineCounts || {};
-  const totalPipeline = Object.values(pipelineCounts).reduce((s, v) => s + v, 0) || 1;
+  // ── State ──────────────────────────────────────────────────────────────────
+  const [kpi, setKpi] = useState<DashboardKPI | null>(null);
+  const [tenders, setTenders] = useState<DashboardTender[]>([]);
+  const [auditLog, setAuditLog] = useState<AuditEntry[]>([]);
+  const [auditError, setAuditError] = useState(false);
+  const [digest, setDigest] = useState<string | null>(null);
+  const [digestError, setDigestError] = useState(false);
+  const [digestLoading, setDigestLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [refreshingAudit, setRefreshingAudit] = useState(false);
 
-  // Real spark data from API (7 days of activity)
-  const sparkData = (stats?.weeklyActivity ?? []).map(d => ({ v: d.count }));
-  const newThisWeek = stats?.newThisWeek ?? 0;
+  // Animated counters
+  const animActiveTenders = useAnimatedCounter(kpi?.active_tenders ?? 0);
+  const animPipelineValue = useAnimatedCounter(kpi?.pipeline_value ? Math.round(kpi.pipeline_value / 1_000_000 * 10) : 0);
+  const animWinRate = useAnimatedCounter(kpi?.win_rate_mtd ?? 0);
+  const animAvgDeal = useAnimatedCounter(kpi?.avg_deal_size ?? 0);
+  const animNewToday = useAnimatedCounter(kpi?.new_today ?? 0);
 
-  const statCards = [
-    {
-      label:   'Aktywne przetargi',
-      tooltip: 'Liczba przetargów w toku — od nowych po wycenione',
-      value:   String(stats?.activeTenders ?? 0),
-      unit:    'szt.',
-      icon:    FileText,
-      color:   'text-accent-primary',
-      sparkColor: '#10b981',
-      trend:   newThisWeek > 0 ? `+${newThisWeek} w tym tygodniu` : 'brak nowych',
-    },
-    {
-      label:   'Wartość pipeline',
-      tooltip: 'Łączna szacunkowa wartość wszystkich aktywnych przetargów',
-      value:   fmtPLN(stats?.totalValue ?? 0),
-      unit:    '',
-      icon:    TrendingUp,
-      color:   'text-accent-warning',
-      sparkColor: '#F59E0B',
-      trend:   stats?.totalValue ? `${(stats.totalValue / 1_000_000).toFixed(1)}M PLN` : 'brak danych',
-    },
-    {
-      label:   'Średni score',
-      tooltip: 'Średnie dopasowanie profilu firmy do przetargów (0–100%)',
-      value:   `${stats?.avgScore ?? 0}%`,
-      unit:    '',
-      icon:    Target,
-      color:   'text-accent-info',
-      sparkColor: '#3B82F6',
-      trend:   `top-5 > ${stats?.avgScore ?? 0}%`,
-    },
-    {
-      label:   'Czerwone flagi',
-      tooltip: 'Liczba przetargów z decyzją NO-GO lub ryzykiem blokującym',
-      value:   String(stats?.redFlags ?? 0),
-      unit:    'szt.',
-      icon:    AlertTriangle,
-      color:   'text-accent-danger',
-      sparkColor: '#EF4444',
-      trend:   (stats?.redFlags ?? 0) > 0 ? `${stats!.redFlags} wymagają uwagi` : 'brak alertów',
-    },
-  ];
+  // ── Data Fetching ──────────────────────────────────────────────────────────
 
-  const quickActions = [
-    {
-      label:    'Skanuj przetargi BZP',
-      desc:     'Wyszukaj nowe przetargi z rynku',
-      icon:     Radar,
-      module:   'zwiad' as const,
-    },
-    {
-      label:    'Nowy kosztorys',
-      desc:     'Przygotuj wycenę robót budowlanych',
-      icon:     Calculator,
-      module:   'kosztorys' as const,
-    },
-    {
-      label:    'Analiza ryzyka AI',
-      desc:     'Oceń ryzyko i szanse wygranej',
-      icon:     Brain,
-      module:   'silnik' as const,
-    },
-  ];
+  const fetchDashboard = useCallback(async () => {
+    try {
+      const data = await authFetch('/api/v2/dashboard') as DashboardKPI;
+      setKpi(data);
+    } catch (err) {
+      console.error('Dashboard KPI fetch failed:', err);
+      showToast('error', 'Nie udało się pobrać KPI');
+    }
+  }, [authFetch]);
+
+  const fetchTenders = useCallback(async () => {
+    try {
+      const data = await authFetch('/api/v2/tenders?sort=match_score&limit=5&deadline_days=14') as DashboardTender[];
+      setTenders(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Tenders fetch failed:', err);
+    }
+  }, [authFetch]);
+
+  const fetchAuditLog = useCallback(async () => {
+    try {
+      setRefreshingAudit(true);
+      const data = await authFetch('/api/v2/audit/recent?limit=15') as AuditEntry[];
+      setAuditLog(Array.isArray(data) ? data : []);
+      setAuditError(false);
+    } catch (err: unknown) {
+      const status = (err as { status?: number })?.status;
+      if (status === 404) {
+        setAuditError(true);
+      } else {
+        console.error('Audit fetch failed:', err);
+        setAuditError(true);
+      }
+    } finally {
+      setRefreshingAudit(false);
+    }
+  }, [authFetch]);
+
+  const fetchDigest = useCallback(async () => {
+    try {
+      const data = await authFetch('/api/v2/dashboard/digest') as DigestData;
+      if (data && data.content) {
+        setDigest(data.content);
+        setDigestError(false);
+      } else {
+        setDigestError(true);
+      }
+    } catch {
+      setDigestError(true);
+    }
+  }, [authFetch]);
+
+  const generateDigest = useCallback(async () => {
+    setDigestLoading(true);
+    try {
+      await authFetch('/api/v2/dashboard/digest/generate', {
+        method: 'POST',
+      });
+      showToast('success', 'Digest generowany...');
+      // Re-fetch after a short delay
+      setTimeout(() => {
+        fetchDigest();
+        setDigestLoading(false);
+      }, 2000);
+    } catch {
+      showToast('error', 'Nie udało się wygenerować digestu');
+      setDigestLoading(false);
+    }
+  }, [authFetch, fetchDigest]);
+
+  // ── Initial Load ───────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    async function loadAll() {
+      setLoading(true);
+      await Promise.all([
+        fetchDashboard(),
+        fetchTenders(),
+        fetchAuditLog(),
+        fetchDigest(),
+      ]);
+      setLoading(false);
+    }
+    loadAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Auto-refresh audit every 60s ──────────────────────────────────────────
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchAuditLog();
+    }, 60_000);
+    return () => clearInterval(interval);
+  }, [fetchAuditLog]);
+
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <ErrorBoundary>
+    <div className="min-h-screen bg-earth-950 p-6 lg:p-8 space-y-8">
+      {/* Header */}
       <motion.div
-        variants={container}
-        initial="hidden"
-        animate="show"
-      className="p-6 md:p-8 max-w-7xl mx-auto space-y-6"
-    >
-      {/* ── Header ─────────────────────────────────────────────── */}
-      <motion.div variants={item} className="flex items-center justify-between">
+        initial={{ opacity: 0, y: -12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="flex items-center justify-between"
+      >
         <div>
-          <h1 className="text-2xl font-bold text-earth-50 tracking-tight">Panel główny</h1>
-          <p className="text-sm text-earth-500 mt-0.5">Podsumowanie aktywności — pipeline przetargów budowlanych</p>
+          <h1 className="text-2xl font-bold text-earth-100">
+            Centrum Dowodzenia
+          </h1>
+          <p className="text-sm text-earth-400 mt-1">
+            Przegląd aktywności i inteligencji rynkowej
+          </p>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-earth-800/60 border border-earth-700/40">
-          <BarChart3 className="w-3.5 h-3.5 text-accent-primary" />
-          <span className="text-xs text-earth-400">{stats?.activeTenders ?? 0} aktywnych przetargów</span>
-        </div>
+        <button
+          onClick={() => {
+            fetchDashboard();
+            fetchTenders();
+            fetchAuditLog();
+            fetchDigest();
+            showToast('info', 'Odświeżam dane...');
+          }}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-earth-900/60 border border-earth-800 text-earth-300 hover:text-earth-100 hover:border-[#3B82F6]/40 transition-all duration-300"
+        >
+          <RefreshCw className="w-4 h-4" />
+          <span className="text-sm">Odśwież</span>
+        </button>
       </motion.div>
 
-      {/* ── Market Intelligence KPI ────────────────────────────── */}
-      <motion.div variants={item}>
-        <MarketKPIBar />
-      </motion.div>
+      {/* ═══════════════════════════════════════════════════════════════════════
+          ROW 1 — KPI Cards
+          ═══════════════════════════════════════════════════════════════════════ */}
 
-      {/* ── Stat Cards ─────────────────────────────────────────── */}
-      <motion.div variants={item} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {isLoading
-          ? Array.from({ length: 4 }).map((_, i) => <SkeletonStatCard key={i} />)
-          : statCards.map((stat) => (
-            <div key={stat.label} className="glass-card card-hover p-5 group">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-semibold text-earth-400 uppercase tracking-wider">
-                    {stat.label}
-                  </span>
-                  <Tooltip text={stat.tooltip} />
-                </div>
-                <stat.icon className={`w-4 h-4 ${stat.color} opacity-60 group-hover:opacity-100 transition-opacity`} />
+      {loading ? (
+        <KPISkeleton />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <KPICard
+            icon={<Activity className="w-5 h-5 text-[#3B82F6]" />}
+            label="Aktywne przetargi"
+            value={animActiveTenders.toLocaleString('pl-PL')}
+            rawValue={kpi?.active_tenders ?? 0}
+            trend={12}
+            delay={0}
+            color="bg-[#3B82F6]/10"
+          />
+          <KPICard
+            icon={<TrendingUp className="w-5 h-5 text-emerald-400" />}
+            label="Pipeline"
+            value={`${(animPipelineValue / 10).toLocaleString('pl-PL', { minimumFractionDigits: 1 })} M PLN`}
+            rawValue={kpi?.pipeline_value ?? 0}
+            trend={8}
+            delay={1}
+            color="bg-emerald-500/10"
+          />
+          <KPICard
+            icon={<Target className="w-5 h-5 text-violet-400" />}
+            label="Win Rate MTD"
+            value={`${animWinRate}%`}
+            rawValue={kpi?.win_rate_mtd ?? 0}
+            trend={kpi?.win_rate_mtd ? (kpi.win_rate_mtd > 50 ? 5 : -3) : 0}
+            delay={2}
+            color="bg-violet-500/10"
+          />
+          <KPICard
+            icon={<Zap className="w-5 h-5 text-amber-400" />}
+            label="Śr. wartość oferty"
+            value={formatPLN(animAvgDeal)}
+            rawValue={kpi?.avg_deal_size ?? 0}
+            trend={3}
+            delay={3}
+            color="bg-amber-500/10"
+          />
+          <KPICard
+            icon={<Bell className="w-5 h-5 text-rose-400" />}
+            label="Nowe dziś"
+            value={animNewToday.toLocaleString('pl-PL')}
+            rawValue={kpi?.new_today ?? 0}
+            trend={undefined}
+            delay={4}
+            color="bg-rose-500/10"
+          />
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════════════
+          ROW 2 — Tenders + Activity Feed (60/40)
+          ═══════════════════════════════════════════════════════════════════════ */}
+
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* Left Column — Hot Tenders (3/5 = 60%) */}
+        <div className="lg:col-span-3">
+          <GlassCard className="p-6">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-[#3B82F6] animate-pulse" />
+                <h2 className="text-lg font-semibold text-earth-100">
+                  Najgorętsze dziś
+                </h2>
               </div>
-              <div className="flex items-end justify-between gap-4">
-                <div>
-                  <p className="text-3xl font-bold text-earth-50 tabular-nums leading-none">
-                    {stat.value}
-                  </p>
-                  {stat.unit && (
-                    <p className="text-xs text-earth-500 mt-1 font-medium">{stat.unit}</p>
-                  )}
-                  <p className="text-xs text-earth-600 mt-0.5">{stat.trend}</p>
-                </div>
-                <div className="w-16 h-10 shrink-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={sparkData}>
-                      <Line
-                        type="monotone"
-                        dataKey="v"
-                        stroke={stat.sparkColor}
-                        strokeWidth={1.5}
-                        dot={false}
-                        strokeOpacity={0.7}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
-          ))}
-      </motion.div>
-
-      {/* ── Pipeline Bar ───────────────────────────────────────── */}
-      <motion.div variants={item} className="glass-card p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-earth-300 uppercase tracking-wider">
-            Pipeline przetargów
-          </h3>
-          <span className="text-xs text-earth-500 bg-earth-800/60 px-2 py-0.5 rounded">{totalPipeline} łącznie</span>
-        </div>
-        <div className="flex items-stretch h-10 rounded-xl overflow-hidden bg-earth-800/40 gap-px">
-          {pipelineStages.map((stage) => {
-            const count = pipelineCounts[stage.key] || 0;
-            const pct = (count / totalPipeline) * 100;
-            if (pct < 1 && count === 0) return null;
-            return (
-              <div
-                key={stage.key}
-                className="h-full flex items-center justify-center text-xs font-semibold transition-all duration-700 cursor-default"
-                style={{
-                  width: `${Math.max(pct, count > 0 ? 6 : 0)}%`,
-                  backgroundColor: stage.color + '28',
-                  borderTop: `2px solid ${stage.color}`,
-                  color: stage.color,
-                }}
-                title={`${stage.label}: ${count} (${pct.toFixed(0)}%)`}
+              <button
+                onClick={() => setCurrentModule('zwiad')}
+                className="text-xs text-earth-400 hover:text-[#3B82F6] transition-colors flex items-center gap-1"
               >
-                {count > 0 && count}
-              </div>
-            );
-          })}
-        </div>
-        <div className="flex items-center gap-4 mt-3 flex-wrap">
-          {pipelineStages.map((stage) => (
-            <div key={stage.key} className="flex items-center gap-1.5 text-xs text-earth-500">
-              <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: stage.color }} />
-              <span className="font-medium">{stage.label}</span>
-              <span className="text-earth-700">({pipelineCounts[stage.key] || 0})</span>
+                Wszystkie <ArrowRight className="w-3 h-3" />
+              </button>
             </div>
-          ))}
-        </div>
-      </motion.div>
 
-      {/* ── Bottom grid ────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-
-        {/* ── Recent tenders table ─── */}
-        <motion.div variants={item} className="lg:col-span-2 glass-card p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-earth-300 uppercase tracking-wider">
-              Ostatnie przetargi
-            </h3>
-            <Clock className="w-3.5 h-3.5 text-earth-600" />
-          </div>
-          <div className="overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-earth-800/60">
-                  <th className="text-left pb-2.5 text-xs text-earth-500 font-semibold uppercase tracking-wider">Przetarg / Zamawiający</th>
-                  <th className="text-right pb-2.5 text-xs text-earth-500 font-semibold uppercase tracking-wider pr-3">Wartość</th>
-                  <th className="text-right pb-2.5 text-xs text-earth-500 font-semibold uppercase tracking-wider pr-3">Status</th>
-                  <th className="text-right pb-2.5 text-xs text-earth-500 font-semibold uppercase tracking-wider">Score</th>
-                  <th className="text-right pb-2.5 text-xs text-earth-500 font-semibold uppercase tracking-wider pl-3">Termin</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-earth-800/30">
-                {(stats?.recentTenders || []).slice(0, 5).map((t, i) => {
-                  const score = (t as { match_score?: number }).match_score;
-                  const scorePct = score != null ? Math.round(score * 100) : null;
-                  return (
-                    <tr
-                      key={t.id || i}
-                      onClick={() => {
-                        setSelectedTender(t as unknown as Parameters<typeof setSelectedTender>[0]);
-                        setCurrentModule('zwiad');
-                      }}
-                      className="group cursor-pointer hover:bg-earth-800/30 transition-colors duration-150"
-                    >
-                      <td className="py-3 pr-3">
-                        <p className="text-earth-100 text-sm font-medium line-clamp-1 group-hover:text-white transition-colors">
-                          {t.title}
-                        </p>
-                        <p className="text-earth-500 text-xs mt-0.5 truncate">{t.buyer}</p>
-                      </td>
-                      <td className="py-3 pr-3 text-right whitespace-nowrap">
-                        <span className="text-earth-200 text-sm font-semibold tabular-nums">
-                          {fmtPLN((t as { value_pln?: number }).value_pln)}
-                        </span>
-                      </td>
-                      <td className="py-3 pr-3 text-right">
-                        <span className={`inline-block text-xs px-2 py-1 rounded-md font-semibold ${STATUS_COLORS[t.status] ?? 'bg-earth-700 text-earth-400'}`}>
-                          {STATUS_LABELS[t.status] ?? t.status}
-                        </span>
-                      </td>
-                      <td className="py-3 text-right">
-                        {scorePct != null ? (
-                          <span
-                            className="text-sm font-bold tabular-nums"
-                            style={{ color: matchColor(scorePct) }}
-                          >
-                            {scorePct}%
-                          </span>
-                        ) : (
-                          <span className="text-earth-700 text-xs">—</span>
-                        )}
-                      </td>
-                      <td className="py-3 text-right text-earth-400 text-sm whitespace-nowrap pl-3">
-                        {fmtDate((t as { deadline_at?: string }).deadline_at)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            {(!stats?.recentTenders || stats.recentTenders.length === 0) && (
-              <div className="py-10 text-center">
-                <FileText className="w-8 h-8 text-earth-700 mx-auto mb-3" />
-                <p className="text-earth-400 text-sm font-medium">Brak przetargów do wyświetlenia</p>
-                <p className="text-earth-600 text-xs mt-1">Uruchom skanowanie w module <strong className="text-earth-500">Zwiad</strong>, aby pobrać przetargi z BZP</p>
+            {loading ? (
+              <TenderSkeleton />
+            ) : tenders.length === 0 ? (
+              <div className="text-center py-12 text-earth-400">
+                <Target className="w-10 h-10 mx-auto mb-3 opacity-40" />
+                <p className="text-sm">Brak gorących przetargów</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {tenders.map((tender, i) => (
+                  <TenderCard
+                    key={tender.id}
+                    tender={tender}
+                    index={i}
+                    onClick={() => {
+                      setSelectedTender(tender as unknown as Tender);
+                      setCurrentModule('decyzja');
+                    }}
+                  />
+                ))}
               </div>
             )}
-          </div>
-        </motion.div>
+          </GlassCard>
+        </div>
 
-        {/* ── Right column ─── */}
-        <motion.div variants={item} className="flex flex-col gap-4">
-
-          {/* Quick actions */}
-          <div className="glass-card p-5">
-            <h3 className="text-sm font-semibold text-earth-300 uppercase tracking-wider mb-4">
-              Szybkie akcje
-            </h3>
-            <div className="space-y-2">
-              {quickActions.map((action) => (
-                <button
-                  key={action.label}
-                  onClick={() => setCurrentModule(action.module)}
-                  aria-label={action.label}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl bg-earth-800/30 border border-earth-700/30 hover:border-accent-primary/40 hover:bg-earth-800/60 transition-all duration-200 group text-left"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-earth-700/50 flex items-center justify-center group-hover:bg-accent-primary/15 transition-colors shrink-0">
-                    <action.icon className="w-4 h-4 text-earth-400 group-hover:text-accent-primary transition-colors" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-earth-200 font-semibold group-hover:text-white transition-colors leading-tight">
-                      {action.label}
-                    </p>
-                    <p className="text-xs text-earth-600 mt-0.5 group-hover:text-earth-500 transition-colors">
-                      {action.desc}
-                    </p>
-                  </div>
-                  <ArrowRight className="w-3.5 h-3.5 text-earth-600 group-hover:text-accent-primary group-hover:translate-x-0.5 transition-all shrink-0" />
-                </button>
-              ))}
+        {/* Right Column — Activity Feed (2/5 = 40%) */}
+        <div className="lg:col-span-2">
+          <GlassCard className="p-6 h-full">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-semibold text-earth-100">
+                Aktywność
+              </h2>
+              <div className="flex items-center gap-2">
+                {refreshingAudit && (
+                  <RefreshCw className="w-3.5 h-3.5 text-earth-500 animate-spin" />
+                )}
+                <span className="text-[11px] text-earth-500">auto 60s</span>
+              </div>
             </div>
-          </div>
 
-          {/* Top tenders preview */}
-          <div className="glass-card p-5 flex-1">
-            <h3 className="text-sm font-semibold text-earth-300 uppercase tracking-wider mb-4">
-              Top przetargi
-            </h3>
-            <div className="space-y-3">
-              {(Array.isArray(tenders) ? tenders : []).slice(0, 4).map((t) => {
-                const pct = Math.round(t.match_score * 100);
-                return (
-                  <div
-                    key={t.id}
-                    onClick={() => {
-                      setSelectedTender(t as unknown as Parameters<typeof setSelectedTender>[0]);
-                      setCurrentModule('zwiad');
-                    }}
-                    className="flex items-start gap-2.5 cursor-pointer group"
-                  >
-                    <Zap className="w-3.5 h-3.5 mt-0.5 text-accent-primary shrink-0" />
-                    <span className="text-xs text-earth-400 line-clamp-2 flex-1 group-hover:text-earth-200 transition-colors leading-relaxed">
-                      {t.title}
-                    </span>
-                    <span
-                      className="text-sm font-bold shrink-0 tabular-nums"
-                      style={{ color: matchColor(pct) }}
-                    >
-                      {pct}%
-                    </span>
-                  </div>
-                );
-              })}
-              {tenders.length === 0 && (
-                <div className="py-4 text-center">
-                  <p className="text-xs text-earth-600">Brak przetargów</p>
-                  <p className="text-xs text-earth-700 mt-0.5">Uruchom skanowanie BZP</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </motion.div>
+            {auditError ? (
+              <div className="flex flex-col items-center justify-center py-12 text-earth-400">
+                <Activity className="w-10 h-10 mb-3 opacity-30" />
+                <p className="text-sm">Feed aktywności niedostępny</p>
+                <p className="text-xs text-earth-500 mt-1">Dane pojawią się wkrótce</p>
+              </div>
+            ) : auditLog.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-earth-400">
+                <Activity className="w-10 h-10 mb-3 opacity-30" />
+                <p className="text-sm">Brak ostatniej aktywności</p>
+              </div>
+            ) : (
+              <div className="max-h-[420px] overflow-y-auto pr-2 scrollbar-thin scrollbar-track-earth-900 scrollbar-thumb-earth-700">
+                <AnimatePresence mode="popLayout">
+                  {auditLog.map((entry, i) => (
+                    <ActivityItem
+                      key={entry.id}
+                      entry={entry}
+                      index={i}
+                      isLast={i === auditLog.length - 1}
+                    />
+                  ))}
+                </AnimatePresence>
+              </div>
+            )}
+          </GlassCard>
+        </div>
       </div>
+
+      {/* ═══════════════════════════════════════════════════════════════════════
+          ROW 3 — Quick Actions
+          ═══════════════════════════════════════════════════════════════════════ */}
+
+      <div>
+        <motion.h2
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+          className="text-lg font-semibold text-earth-100 mb-4"
+        >
+          Szybkie akcje
+        </motion.h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <QuickActionCard
+            icon={<Bell className="w-6 h-6 text-[#3B82F6] group-hover:text-[#60A5FA] transition-colors" />}
+            label="Nowy Alert"
+            onClick={() => setCurrentModule('notifications')}
+            delay={0.7}
+          />
+          <QuickActionCard
+            icon={<BarChart3 className="w-6 h-6 text-emerald-400 group-hover:text-emerald-300 transition-colors" />}
+            label="Pipeline"
+            onClick={() => setCurrentModule('pipeline')}
+            delay={0.8}
+          />
+          <QuickActionCard
+            icon={<Search className="w-6 h-6 text-violet-400 group-hover:text-violet-300 transition-colors" />}
+            label="Zwiad AI"
+            onClick={() => setCurrentModule('zwiad')}
+            delay={0.9}
+          />
+          <QuickActionCard
+            icon={<Package className="w-6 h-6 text-amber-400 group-hover:text-amber-300 transition-colors" />}
+            label="InterCenBud"
+            onClick={() => setCurrentModule('icb')}
+            delay={1.0}
+          />
+        </div>
+      </div>
+
+      {/* ═══════════════════════════════════════════════════════════════════════
+          ROW 4 — AI Digest
+          ═══════════════════════════════════════════════════════════════════════ */}
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 1.0 }}
+      >
+        <GlassCard className="p-6">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-br from-[#3B82F6]/20 to-violet-500/20">
+                <Zap className="w-5 h-5 text-[#3B82F6]" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-earth-100">
+                  AI Digest
+                </h2>
+                <p className="text-xs text-earth-400">
+                  Podsumowanie inteligencji rynkowej
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={generateDigest}
+              disabled={digestLoading}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#3B82F6]/10 border border-[#3B82F6]/30 text-[#3B82F6] hover:bg-[#3B82F6]/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${digestLoading ? 'animate-spin' : ''}`} />
+              <span className="text-xs font-medium">Odśwież</span>
+            </button>
+          </div>
+
+          {digestLoading ? (
+            <div className="space-y-3 animate-pulse">
+              <div className="h-4 w-3/4 bg-earth-800 rounded" />
+              <div className="h-4 w-full bg-earth-800/60 rounded" />
+              <div className="h-4 w-5/6 bg-earth-800/40 rounded" />
+              <div className="h-4 w-2/3 bg-earth-800/30 rounded" />
+            </div>
+          ) : digestError || !digest ? (
+            <div className="flex flex-col items-center justify-center py-10 text-earth-400">
+              <div className="p-4 rounded-full bg-earth-800/40 mb-4">
+                <Zap className="w-8 h-8 opacity-40" />
+              </div>
+              <p className="text-sm font-medium text-earth-300">
+                Digest wygeneruje się dziś o 8:00
+              </p>
+              <p className="text-xs text-earth-500 mt-1">
+                Kliknij &quot;Odśwież&quot; aby wygenerować teraz
+              </p>
+            </div>
+          ) : (
+            <div className="prose prose-invert prose-sm max-w-none">
+              {renderSimpleMarkdown(digest)}
+            </div>
+          )}
+        </GlassCard>
       </motion.div>
-    </ErrorBoundary>
+
+      {/* ═══════════════════════════════════════════════════════════════════════
+          Footer Spacer
+          ═══════════════════════════════════════════════════════════════════════ */}
+      <div className="h-8" />
+    </div>
   );
 }
