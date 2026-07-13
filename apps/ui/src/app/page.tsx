@@ -17,6 +17,7 @@ import { SettingsPage } from '@/components/pages/SettingsPage';
 import { ImportPage } from '@/components/pages/ImportPage';
 import { PogodaPage } from '@/components/pages/PogodaPage';
 import { MarketIntelPage } from '@/components/pages/MarketIntelPage';
+import { ProactivePage } from '@/components/pages/ProactivePage';
 import { CompetitorPage } from '@/components/pages/CompetitorPage';
 import { BookmarksBoardPage } from '@/components/pages/BookmarksBoardPage';
 import { BuyerCRMPage } from '@/components/pages/BuyerCRMPage';
@@ -55,6 +56,7 @@ function ActivePage() {
     case 'settings':      return <SettingsPage />;
     case 'pogoda':        return <PogodaPage />;
     case 'market-intel':  return <MarketIntelPage />;
+    case 'proactive':     return <ProactivePage />;
     case 'competitors':   return <CompetitorPage />;
     case 'bookmarks':     return <BookmarksBoardPage />;
     case 'buyer-crm':     return <BuyerCRMPage />;
