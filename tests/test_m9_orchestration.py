@@ -223,18 +223,19 @@ async def test_backup_status_endpoint():
 
 @pytest.mark.asyncio
 async def test_backup_run_endpoint():
+    """P0-12: backup requires admin/owner auth."""
     from services.api.services.api.main import app
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         r = await ac.post("/api/v1/system/backup/run")
     assert r.status_code == 200
     body = r.json()
     assert "status" in body
-    # ok or skipped_no_pg_dump or skipped_timeout — all acceptable in test env
     assert body["status"] in ("ok", "skipped_no_pg_dump", "skipped_timeout", "error")
 
 
 @pytest.mark.asyncio
 async def test_backup_status_after_run():
+    """P0-12: backup endpoints require auth (owner role passes)."""
     from services.api.services.api.main import app
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         await ac.post("/api/v1/system/backup/run")

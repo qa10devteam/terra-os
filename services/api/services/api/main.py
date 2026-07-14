@@ -285,7 +285,29 @@ app = FastAPI(
 # ─── Prometheus metrics (Task 112) ────────────────────────────────────────────
 try:
     from prometheus_fastapi_instrumentator import Instrumentator
-    Instrumentator().instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
+
+    _metrics_token = os.environ.get("METRICS_TOKEN", "")
+
+    _instrumentator = Instrumentator()
+    _instrumentator.instrument(app)
+
+    # Expose metrics on a custom secured endpoint
+    from starlette.responses import Response as StarletteResponse
+
+    @app.get("/metrics", include_in_schema=False)
+    async def _metrics_endpoint(request: Request):
+        # Allow localhost
+        client_host = request.client.host if request.client else ""
+        if client_host in ("127.0.0.1", "::1", "localhost"):
+            pass  # allowed
+        elif _metrics_token and request.headers.get("X-Metrics-Token") == _metrics_token:
+            pass  # valid token
+        else:
+            from fastapi.responses import PlainTextResponse
+            return PlainTextResponse("Forbidden", status_code=403)
+        # Generate metrics output
+        from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+        return StarletteResponse(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 except ImportError:
     pass  # prometheus_fastapi_instrumentator not installed — skip
 

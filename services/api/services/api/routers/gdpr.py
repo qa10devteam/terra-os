@@ -212,9 +212,12 @@ def record_consent(body: ConsentRequest, current_user: AuthUser, db: DB) -> dict
             },
         )
         db.commit()
-    except Exception:
-        # Table may not exist yet — return success anyway (consent stored in memory)
+    except Exception as exc:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error("Failed to record GDPR consent for user %s: %s", current_user.user_id, exc)
         db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to record consent") from exc
 
     return {
         "status": "recorded",

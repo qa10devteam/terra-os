@@ -22,6 +22,8 @@ from pathlib import Path
 
 import sqlalchemy as sa
 from fastapi import APIRouter, HTTPException, Query
+
+from ..auth.deps import AuthUser
 from pydantic import BaseModel
 
 from terra_db.session import get_engine
@@ -198,7 +200,7 @@ _BACKUP_STATE_FILE = _BACKUP_DIR / "last_backup.json"
 
 
 @router.get("/system/backup/status", response_model=BackupStatusResponse)
-def backup_status() -> BackupStatusResponse:
+def backup_status(user: AuthUser) -> BackupStatusResponse:
     if _BACKUP_STATE_FILE.exists():
         data = json.loads(_BACKUP_STATE_FILE.read_text())
         return BackupStatusResponse(
@@ -210,8 +212,10 @@ def backup_status() -> BackupStatusResponse:
 
 
 @router.post("/system/backup/run")
-def run_backup() -> dict:
+def run_backup(user: AuthUser) -> dict:
     """Execute pg_dump. Non-blocking check of binary; runs synchronously in test mode."""
+    if user.role not in ("admin", "owner"):
+        raise HTTPException(403, "Admin only")
     _BACKUP_DIR.mkdir(parents=True, exist_ok=True)
     import datetime
     ts = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d_%H%M%S")
