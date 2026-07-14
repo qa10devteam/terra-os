@@ -201,7 +201,7 @@ export function AnalyticsPage() {
   async function loadWin() {
     setLoading(true);
     try {
-      const d = await fetch('/api/v2/analytics/win-probability', {
+      const d = await fetch('/api/v2/intelligence/win-probability', {
         headers: { Authorization: `Bearer ${token}` },
       }).then(r => r.json());
       setWinData(d);

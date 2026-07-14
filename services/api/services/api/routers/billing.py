@@ -504,6 +504,45 @@ def _verify_stripe_signature(payload: bytes, sig_header: str, secret: str) -> bo
 
 # ─── Routes ────────────────────────────────────────────────────────────────────
 
+@router.get("/invoices")
+def list_invoices(current_user: AuthUser, db: DB) -> dict[str, Any]:
+    """GET /api/v2/billing/invoices — list invoices for the authenticated org."""
+    org_id = current_user.org_id
+    if not org_id:
+        raise HTTPException(status_code=403, detail="Użytkownik nie należy do organizacji")
+
+    # Check if invoices table exists
+    table_exists = db.execute(
+        text(
+            "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='invoices'"
+        )
+    ).scalar()
+
+    if not table_exists:
+        return {"invoices": [], "message": "No invoices yet"}
+
+    rows = db.execute(
+        text(
+            "SELECT id, amount, status, created_at, pdf_url "
+            "FROM invoices WHERE org_id = :oid ORDER BY created_at DESC"
+        ),
+        {"oid": org_id},
+    ).fetchall()
+
+    return {
+        "invoices": [
+            {
+                "id": str(r.id),
+                "amount": r.amount,
+                "status": r.status,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+                "pdf_url": r.pdf_url,
+            }
+            for r in rows
+        ]
+    }
+
+
 @router.get("/plans")
 def list_plans() -> list[dict[str, Any]]:
     """Return all available subscription plans (public)."""

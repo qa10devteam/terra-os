@@ -25,7 +25,7 @@ export default function BillingPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const subRes = await fetch('/api/v1/billing/subscription');
+        const subRes = await fetch('/api/v2/billing/subscription');
         if (subRes.ok) {
           const subData = await subRes.json();
           setSubscription(subData);
@@ -35,7 +35,7 @@ export default function BillingPage() {
       }
 
       try {
-        const invRes = await fetch('/api/v1/billing/invoices');
+        const invRes = await fetch('/api/v2/billing/invoices');
         if (invRes.ok) {
           const invData = await invRes.json();
           setInvoices(invData.items || invData || []);

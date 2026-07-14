@@ -31,7 +31,7 @@ export default function CookieBanner() {
     setVisible(false);
 
     try {
-      await fetch('/api/v1/gdpr/consent', {
+      await fetch('/api/v2/gdpr/consent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(consent),

@@ -423,10 +423,11 @@ def reset_password(request: Request, body: ResetPasswordRequest, db: DB):
 
 @router.get("/me", response_model=MeResponse)
 def me(current_user: AuthUser):
+    name = current_user.email.split('@')[0]
     return MeResponse(
         id=current_user.user_id,
         email=current_user.email,
-        name="",  # could fetch from DB but access token has enough info
+        name=name,
         org_id=current_user.org_id,
         role=current_user.role,
     )

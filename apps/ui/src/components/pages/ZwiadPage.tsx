@@ -1317,24 +1317,9 @@ function SemanticSearchTab({
       setSearched(true);
     } catch {
       // TODO: endpoint not yet available — show mock
-      setResults([
-        {
-          id: 'mock-1', title: `Przykładowy wynik dla: "${query}"`, buyer: 'GDDKiA',
-          cpv: ['45233142-6'], voivodeship: 'Mazowieckie', value_pln: 1_200_000,
-          deadline_at: new Date(Date.now() + 14 * 86400_000).toISOString(),
-          status: 'new', match_score: 0.94, match_reason: 'semantic match',
-          source: 'BZP', external_id: null, published_at: new Date().toISOString(), url: null, similarity: 0.94,
-        },
-        {
-          id: 'mock-2', title: 'Budowa drogi gminnej — odcinek B', buyer: 'Gmina Warszawa',
-          cpv: ['45233000-9'], voivodeship: 'Mazowieckie', value_pln: 850_000,
-          deadline_at: new Date(Date.now() + 7 * 86400_000).toISOString(),
-          status: 'new', match_score: 0.87, match_reason: 'semantic match',
-          source: 'BZP', external_id: null, published_at: new Date().toISOString(), url: null, similarity: 0.87,
-        },
-      ]);
+      setResults([]);
       setSearched(true);
-      setError('TODO: /api/v2/tenders/semantic-search — endpoint w implementacji');
+      setError('Wyszukiwanie semantyczne — wkrótce');
     } finally {
       setLoading(false);
     }
@@ -1374,8 +1359,9 @@ function SemanticSearchTab({
       </div>
 
       {error && (
-        <div className="text-xs text-accent-warning bg-accent-warning/10 border border-accent-warning/20 px-3 py-2 rounded-token-lg">
-          {error}
+        <div className="flex items-center gap-2 text-sm text-accent-info bg-accent-info/10 border border-accent-info/20 px-4 py-3 rounded-token-lg">
+          <AlertCircle size={16} className="shrink-0 text-accent-info" />
+          <span>{error}</span>
         </div>
       )}
 

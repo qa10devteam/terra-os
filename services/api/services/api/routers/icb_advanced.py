@@ -17,6 +17,8 @@ from __future__ import annotations
 
 import json
 import logging
+import threading
+import time
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
@@ -27,6 +29,11 @@ from terra_db.session import get_engine
 
 router = APIRouter(prefix="/api/v2/icb", tags=["icb-advanced"])
 logger = logging.getLogger(__name__)
+
+# ─── Dashboard cache ────────────────────────────────────────────────────────────
+_dashboard_cache: dict = {}
+_dashboard_lock = threading.Lock()
+_DASHBOARD_TTL = 3600  # 1 hour
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -430,6 +437,11 @@ def kosztorys_autofill(body: AutofillRequest) -> dict:
 @router.get("/dashboard")
 def icb_dashboard() -> dict:
     """Dashboard z kluczowymi wskaźnikami cenowymi z InterCenBud."""
+    now = time.time()
+    with _dashboard_lock:
+        if 'data' in _dashboard_cache and now - _dashboard_cache['ts'] < _DASHBOARD_TTL:
+            return _dashboard_cache['data']
+
     engine = get_engine()
     with engine.connect() as conn:
         # Total stats
@@ -488,7 +500,7 @@ def icb_dashboard() -> dict:
             ORDER BY avg_coeff DESC
         """)).fetchall()
 
-    return {
+    result = {
         "overview": {
             "total_records": stats[0],
             "unique_symbols": stats[1],
@@ -511,6 +523,12 @@ def icb_dashboard() -> dict:
             for r in regions
         ],
     }
+
+    with _dashboard_lock:
+        _dashboard_cache['data'] = result
+        _dashboard_cache['ts'] = time.time()
+
+    return result
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

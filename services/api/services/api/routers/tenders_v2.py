@@ -551,6 +551,105 @@ def search_tenders(
     return {"items": items, "total": len(items), "query": q}
 
 
+@router.get("/semantic-search", summary="Semantyczne wyszukiwanie przetargów (FTS polish + ILIKE fallback)")
+def semantic_search_tenders(
+    user: AuthUser,
+    q: str = Query(..., min_length=1, description="Fraza wyszukiwania"),
+    limit: int = Query(10, ge=1, le=100),
+    cpv: str | None = Query(None, description="Prefiks CPV, np. '45'"),
+) -> dict:
+    """
+    GET /api/v2/tenders/semantic-search?q=...
+    Semantic search over tenders using Polish FTS with ILIKE fallback.
+    Returns {items: [...], total: int, query: str}.
+    This route MUST be declared before /{tender_id} to avoid being interpreted as a UUID.
+    """
+    org_id = user.org_id
+    if not org_id:
+        raise HTTPException(status_code=403, detail={"error": "no_org", "message": "Brak org_id"})
+
+    q = q.strip()
+    if not q:
+        return {"items": [], "total": 0, "query": q}
+
+    engine = get_engine()
+    tenant_id = _resolve_tenant_id(engine, org_id)
+
+    try:
+        conditions: list[str] = ["t.tenant_id = :tenant_id", "t.status != 'archived'"]
+        params: dict = {"tenant_id": tenant_id, "limit": limit, "q": q}
+
+        if cpv:
+            conditions.append("EXISTS (SELECT 1 FROM unnest(t.cpv) c WHERE c LIKE :cpv_prefix)")
+            params["cpv_prefix"] = cpv + "%"
+
+        where = " AND ".join(conditions)
+
+        fts_condition = (
+            "to_tsvector('polish', t.title || ' ' || COALESCE(t.description, ''))"
+            " @@ plainto_tsquery('polish', :q)"
+        )
+        ilike_condition = "t.title ILIKE '%' || :q || '%'"
+
+        rows: list = []
+        with engine.connect() as conn:
+            # Set RLS tenant
+            conn.execute(sa.text("SET app.tenant_id = :tid"), {"tid": tenant_id})
+
+            # Try Polish FTS first
+            try:
+                rows = conn.execute(
+                    sa.text(f"""
+                        SELECT t.id, t.title, t.buyer, t.source::text, t.cpv,
+                               t.voivodeship, t.value_pln, t.deadline_at,
+                               t.published_at, t.url, t.status::text,
+                               t.match_score, t.created_at
+                        FROM tender t
+                        WHERE {where} AND {fts_condition}
+                        ORDER BY
+                            ts_rank(
+                                to_tsvector('polish', t.title || ' ' || COALESCE(t.description, '')),
+                                plainto_tsquery('polish', :q)
+                            ) DESC,
+                            t.created_at DESC
+                        LIMIT :limit
+                    """),
+                    params,
+                ).fetchall()
+            except Exception:
+                logger.exception("Polish FTS semantic-search failed for q=%r, falling back to ILIKE", q)
+                rows = []
+
+            # ILIKE fallback if FTS returned 0 results
+            if not rows:
+                rows = conn.execute(
+                    sa.text(f"""
+                        SELECT t.id, t.title, t.buyer, t.source::text, t.cpv,
+                               t.voivodeship, t.value_pln, t.deadline_at,
+                               t.published_at, t.url, t.status::text,
+                               t.match_score, t.created_at
+                        FROM tender t
+                        WHERE {where} AND {ilike_condition}
+                        ORDER BY t.created_at DESC
+                        LIMIT :limit
+                    """),
+                    params,
+                ).fetchall()
+
+            is_dup_set, dup_masters = _get_dup_context(conn, tenant_id)
+
+        items = [_row_to_summary(r, is_dup_set, dup_masters) for r in rows]
+        return {"items": [i.model_dump() for i in items], "total": len(items), "query": q}
+
+    except HTTPException:
+        raise
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail={"error": "bad_input", "message": str(exc)})
+    except Exception as exc:
+        logger.exception("semantic-search DB error for q=%r", q)
+        raise HTTPException(status_code=500, detail={"error": "db_error", "message": "Błąd bazy danych"})
+
+
 @router.get("/{tender_id}", response_model=TenderDetail, summary="Szczegóły przetargu")
 def get_tender(tender_id: str, user: AuthUser) -> TenderDetail:
     """
