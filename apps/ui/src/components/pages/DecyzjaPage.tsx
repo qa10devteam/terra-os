@@ -244,8 +244,8 @@ export function DecyzjaPage() {
   const fetchHistory = useCallback(async () => {
     try {
       const [go, nogo] = await Promise.all([
-        authFetch('/api/v1/tenders?pipeline_status=decided_go&limit=5').catch(() => null),
-        authFetch('/api/v1/tenders?pipeline_status=decided_nogo&limit=5').catch(() => null),
+        authFetch('/api/v2/tenders?status=decided_go&limit=5').catch(() => null),
+        authFetch('/api/v2/tenders?status=decided_nogo&limit=5').catch(() => null),
       ]);
       setHistoryGo((go?.items ?? go ?? []).slice(0, 5));
       setHistoryNogo((nogo?.items ?? nogo ?? []).slice(0, 5));

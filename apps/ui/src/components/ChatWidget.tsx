@@ -88,7 +88,7 @@ export function ChatWidget() {
     const timeoutId = setTimeout(() => controller.abort(), STREAM_TIMEOUT_MS);
 
     try {
-      const res = await fetch('/api/v1/chat', {
+      const res = await fetch('/api/v2/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text }),

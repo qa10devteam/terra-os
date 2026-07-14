@@ -804,7 +804,7 @@ export function KosztorysPage() {
   // ── Load tenders ───────────────────────────────────────────────────────────
   useEffect(() => {
     setTendersLoading(true);
-    authFetch('/api/v1/tenders?limit=100')
+    authFetch('/api/v2/tenders?limit=100')
       .then((d: unknown) => setTenders((d as { items: TenderItem[] }).items ?? []))
       .catch(() => {})
       .finally(() => setTendersLoading(false));

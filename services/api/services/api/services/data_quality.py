@@ -1,3 +1,4 @@
+# STUB — not yet integrated
 """S125-S126 — Data Quality service helper."""
 from __future__ import annotations
 

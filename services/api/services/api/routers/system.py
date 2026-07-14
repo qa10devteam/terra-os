@@ -30,6 +30,9 @@ from terra_db.session import get_engine
 
 router = APIRouter(prefix="/api/v1", tags=["observability", "system"])
 
+# v2 router for version endpoint (previously only on v1)
+router_v2 = APIRouter(prefix="/api/v2", tags=["system-v2"])
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Schemas
@@ -358,3 +361,17 @@ def read_audit(
         )
         for r in rows
     ]
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# v2 endpoints
+# ──────────────────────────────────────────────────────────────────────────────
+
+@router_v2.get("/system/version")
+def get_version_v2():
+    """Version info on /api/v2 prefix (mirrors /api/v1/system/version)."""
+    return {
+        "version": os.environ.get("APP_VERSION", "1.0.0"),
+        "environment": os.environ.get("ENVIRONMENT", "production"),
+        "api_version": "v2",
+    }

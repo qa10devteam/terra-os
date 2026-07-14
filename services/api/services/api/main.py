@@ -397,6 +397,7 @@ app.include_router(rfq.router)
 app.include_router(chat.router)
 app.include_router(module3.router)
 app.include_router(system.router)
+app.include_router(system.router_v2)
 app.include_router(export.router)
 app.include_router(offers.router)   # Faza 7 — Oferty
 app.include_router(bzp.router)

@@ -1,3 +1,4 @@
+# STUB — not yet integrated
 """S112 — HubSpot integration."""
 from __future__ import annotations
 

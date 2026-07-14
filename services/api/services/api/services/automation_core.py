@@ -1,3 +1,4 @@
+# STUB — not yet integrated
 """
 S94/S95/S96 — Automation Core: Condition builder, Action library, Trigger library.
 """

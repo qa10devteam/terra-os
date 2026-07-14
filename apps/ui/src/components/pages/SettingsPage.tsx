@@ -16,7 +16,7 @@ import { PageShell } from '@/components/PageShell';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
-type SectionId = 'organizacja' | 'zespol' | 'zaproszenia' | 'ustawienia' | 'scoring';
+type SectionId = 'organizacja' | 'zespol' | 'zaproszenia' | 'ustawienia' | 'scoring' | 'uzycie';
 
 interface OrgData {
   id: string;
@@ -76,6 +76,7 @@ const SECTIONS: { id: SectionId; label: string; icon: typeof Building2 }[] = [
   { id: 'zaproszenia', label: 'Zaproszenia',  icon: Send      },
   { id: 'ustawienia',  label: 'Ustawienia',   icon: Settings2 },
   { id: 'scoring',     label: 'Scoring AI',   icon: Target    },
+  { id: 'uzycie',      label: 'Użycie',       icon: Zap       },
 ];
 
 const CPV_OPTIONS = [
@@ -1143,6 +1144,63 @@ function ScoringSection() {
 
 // ─── Main component ────────────────────────────────────────────────────────────
 
+// ─── Usage section ─────────────────────────────────────────────────────────────
+
+interface UsageData {
+  tenders_this_month: number;
+  ai_analyses_this_month: number;
+}
+
+function UsageSection() {
+  const authFetch = useAuthFetch();
+  const [usage, setUsage]     = useState<UsageData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    authFetch('/api/v2/settings/usage')
+      .then((d: unknown) => setUsage(d as UsageData))
+      .catch((e: unknown) => setError((e as Error).message ?? 'Błąd pobierania danych'))
+      .finally(() => setLoading(false));
+  }, [authFetch]);
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-32">
+      <Loader2 className="w-6 h-6 animate-spin text-accent-primary" />
+    </div>
+  );
+
+  if (error) return (
+    <GlassCard className="p-6 text-center text-accent-danger text-sm">{error}</GlassCard>
+  );
+
+  return (
+    <div className="space-y-6">
+      <GlassCard className="p-6">
+        <h3 className="text-sm font-semibold text-earth-300 uppercase tracking-wider mb-4 flex items-center gap-2">
+          <Zap className="w-4 h-4 text-accent-primary" />
+          Użycie w bieżącym miesiącu
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="bg-earth-800/40 rounded-token-lg p-4 border border-earth-700/30">
+            <div className="text-2xl font-bold text-earth-100">
+              {usage?.tenders_this_month ?? 0}
+            </div>
+            <div className="text-xs text-earth-400 mt-1">Przetargi (ten miesiąc)</div>
+          </div>
+          <div className="bg-earth-800/40 rounded-token-lg p-4 border border-earth-700/30">
+            <div className="text-2xl font-bold text-earth-100">
+              {usage?.ai_analyses_this_month ?? 0}
+            </div>
+            <div className="text-xs text-earth-400 mt-1">Analizy AI (ten miesiąc)</div>
+          </div>
+        </div>
+      </GlassCard>
+    </div>
+  );
+}
+
 export function SettingsPage() {
   const [section, setSection] = useState<SectionId>('organizacja');
 
@@ -1189,6 +1247,7 @@ export function SettingsPage() {
               {section === 'zaproszenia' ? <ZaproszeniaSSection /> : null}
               {section === 'ustawienia'  ? <UstawieniaSection />   : null}
               {section === 'scoring'     ? <ScoringSection />      : null}
+              {section === 'uzycie'      ? <UsageSection />        : null}
             </motion.div>
           </AnimatePresence>
         </div>
