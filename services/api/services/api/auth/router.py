@@ -1,4 +1,4 @@
-"""Auth router — POST /api/v2/auth/register, /login, /refresh, /logout, /me."""
+"""Auth router — POST /api/v2/auth/register, /login, /refresh, /logout, /me, /forgot-password, /reset-password."""
 from __future__ import annotations
 
 import sys
@@ -6,7 +6,8 @@ sys.path.insert(0, "/home/ubuntu/terra-os/packages/vendor")
 
 import hashlib
 import re
-from datetime import datetime, timezone
+import uuid as _uuid_mod
+from datetime import datetime, timezone, timedelta
 from secrets import token_urlsafe
 from typing import Annotated, Any
 
@@ -18,7 +19,7 @@ from sqlalchemy.orm import Session
 from terra_db.session import get_session
 
 from .deps import AuthUser
-from ..services.email_service import send_welcome_email
+from ..services.email_service import send_welcome_email, send_password_reset_email
 from .utils import (
     create_access_token,
     create_refresh_token,
@@ -323,6 +324,82 @@ def logout(body: RefreshRequest, db: DB):
     )
     db.commit()
 
+
+# ─── Password Reset ────────────────────────────────────────────────────────────
+
+# TODO: Migrate to DB table (password_reset_tokens) — currently in-memory for MVP
+_password_reset_tokens: dict[str, dict] = {}  # {token: {email, expires_at}}
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("Hasło musi mieć co najmniej 8 znaków")
+        return v
+
+
+@router.post("/forgot-password", status_code=200)
+@limiter.limit("5/minute")
+def forgot_password(request: Request, body: ForgotPasswordRequest, db: DB):
+    """Generate password reset token and send email. Always returns 200 to avoid email enumeration."""
+    user = db.execute(
+        text("SELECT id, email FROM users WHERE email = :email"),
+        {"email": body.email.lower().strip()},
+    ).fetchone()
+
+    if user:
+        token = str(_uuid_mod.uuid4())
+        _password_reset_tokens[token] = {
+            "email": user.email,
+            "expires_at": datetime.now(timezone.utc) + timedelta(hours=1),
+        }
+        send_password_reset_email(user.email, token)
+
+    # Always return success to prevent email enumeration
+    return {"message": "Jeśli konto istnieje, wysłaliśmy link do resetowania hasła."}
+
+
+@router.post("/reset-password", status_code=200)
+@limiter.limit("5/minute")
+def reset_password(request: Request, body: ResetPasswordRequest, db: DB):
+    """Validate reset token and update password."""
+    token_data = _password_reset_tokens.get(body.token)
+
+    if not token_data:
+        raise HTTPException(status_code=400, detail="Nieprawidłowy lub wygasły token")
+
+    if token_data["expires_at"] < datetime.now(timezone.utc):
+        del _password_reset_tokens[body.token]
+        raise HTTPException(status_code=400, detail="Token wygasł")
+
+    # Update password
+    new_hash = hash_password(body.new_password)
+    result = db.execute(
+        text("UPDATE users SET password_hash = :ph WHERE email = :email RETURNING id"),
+        {"ph": new_hash, "email": token_data["email"]},
+    ).fetchone()
+
+    if not result:
+        raise HTTPException(status_code=400, detail="Nie znaleziono użytkownika")
+
+    db.commit()
+
+    # Invalidate token after use
+    del _password_reset_tokens[body.token]
+
+    return {"message": "Hasło zostało zmienione pomyślnie."}
+
+
+# ─── Me ────────────────────────────────────────────────────────────────────────
 
 @router.get("/me", response_model=MeResponse)
 def me(current_user: AuthUser):

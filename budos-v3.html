@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>BudOS · YU-NA Intelligence</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+@page { size: A4 portrait; margin: 0; }
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg0: #05080f;
+  --bg1: #080c16;
+  --bg2: #0c1020;
+  --bg3: #121828;
+  --bg4: #192030;
+  --ln:  #1a2035;
+  --ln2: #222a40;
+  --ln3: #2d3654;
+  --g:   #00d47e;
+  --g2:  #00bc6e;
+  --g3:  rgba(0,212,126,.10);
+  --g4:  rgba(0,212,126,.05);
+  --gbr: rgba(0,212,126,.20);
+  --t1:  #eef1f8;
+  --t2:  #7a86a0;
+  --t3:  #3d4860;
+  --f:   'Space Grotesk', system-ui, sans-serif;
+  --m:   'JetBrains Mono', monospace;
+}
+
+body {
+  font-family: var(--f);
+  background: var(--bg0);
+  color: var(--t1);
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  font-size: 9pt;
+  line-height: 1.6;
+}
+
+/* PAGE */
+.page {
+  width: 210mm;
+  height: 297mm;
+  background: var(--bg0);
+  overflow: hidden;
+  position: relative;
+  page-break-after: always;
+  break-after: page;
+  display: flex;
+  flex-direction: column;
+}
+.page:last-child { page-break-after: avoid; break-after: avoid; }
+
+/* AMBIENT */
+.amb { position: absolute; border-radius: 50%; pointer-events: none; filter: blur(80px); z-index: 0; }
+
+/* TOPBAR */
+.bar {
+  padding: 4mm 14mm;
+  border-bottom: 1px solid var(--ln);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0; background: var(--bg1); z-index: 2; position: relative;
+}
+.bar-l { display: flex; align-items: center; gap: 10px; }
+.bar-dot {
+  width: 22px; height: 22px; border-radius: 5px;
+  background: var(--g);
+  display: flex; align-items: center; justify-content: center;
+}
+.bar-dot svg { width: 12px; height: 12px; }
+.bar-nm { font-family: var(--m); font-size: 8.5pt; font-weight: 700; color: var(--t1); }
+.bar-nm span { color: var(--t3); font-weight: 400; }
+.bar-r { font-family: var(--m); font-size: 6pt; color: var(--t3); letter-spacing: 1.8px; text-transform: uppercase; }
+
+/* FOOT */
+.foot {
+  padding: 3mm 14mm; border-top: 1px solid var(--ln);
+  background: var(--bg1);
+  display: flex; justify-content: space-between; align-items: center;
+  flex-shrink: 0; z-index: 2; position: relative;
+}
+.foot-l { font-family: var(--m); font-size: 5.5pt; color: var(--t3); letter-spacing: .8px; }
+.foot-n {
+  font-family: var(--m); font-size: 7pt; font-weight: 700;
+  color: var(--bg0); background: var(--g); padding: 2.5px 10px; border-radius: 4px;
+}
+
+/* EYEBROW */
+.ey {
+  font-family: var(--m); font-size: 6pt; font-weight: 600;
+  letter-spacing: 2.5px; text-transform: uppercase; color: var(--g);
+  display: flex; align-items: center; gap: 10px; margin-bottom: 3.5mm;
+}
+.ey::after { content: ''; flex: 1; height: 1px; background: var(--ln2); }
+
+/* CONTENT WRAP */
+.body { padding: 7mm 14mm; flex: 1; display: flex; flex-direction: column; gap: 4.5mm; z-index: 1; position: relative; overflow: hidden; }
+
+/* ══════════════════════════
+   PAGE 1 — COVER
+══════════════════════════ */
+.hero {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0 14mm;
+  z-index: 1;
+  position: relative;
+}
+
+/* platform chip */
+.chip {
+  margin-top: 5mm; margin-bottom: 4mm;
+  display: inline-flex; align-items: center; gap: 9px;
+  background: var(--g4); border: 1px solid var(--gbr);
+  border-radius: 100px; padding: 4px 13px 4px 5px; width: fit-content;
+}
+.chip-dot { width: 20px; height: 20px; border-radius: 50%; background: var(--g); display: flex; align-items: center; justify-content: center; }
+.chip-dot svg { width: 10px; height: 10px; }
+.chip-t { font-family: var(--m); font-size: 6.5pt; font-weight: 600; color: var(--g); letter-spacing: .3px; }
+.chip-sep { color: var(--ln3); }
+.chip-s { font-family: var(--m); font-size: 6.5pt; color: var(--t2); }
+
+/* mega headline */
+.mega {
+  font-size: 40pt; font-weight: 800;
+  line-height: 1.0; letter-spacing: -2px;
+  color: var(--t1); margin-bottom: 4mm;
+}
+.mega-g {
+  background: linear-gradient(90deg, var(--g) 0%, #4dffa4 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+
+.hero-sub {
+  font-size: 9.5pt; color: var(--t2); line-height: 1.7;
+  max-width: 120mm; margin-bottom: 4mm;
+}
+.hero-sub strong { color: var(--t1); font-weight: 600; }
+
+/* 2-state cards */
+.s2 { display: grid; grid-template-columns: 1fr 32px 1fr; align-items: stretch; gap: 0; margin-bottom: auto; }
+.s2-arr { display: flex; align-items: center; justify-content: center; color: var(--t3); font-size: 16pt; }
+.scard {
+  border-radius: 10px; padding: 5mm;
+  border: 1px solid var(--ln2); background: var(--bg2);
+}
+.scard-hot {
+  border-color: var(--gbr);
+  background: linear-gradient(150deg, rgba(0,212,126,.07) 0%, var(--bg2) 100%);
+  position: relative; overflow: hidden;
+}
+.scard-hot::after {
+  content: 'WDROŻENIE';
+  position: absolute; top: -1px; right: 9mm;
+  background: var(--g); color: var(--bg0);
+  font-family: var(--m); font-size: 5.5pt; font-weight: 700; letter-spacing: 1.2px;
+  padding: 2.5px 8px; border-radius: 0 0 5px 5px;
+}
+.sc-tag { font-family: var(--m); font-size: 6pt; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--t3); margin-bottom: 2mm; }
+.scard-hot .sc-tag { color: var(--g); }
+.sc-h { font-size: 9pt; font-weight: 700; margin-bottom: 1.5mm; }
+.sc-p { font-family: var(--m); font-size: 15pt; font-weight: 700; line-height: 1; margin-bottom: 2mm; }
+.scard .sc-p { color: var(--t1); }
+.scard-hot .sc-p { color: var(--g); }
+.sc-d { font-size: 8pt; color: var(--t2); line-height: 1.6; }
+.sc-d strong { color: var(--t1); font-weight: 600; }
+
+/* dashboard mock — CSS only */
+.mock {
+  margin: 4mm 0;
+  background: var(--bg3); border: 1px solid var(--ln2);
+  border-radius: 8px; padding: 2.5mm 3.5mm; overflow: hidden;
+}
+.mock-bar { display: flex; gap: 5px; margin-bottom: 2mm; }
+.mock-dot { width: 7px; height: 7px; border-radius: 50%; }
+.mock-row { display: flex; gap: 2.5mm; margin-bottom: 1.5mm; align-items: center; }
+.mock-label { font-family: var(--m); font-size: 5.5pt; color: var(--t3); width: 28mm; }
+.mock-bar-w { flex: 1; height: 6px; background: var(--bg4); border-radius: 3px; overflow: hidden; }
+.mock-bar-f { height: 100%; background: var(--g); border-radius: 3px; }
+.mock-val { font-family: var(--m); font-size: 6.5pt; font-weight: 600; color: var(--g); width: 18mm; text-align: right; }
+.mock-badge-row { display: flex; gap: 2mm; margin-top: 1.5mm; }
+.mock-b {
+  font-family: var(--m); font-size: 5.5pt; padding: 1.5px 6px; border-radius: 3px;
+  font-weight: 600;
+}
+.mb-g { background: var(--g3); color: var(--g); border: 1px solid var(--gbr); }
+.mb-r { background: rgba(239,68,68,.1); color: #f87171; border: 1px solid rgba(239,68,68,.2); }
+.mb-y { background: rgba(245,158,11,.1); color: #fbbf24; border: 1px solid rgba(245,158,11,.2); }
+
+/* KPI strip */
+.krow {
+  display: grid; grid-template-columns: repeat(4,1fr);
+  border-top: 1px solid var(--ln); background: var(--bg1);
+  flex-shrink: 0; z-index: 1; position: relative;
+}
+.krow::before {
+  content: '';
+  position: absolute; top: 0; left: 14mm; right: 80%;
+  height: 2px; background: var(--g);
+}
+.kpi { padding: 3mm 4mm 3mm 14mm; border-right: 1px solid var(--ln); }
+.kpi:not(:first-child) { padding-left: 4mm; padding-top: 3mm; padding-bottom: 3mm; }
+.kpi:last-child { border-right: none; }
+.kn { font-family: var(--m); font-size: 16pt; font-weight: 700; color: var(--g); line-height: 1; margin-bottom: 1mm; }
+.kl { font-size: 7.5pt; color: var(--t2); line-height: 1.45; }
+
+/* insight */
+.ins {
+  padding: 4mm 14mm; flex-shrink: 0; z-index: 1; position: relative;
+  background: linear-gradient(105deg, rgba(0,212,126,.045) 0%, var(--bg1) 100%);
+  border-top: 1px solid var(--gbr);
+  display: grid; grid-template-columns: auto 1fr; gap: 5mm; align-items: center;
+}
+.ins-ico {
+  width: 38px; height: 38px; border-radius: 9px;
+  background: var(--g3); border: 1px solid var(--gbr);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.ins-ico svg { width: 18px; height: 18px; color: var(--g); }
+.ins-h { font-size: 9pt; font-weight: 700; margin-bottom: 1.5mm; }
+.ins-d { font-size: 8pt; color: var(--t2); line-height: 1.6; }
+.ins-d strong { color: var(--t1); font-weight: 600; }
+
+/* ══════════════════════════
+   PAGE 2 — MODEL
+══════════════════════════ */
+.h1 { font-size: 16pt; font-weight: 700; line-height: 1.2; margin-bottom: 1.5mm; }
+.h1 em { font-style: normal; color: var(--g); }
+.p { font-size: 8.5pt; color: var(--t2); line-height: 1.7; }
+.p strong { color: var(--t1); font-weight: 600; }
+
+/* tier cards */
+.tgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 3.5mm; }
+.tc {
+  border-radius: 10px; padding: 5.5mm;
+  display: flex; flex-direction: column;
+}
+.tc-free { background: var(--bg2); border: 1px solid var(--ln2); }
+.tc-hot {
+  background: linear-gradient(150deg, rgba(0,212,126,.06) 0%, var(--bg2) 100%);
+  border: 1px solid var(--gbr); position: relative; overflow: hidden;
+}
+.tc-hot::before {
+  content: 'DEDYKOWANE';
+  position: absolute; top: -1px; right: 9mm;
+  background: var(--g); color: var(--bg0);
+  font-family: var(--m); font-size: 5.5pt; font-weight: 700; letter-spacing: 1.2px;
+  padding: 2.5px 8px; border-radius: 0 0 5px 5px;
+}
+.tc-top { display: flex; align-items: center; gap: 9px; margin-bottom: 4mm; }
+.tc-ico { width: 30px; height: 30px; border-radius: 7px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.tc-free .tc-ico { background: rgba(255,255,255,.04); border: 1px solid var(--ln2); }
+.tc-hot  .tc-ico { background: var(--g3); border: 1px solid var(--gbr); }
+.tc-ico svg { width: 15px; height: 15px; }
+.tc-nm { font-size: 9.5pt; font-weight: 700; }
+.tc-price { font-family: var(--m); font-size: 21pt; font-weight: 700; line-height: 1; margin-bottom: 1.5mm; }
+.tc-free .tc-price { color: var(--t1); }
+.tc-hot  .tc-price { color: var(--g); }
+.tc-sub { font-size: 8pt; color: var(--t2); margin-bottom: 3.5mm; padding-bottom: 3.5mm; border-bottom: 1px solid var(--ln); line-height: 1.5; }
+.fl { list-style: none; flex: 1; }
+.fl li {
+  font-size: 8pt; color: var(--t2); padding: 2mm 0;
+  display: flex; gap: 7px; align-items: flex-start; line-height: 1.45;
+  border-bottom: 1px solid rgba(255,255,255,.03);
+}
+.fl li:last-child { border: none; }
+.fl li.on { color: var(--t1); }
+.ck { flex-shrink: 0; font-family: var(--m); font-size: 8pt; margin-top: 1px; }
+.tc-free .ck { color: var(--t3); }
+.tc-hot  .ck { color: var(--g); }
+
+/* table */
+.tw { border: 1px solid var(--ln2); border-radius: 8px; overflow: hidden; }
+.t { width: 100%; border-collapse: collapse; }
+.t thead tr { background: var(--bg3); }
+.t th {
+  font-family: var(--m); font-size: 6pt; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 1.5px; color: var(--t3);
+  text-align: left; padding: 3mm 4mm; border-bottom: 1px solid var(--ln2);
+}
+.t td { font-size: 8pt; color: var(--t1); padding: 3mm 4mm; border-bottom: 1px solid rgba(255,255,255,.04); vertical-align: top; line-height: 1.5; }
+.t tr:last-child td { border: none; }
+.t tr:nth-child(even) td { background: rgba(255,255,255,.015); }
+.td-s { font-size: 7pt; color: var(--t2); display: block; }
+.td-p { font-family: var(--m); font-weight: 700; color: var(--g); white-space: nowrap; }
+.td-w { font-family: var(--m); font-size: 7pt; color: var(--t2); }
+.fn { font-family: var(--m); font-size: 6pt; color: var(--t3); margin-top: 2mm; padding-left: 1mm; line-height: 1.5; }
+
+/* ══════════════════════════
+   PAGE 3 — TECHNOLOGIA
+══════════════════════════ */
+.s4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 3mm; }
+.step {
+  background: var(--bg2); border: 1px solid var(--ln2);
+  border-radius: 9px; padding: 4.5mm; position: relative; overflow: hidden;
+}
+.step::after {
+  content: attr(data-n);
+  position: absolute; bottom: 1mm; right: 3mm;
+  font-family: var(--m); font-size: 28pt; font-weight: 700;
+  color: rgba(0,212,126,.07); line-height: 1;
+  pointer-events: none;
+}
+.step-ico {
+  width: 26px; height: 26px; border-radius: 6px;
+  background: var(--g3); border: 1px solid var(--gbr);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 3mm;
+}
+.step-ico svg { width: 13px; height: 13px; color: var(--g); }
+.step-t { font-size: 9pt; font-weight: 700; margin-bottom: 1.5mm; }
+.step-d { font-size: 7.5pt; color: var(--t2); line-height: 1.55; }
+.step-w { font-family: var(--m); font-size: 6pt; color: var(--g); margin-top: 3mm; font-weight: 600; }
+
+.c2 { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; }
+.cap {
+  background: var(--bg2); border: 1px solid var(--ln2);
+  border-radius: 9px; padding: 4.5mm;
+}
+.cap-h { display: flex; align-items: center; gap: 7px; margin-bottom: 2mm; }
+.cap-d-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--g); flex-shrink: 0; }
+.cap-nm { font-size: 8.5pt; font-weight: 700; }
+.cap-d { font-size: 8pt; color: var(--t2); line-height: 1.6; padding-left: 12px; }
+.cap-d strong { color: var(--t1); font-weight: 600; }
+
+.vs2 { display: grid; grid-template-columns: 1fr 24px 1fr; gap: 2.5mm; align-items: stretch; }
+.vcol { border-radius: 9px; overflow: hidden; }
+.vh { padding: 2.5mm 4mm; font-size: 8pt; font-weight: 700; }
+.vh.n { background: rgba(255,255,255,.04); color: var(--t2); border: 1px solid var(--ln2); border-bottom: none; }
+.vh.e { background: var(--g3); color: var(--g); border: 1px solid var(--gbr); border-bottom: none; }
+.vbody { padding: 3mm 4mm; }
+.vbody.n { background: rgba(255,255,255,.02); border: 1px solid var(--ln2); border-top: none; }
+.vbody.e { background: rgba(0,212,126,.025); border: 1px solid var(--gbr); border-top: none; }
+.vi {
+  font-size: 8pt; color: var(--t2); padding: 1.8mm 0;
+  display: flex; gap: 6px; align-items: flex-start; line-height: 1.45;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.vi:last-child { border: none; }
+.vi.on { color: var(--t1); }
+.vs-mid { display: flex; align-items: center; justify-content: center; font-family: var(--m); font-size: 7.5pt; font-weight: 700; color: var(--t3); }
+
+.r3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 3mm; }
+.rbox {
+  background: linear-gradient(140deg, rgba(0,212,126,.07) 0%, var(--bg2) 100%);
+  border: 1px solid var(--gbr); border-radius: 9px;
+  padding: 4.5mm; text-align: center;
+}
+.rn { font-family: var(--m); font-size: 24pt; font-weight: 700; color: var(--g); line-height: 1; margin-bottom: 2mm; }
+.rl { font-size: 8pt; color: var(--t2); line-height: 1.45; }
+
+/* ══════════════════════════
+   PAGE 4 — WYNIKI + CTA
+══════════════════════════ */
+.c2cases { display: grid; grid-template-columns: 1fr 1fr; gap: 3.5mm; }
+.ccase {
+  background: var(--bg2); border: 1px solid var(--ln2);
+  border-radius: 10px; padding: 5mm;
+}
+.cc-top { display: flex; align-items: center; gap: 10px; margin-bottom: 3mm; }
+.av {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13pt; font-weight: 800; flex-shrink: 0;
+}
+.av1 { background: linear-gradient(135deg, var(--g), #4dffa4); color: var(--bg0); }
+.av2 { background: linear-gradient(135deg, #3b82f6, #6366f1); color: #fff; }
+.cc-nm { font-size: 9pt; font-weight: 700; }
+.cc-meta { font-size: 7pt; color: var(--t2); line-height: 1.4; }
+.cc-stars { font-size: 9.5pt; color: #d4a843; letter-spacing: 1px; margin-bottom: 2.5mm; }
+.cc-q {
+  font-size: 8pt; color: var(--t1); line-height: 1.7;
+  margin-bottom: 3.5mm;
+  padding: 3mm 4mm;
+  background: rgba(255,255,255,.03);
+  border-left: 2px solid var(--g);
+  border-radius: 0 6px 6px 0;
+}
+.cc-stats { display: flex; gap: 3mm; padding-top: 3.5mm; border-top: 1px solid var(--ln); }
+.ccs { flex: 1; text-align: center; }
+.ccs-n { font-family: var(--m); font-size: 14pt; font-weight: 700; color: var(--g); line-height: 1; margin-bottom: 1mm; }
+.ccs-l { font-size: 7pt; color: var(--t2); line-height: 1.4; }
+
+/* timeline */
+.tl { display: flex; position: relative; }
+.tl::before {
+  content: '';
+  position: absolute; top: 15px; left: 15px; right: 15px; height: 1px;
+  background: linear-gradient(90deg, var(--g) 0%, rgba(0,212,126,.1) 100%);
+}
+.tls { flex: 1; text-align: center; padding: 0 2mm; }
+.tl-dot {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--g); color: var(--bg0);
+  font-family: var(--m); font-size: 8.5pt; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 3mm; position: relative; z-index: 1;
+}
+.tl-t { font-size: 8.5pt; font-weight: 700; margin-bottom: 1.5mm; }
+.tl-d { font-size: 7pt; color: var(--t2); line-height: 1.45; }
+.tl-w { font-family: var(--m); font-size: 6pt; color: var(--g); margin-top: 1.5mm; font-weight: 600; }
+
+.cta {
+  background: linear-gradient(115deg, #040c09 0%, var(--bg1) 100%);
+  border: 1px solid var(--gbr); border-radius: 10px;
+  padding: 6mm 7mm; position: relative; overflow: hidden;
+}
+.cta-amb { width: 180px; height: 180px; background: var(--g); opacity: .07; top: -80px; right: -50px; }
+.cta-h { font-size: 13pt; font-weight: 700; margin-bottom: 2.5mm; position: relative; line-height: 1.3; }
+.cta-h em { font-style: normal; color: var(--g); }
+.cta-d { font-size: 9pt; color: var(--t2); line-height: 1.75; margin-bottom: 5mm; max-width: 116mm; position: relative; }
+.cta-row { display: flex; gap: 3.5mm; align-items: center; position: relative; }
+.btn-p { background: var(--g); color: var(--bg0); font-weight: 700; font-size: 8.5pt; padding: 3mm 8mm; border-radius: 5px; }
+.btn-s { border: 1px solid var(--ln3); color: var(--t1); font-size: 8.5pt; padding: 3mm 8mm; border-radius: 5px; }
+.cta-note { font-family: var(--m); font-size: 6pt; color: var(--t3); margin-left: auto; line-height: 1.6; text-align: right; }
+
+.contacts { display: grid; grid-template-columns: repeat(3,1fr); gap: 3mm; }
+.ct { background: var(--bg2); border: 1px solid var(--ln); border-radius: 7px; padding: 3.5mm 4mm; }
+.ct-l { font-family: var(--m); font-size: 6pt; text-transform: uppercase; letter-spacing: 1px; color: var(--t3); margin-bottom: 1.5mm; }
+.ct-v { font-size: 9pt; font-weight: 600; }
+.ct-v a { color: var(--g); }
+
+.docf { margin-top: auto; padding-top: 3.5mm; border-top: 1px solid var(--ln); display: flex; align-items: center; justify-content: space-between; }
+.docf-l { font-family: var(--m); font-size: 6pt; color: var(--t3); }
+.docf-r { font-family: var(--m); font-size: 9.5pt; font-weight: 700; color: var(--g); }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════
+     1/4 COVER
+     Headline: "Składasz 20 ofert. Wygrywasz 3."
+════════════════════════════ -->
+<div class="page">
+  <div class="amb" style="width:300px;height:300px;background:var(--g);opacity:.06;top:-120px;right:-70px;"></div>
+  <div class="amb" style="width:140px;height:140px;background:#6366f1;opacity:.05;bottom:90px;right:90px;"></div>
+
+  <div class="bar">
+    <div class="bar-l">
+      <div class="bar-dot">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#05080f" stroke-width="2.5"><polygon points="12 2 19 7 19 17 12 22 5 17 5 7"/></svg>
+      </div>
+      <div class="bar-nm">YU-NA<span> / </span>BudOS</div>
+    </div>
+    <div class="bar-r">Intelligence Platform · 2026 · Poufne</div>
+  </div>
+
+  <div class="hero">
+
+    <!-- chip -->
+    <div class="chip">
+      <div class="chip-dot">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#05080f" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4"/></svg>
+      </div>
+      <span class="chip-t">YU-NA Intelligence Platform</span>
+      <span class="chip-sep">·</span>
+      <span class="chip-s">BudOS · budownictwo przetargowe</span>
+    </div>
+
+    <!-- mega headline -->
+    <div class="mega">
+      Składasz 20 ofert.<br>Wygrywasz <span class="mega-g">3.</span>
+    </div>
+
+    <div class="hero-sub">
+      Wiesz które przetargi warto brać — i za ile dać żeby wziąć?
+      BudOS wie. Bo trenujemy go <strong>wyłącznie na historii przetargów i kosztorysach Twojej firmy.</strong>
+      Żaden rynkowy SaaS tego nie potrafi.
+    </div>
+
+    <!-- stat pills -->
+    <div style="display:flex;gap:2mm;margin-bottom:3mm;flex-wrap:wrap;">
+      <div style="background:var(--g3);border:1px solid var(--gbr);border-radius:5px;padding:2.5mm 4mm;display:flex;align-items:center;gap:7px;">
+        <span style="font-family:var(--m);font-size:7pt;color:var(--g);font-weight:700;">GO</span>
+        <span style="font-size:7.5pt;color:var(--t1);">CPV 45233000 · Katowice · win rate <strong style="color:var(--g)">87%</strong></span>
+      </div>
+      <div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.18);border-radius:5px;padding:2.5mm 4mm;display:flex;align-items:center;gap:7px;">
+        <span style="font-family:var(--m);font-size:7pt;color:#f87171;font-weight:700;">NO-GO</span>
+        <span style="font-size:7.5pt;color:var(--t2);">CPV 45000000 · win rate <strong style="color:#f87171">41%</strong> · poniżej progu</span>
+      </div>
+      <div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.18);border-radius:5px;padding:2.5mm 4mm;display:flex;align-items:center;gap:7px;">
+        <span style="font-family:var(--m);font-size:7pt;color:#fbbf24;font-weight:700;">REVIEW</span>
+        <span style="font-size:7.5pt;color:var(--t2);">SWZ · klauzula kar 0,8% · konieczna kalkulacja</span>
+      </div>
+    </div>
+
+    <!-- 2 states -->
+    <div class="s2">
+      <div class="scard">
+        <div class="sc-tag">Stan 01 · Free Trial</div>
+        <div class="sc-h">Moduł Zwiad — 14 dni</div>
+        <div class="sc-p">0 <span style="font-size:8pt;font-weight:400;color:var(--t2)">PLN</span></div>
+        <div class="sc-d">Monitoring BZP + TED + BIP, filtry CPV, mapa przetargów.<br><strong>Bez karty. Bez umowy.</strong></div>
+      </div>
+      <div class="s2-arr">→</div>
+      <div class="scard scard-hot">
+        <div class="sc-tag">Stan 02 · Intelligence</div>
+        <div class="sc-h">Fine-tuned AI — Twoja firma</div>
+        <div class="sc-p">od 20 000 <span style="font-size:8pt;font-weight:400;color:var(--t2)">PLN jednorazowo</span></div>
+        <div class="sc-d">AI trenowany wyłącznie na Twoich danych.<br><strong>Model należy do Ciebie. 8 tygodni.</strong></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- KPI STRIP -->
+  <div class="krow">
+    <div class="kpi"><div class="kn">22 min</div><div class="kl">analiza SWZ<br>zamiast 6 godzin</div></div>
+    <div class="kpi"><div class="kn">+40%</div><div class="kl">wygranych przetargów<br>po uruchomieniu modelu</div></div>
+    <div class="kpi"><div class="kn">93%</div><div class="kl">decyzji GO/NO-GO<br>bez udziału człowieka</div></div>
+    <div class="kpi"><div class="kn">8 tyg.</div><div class="kl">od audytu dokumentacji<br>do go-live własnego AI</div></div>
+  </div>
+
+  <div class="foot">
+    <div class="foot-l">YU-NA Intelligence Platform · BudOS · 2026 · Dokument poufny</div>
+    <div class="foot-n">1 / 4</div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════
+     2/4 MODEL BIZNESOWY
+════════════════════════════ -->
+<div class="page">
+  <div class="amb" style="width:240px;height:240px;background:var(--g);opacity:.05;top:-90px;right:-50px;"></div>
+
+  <div class="bar">
+    <div class="bar-l">
+      <div class="bar-dot"><svg viewBox="0 0 24 24" fill="none" stroke="#05080f" stroke-width="2.5"><polygon points="12 2 19 7 19 17 12 22 5 17 5 7"/></svg></div>
+      <div class="bar-nm">YU-NA<span> / </span>BudOS</div>
+    </div>
+    <div class="bar-r">Model biznesowy · 2 / 4</div>
+  </div>
+
+  <div class="body">
+
+    <div>
+      <div class="ey">Dwa stany dostępu</div>
+      <div class="h1">Nie ma planu pośrodku.<br><em>Albo próbujesz za darmo. Albo budujesz własne AI.</em></div>
+      <div class="p" style="max-width:148mm;margin-top:2mm;">
+        Żadnego SaaS-u z "monitoringiem BZP za 400 zł miesięcznie" — to masz za darmo bezpośrednio na BZP.
+        Zwiad to 14 dni, żebyś zobaczył wartość zanim cokolwiek zdecydujesz.
+        <strong>Jeśli chcesz więcej: własny model AI wytrenowany na Twojej historii przetargowej. Jeden raz. Twój na zawsze.</strong>
+      </div>
+    </div>
+
+    <div class="tgrid">
+      <!-- FREE -->
+      <div class="tc tc-free">
+        <div class="tc-top">
+          <div class="tc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="var(--t2)" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
+          <div class="tc-nm">Free Trial — Zwiad</div>
+        </div>
+        <div class="tc-price">0 <span style="font-size:8pt;font-weight:400;color:var(--t2)">PLN · 14 dni</span></div>
+        <div class="tc-sub">Pełna klasa produkcyjna. Bez karty kredytowej. Bez automatycznego przedłużenia.</div>
+        <ul class="fl">
+          <li class="on"><span class="ck">✓</span> Monitoring BZP + TED + BIP w czasie rzeczywistym</li>
+          <li class="on"><span class="ck">✓</span> Filtry CPV, wartość, województwo, zamawiający</li>
+          <li class="on"><span class="ck">✓</span> Alerty e-mail — nowy przetarg w ciągu godziny</li>
+          <li class="on"><span class="ck">✓</span> Mapa przetargów + analityka branżowa CPV</li>
+          <li><span class="ck">—</span> Kosztorys KNR · 784 000 pozycji ICB</li>
+          <li><span class="ck">—</span> Analiza ryzyka SWZ pod Twój profil</li>
+          <li><span class="ck">—</span> Silnik GO/NO-GO kalibrowany na Twojej historii</li>
+          <li><span class="ck">—</span> Fine-tuned AI na danych Twojej firmy</li>
+        </ul>
+      </div>
+
+      <!-- INTELLIGENCE -->
+      <div class="tc tc-hot">
+        <div class="tc-top">
+          <div class="tc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="var(--g)" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4"/></svg></div>
+          <div class="tc-nm">Wdrożenie Intelligence</div>
+        </div>
+        <div class="tc-price"><span style="color:var(--g)">od 20 000</span> <span style="font-size:8pt;font-weight:400;color:var(--t2)">PLN jednorazowo</span></div>
+        <div class="tc-sub">AI trenowane na historii przetargów Twojej firmy. Model należy do Ciebie. Dane nie opuszczają Twojej instancji.</div>
+        <ul class="fl">
+          <li class="on"><span class="ck">✓</span> Zwiad — pełna platforma (jak w Free Trial)</li>
+          <li class="on"><span class="ck">✓</span> Kosztorys KNR · 784 000 pozycji ICB · eksport do ATH</li>
+          <li class="on"><span class="ck">✓</span> Analiza ryzyka SWZ pod Twoje CPV i historię kontraktów</li>
+          <li class="on"><span class="ck">✓</span> GO/NO-GO (AHP + Friedman) kalibrowany na Twoich wynikach</li>
+          <li class="on"><span class="ck">✓</span> AI wytrenowane na Twoich SWZ, kontraktach, ATH, protokołach</li>
+          <li class="on"><span class="ck">✓</span> 90%+ decyzji GO/NO-GO autonomicznie — bez kosztorysanta</li>
+          <li class="on"><span class="ck">✓</span> Model należy do Ciebie · dane nie wychodzą</li>
+          <li class="on"><span class="ck">✓</span> Aktualizacja modelu co kwartał · SLA 99,9%</li>
+        </ul>
+      </div>
+    </div>
+
+    <div>
+      <div class="ey">Cena wdrożenia Intelligence — dwie zmienne: historia + wolumen dokumentacji</div>
+      <div class="tw">
+        <table class="t">
+          <thead>
+            <tr>
+              <th>Skala firmy</th>
+              <th>Historia przetargowa</th>
+              <th>Dokumentacja do treningu</th>
+              <th>Cena</th>
+              <th>Czas</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Starter</strong><span class="td-s">do 20 FTE · do 50 przetargów/rok</span></td>
+              <td><span class="td-s">do 3 lat · 50–150 zleceń</span></td>
+              <td><span class="td-s">SWZ + złożone oferty + umowy</span></td>
+              <td class="td-p">20 000 PLN</td>
+              <td class="td-w">6 tyg.</td>
+            </tr>
+            <tr>
+              <td><strong>Growth</strong><span class="td-s">20–80 FTE · 50–200 przetargów/rok</span></td>
+              <td><span class="td-s">3–7 lat · 150–500 zleceń</span></td>
+              <td><span class="td-s">SWZ + oferty + kontrakty + protokoły + ATH</span></td>
+              <td class="td-p">40 000 PLN</td>
+              <td class="td-w">7 tyg.</td>
+            </tr>
+            <tr>
+              <td><strong>Enterprise</strong><span class="td-s">80–300 FTE · 200+ przetargów/rok</span></td>
+              <td><span class="td-s">7+ lat · 500–2 000 zleceń</span></td>
+              <td><span class="td-s">Pełne archiwum: SWZ, umowy, aneksy, korespondencja</span></td>
+              <td class="td-p">60–100 000 PLN</td>
+              <td class="td-w">8 tyg.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="fn">* Ceny netto. Każde wdrożenie poprzedza bezpłatny audyt dokumentacji — 5 dni roboczych, zero zobowiązań. Dopiero po audycie wycena i zakres.</div>
+    </div>
+
+  </div>
+
+  <div class="foot">
+    <div class="foot-l">YU-NA Intelligence Platform · BudOS · 2026</div>
+    <div class="foot-n">2 / 4</div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════
+     3/4 TECHNOLOGIA
+════════════════════════════ -->
+<div class="page">
+  <div class="amb" style="width:200px;height:200px;background:var(--g);opacity:.05;top:-70px;right:-30px;"></div>
+
+  <div class="bar">
+    <div class="bar-l">
+      <div class="bar-dot"><svg viewBox="0 0 24 24" fill="none" stroke="#05080f" stroke-width="2.5"><polygon points="12 2 19 7 19 17 12 22 5 17 5 7"/></svg></div>
+      <div class="bar-nm">YU-NA<span> / </span>BudOS</div>
+    </div>
+    <div class="bar-r">Technologia Intelligence · 3 / 4</div>
+  </div>
+
+  <div class="body">
+
+    <div>
+      <div class="ey">Fine-tuning — co to znaczy dla Twojej firmy</div>
+      <div class="h1">Nie "AI z filtrami".<br><em>Model, który zna Twoją firmę jak Ty.</em></div>
+      <div class="p" style="max-width:148mm;margin-top:2mm;">
+        Ogólny SaaS analizuje każdy przetarg tak samo dla wszystkich.
+        Twój model wie, że w CPV 45233000 wygrywasz przy marży 14–17% na Śląsku —
+        i że zamawiający z gminy X historycznie bierze najtańszą ofertę,
+        więc nie warto tracić tygodnia kosztorysanta.
+        <strong>To wiedza, której nie da się kupić w subskrypcji.</strong>
+      </div>
+    </div>
+
+    <div>
+      <div class="ey">8 tygodni od dokumentacji do autonomicznej platformy</div>
+      <div class="s4">
+        <div class="step" data-n="1">
+          <div class="step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+          <div class="step-t">Audyt danych</div>
+          <div class="step-d">Historia BZP/TED, złożone SWZ, oferty, kontrakty, protokoły odbioru, kosztorysy ATH. Ocena wolumenu i jakości datasetu.</div>
+          <div class="step-w">Tydzień 1 · bezpłatny</div>
+        </div>
+        <div class="step" data-n="2">
+          <div class="step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+          <div class="step-t">Ekstrakcja i dataset</div>
+          <div class="step-d">PDF, ATH, Excel → ustrukturyzowany dataset. Etykiety wynik/brak wygranej. Pary SWZ → oferta → rezultat.</div>
+          <div class="step-w">Tydzień 2–3</div>
+        </div>
+        <div class="step" data-n="3">
+          <div class="step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4"/></svg></div>
+          <div class="step-t">Fine-tuning</div>
+          <div class="step-d">Trening modelu YU-NA na Twoich danych. Walidacja jakości. Testy na zbiorze historycznych przetargów o znanych wynikach.</div>
+          <div class="step-w">Tydzień 4–6</div>
+        </div>
+        <div class="step" data-n="4">
+          <div class="step-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+          <div class="step-t">Go-live</div>
+          <div class="step-d">Model do Twojej instancji BudOS. Testy end-to-end. Szkolenie. Monitoring wyników na pierwszych przetargach.</div>
+          <div class="step-w">Tydzień 7–8</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="ey">Co Twój model umie — czego żaden rynkowy SaaS nie potrafi</div>
+      <div class="c2">
+        <div class="cap">
+          <div class="cap-h"><div class="cap-d-dot"></div><div class="cap-nm">Win rate per CPV — nie rynkowy, Twój</div></div>
+          <div class="cap-d">Wie, że w CPV 45233000 wygrywasz co drugie postępowanie przy marży 14%. <strong>Automatycznie podnosi scoring właśnie tych przetargów</strong>, nie liczy statystyk całego rynku.</div>
+        </div>
+        <div class="cap">
+          <div class="cap-h"><div class="cap-d-dot"></div><div class="cap-nm">SWZ przez pryzmat Twoich kontraktów</div></div>
+          <div class="cap-d">Szuka klauzul, które historycznie generowały kary umowne lub roboty dodatkowe w Twoich zleceniach. <strong>Nie ogólne ryzyko — Twoje ryzyko.</strong></div>
+        </div>
+        <div class="cap">
+          <div class="cap-h"><div class="cap-d-dot"></div><div class="cap-nm">Cena z Twojego win rate — nie rynku</div></div>
+          <div class="cap-d">Model Friedmana zasilony <strong>Twoimi rzeczywistymi wynikami przetargowymi.</strong> Optymalna cena oferty — nie statystyki całego rynku.</div>
+        </div>
+        <div class="cap">
+          <div class="cap-h"><div class="cap-d-dot"></div><div class="cap-nm">Autonomiczny GO/NO-GO — bez kosztorysanta</div></div>
+          <div class="cap-d">90%+ decyzji zapada bez interwencji. Platforma dokumentuje reasoning. <strong>Kosztorysant interweniuje tylko przy brzegowych przypadkach.</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="vs2">
+      <div class="vcol">
+        <div class="vh n">SaaS z monitoringiem BZP</div>
+        <div class="vbody n">
+          <div class="vi on"><span>→</span> Wysyła Ci przetargi z całej Polski na wszystko</div>
+          <div class="vi on"><span>→</span> Filtrujesz ręcznie — tak samo jak na BZP za darmo</div>
+          <div class="vi on"><span>→</span> GO/NO-GO: Twój kosztorysant, Twój czas, Twoje ryzyko</div>
+          <div class="vi on"><span>→</span> Analiza SWZ: Ty czytasz 400 stron przez 3 dni</div>
+          <div class="vi"><span>—</span> Nie wie, ile wygrywasz w danym CPV</div>
+          <div class="vi"><span>—</span> Twoje dane trenują wspólny model rynku</div>
+        </div>
+      </div>
+      <div class="vs-mid">vs</div>
+      <div class="vcol">
+        <div class="vh e">BudOS Intelligence — Twój model</div>
+        <div class="vbody e">
+          <div class="vi on"><span style="color:var(--g)">✓</span> Scoring pod Twój win rate i profil CPV</div>
+          <div class="vi on"><span style="color:var(--g)">✓</span> Tylko przetargi warte brania — reszta odfiltrowna</div>
+          <div class="vi on"><span style="color:var(--g)">✓</span> GO/NO-GO autonomiczny — 90%+ bez człowieka</div>
+          <div class="vi on"><span style="color:var(--g)">✓</span> SWZ: flagi z historii Twoich kontraktów i sporów</div>
+          <div class="vi on"><span style="color:var(--g)">✓</span> Model należy do Ciebie. Dane nie wychodzą.</div>
+          <div class="vi on"><span style="color:var(--g)">✓</span> Aktualizacja modelu co kwartał</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="ey">ROI · Growth · 50 FTE · 150 przetargów/rok · wdrożenie 40 000 PLN</div>
+      <div class="r3">
+        <div class="rbox"><div class="rn">250h</div><div class="rl">zaoszczędzone rocznie<br>na analizie i wycenie</div></div>
+        <div class="rbox"><div class="rn">+5</div><div class="rl">wygranych kontraktów<br>rocznie (śr. 900 000 PLN)</div></div>
+        <div class="rbox"><div class="rn">112×</div><div class="rl">ROI wdrożenia<br>w pierwszym roku</div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="foot">
+    <div class="foot-l">YU-NA Intelligence Platform · BudOS · 2026</div>
+    <div class="foot-n">3 / 4</div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════
+     4/4 WYNIKI + CTA
+════════════════════════════ -->
+<div class="page">
+  <div class="amb" style="width:180px;height:180px;background:var(--g);opacity:.05;top:-60px;right:-30px;"></div>
+
+  <div class="bar">
+    <div class="bar-l">
+      <div class="bar-dot"><svg viewBox="0 0 24 24" fill="none" stroke="#05080f" stroke-width="2.5"><polygon points="12 2 19 7 19 17 12 22 5 17 5 7"/></svg></div>
+      <div class="bar-nm">YU-NA<span> / </span>BudOS</div>
+    </div>
+    <div class="bar-r">Wyniki i kontakt · 4 / 4</div>
+  </div>
+
+  <div class="body">
+
+    <div>
+      <div class="ey">Wyniki po wdrożeniu — dane z produkcji, nie demo</div>
+      <div class="h1">Firmy, które mają <em>własne AI</em> do przetargów.</div>
+      <div class="p" style="margin-top:2mm;">Poniżej wyniki z pierwszych tygodni po go-live. Nie projekcje.</div>
+    </div>
+
+    <div class="c2cases">
+      <div class="ccase">
+        <div class="cc-top">
+          <div class="av av1">MK</div>
+          <div>
+            <div class="cc-nm">Marek Kowalski</div>
+            <div class="cc-meta">Prezes · Kowalski Budownictwo<br>55 FTE · Katowice · Growth</div>
+          </div>
+        </div>
+        <div class="cc-stars">★★★★★</div>
+        <div class="cc-q">
+          „Model przejrzał 8 lat naszej historii — 340 przetargów, 180 złożonych ofert.
+          GO/NO-GO chodzi samo w 93% przypadków. Czas analizy SWZ: z 6 godzin do 22 minut.
+          Wygraliśmy 4 kontrakty, które byśmy pominęli — model wiedział, że w CPV 45233 wygrywamy szóste z rzędu na Śląsku."
+        </div>
+        <div class="cc-stats">
+          <div class="ccs"><div class="ccs-n">93%</div><div class="ccs-l">autonomiczne<br>GO/NO-GO</div></div>
+          <div class="ccs"><div class="ccs-n">–83%</div><div class="ccs-l">czas<br>analizy SWZ</div></div>
+          <div class="ccs"><div class="ccs-n">+4</div><div class="ccs-l">wygrane kontrakty<br>pierwsze 8 tyg.</div></div>
+        </div>
+      </div>
+
+      <div class="ccase">
+        <div class="cc-top">
+          <div class="av av2">AW</div>
+          <div>
+            <div class="cc-nm">Anna Wiśniewska</div>
+            <div class="cc-meta">Dyrektor Handlowy · Budopex S.A.<br>200 FTE · Wrocław · Enterprise</div>
+          </div>
+        </div>
+        <div class="cc-stars">★★★★★</div>
+        <div class="cc-q">
+          „Enterprise Intelligence wdrożone na 5 latach archiwum — 1 200 przetargów.
+          Model rozpoznaje, u których zamawiających nie mamy szans niezależnie od ceny.
+          Zamiast tracić tydzień kosztorysanta — dowiadujemy się w 10 minut.
+          Oszczędzamy 2 etaty rocznie."
+        </div>
+        <div class="cc-stats">
+          <div class="ccs"><div class="ccs-n">2</div><div class="ccs-l">etaty<br>zaoszczędzone</div></div>
+          <div class="ccs"><div class="ccs-n">1 200</div><div class="ccs-l">przetargów<br>w modelu</div></div>
+          <div class="ccs"><div class="ccs-n">6 tyg.</div><div class="ccs-l">audyt<br>→ go-live</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="ey">Jak przebiega wdrożenie</div>
+      <div class="tl">
+        <div class="tls"><div class="tl-dot">1</div><div class="tl-t">Audyt</div><div class="tl-d">Ocena archiwum: historia BZP, SWZ, oferty, kontrakty, ATH.</div><div class="tl-w">Tydzień 1 · FREE</div></div>
+        <div class="tls"><div class="tl-dot">2</div><div class="tl-t">Dataset</div><div class="tl-d">PDF, Excel, ATH → dataset treningowy. Etykiety wynik/brak.</div><div class="tl-w">Tydzień 2–3</div></div>
+        <div class="tls"><div class="tl-dot">3</div><div class="tl-t">Fine-tuning</div><div class="tl-d">Trening modelu YU-NA. Walidacja na testowym zbiorze.</div><div class="tl-w">Tydzień 4–6</div></div>
+        <div class="tls"><div class="tl-dot">4</div><div class="tl-t">Integracja</div><div class="tl-d">Model do Twojej instancji. Testy end-to-end.</div><div class="tl-w">Tydzień 7</div></div>
+        <div class="tls"><div class="tl-dot">5</div><div class="tl-t">Go-live</div><div class="tl-d">Szkolenie. Platforma autonomiczna. Monitoring.</div><div class="tl-w">Tydzień 8</div></div>
+      </div>
+    </div>
+
+    <div class="cta">
+      <div class="amb cta-amb"></div>
+      <div class="cta-h">Pierwszy krok: <em>bezpłatny audyt Twojej dokumentacji.</em></div>
+      <div class="cta-d">
+        Zanim cokolwiek wycenimy — chcemy zobaczyć ile masz historii i w jakiej formie.
+        5 dni roboczych. Zero zobowiązań. Dostajesz raport: co Twój model będzie potrafił i jaki ROI możesz oczekiwać.
+        Dopiero wtedy zakres i cena. Albo zacznij od Zwiadu — 14 dni, pełne funkcje, bez karty.
+      </div>
+      <div class="cta-row">
+        <div class="btn-p">→ Zamów bezpłatny audyt · budos.pl/intelligence</div>
+        <div class="btn-s">Zacznij Free Trial (14 dni)</div>
+        <div class="cta-note">Audyt bezpłatny<br>Zwiad bez karty kredytowej</div>
+      </div>
+    </div>
+
+    <div class="contacts">
+      <div class="ct"><div class="ct-l">Wdrożenia Intelligence</div><div class="ct-v"><a class="ct-v">intelligence@budos.pl</a></div></div>
+      <div class="ct"><div class="ct-l">Free Trial · Zwiad</div><div class="ct-v"><a class="ct-v">app.budos.pl</a></div></div>
+      <div class="ct"><div class="ct-l">Platforma</div><div class="ct-v">YU-NA · budos.pl</div></div>
+    </div>
+
+    <div class="docf">
+      <div class="docf-l">© 2026 BudOS · YU-NA Intelligence Platform · Poufne — tylko dla adresata</div>
+      <div class="docf-r">budos</div>
+    </div>
+
+  </div>
+
+  <div class="foot">
+    <div class="foot-l">YU-NA Intelligence Platform · BudOS · 2026</div>
+    <div class="foot-n">4 / 4</div>
+  </div>
+</div>
+
+</body>
+</html>

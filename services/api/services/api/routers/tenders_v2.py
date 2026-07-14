@@ -109,16 +109,17 @@ class TenderListResponse(BaseModel):
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
 def _resolve_tenant_id(engine, org_id: str) -> str:
-    # Najpierw użyj org_id z JWT — to jest tenant_id w tabeli tender
+    # Lookup tenant_id from organizations table
     if org_id:
-        return str(org_id)
-    # Fallback: szukaj w tabeli organizations
-    with engine.connect() as conn:
-        row = conn.execute(
-            sa.text("SELECT tenant_id FROM organizations WHERE id = :id"),
-            {"id": org_id},
-        ).fetchone()
-    return str(row.tenant_id) if row and row.tenant_id else org_id
+        with engine.connect() as conn:
+            row = conn.execute(
+                sa.text("SELECT tenant_id FROM organizations WHERE id = :id"),
+                {"id": org_id},
+            ).fetchone()
+        if row and row.tenant_id:
+            return str(row.tenant_id)
+    # Fallback: org_id == tenant_id (legacy / self-tenant)
+    return str(org_id) if org_id else org_id
 
 
 def _row_to_summary(row: Any, is_dup_set: set[str], dup_masters: dict[str, str]) -> TenderSummary:

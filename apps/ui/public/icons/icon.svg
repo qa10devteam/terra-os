@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" fill="none">
+  <rect width="192" height="192" rx="40" fill="#0a0a0f"/>
+  <rect x="32" y="80" width="128" height="12" rx="6" fill="#10b981"/>
+  <rect x="32" y="100" width="96" height="12" rx="6" fill="#10b981" opacity="0.6"/>
+  <rect x="32" y="60" width="64" height="12" rx="6" fill="#10b981" opacity="0.3"/>
+  <text x="96" y="155" font-family="system-ui" font-size="28" font-weight="700" fill="#10b981" text-anchor="middle">budos</text>
+</svg>

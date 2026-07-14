@@ -16,6 +16,7 @@ sys.path.insert(0, "/home/ubuntu/terra-os/services")
 sys.path.insert(0, "/home/ubuntu/terra-os/packages/db")
 sys.path.insert(0, "/home/ubuntu/terra-os/packages/vendor")
 sys.path.insert(0, "/home/ubuntu/terra-os/packages/shared")
+sys.path.insert(0, "/home/ubuntu/terra-os/services/ingestion")
 
 os.environ.setdefault("DB_HOST", "127.0.0.1")
 os.environ.setdefault("DB_PORT", "5432")

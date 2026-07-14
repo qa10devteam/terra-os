@@ -18,6 +18,10 @@ from terra_db.session import get_db_url  # noqa: E402
 
 config = context.config
 
+# Inject DB_URL from environment so alembic.ini doesn't contain credentials
+_db_url = get_db_url()
+config.set_section_option(config.config_ini_section, "DB_URL", _db_url)
+
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 

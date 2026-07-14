@@ -599,6 +599,23 @@ try:
 except ImportError as _e:
     logging.getLogger(__name__).warning("gantt v2 router error: %s", _e)
 
+# P1-10 — kosztorys_v3, m7_phase2, workflows
+try:
+    from .routers import kosztorys_v3 as _kosztorys_v3_mod
+    app.include_router(_kosztorys_v3_mod.router)
+except ImportError as _e:
+    logging.getLogger(__name__).warning("kosztorys_v3 router error: %s", _e)
+try:
+    from .routers import m7_phase2 as _m7_phase2_mod
+    app.include_router(_m7_phase2_mod.router)
+except ImportError as _e:
+    logging.getLogger(__name__).warning("m7_phase2 router error: %s", _e)
+try:
+    from .routers import workflows as _workflows_mod
+    app.include_router(_workflows_mod.router)
+except ImportError as _e:
+    logging.getLogger(__name__).warning("workflows router error: %s", _e)
+
 # ─── M7 Intelligence Layer ────────────────────────────────────────────────────
 if 'semantic_search' in _opt_map:
     app.include_router(_opt_map['semantic_search'].router)

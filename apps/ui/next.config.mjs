@@ -2,8 +2,11 @@
 const nextConfig = {
   // Enable standalone output for Docker builds (Dockerfile.ui)
   output: process.env.NEXT_OUTPUT === 'standalone' ? 'standalone' : undefined,
+  compress: true,
+  poweredByHeader: false,
   images: {
     unoptimized: true,
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       {
         protocol: 'https',

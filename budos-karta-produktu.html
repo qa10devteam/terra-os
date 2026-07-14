@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>budos — Karta Produktu 2026</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+  /* ── PDF / print setup ─────────────────────────────────────────────── */
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --green:   #10b981;
+    --green2:  #059669;
+    --dark:    #0a0a0f;
+    --dark2:   #111118;
+    --dark3:   #1a1a26;
+    --border:  #2a2a3a;
+    --text:    #f0f0f4;
+    --muted:   #8888a8;
+    --accent:  #34d399;
+  }
+
+  body {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    background: var(--dark);
+    color: var(--text);
+    font-size: 10pt;
+    line-height: 1.5;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* ── Page wrapper ───────────────────────────────────────────────────── */
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    background: var(--dark);
+    position: relative;
+    overflow: hidden;
+    page-break-after: always;
+  }
+  .page:last-child { page-break-after: avoid; }
+
+  /* ── Decorative blobs ───────────────────────────────────────────────── */
+  .blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    pointer-events: none;
+    opacity: 0.18;
+  }
+
+  /* ════════════════════════════════════════════════════
+     PAGE 1 — COVER
+  ════════════════════════════════════════════════════ */
+  .cover {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+  }
+
+  /* top strip */
+  .cover-top {
+    background: linear-gradient(135deg, #0d1f17 0%, #0a0a0f 60%);
+    padding: 10mm 14mm 8mm;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .cover-top .blob1 {
+    width: 200px; height: 200px;
+    background: var(--green);
+    top: -80px; right: 40px;
+  }
+  .cover-top .blob2 {
+    width: 120px; height: 120px;
+    background: #3b82f6;
+    bottom: -40px; right: 120px;
+  }
+
+  /* logo row */
+  .logo-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18mm;
+  }
+  .logo-mark {
+    width: 38px; height: 38px;
+    background: var(--green);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .logo-mark svg { width: 22px; height: 22px; }
+  .logo-name {
+    font-size: 22pt;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.5px;
+  }
+  .logo-name span { color: var(--green); }
+  .tagline-pill {
+    margin-left: auto;
+    background: rgba(16,185,129,0.12);
+    border: 1px solid rgba(16,185,129,0.3);
+    color: var(--green);
+    font-size: 7.5pt;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  /* hero headline */
+  .cover-headline {
+    font-size: 28pt;
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--text);
+    margin-bottom: 5mm;
+    max-width: 140mm;
+    position: relative;
+  }
+  .cover-headline em {
+    font-style: normal;
+    background: linear-gradient(90deg, var(--green), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .cover-sub {
+    font-size: 11pt;
+    color: var(--muted);
+    max-width: 120mm;
+    line-height: 1.6;
+    position: relative;
+  }
+
+  /* stat row */
+  .cover-stats {
+    display: flex;
+    gap: 0;
+    margin-top: 10mm;
+    position: relative;
+  }
+  .stat-item {
+    flex: 1;
+    padding: 5mm 6mm;
+    border-right: 1px solid var(--border);
+  }
+  .stat-item:last-child { border-right: none; }
+  .stat-num {
+    font-size: 22pt;
+    font-weight: 700;
+    color: var(--green);
+    line-height: 1;
+    margin-bottom: 2px;
+  }
+  .stat-label {
+    font-size: 8pt;
+    color: var(--muted);
+    line-height: 1.3;
+  }
+
+  /* cover body — features grid */
+  .cover-body {
+    padding: 8mm 14mm;
+    flex: 1;
+  }
+  .section-label {
+    font-size: 7pt;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 5mm;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4mm;
+    margin-bottom: 8mm;
+  }
+  .feature-card {
+    background: var(--dark2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 5mm;
+    position: relative;
+    overflow: hidden;
+  }
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--green), transparent);
+  }
+  .feature-icon {
+    width: 32px; height: 32px;
+    background: rgba(16,185,129,0.1);
+    border: 1px solid rgba(16,185,129,0.2);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 3mm;
+  }
+  .feature-icon svg { width: 16px; height: 16px; color: var(--green); }
+  .feature-title {
+    font-size: 9.5pt;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 2mm;
+  }
+  .feature-desc {
+    font-size: 8pt;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* ── Quote strip ────────────────────────────────────────────────────── */
+  .quote-strip {
+    background: linear-gradient(90deg, rgba(16,185,129,0.06) 0%, transparent 100%);
+    border: 1px solid rgba(16,185,129,0.15);
+    border-radius: 10px;
+    padding: 5mm 6mm;
+    display: flex;
+    gap: 4mm;
+    align-items: flex-start;
+  }
+  .quote-mark {
+    font-size: 32pt;
+    color: var(--green);
+    line-height: 0.8;
+    font-family: Georgia, serif;
+    flex-shrink: 0;
+    opacity: 0.6;
+  }
+  .quote-text {
+    font-size: 9pt;
+    color: var(--text);
+    line-height: 1.55;
+    font-style: italic;
+  }
+  .quote-author {
+    font-size: 7.5pt;
+    color: var(--muted);
+    margin-top: 2mm;
+    font-style: normal;
+  }
+  .quote-author strong { color: var(--green); }
+
+  /* cover footer */
+  .cover-footer {
+    padding: 4mm 14mm;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--dark2);
+  }
+  .footer-text { font-size: 7pt; color: var(--muted); }
+  .footer-badge {
+    background: var(--green);
+    color: var(--dark);
+    font-size: 7pt;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  /* ════════════════════════════════════════════════════
+     PAGE 2 — HOW IT WORKS + MODULES
+  ════════════════════════════════════════════════════ */
+  .inner-page {
+    padding: 10mm 14mm 6mm;
+    display: flex;
+    flex-direction: column;
+    min-height: 297mm;
+  }
+
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 7mm;
+    padding-bottom: 4mm;
+    border-bottom: 1px solid var(--border);
+  }
+  .page-header-logo {
+    font-size: 11pt;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: -0.3px;
+  }
+  .page-num {
+    font-size: 7pt;
+    color: var(--muted);
+  }
+
+  .section-title {
+    font-size: 16pt;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 2mm;
+    line-height: 1.2;
+  }
+  .section-title em {
+    font-style: normal;
+    color: var(--green);
+  }
+  .section-intro {
+    font-size: 9pt;
+    color: var(--muted);
+    margin-bottom: 6mm;
+    max-width: 140mm;
+    line-height: 1.6;
+  }
+
+  /* workflow steps */
+  .workflow {
+    display: flex;
+    gap: 0;
+    margin-bottom: 8mm;
+    position: relative;
+  }
+  .workflow::before {
+    content: '';
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    right: 16px;
+    height: 1px;
+    background: linear-gradient(90deg, var(--green), rgba(16,185,129,0.2), transparent);
+  }
+  .step {
+    flex: 1;
+    text-align: center;
+    padding: 0 3mm;
+    position: relative;
+  }
+  .step-num {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--green);
+    color: var(--dark);
+    font-size: 9pt;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 3mm;
+    position: relative;
+    z-index: 1;
+  }
+  .step-title {
+    font-size: 8.5pt;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 1.5mm;
+  }
+  .step-desc {
+    font-size: 7pt;
+    color: var(--muted);
+    line-height: 1.45;
+  }
+
+  /* modules table */
+  .modules-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 3mm;
+    margin-bottom: 7mm;
+  }
+  .module-card {
+    background: var(--dark2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 4mm;
+  }
+  .module-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 2mm;
+  }
+  .module-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    flex-shrink: 0;
+  }
+  .module-name {
+    font-size: 8.5pt;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .module-desc {
+    font-size: 7.5pt;
+    color: var(--muted);
+    line-height: 1.4;
+    padding-left: 12px;
+  }
+
+  /* before/after comparison */
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4mm;
+    margin-bottom: 6mm;
+  }
+  .compare-col {
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .compare-header {
+    padding: 3mm 4mm;
+    font-size: 8pt;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .compare-header.before {
+    background: rgba(239,68,68,0.1);
+    color: #f87171;
+    border: 1px solid rgba(239,68,68,0.2);
+    border-bottom: none;
+  }
+  .compare-header.after {
+    background: rgba(16,185,129,0.1);
+    color: var(--green);
+    border: 1px solid rgba(16,185,129,0.2);
+    border-bottom: none;
+  }
+  .compare-body {
+    padding: 3mm 4mm;
+    border-radius: 0 0 8px 8px;
+  }
+  .compare-body.before {
+    background: rgba(239,68,68,0.04);
+    border: 1px solid rgba(239,68,68,0.15);
+    border-top: none;
+  }
+  .compare-body.after {
+    background: rgba(16,185,129,0.04);
+    border: 1px solid rgba(16,185,129,0.15);
+    border-top: none;
+  }
+  .compare-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+    font-size: 8pt;
+    color: var(--muted);
+    padding: 1.5mm 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    line-height: 1.4;
+  }
+  .compare-item:last-child { border-bottom: none; }
+  .compare-item .ci {
+    flex-shrink: 0;
+    font-size: 9pt;
+    margin-top: -1px;
+  }
+  .compare-item.after-item { color: var(--text); }
+
+  /* ════════════════════════════════════════════════════
+     PAGE 3 — PRICING + TECH
+  ════════════════════════════════════════════════════ */
+  .plans-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 4mm;
+    margin-bottom: 7mm;
+  }
+  .plan-card {
+    background: var(--dark2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 5mm;
+    position: relative;
+  }
+  .plan-card.popular {
+    border-color: var(--green);
+    background: linear-gradient(160deg, rgba(16,185,129,0.06) 0%, var(--dark2) 100%);
+  }
+  .popular-badge {
+    position: absolute;
+    top: -1px; right: 10mm;
+    background: var(--green);
+    color: var(--dark);
+    font-size: 6.5pt;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 0 0 6px 6px;
+    letter-spacing: 0.5px;
+  }
+  .plan-name {
+    font-size: 11pt;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 1mm;
+  }
+  .plan-price {
+    font-size: 20pt;
+    font-weight: 700;
+    color: var(--green);
+    line-height: 1;
+    margin-bottom: 1mm;
+  }
+  .plan-price span {
+    font-size: 8.5pt;
+    font-weight: 400;
+    color: var(--muted);
+  }
+  .plan-note {
+    font-size: 7.5pt;
+    color: var(--muted);
+    margin-bottom: 4mm;
+    padding-bottom: 3mm;
+    border-bottom: 1px solid var(--border);
+  }
+  .plan-features { list-style: none; }
+  .plan-features li {
+    font-size: 8pt;
+    color: var(--muted);
+    padding: 1.5mm 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    line-height: 1.4;
+  }
+  .plan-features li:last-child { border-bottom: none; }
+  .plan-features li .check { color: var(--green); flex-shrink: 0; }
+  .plan-features li.active { color: var(--text); }
+
+  /* ROI calculator */
+  .roi-box {
+    background: linear-gradient(90deg, rgba(16,185,129,0.07) 0%, rgba(16,185,129,0.02) 100%);
+    border: 1px solid rgba(16,185,129,0.2);
+    border-radius: 10px;
+    padding: 5mm 6mm;
+    margin-bottom: 6mm;
+  }
+  .roi-title {
+    font-size: 10pt;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4mm;
+  }
+  .roi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 3mm;
+  }
+  .roi-item {
+    text-align: center;
+  }
+  .roi-num {
+    font-size: 16pt;
+    font-weight: 700;
+    color: var(--green);
+    line-height: 1;
+    margin-bottom: 1mm;
+  }
+  .roi-label {
+    font-size: 7pt;
+    color: var(--muted);
+    line-height: 1.3;
+  }
+
+  /* tech stack */
+  .tech-row {
+    display: flex;
+    gap: 3mm;
+    flex-wrap: wrap;
+  }
+  .tech-pill {
+    background: var(--dark3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2mm 4mm;
+    font-size: 7.5pt;
+    color: var(--muted);
+  }
+  .tech-pill strong { color: var(--text); }
+
+  /* ════════════════════════════════════════════════════
+     PAGE 4 — SOCIAL PROOF + CTA
+  ════════════════════════════════════════════════════ */
+  .testimonials-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 4mm;
+    margin-bottom: 7mm;
+  }
+  .testi-card {
+    background: var(--dark2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4mm;
+  }
+  .testi-stars {
+    color: #f59e0b;
+    font-size: 9pt;
+    margin-bottom: 2.5mm;
+    letter-spacing: 1px;
+  }
+  .testi-text {
+    font-size: 8pt;
+    color: var(--text);
+    line-height: 1.55;
+    font-style: italic;
+    margin-bottom: 3mm;
+  }
+  .testi-author {
+    font-size: 7.5pt;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    padding-top: 2.5mm;
+  }
+  .testi-author strong { color: var(--green); display: block; }
+
+  /* integration logos row */
+  .integrations {
+    display: flex;
+    gap: 3mm;
+    align-items: center;
+    margin-bottom: 7mm;
+    flex-wrap: wrap;
+  }
+  .int-label {
+    font-size: 7.5pt;
+    color: var(--muted);
+    margin-right: 2mm;
+  }
+  .int-badge {
+    background: var(--dark3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2mm 5mm;
+    font-size: 8pt;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  /* CTA block */
+  .cta-block {
+    background: linear-gradient(135deg, #0d1f17 0%, var(--dark2) 100%);
+    border: 1px solid rgba(16,185,129,0.25);
+    border-radius: 12px;
+    padding: 7mm 8mm;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 6mm;
+  }
+  .cta-block .blob {
+    width: 160px; height: 160px;
+    background: var(--green);
+    top: -60px; right: -40px;
+    opacity: 0.12;
+  }
+  .cta-title {
+    font-size: 15pt;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 2mm;
+    position: relative;
+  }
+  .cta-title em { font-style: normal; color: var(--green); }
+  .cta-sub {
+    font-size: 9pt;
+    color: var(--muted);
+    margin-bottom: 5mm;
+    position: relative;
+    max-width: 110mm;
+    line-height: 1.5;
+  }
+  .cta-buttons {
+    display: flex;
+    gap: 4mm;
+    align-items: center;
+    position: relative;
+  }
+  .btn-primary {
+    background: var(--green);
+    color: var(--dark);
+    font-weight: 700;
+    font-size: 9pt;
+    padding: 3mm 7mm;
+    border-radius: 7px;
+    display: inline-block;
+  }
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 9pt;
+    padding: 3mm 7mm;
+    border-radius: 7px;
+    display: inline-block;
+  }
+  .cta-note {
+    font-size: 7.5pt;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  /* contact row */
+  .contact-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4mm;
+  }
+  .contact-item {
+    background: var(--dark2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 3.5mm 4mm;
+  }
+  .contact-label {
+    font-size: 7pt;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 1.5mm;
+  }
+  .contact-value {
+    font-size: 9pt;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .contact-value a { color: var(--green); }
+
+  /* security badges */
+  .security-row {
+    display: flex;
+    gap: 3mm;
+    margin-top: 4mm;
+    flex-wrap: wrap;
+  }
+  .sec-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 7pt;
+    color: var(--muted);
+  }
+  .sec-badge svg { width: 12px; height: 12px; color: var(--green); }
+
+  /* ── print fixes ─────────────────────────────────── */
+  @media print {
+    body { background: var(--dark) !important; }
+    .page { page-break-after: always; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ╔══════════════════════════════════════════
+     PAGE 1 — COVER
+══════════════════════════════════════════╗ -->
+<div class="page cover">
+
+  <div class="cover-top">
+    <div class="blob blob1"></div>
+    <div class="blob blob2"></div>
+
+    <div class="logo-row">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:#0a0a0f">
+          <rect x="3" y="3" width="18" height="18" rx="3"/>
+          <path d="M3 9h18M9 21V9"/>
+        </svg>
+      </div>
+      <div class="logo-name">bu<span>dos</span></div>
+      <div class="tagline-pill">AI · Przetargi Budowlane</div>
+    </div>
+
+    <div class="cover-headline">
+      Wygrywaj więcej przetargów.<br>
+      <em>Z mniejszym nakładem pracy.</em>
+    </div>
+    <div class="cover-sub">
+      Platforma dla firm budowlanych, która automatycznie monitoruje BZP i TED,
+      analizuje ryzyko SWZ i liczy kosztorysy — zanim konkurencja zdąży przeczytać ogłoszenie.
+    </div>
+
+    <div class="cover-stats">
+      <div class="stat-item">
+        <div class="stat-num">4h</div>
+        <div class="stat-label">zamiast 3 dni<br>na przygotowanie oferty</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">+40%</div>
+        <div class="stat-label">więcej wygranych<br>przetargów</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">2 mies.</div>
+        <div class="stat-label">zwrot<br>z inwestycji</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-num">2 400+</div>
+        <div class="stat-label">przetargów<br>w bazie (co dobę rośnie)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cover-body">
+    <div class="section-label">Kluczowe funkcje</div>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+        </div>
+        <div class="feature-title">Automatyczny monitoring BZP i TED</div>
+        <div class="feature-desc">Nowe przetargi CPV45 lądują w systemie co godzinę — bez ręcznego przeszukiwania portali. Filtry po CPV, wartości, województwie i słowach kluczowych.</div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/>
+          </svg>
+        </div>
+        <div class="feature-title">AI Analiza Ryzyka SWZ</div>
+        <div class="feature-desc">Silnik AI w 3 minuty identyfikuje kary umowne, niejasne zapisy, ryzyko zmian cen materiałów i warunki nie do spełnienia — zanim złożysz ofertę.</div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="3" width="20" height="14" rx="2"/>
+            <path d="M8 21h8M12 17v4"/>
+          </svg>
+        </div>
+        <div class="feature-title">Kosztorys KNR jednym kliknięciem</div>
+        <div class="feature-desc">Baza 784 tys. pozycji KNR z aktualnymi cenami ICB. System podpowiada normy dla zakresu robót i przelicza R/M/S automatycznie.</div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          </svg>
+        </div>
+        <div class="feature-title">Silnik Decyzyjny GO / NO-GO</div>
+        <div class="feature-desc">Metoda AHP + model Friedmana wylicza optymalną cenę oferty i prawdopodobieństwo wygranej na podstawie historii przetargów w CPV.</div>
+      </div>
+    </div>
+
+    <div class="quote-strip">
+      <div class="quote-mark">"</div>
+      <div>
+        <div class="quote-text">budos skróciła czas przygotowania oferty z 3 dni do 4 godzin. Analiza ryzyka SWZ wykryła klauzulę, która by nas kosztowała 180 tys. zł kary. Wygrywamy 40% więcej przetargów niż rok temu.</div>
+        <div class="quote-author"><strong>Marek Kowalski</strong> — Prezes, Kowalski Budownictwo Sp. z o.o. (50+ pracowników)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cover-footer">
+    <div class="footer-text">budos v2.0 · 2026 · Dokument poufny — tylko dla adresata</div>
+    <div class="footer-badge">1 / 4</div>
+  </div>
+</div>
+
+
+<!-- ╔══════════════════════════════════════════
+     PAGE 2 — JAK TO DZIAŁA + MODUŁY
+══════════════════════════════════════════╗ -->
+<div class="page">
+  <div class="inner-page">
+
+    <div class="page-header">
+      <div class="page-header-logo">budos</div>
+      <div class="page-num">Jak to działa · 2 / 4</div>
+    </div>
+
+    <div class="section-label">Od ogłoszenia do podpisanej umowy</div>
+    <div class="section-title">Cały proces przetargowy<br><em>w jednym miejscu</em></div>
+    <div class="section-intro">budos prowadzi Twoją firmę przez każdy etap — od pierwszego sygnału w BZP po złożenie oferty i nadzór nad kontraktem. Zero przełączania między arkuszami Excel, mailami i portalem e-Zamówień.</div>
+
+    <div class="workflow">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-title">Wykrycie</div>
+        <div class="step-desc">System co godzinę skanuje BZP, TED i BIP. Nowy przetarg z CPV45 trafia do Twojej skrzynki w ciągu 60 minut od publikacji.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-title">Analiza</div>
+        <div class="step-desc">AI czyta SWZ, wyszukuje ryzyka, ocenia realność terminów i kwalifikacji. Rekomendacja GO/NO-GO w 3 minuty.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-title">Wycena</div>
+        <div class="step-desc">Kosztorys KNR z bazą 784 tys. pozycji ICB. Automatyczne R/M/S, narzuty, prognoza cen materiałów na datę realizacji.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-title">Oferta</div>
+        <div class="step-desc">Kreator PDF — dane, zakres, ceny, gwarancja, termin. Gotowy dokument do złożenia w systemie zamawiającego.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-title">Kontrakt</div>
+        <div class="step-desc">Tracker kontraktów, cashflow, harmonogram Gantta, alerty o terminach gwarancji i przeglądów.</div>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-bottom:4mm">Wszystkie moduły platformy</div>
+    <div class="modules-grid">
+      <div class="module-card">
+        <div class="module-header"><div class="module-dot"></div><div class="module-name">Zwiad Przetargowy</div></div>
+        <div class="module-desc">Mapa przetargów BZP / TED / BIP z filtrami CPV, wartości i województwa</div>
+      </div>
+      <div class="module-card">
+        <div class="module-header"><div class="module-dot"></div><div class="module-name">Silnik Decyzyjny</div></div>
+        <div class="module-desc">AHP + Friedman — optymalny poziom ceny i prawdopodobieństwo wygranej</div>
+      </div>
+      <div class="module-card">
+        <div class="module-header"><div class="module-dot"></div><div class="module-name">Kosztorys KNR</div></div>
+        <div class="module-desc">784 tys. pozycji ICB, automatyczne R/M/S, narzuty, prognoza cen</div>
+      </div>
+      <div class="module-card">
+        <div class="module-header"><div class="module-dot"></div><div class="module-name">Analiza Ryzyka SWZ</div></div>
+        <div class="module-desc">AI identyfikuje klauzule abuzywne, kary, nierealne terminy i wymagania</div>
+      </div>
+      <div class="module-card">
+        <div class="module-header"><div class="module-dot"></div><div class="module-name">Lejek Ofertowy</div></div>
+        <div class="module-desc">Kanban: Rozpoznanie → Analiza → Wycena → Złożona → Wynik</div>
+      </div>
+      <div class="module-card">
+        <div class="module-header"><div class="module-dot"></div><div class="module-name">Kreator Ofert PDF</div></div>
+        <div class="module-desc">Profesjonalne oferty PDF z danymi wykonawcy, zakresem i harmonogramem</div>
+      </div>
+      <div class="module-card">
+        <div class="module-header"><div class="module-dot"></div><div class="module-name">Analityka Rynkowa</div></div>
+        <div class="module-desc">Trendy CPV, sezonowość, mapa ciepła woj., monitoring konkurencji</div>
+      </div>
+      <div class="module-card">
+        <div class="module-header"><div class="module-dot"></div><div class="module-name">CRM Zamawiających</div></div>
+        <div class="module-desc">Historia współpracy, kontakty, notatki, ocena zamawiającego</div>
+      </div>
+      <div class="module-card">
+        <div class="module-header"><div class="module-dot"></div><div class="module-name">Logistyka i Kontrakty</div></div>
+        <div class="module-desc">Sprzęt, pracownicy, cashflow, harmonogram Gantta, alerty terminów</div>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-bottom:4mm">Przed i po wdrożeniu budos</div>
+    <div class="compare">
+      <div class="compare-col">
+        <div class="compare-header before">✗ Przed budos</div>
+        <div class="compare-body before">
+          <div class="compare-item"><span class="ci">⏱</span>Ręczne przeglądanie BZP każdego ranka — 1-2h dziennie</div>
+          <div class="compare-item"><span class="ci">📋</span>Kosztorys w Excelu — 2-3 dni, ryzyko błędów arytmetycznych</div>
+          <div class="compare-item"><span class="ci">📄</span>Czytanie SWZ bez wsparcia — ryzyko przeoczenia kar</div>
+          <div class="compare-item"><span class="ci">🤷</span>Cena oferty „z doświadczenia" — brak analizy konkurencji</div>
+          <div class="compare-item"><span class="ci">📁</span>Dokumenty rozrzucone w mailach i folderach sieciowych</div>
+        </div>
+      </div>
+      <div class="compare-col">
+        <div class="compare-header after">✓ Po wdrożeniu budos</div>
+        <div class="compare-body after">
+          <div class="compare-item after-item"><span class="ci" style="color:var(--green)">✓</span>Automatyczny alert o nowym przetargu — max 60 min od publikacji</div>
+          <div class="compare-item after-item"><span class="ci" style="color:var(--green)">✓</span>Kosztorys KNR gotowy w 4 godziny, ceny ICB na bieżąco</div>
+          <div class="compare-item after-item"><span class="ci" style="color:var(--green)">✓</span>AI analiza SWZ — raport ryzyk w 3 minuty</div>
+          <div class="compare-item after-item"><span class="ci" style="color:var(--green)">✓</span>Optymalna cena oferty z modelu Friedmana i historii CPV</div>
+          <div class="compare-item after-item"><span class="ci" style="color:var(--green)">✓</span>Wszystkie przetargi, oferty i kontrakty w jednym miejscu</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ╔══════════════════════════════════════════
+     PAGE 3 — CENNIK + ZWROT Z INWESTYCJI
+══════════════════════════════════════════╗ -->
+<div class="page">
+  <div class="inner-page">
+
+    <div class="page-header">
+      <div class="page-header-logo">budos</div>
+      <div class="page-num">Cennik i ROI · 3 / 4</div>
+    </div>
+
+    <div class="section-label">Plany i ceny</div>
+    <div class="section-title">Inwestycja, która <em>zwraca się w 2 miesiące</em></div>
+    <div class="section-intro">Każdy plan zawiera pełny dostęp do monitoringu BZP/TED, kosztorys KNR i analizę ryzyka SWZ. Różnica to liczba aktywnych przetargów i zaawansowanie AI.</div>
+
+    <div class="plans-grid">
+      <div class="plan-card">
+        <div class="plan-name">Free</div>
+        <div class="plan-price">0 <span>PLN / mies.</span></div>
+        <div class="plan-note">do 5 przetargów miesięcznie</div>
+        <ul class="plan-features">
+          <li class="active"><span class="check">✓</span> Monitoring BZP (bez TED)</li>
+          <li class="active"><span class="check">✓</span> Kosztorys KNR (10 pozycji)</li>
+          <li class="active"><span class="check">✓</span> Lejek ofertowy</li>
+          <li style="opacity:0.4"><span class="check">—</span> AI Analiza SWZ</li>
+          <li style="opacity:0.4"><span class="check">—</span> Silnik GO/NO-GO</li>
+          <li style="opacity:0.4"><span class="check">—</span> CRM Zamawiających</li>
+          <li style="opacity:0.4"><span class="check">—</span> Eksport PDF / Excel</li>
+        </ul>
+      </div>
+
+      <div class="plan-card popular">
+        <div class="popular-badge">NAJPOPULARNIEJSZY</div>
+        <div class="plan-name">Pro</div>
+        <div class="plan-price">499 <span>PLN / mies.</span></div>
+        <div class="plan-note">do 50 przetargów + pełne AI · 1 firma</div>
+        <ul class="plan-features">
+          <li class="active"><span class="check">✓</span> BZP + TED + BIP</li>
+          <li class="active"><span class="check">✓</span> Kosztorys KNR (pełna baza)</li>
+          <li class="active"><span class="check">✓</span> AI Analiza SWZ</li>
+          <li class="active"><span class="check">✓</span> Silnik GO/NO-GO (AHP)</li>
+          <li class="active"><span class="check">✓</span> CRM Zamawiających</li>
+          <li class="active"><span class="check">✓</span> Eksport PDF / XLSX / ATH</li>
+          <li class="active"><span class="check">✓</span> Alerty email (co godzinę)</li>
+        </ul>
+      </div>
+
+      <div class="plan-card">
+        <div class="plan-name">Enterprise</div>
+        <div class="plan-price" style="font-size:14pt; padding-top:3mm">Wycena<br><span style="font-size:8pt">indywidualna</span></div>
+        <div class="plan-note">bez limitu przetargów · multi-tenant</div>
+        <ul class="plan-features">
+          <li class="active"><span class="check">✓</span> Wszystko z Pro</li>
+          <li class="active"><span class="check">✓</span> Nieograniczone przetargi</li>
+          <li class="active"><span class="check">✓</span> Wiele firm / oddziałów</li>
+          <li class="active"><span class="check">✓</span> Dedykowany onboarding</li>
+          <li class="active"><span class="check">✓</span> SLA 99.9% + wsparcie 24/7</li>
+          <li class="active"><span class="check">✓</span> Integracja ERP / athenaBF</li>
+          <li class="active"><span class="check">✓</span> Audyt AI i raportowanie</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="roi-box">
+      <div class="roi-title">💡 Realny zwrot z inwestycji — firma 20 pracowników, 30 przetargów / rok</div>
+      <div class="roi-grid">
+        <div class="roi-item">
+          <div class="roi-num">180h</div>
+          <div class="roi-label">zaoszczędzone rocznie<br>na szukaniu przetargów</div>
+        </div>
+        <div class="roi-item">
+          <div class="roi-num">12×</div>
+          <div class="roi-label">szybsze przygotowanie<br>kosztorysu KNR</div>
+        </div>
+        <div class="roi-item">
+          <div class="roi-num">+3</div>
+          <div class="roi-label">przetargi wygrane<br>rocznie (śr. wartość 800k)</div>
+        </div>
+        <div class="roi-item">
+          <div class="roi-num">480×</div>
+          <div class="roi-label">ROI rocznie<br>vs koszt abonamentu</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-bottom:4mm">Technologia i bezpieczeństwo</div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:4mm; margin-bottom:5mm;">
+      <div>
+        <div style="font-size:8pt; color:var(--muted); margin-bottom:3mm; line-height:1.5;">
+          budos działa w chmurze AWS (Frankfurt, eu-central-1). Dane są szyfrowane w tranzycie (TLS 1.3) i w spoczynku (AES-256). Każda firma ma izolowaną bazę danych (RLS na poziomie PostgreSQL).
+        </div>
+        <div class="tech-row">
+          <div class="tech-pill"><strong>Next.js 14</strong> App Router</div>
+          <div class="tech-pill"><strong>FastAPI</strong> Python</div>
+          <div class="tech-pill"><strong>PostgreSQL</strong> + pgvector</div>
+          <div class="tech-pill"><strong>AWS</strong> ECS Fargate</div>
+          <div class="tech-pill"><strong>TLS 1.3</strong></div>
+          <div class="tech-pill"><strong>AES-256</strong></div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:8.5pt; font-weight:600; color:var(--text); margin-bottom:3mm;">Integracje natywne</div>
+        <div class="tech-row">
+          <div class="tech-pill">🏛 <strong>BZP</strong> (API oficjalne)</div>
+          <div class="tech-pill">🇪🇺 <strong>TED EU</strong> (v3 API)</div>
+          <div class="tech-pill">📋 <strong>BIP</strong> connector</div>
+          <div class="tech-pill">🤖 <strong>n8n</strong> webhooks</div>
+          <div class="tech-pill">📊 <strong>athenaBF</strong> import ATH</div>
+          <div class="tech-pill">📄 <strong>PDF / XLSX</strong> eksport</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="security-row">
+      <div class="sec-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        RODO / GDPR compliant
+      </div>
+      <div class="sec-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        Uptime 99.9% SLA
+      </div>
+      <div class="sec-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Izolacja danych tenant-level
+      </div>
+      <div class="sec-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+        Dane przechowywane w Polsce / EU
+      </div>
+      <div class="sec-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Backup co 6h
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ╔══════════════════════════════════════════
+     PAGE 4 — REFERENCJE + CTA
+══════════════════════════════════════════╗ -->
+<div class="page">
+  <div class="inner-page">
+
+    <div class="page-header">
+      <div class="page-header-logo">budos</div>
+      <div class="page-num">Opinie i kontakt · 4 / 4</div>
+    </div>
+
+    <div class="section-label">Co mówią firmy budowlane</div>
+    <div class="section-title">Zaufali nam <em>wykonawcy</em> od małych firm<br>po generalnych wykonawców</div>
+    <div style="margin-bottom:5mm;"></div>
+
+    <div class="testimonials-grid">
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <div class="testi-text">„budos skróciła czas przygotowania oferty z 3 dni do 4 godzin. Analiza ryzyka SWZ wykryła klauzulę, która by nas kosztowała 180 tys. zł kary. Wygrywamy 40% więcej przetargów."</div>
+        <div class="testi-author"><strong>Marek Kowalski</strong> Prezes, Kowalski Budownictwo · 50 prac.</div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <div class="testi-text">„Synchronizacja z BZP i automatyczna analiza ryzyka to game-changer. Nasz dział ofertowania pracuje nad 3 razy większą liczbą przetargów bez rekrutacji nowego pracownika."</div>
+        <div class="testi-author"><strong>Anna Nowak</strong> Dyrektor Sprzedaży, Budopex S.A. · 200 prac.</div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-stars">★★★★★</div>
+        <div class="testi-text">„ROI zwrócił się w 2 miesiące. Szczególnie ceni kosztorys KNR — baza ICB jest zawsze aktualna, nie musimy ręcznie szukać cen. Polecam każdej firmie robiącej przetargi."</div>
+        <div class="testi-author"><strong>Tomasz Wiśniewski</strong> Właściciel, Wismak Sp. z o.o. · 15 prac.</div>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-bottom:4mm">Integruje się z Twoimi narzędziami</div>
+    <div class="integrations">
+      <div class="int-label">Natywne połączenie z:</div>
+      <div class="int-badge">🏛 e-Zamówienia BZP</div>
+      <div class="int-badge">🇪🇺 TED / SIMAP EU</div>
+      <div class="int-badge">📊 athenaBF</div>
+      <div class="int-badge">📋 Norma PRO (import ATH)</div>
+      <div class="int-badge">📧 Email alerty</div>
+      <div class="int-badge">🔗 REST API / n8n</div>
+    </div>
+
+    <div class="cta-block">
+      <div class="blob"></div>
+      <div class="cta-title">Gotowy, żeby wygrywać <em>więcej przetargów?</em></div>
+      <div class="cta-sub">Zacznij bezpłatnie — bez karty kredytowej. Konfiguracja zajmuje 10 minut. Pierwsze przetargi w systemie pojawią się jeszcze dziś.</div>
+      <div class="cta-buttons">
+        <div class="btn-primary">→ Zacznij za darmo · app.budos.pl</div>
+        <div class="btn-secondary">Umów demo z konsultantem</div>
+        <div class="cta-note">14 dni próby Pro · Bez zobowiązań</div>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-bottom:4mm">Kontakt i wsparcie</div>
+    <div class="contact-row">
+      <div class="contact-item">
+        <div class="contact-label">Demo i sprzedaż</div>
+        <div class="contact-value"><a>demo@budos.pl</a></div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-label">Wsparcie techniczne</div>
+        <div class="contact-value"><a>support@budos.pl</a></div>
+      </div>
+      <div class="contact-item">
+        <div class="contact-label">Aplikacja</div>
+        <div class="contact-value"><a>app.budos.pl</a></div>
+      </div>
+    </div>
+
+    <div style="margin-top:5mm; padding-top:4mm; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
+      <div style="font-size:7pt; color:var(--muted);">
+        © 2026 budos · YU-NA Sp. z o.o. · Dokument wygenerowany: lipiec 2026 · Wszelkie prawa zastrzeżone.
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div class="logo-mark" style="width:24px; height:24px; border-radius:6px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:#0a0a0f; width:14px; height:14px;">
+            <rect x="3" y="3" width="18" height="18" rx="3"/>
+            <path d="M3 9h18M9 21V9"/>
+          </svg>
+        </div>
+        <span style="font-size:9pt; font-weight:700; color:var(--text);">budos</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

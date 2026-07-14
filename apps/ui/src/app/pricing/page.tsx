@@ -5,6 +5,6 @@ export default function PricingRoute() {
 }
 
 export const metadata = {
-  title: 'Cennik — YU-NA',
-  description: 'Plany subskrypcji YU-NA dla firm budowlanych',
+  title: 'Cennik — budos',
+  description: 'Plany subskrypcji budos dla firm budowlanych',
 };

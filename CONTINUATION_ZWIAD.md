@@ -185,3 +185,9 @@ Priorytet: fazy 11-15 (UI filtry), potem 3-5 (backend), potem 16-19 (scoring+ale
 ---
 
 *Ostatnia aktualizacja: 2026-07-08 10:45 UTC*
+
+## M4 KOMPLETNY (2026-07-13)
+- FAZA 17: _deadline_proximity_bonus() — boost 0.05-0.15 za termin 3-60 dni (NULL safe)
+- FAZA 18: load_cpv_win_rates() + _cpv_win_rate_score() — CPV win rate boost z cache TTL 1h
+- Scorer: clamp(weighted + deadline_bonus + cpv_win_bonus, 0.0, 1.0)
+- Testy scorer M4: 5 nowych test caseów

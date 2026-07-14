@@ -133,6 +133,20 @@ PLANS = [
     },
 ]
 
+# ─── Startup validation: warn if placeholder price IDs in non-dev ──────────────
+ENVIRONMENT = os.getenv("ENVIRONMENT", "dev")
+if ENVIRONMENT != "dev":
+    _placeholder_plans = [
+        p["id"] for p in PLANS
+        if p.get("stripe_price_id") and "placeholder" in p["stripe_price_id"]
+    ]
+    if _placeholder_plans:
+        logger.warning(
+            "BILLING NOT CONFIGURED: plans %s still use placeholder Stripe price IDs. "
+            "Set STRIPE_PRICE_PRO and STRIPE_PRICE_BUSINESS env vars.",
+            _placeholder_plans,
+        )
+
 # price_id → plan name mapping (used in webhook handlers)
 PRICE_ID_TO_PLAN: dict[str, str] = {
     p["stripe_price_id"]: p["id"]
@@ -512,6 +526,10 @@ def checkout(body: CheckoutRequest, current_user: AuthUser) -> dict[str, str]:
 
     stripe_key = os.getenv("STRIPE_SECRET_KEY", "")
     stripe_price_id = plan.get("stripe_price_id", "")
+
+    # Block checkout if billing is not configured (placeholder price IDs)
+    if stripe_price_id and "placeholder" in stripe_price_id:
+        raise HTTPException(status_code=503, detail="Billing not configured")
 
     if stripe_key and stripe_key.startswith("sk_") and stripe_price_id and not stripe_price_id.endswith("_placeholder"):
         try:

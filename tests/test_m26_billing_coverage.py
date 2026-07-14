@@ -74,12 +74,14 @@ class TestCheckout:
         assert "redirect_url" in result
 
     def test_pro_plan_no_stripe_fallback(self):
+        from fastapi import HTTPException
         from services.api.services.api.routers.billing import checkout, CheckoutRequest
         body = CheckoutRequest(plan_id="pro")
-        # STRIPE_SECRET_KEY not set → fallback placeholder response
+        # P1-1: Stripe placeholder → 503 Service Unavailable
         with patch.dict("os.environ", {"STRIPE_SECRET_KEY": ""}, clear=False):
-            result = checkout(body, _user())
-        assert "redirect_url" in result or "message" in result
+            with pytest.raises(HTTPException) as exc_info:
+                checkout(body, _user())
+            assert exc_info.value.status_code == 503
 
     def test_enterprise_plan_redirect(self):
         from services.api.services.api.routers.billing import checkout, CheckoutRequest, PLANS

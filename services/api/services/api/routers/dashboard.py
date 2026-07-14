@@ -144,6 +144,20 @@ def dashboard_stats_v2(user: AuthUser) -> dict:
     return _cached_dashboard(tenant_id)
 
 
+@router.get("/api/v2/dashboard")
+def dashboard_kpi_root(user: AuthUser) -> dict:
+    """Root dashboard KPI — active_tenders, pipeline_value, win_rate_mtd, avg_deal_size, new_today."""
+    kpi = get_pipeline_kpi(user)
+    # Map active_count → active_tenders for frontend compatibility
+    return {
+        "active_tenders": kpi.get("active_count", 0),
+        "pipeline_value": kpi.get("pipeline_value", 0),
+        "win_rate_mtd": kpi.get("win_rate_mtd", 0),
+        "avg_deal_size": kpi.get("avg_deal_size", 0),
+        "new_today": kpi.get("new_today", 0),
+    }
+
+
 # ── Dashboard Digest (AI-generated) ──────────────────────────────────────────
 
 @router.get("/api/v2/dashboard/digest")

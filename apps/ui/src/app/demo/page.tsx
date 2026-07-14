@@ -65,6 +65,9 @@ export default function DemoPage() {
     }
 
     // Auto-login with demo credentials
+    // NOTE: demo-only credentials sourced from env vars; not for production use
+    const demoPassword = process.env.NEXT_PUBLIC_DEMO_PASSWORD || '';
+    const fallbackPassword = process.env.NEXT_PUBLIC_DEMO_FALLBACK_PASSWORD || '';
     async function autoLogin() {
       try {
         // First try to register demo user (ignore if already exists)
@@ -73,7 +76,7 @@ export default function DemoPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             email: 'demo@yu-na.pl',
-            password: 'demo2026!',
+            password: demoPassword,
             name: 'Jan Kowalski',
           }),
         }).catch(() => {});
@@ -84,7 +87,7 @@ export default function DemoPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             email: 'demo@yu-na.pl',
-            password: 'demo2026!',
+            password: demoPassword,
           }),
         });
 
@@ -95,7 +98,7 @@ export default function DemoPage() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               email: 'mateusz@qa10.io',
-              password: 'terra123',
+              password: fallbackPassword,
             }),
           });
           if (!res2.ok) throw new Error('Login failed');

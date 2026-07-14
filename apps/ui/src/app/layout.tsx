@@ -22,17 +22,26 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'YU-NA — System Zarządzania Przetargami i Budową',
-  description: 'Platforma do zarządzania przetargami budowlanymi. AI analiza ryzyka SWZ, automatyczny BZP sync, silnik kalkulacji.',
+  title: 'budos — AI Platforma Przetargów Budowlanych',
+  description: 'Automatyczny monitoring BZP/TED, AI analiza ryzyka SWZ, silnik kalkulacji KNR. Dla firm budowlanych.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'YU-NA',
+    title: 'budos',
   },
   icons: {
-    icon: '/favicon.ico',
-    apple: '/icons/icon-192.png',
+    icon: '/icons/icon.svg',
+    apple: '/icons/icon.svg',
+  },
+  openGraph: {
+    title: 'budos — AI Platforma Przetargów Budowlanych',
+    description: 'Automatyczny monitoring BZP/TED, AI analiza ryzyka SWZ, silnik kalkulacji KNR. Dla firm budowlanych.',
+    type: 'website',
+    locale: 'pl_PL',
+  },
+  twitter: {
+    card: 'summary',
   },
   other: {
     'mobile-web-app-capable': 'yes',

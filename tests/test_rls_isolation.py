@@ -8,11 +8,12 @@ Marks: integration (requires live DB; skipped in CI unless TERRA_DB_URL set).
 """
 from __future__ import annotations
 
+import os
 import uuid
 import pytest
 import httpx
 
-API_BASE = "http://127.0.0.1:8765"
+API_BASE = f'http://127.0.0.1:{os.environ.get("PORT", "8000")}'
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────

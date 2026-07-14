@@ -110,7 +110,7 @@ export function AutomationSuggestions({
   useEffect(() => {
     authFetch(`/api/v2/automations/suggestions/${entityType}/${entityId}`)
       .then(r => r.json())
-      .then(setSuggestions)
+      .then(data => setSuggestions(Array.isArray(data) ? data : []))
       .catch(() => {});
   }, [entityType, entityId, authFetch]);
 
@@ -188,7 +188,7 @@ export function WebhookManager({
   const loadWebhooks = () => {
     authFetch('/api/v2/automations/webhooks')
       .then(r => r.json())
-      .then(setWebhooks)
+      .then(data => setWebhooks(Array.isArray(data) ? data : []))
       .catch(() => {});
   };
 
@@ -308,7 +308,7 @@ export function AutomationHistory({
   useEffect(() => {
     authFetch('/api/v2/automations/history?limit=10')
       .then(r => r.json())
-      .then(setEvents)
+      .then(data => setEvents(Array.isArray(data) ? data : []))
       .catch(() => {});
   }, [authFetch]);
 

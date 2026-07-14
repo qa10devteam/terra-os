@@ -15,6 +15,7 @@ from datetime import datetime
 from typing import Any, Optional
 
 from fastapi import APIRouter, Query
+from ..auth.deps import AuthUser
 from pydantic import BaseModel
 import sqlalchemy as sa
 
@@ -22,6 +23,29 @@ from terra_db.session import get_engine
 
 router = APIRouter(prefix="/api/v2/audit", tags=["audit"])
 logger = logging.getLogger(__name__)
+
+
+@router.get("/recent")
+def get_audit_recent(
+    limit: int = Query(15, ge=1, le=100),
+    user: AuthUser = None,  # type: ignore[assignment]
+) -> list:
+    """Recent audit entries for dashboard feed."""
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(sa.text("""
+            SELECT id, entity, entity_id, action, actor, detail, at
+            FROM audit_log
+            ORDER BY at DESC
+            LIMIT :lim
+        """), {"lim": limit}).fetchall()
+    return [{
+        "id": str(r[0]),
+        "action_type": r[3] or "update",
+        "user_email": str(r[4]) if r[4] else "system",
+        "action": f"{r[1] or ''} {r[3] or ''}".strip(),
+        "created_at": r[6].isoformat() if r[6] else None,
+    } for r in rows]
 
 
 @router.get("/trail")
