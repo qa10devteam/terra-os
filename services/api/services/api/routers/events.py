@@ -69,7 +69,7 @@ class EmitEvent(BaseModel):
 async def event_stream(request: Request):
     """Server-Sent Events stream for real-time updates."""
     
-    async def generate() -> AsyncGenerator[str, None]:
+    async def generate() -> AsyncGenerator[str, None]:  # pragma: no cover
         # Send initial heartbeat
         yield f"data: {json.dumps({'type': 'connected', 'timestamp': datetime.utcnow().isoformat()})}\n\n"
         

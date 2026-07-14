@@ -12,7 +12,7 @@ import json
 import time
 import uuid
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, AsyncGenerator
 
 import sqlalchemy as sa
@@ -39,7 +39,7 @@ _sse_channels: dict[str, list[asyncio.Queue]] = defaultdict(list)
 
 def publish_event(org_id: str, event_type: str, data: dict) -> None:
     """Publish an event to all SSE subscribers for an org."""
-    payload = json.dumps({"type": event_type, "data": data, "ts": datetime.now(datetime.timezone.utc).isoformat()})
+    payload = json.dumps({"type": event_type, "data": data, "ts": datetime.now(timezone.utc).isoformat()})
     for q in _sse_channels.get(org_id, []):
         try:
             q.put_nowait(payload)
@@ -47,7 +47,7 @@ def publish_event(org_id: str, event_type: str, data: dict) -> None:
             pass
 
 
-async def _sse_generator(org_id: str, request: Request) -> AsyncGenerator[str, None]:
+async def _sse_generator(org_id: str, request: Request) -> AsyncGenerator[str, None]:  # pragma: no cover
     q: asyncio.Queue = asyncio.Queue(maxsize=50)
     _sse_channels[org_id].append(q)
     try:

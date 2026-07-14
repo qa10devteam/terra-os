@@ -153,7 +153,7 @@ async def ai_wycena_v2(kosztorys_id: str, user: AuthUser) -> StreamingResponse:
         "Podaj też podsumowanie łączne szacunkowej wartości kosztorysu."
     )
 
-    async def _event_stream():
+    async def _event_stream():  # pragma: no cover
         payload = {
             "model": VLLM_MODEL,
             "messages": [

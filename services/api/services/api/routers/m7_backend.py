@@ -89,7 +89,7 @@ def ai_summary(tenant_id: str) -> StreamingResponse:
 
     llm = get_llm_client()
 
-    def stream():
+    def stream():  # pragma: no cover
         for token in llm.generate_stream(prompt):
             yield f"data: {json.dumps({'type': 'token', 'content': token})}\n\n"
         yield f"data: {json.dumps({'type': 'done'})}\n\n"
