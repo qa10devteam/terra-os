@@ -1,43 +1,27 @@
 #!/bin/bash
-# Faza 65/111 — Automated PostgreSQL backup with retention + syslog
-# Cron: 0 2 * * * /home/ubuntu/terra-os/scripts/backup.sh
-
 set -euo pipefail
 
-DATE=$(date +%Y%m%d_%H%M%S)
-BACKUP_DIR=/var/backups/terraos
-RETENTION_DAYS=30
-BACKUP_FILE="${BACKUP_DIR}/terraos_${DATE}.sql.gz"
+BACKUP_DIR="/home/ubuntu/backups"
+DB_NAME="${POSTGRES_DB:-terraos}"
+DB_USER="${POSTGRES_USER:-terraos}"
+DB_HOST="${POSTGRES_HOST:-127.0.0.1}"
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+BACKUP_FILE="${BACKUP_DIR}/terraos_${TIMESTAMP}.sql.gz"
 
-# Log helper: writes to both stdout and syslog
-log() {
-    local msg="[terraos-backup] $1"
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $msg"
-    logger -t terraos-backup "$msg" || true
-}
-
-# Ensure backup directory exists
 mkdir -p "$BACKUP_DIR"
 
-log "Starting backup → ${BACKUP_FILE}"
+echo "[$(date)] Starting backup of ${DB_NAME}..."
+pg_dump -h "$DB_HOST" -U "$DB_USER" "$DB_NAME" | gzip > "$BACKUP_FILE"
+echo "[$(date)] Backup saved: $BACKUP_FILE ($(du -h "$BACKUP_FILE" | cut -f1))"
 
-# Run pg_dump; exit non-zero on failure
-if sudo -u postgres pg_dump terraos | gzip > "${BACKUP_FILE}"; then
-    SIZE=$(du -h "${BACKUP_FILE}" | cut -f1)
-    log "Backup completed: ${BACKUP_FILE} (${SIZE})"
-else
-    log "ERROR: pg_dump failed for database 'terraos'"
-    logger -t terraos-backup -p user.err "CRITICAL: pg_dump failed — backup NOT created"
-    exit 1
+# Keep only last 7 backups
+cd "$BACKUP_DIR"
+ls -t terraos_*.sql.gz 2>/dev/null | tail -n +8 | xargs -r rm -f
+echo "[$(date)] Cleanup done. Backups retained: $(ls terraos_*.sql.gz | wc -l)"
+
+# Optional S3 upload
+if [ -n "${BACKUP_S3_BUCKET:-}" ]; then
+    echo "[$(date)] Uploading to s3://${BACKUP_S3_BUCKET}/..."
+    aws s3 cp "$BACKUP_FILE" "s3://${BACKUP_S3_BUCKET}/daily/$(basename "$BACKUP_FILE")"
+    echo "[$(date)] S3 upload complete."
 fi
-
-# Retention: remove backups older than RETENTION_DAYS days
-DELETED=$(find "$BACKUP_DIR" -name '*.sql.gz' -mtime "+${RETENTION_DAYS}" -print -delete | wc -l)
-if [ "$DELETED" -gt 0 ]; then
-    log "Retention cleanup: removed ${DELETED} backup(s) older than ${RETENTION_DAYS} days"
-fi
-
-log "Done. Current backups in ${BACKUP_DIR}:"
-ls -lh "${BACKUP_DIR}"/*.sql.gz 2>/dev/null || log "  (no backups found)"
-
-exit 0

@@ -264,6 +264,49 @@ def run_backup(user: AuthUser) -> dict:
 # Audit log read-only
 # ──────────────────────────────────────────────────────────────────────────────
 
+@router.get("/health/detailed")
+def health_detailed() -> dict:
+    """Detailed health check — DB, Redis, last ingest timestamp."""
+    import time
+    import redis as redis_lib
+
+    engine = get_engine()
+    checks: dict = {}
+
+    # DB
+    try:
+        with engine.connect() as conn:
+            conn.execute(sa.text("SELECT 1"))
+        checks["database"] = "ok"
+    except Exception as exc:
+        checks["database"] = f"error: {str(exc)[:120]}"
+
+    # Redis
+    try:
+        r = redis_lib.from_url(os.environ.get("REDIS_URL", "redis://localhost:6379"), socket_connect_timeout=2)
+        r.ping()
+        checks["redis"] = "ok"
+    except Exception as exc:
+        checks["redis"] = f"error: {str(exc)[:120]}"
+
+    # Last ingest
+    try:
+        with engine.connect() as conn:
+            row = conn.execute(sa.text("SELECT max(created_at) FROM tender")).scalar()
+        checks["last_ingest"] = str(row) if row else "never"
+    except Exception:
+        checks["last_ingest"] = "unknown"
+
+    status = (
+        "healthy"
+        if all(checks.get(k) == "ok" for k in ("database", "redis"))
+        else "degraded"
+    )
+    return {"status": status, "checks": checks, "timestamp": time.time()}
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+
 @router.get("/audit", response_model=list[AuditEntry])
 def read_audit(
     entity: str | None = Query(default=None),
