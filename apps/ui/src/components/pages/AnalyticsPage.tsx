@@ -203,8 +203,8 @@ export function AnalyticsPage() {
     try {
       const d = await fetch('/api/v2/intelligence/win-probability', {
         headers: { Authorization: `Bearer ${token}` },
-      }).then(r => r.json());
-      setWinData(d);
+      }).then(r => { if (!r.ok) return null; return r.json(); });
+      if (d && typeof d.win_rate === 'number') setWinData(d);
     } finally {
       setLoading(false);
     }
