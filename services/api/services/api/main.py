@@ -495,6 +495,12 @@ except ImportError as _e:  # pragma: no cover
 if 'alert_config' in _opt_map:
     app.include_router(_opt_map['alert_config'].router)
 
+if 'automations' in _opt_map:
+    app.include_router(_opt_map['automations'].router)
+
+if 'gus_bdl' in _opt_map and hasattr(_opt_map['gus_bdl'], 'gus_v2_router'):
+    app.include_router(_opt_map['gus_bdl'].gus_v2_router)
+
 # S103-S105 — Onboarding
 try:
     from .routers import onboarding as _onboarding_mod
