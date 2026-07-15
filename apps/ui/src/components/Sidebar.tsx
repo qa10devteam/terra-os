@@ -116,14 +116,14 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
       <div className="flex items-center justify-between px-3 h-16 border-b border-earth-700/50 flex-shrink-0">
         {isMenuOpen ? (
           /* Full logo */
-          <span className="text-base font-bold text-earth-100 tracking-tight select-none">
-            YU-NA
-            <span className="text-accent-primary text-xs font-normal ml-1.5 opacity-70">budos</span>
+          <span className="text-base font-bold text-accent-primary tracking-tight select-none">
+            budos
+            <span className="text-earth-600 text-[10px] font-normal ml-1">by YU‑NA</span>
           </span>
         ) : (
           /* Signet icon */
           <div className="w-8 h-8 rounded-lg bg-accent-primary/10 border border-accent-primary/30 flex items-center justify-center mx-auto">
-            <span className="text-accent-primary text-xs font-bold leading-none select-none">Y</span>
+            <span className="text-accent-primary text-xs font-bold leading-none select-none">b</span>
           </div>
         )}
 
@@ -147,7 +147,7 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
             {/* Group header */}
             {isMenuOpen ? (
               <div className="flex items-center gap-1.5 px-2 py-1 mb-0.5">
-                <GroupIcon className="w-3 h-3 text-earth-600 flex-shrink-0" />
+                <GroupIcon className="w-3.5 h-3.5 text-earth-700 flex-shrink-0" />
                 <span className="section-label truncate">{label}</span>
               </div>
             ) : (
@@ -173,7 +173,7 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
                         'rounded-lg px-3 py-1.5',
                         'transition-all duration-150',
                         isActive
-                          ? 'bg-accent-primary/10 text-accent-primary border-l-2 border-accent-primary shadow-token-sm'
+                          ? 'bg-accent-primary/[0.12] text-accent-primary border-l-2 border-accent-primary shadow-token-sm'
                           : 'text-earth-400 hover:text-earth-200 hover:bg-earth-800/60 border-l-2 border-transparent',
                       ].join(' ')}
                     >
@@ -218,16 +218,16 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
               })}
             </div>
 
-            <div className="mt-2 border-t border-earth-800/40" />
+            <div className="mt-1.5" />
           </div>
         ))}
       </nav>
 
       {/* ── Footer ─────────────────────────────────────────────────────── */}
-      <div className="p-3 border-t border-earth-700/50 space-y-2 flex-shrink-0">
+      <div className="p-3 border-t border-earth-700/50 flex-shrink-0">
         {isMenuOpen ? (
           <div className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-earth-800/40 transition-colors cursor-default">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-primary/30 to-accent-primary/10 border border-accent-primary/20 flex items-center justify-center text-xs font-bold text-accent-primary flex-shrink-0">
+            <div className="w-8 h-8 rounded-full bg-earth-800 border border-earth-600/50 flex items-center justify-center text-xs font-bold text-accent-primary flex-shrink-0">
               {initials}
             </div>
             <div className="flex-1 min-w-0">
@@ -245,7 +245,7 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
           </div>
         ) : (
           <div className="relative group/logout">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-accent-primary/30 to-accent-primary/10 border border-accent-primary/20 flex items-center justify-center text-xs font-bold text-accent-primary mx-auto cursor-default">
+            <div className="w-8 h-8 rounded-full bg-earth-800 border border-earth-600/50 flex items-center justify-center text-xs font-bold text-accent-primary mx-auto cursor-default">
               {initials}
             </div>
             <button
@@ -255,20 +255,6 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
             >
               <LogOut className="w-2.5 h-2.5 text-white" />
             </button>
-          </div>
-        )}
-
-        {isMenuOpen ? (
-          <div className="flex items-center justify-between px-2 py-1">
-            <span className="text-[10px] text-earth-700 font-mono tracking-wide">v2.1.0</span>
-            <div className="flex items-center gap-1.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-accent-primary animate-pulse-soft" />
-              <span className="text-[10px] text-earth-600">API</span>
-            </div>
-          </div>
-        ) : (
-          <div className="flex justify-center">
-            <div className="w-1.5 h-1.5 rounded-full bg-accent-primary animate-pulse-soft" />
           </div>
         )}
       </div>

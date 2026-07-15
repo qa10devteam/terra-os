@@ -57,14 +57,14 @@ function CurrencyChip({ rate }: { rate: CurrencyRate }) {
   const changeStr = `${arrow}${Math.abs(rate.change).toFixed(2)}%`;
 
   return (
-    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-earth-800/60 border border-earth-700/40 select-none">
-      <span className="text-[11px] font-bold text-earth-300 tracking-wide">{rate.code}</span>
-      <span className="font-mono text-[11px] font-medium text-earth-100 stat-value">
+    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-earth-800/60 border border-earth-700/40 select-none">
+      <span className="text-[11px] font-semibold text-earth-400 tracking-wide">{rate.code}</span>
+      <span className="font-mono text-[12px] font-medium text-earth-100 stat-value">
         {rate.rate.toFixed(4)}
       </span>
       <span className="text-[10px] text-earth-600">PLN</span>
       <span
-        className={`text-[10px] font-semibold tabular-nums ${
+        className={`text-[11px] font-semibold tabular-nums ${
           positive ? 'text-accent-primary' : 'text-accent-danger'
         }`}
       >
@@ -126,12 +126,12 @@ export function MarketBar() {
   return (
     <div className="sticky top-0 z-40 h-10 flex items-center gap-2 px-4 bg-earth-900/95 border-b border-earth-800/80 backdrop-blur-md">
       {/* Label */}
-      <span className="text-[10px] font-bold text-earth-600 uppercase tracking-widest hidden sm:block mr-1">
+      <span className="text-[11px] font-mono text-earth-700 hidden sm:block mr-1">
         NBP
       </span>
 
       {/* Separator */}
-      <div className="h-4 w-px bg-earth-800 hidden sm:block" />
+      <div className="h-4 w-px bg-earth-700/40 hidden sm:block" />
 
       {/* Currency chips */}
       <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-x-auto scrollbar-none">
@@ -155,7 +155,7 @@ export function MarketBar() {
         )}
 
         {/* Separator */}
-        <div className="h-4 w-px bg-earth-800" />
+        <div className="h-4 w-px bg-earth-700/40" />
 
         {/* Live clock */}
         <span className="font-mono text-[11px] font-semibold text-earth-300 tabular-nums tracking-tight stat-value">
@@ -163,7 +163,7 @@ export function MarketBar() {
         </span>
 
         {/* Live indicator */}
-        <div className="w-1.5 h-1.5 rounded-full bg-accent-primary animate-pulse" />
+        <div className="w-1.5 h-1.5 rounded-full bg-accent-primary/60 animate-pulse-soft" />
       </div>
     </div>
   );
