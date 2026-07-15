@@ -449,10 +449,10 @@ export function DashboardPage() {
 
   const fetchDashboard = useCallback(async () => {
     try {
-      const data = await authFetch('/api/v2/dashboard') as DashboardKPI;
+      const data = await authFetch('/api/v2/dashboard/stats') as DashboardKPI;
       setKpi(data);
     } catch (err) {
-      // Fallback to tenders/stats endpoint
+      // Fallback to tenders/stats endpoint when dashboard/stats returns 404
       try {
         const fallback = await authFetch('/api/v2/tenders/stats') as DashboardKPI;
         setKpi(fallback);
@@ -623,7 +623,7 @@ export function DashboardPage() {
             >
               <MetricCard
                 icon={Package}
-                label="Łączna wartość"
+                label="Wartość portfela"
                 value={formatPLN(kpi?.total_value ?? kpi?.pipeline_value ?? 0)}
                 trendLabel="wszystkie przetargi"
                 iconColor="text-accent-success"
