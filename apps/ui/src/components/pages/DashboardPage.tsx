@@ -36,6 +36,7 @@ interface DashboardKPI {
   win_rate_mtd: number;
   avg_deal_size: number;
   new_today: number;
+  total_value?: number;
 }
 
 interface DashboardTender {
@@ -451,8 +452,14 @@ export function DashboardPage() {
       const data = await authFetch('/api/v2/dashboard') as DashboardKPI;
       setKpi(data);
     } catch (err) {
-      console.error('Dashboard KPI fetch failed:', err);
-      showToast('error', 'Nie udało się pobrać KPI');
+      // Fallback to tenders/stats endpoint
+      try {
+        const fallback = await authFetch('/api/v2/tenders/stats') as DashboardKPI;
+        setKpi(fallback);
+      } catch {
+        console.error('Dashboard KPI fetch failed:', err);
+        showToast('error', 'Nie udało się pobrać KPI');
+      }
     }
   }, [authFetch]);
 
@@ -570,10 +577,10 @@ export function DashboardPage() {
           ROW 1 — Karty KPI
           ════════════════════════════════════════════════════════════════════ */}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
         {loading ? (
           <>
-            {[...Array(5)].map((_, i) => (
+            {[...Array(6)].map((_, i) => (
               <SkeletonKPI key={i} />
             ))}
           </>
@@ -606,6 +613,20 @@ export function DashboardPage() {
                 trend={8}
                 trendLabel="wzrost wartości"
                 iconColor="text-accent-primary"
+              />
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.15 }}
+            >
+              <MetricCard
+                icon={Package}
+                label="Łączna wartość"
+                value={formatPLN(kpi?.total_value ?? kpi?.pipeline_value ?? 0)}
+                trendLabel="wszystkie przetargi"
+                iconColor="text-accent-success"
               />
             </motion.div>
 

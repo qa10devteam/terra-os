@@ -1,9 +1,21 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { FileText, Download, Calendar, BarChart2, FileBarChart, Plus, Clock, CheckCircle } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { motion } from 'motion/react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import {
+  FileText, Download, Calendar, BarChart2, FileBarChart, Plus, Clock, CheckCircle, Loader2,
+} from 'lucide-react';
 import { PageShell } from '@/components/PageShell';
+import { useAuthFetch } from '@/lib/api-v2';
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface MonthlyRow {
+  month: string;
+  count: number;
+  total_value: number;
+}
 
 interface Report {
   id: string;
@@ -13,14 +25,6 @@ interface Report {
   status: 'ready' | 'generating' | 'scheduled';
   pages: number;
 }
-
-const DEMO_REPORTS: Report[] = [
-  { id: '1', title: 'Raport miesięczny — Czerwiec 2026', type: 'monthly', generated_at: '2026-07-01 08:00', status: 'ready', pages: 12 },
-  { id: '2', title: 'Podsumowanie: Droga gminna Pieszyce', type: 'project', generated_at: '2026-07-08 14:30', status: 'ready', pages: 8 },
-  { id: '3', title: 'Analiza finansowa Q2 2026', type: 'financial', generated_at: '2026-07-05 09:15', status: 'ready', pages: 15 },
-  { id: '4', title: 'Raport miesięczny — Lipiec 2026', type: 'monthly', generated_at: '', status: 'scheduled', pages: 0 },
-  { id: '5', title: 'Porównanie ofert: Kanalizacja Łagiewniki', type: 'custom', generated_at: '2026-07-09 16:45', status: 'ready', pages: 6 },
-];
 
 const TYPE_META: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
   monthly:   { label: 'Miesięczny',     icon: <Calendar className="w-3.5 h-3.5" />,    color: 'text-info' },
@@ -32,8 +36,47 @@ const TYPE_META: Record<string, { label: string; icon: React.ReactNode; color: s
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } };
 const item      = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0, transition: { duration: 0.3 } } };
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function fmtMln(v: number): string {
+  if (v >= 1_000_000) return (v / 1_000_000).toFixed(1) + ' M';
+  if (v >= 1_000) return (v / 1_000).toFixed(0) + ' tys.';
+  return String(v);
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
 export function ReportsPage() {
-  const [reports] = useState<Report[]>(DEMO_REPORTS);
+  const authFetch = useAuthFetch();
+  const [monthlyData, setMonthlyData] = useState<MonthlyRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [reports, setReports] = useState<Report[]>([]);
+
+  const fetchMonthly = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await authFetch('/api/v2/reports/monthly');
+      const rows: MonthlyRow[] = data?.items ?? data?.data ?? data ?? [];
+      setMonthlyData(Array.isArray(rows) ? rows : []);
+    } catch {
+      // Use empty fallback
+      setMonthlyData([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [authFetch]);
+
+  useEffect(() => { fetchMonthly(); }, [fetchMonthly]);
+
+  // Build static report list (could later come from API)
+  useEffect(() => {
+    setReports([
+      { id: '1', title: 'Raport miesięczny — Czerwiec 2026', type: 'monthly', generated_at: '2026-07-01 08:00', status: 'ready', pages: 12 },
+      { id: '2', title: 'Podsumowanie: Droga gminna Pieszyce', type: 'project', generated_at: '2026-07-08 14:30', status: 'ready', pages: 8 },
+      { id: '3', title: 'Analiza finansowa Q2 2026', type: 'financial', generated_at: '2026-07-05 09:15', status: 'ready', pages: 15 },
+      { id: '4', title: 'Raport miesięczny — Lipiec 2026', type: 'monthly', generated_at: '', status: 'scheduled', pages: 0 },
+    ]);
+  }, []);
 
   const readyCount = reports.filter(r => r.status === 'ready').length;
   const totalPages = reports.reduce((s, r) => s + r.pages, 0);
@@ -68,6 +111,57 @@ export function ReportsPage() {
             </div>
             <p className="text-2xl font-bold text-info">{reports.filter(r => r.status === 'scheduled').length}</p>
           </div>
+        </motion.div>
+
+        {/* Monthly Bar Chart */}
+        <motion.div variants={item} className="card rounded-token-lg p-5 shadow-token-sm">
+          <h3 className="text-sm font-semibold text-earth-200 mb-4 flex items-center gap-2">
+            <BarChart2 className="w-4 h-4 text-accent-primary" />
+            Przetargi miesięcznie
+          </h3>
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="w-6 h-6 text-earth-500 animate-spin" />
+            </div>
+          ) : monthlyData.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <BarChart2 className="w-8 h-8 text-earth-700 mb-2" />
+              <p className="text-earth-500 text-sm">Brak danych miesięcznych</p>
+              <p className="text-earth-600 text-xs mt-1">Dane pojawią się po zaindeksowaniu przetargów</p>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={monthlyData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                <XAxis
+                  dataKey="month"
+                  tick={{ fill: '#94A3B8', fontSize: 11 }}
+                  axisLine={{ stroke: '#1E293B' }}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fill: '#64748B', fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(v: number) => fmtMln(v)}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#1E293B',
+                    border: '1px solid #334155',
+                    borderRadius: '8px',
+                    fontSize: 12,
+                  }}
+                  labelStyle={{ color: '#E2E8F0' }}
+                  formatter={(value: number, name: string) => [
+                    name === 'total_value' ? fmtMln(value) + ' zł' : value,
+                    name === 'total_value' ? 'Wartość' : 'Liczba',
+                  ]}
+                />
+                <Bar dataKey="count" fill="#3B82F6" radius={[4, 4, 0, 0]} name="Liczba" />
+                <Bar dataKey="total_value" fill="#22C55E" radius={[4, 4, 0, 0]} name="Wartość" />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </motion.div>
 
         {/* Report List */}

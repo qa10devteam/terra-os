@@ -38,13 +38,12 @@ interface PipelineKPI {
 // ── Column config ─────────────────────────────────────────────────────────────
 
 const COLUMNS = [
-  { key: 'OBSERWOWANY', label: 'Obserwowany', color: '#94A3B8', ring: 'rgba(148,163,184,0.35)' },
-  { key: 'ANALIZOWANY', label: 'Analizowany', color: '#3B82F6', ring: 'rgba(59,130,246,0.35)' },
-  { key: 'DECYZJA',     label: 'Decyzja',     color: '#EAB308', ring: 'rgba(234,179,8,0.35)' },
-  { key: 'OFERTA',      label: 'Oferta',      color: '#F97316', ring: 'rgba(249,115,22,0.35)' },
-  { key: 'ZLOZONY',     label: 'Złożony',     color: '#A855F7', ring: 'rgba(168,85,247,0.35)' },
-  { key: 'WON',         label: 'WON ✓',       color: '#22C55E', ring: 'rgba(34,197,94,0.35)' },
-  { key: 'LOST',        label: 'LOST ✗',      color: '#EF4444', ring: 'rgba(239,68,68,0.35)' },
+  { key: 'new',          label: 'Nowe',         color: '#94A3B8', ring: 'rgba(148,163,184,0.35)' },
+  { key: 'watching',     label: 'Obserwowane',  color: '#3B82F6', ring: 'rgba(59,130,246,0.35)' },
+  { key: 'analyzing',    label: 'Analiza',      color: '#EAB308', ring: 'rgba(234,179,8,0.35)' },
+  { key: 'estimated',    label: 'Wycenione',    color: '#F97316', ring: 'rgba(249,115,22,0.35)' },
+  { key: 'decided_go',   label: 'GO ✓',         color: '#22C55E', ring: 'rgba(34,197,94,0.35)' },
+  { key: 'decided_nogo', label: 'NO-GO ✗',      color: '#EF4444', ring: 'rgba(239,68,68,0.35)' },
 ] as const;
 
 const COL_COLOR_MAP: Record<string, string> = Object.fromEntries(
@@ -457,13 +456,14 @@ export function PipelinePage() {
   const fetchTenders = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await authFetch('/api/v2/tenders?limit=200&include_all_statuses=true');
+      const data = await authFetch('/api/v2/tenders?limit=200');
       const items: TenderItem[] = data?.items ?? [];
       const byStatus: Record<string, TenderItem[]> = {};
       for (const col of COLUMNS) byStatus[col.key] = [];
       for (const t of items) {
-        const key = (t.pipeline_status ?? '').toUpperCase();
+        const key = (t.pipeline_status ?? 'new').toLowerCase();
         if (byStatus[key] !== undefined) byStatus[key].push(t);
+        else byStatus['new'].push(t); // fallback to 'new' column
       }
       setTendersByStatus(byStatus);
     } catch {
@@ -485,7 +485,7 @@ export function PipelinePage() {
   // ── Drag handlers ─────────────────────────────────────────────────────────
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, tender: TenderItem) => {
     e.dataTransfer.setData('tenderId', tender.id);
-    e.dataTransfer.setData('fromStatus', (tender.pipeline_status ?? '').toUpperCase());
+    e.dataTransfer.setData('fromStatus', (tender.pipeline_status ?? 'new').toLowerCase());
     e.dataTransfer.effectAllowed = 'move';
   };
 
@@ -529,7 +529,7 @@ export function PipelinePage() {
     try {
       await authFetch(`/api/v2/tenders/${tenderId}`, {
         method: 'PATCH',
-        body: JSON.stringify({ pipeline_status: toStatus }),
+        body: JSON.stringify({ status: toStatus }),
       });
       const label = COLUMNS.find(c => c.key === toStatus)?.label ?? toStatus;
       showToast('success', `Przeniesiono → ${label}`);
@@ -543,9 +543,9 @@ export function PipelinePage() {
     try {
       await authFetch(`/api/v2/tenders/${tender.id}`, {
         method: 'PATCH',
-        body: JSON.stringify({ pipeline_status: 'OBSERWOWANY' }),
+        body: JSON.stringify({ status: 'watching' }),
       });
-      showToast('success', 'Dodano do pipeline jako Obserwowany');
+      showToast('success', 'Dodano do pipeline jako Obserwowane');
       setShowAddModal(false);
       fetchTenders();
     } catch { /* toast handled */ }
@@ -561,9 +561,9 @@ export function PipelinePage() {
   const allFlat = Object.values(tendersByStatus).flat();
   const totalCount = allFlat.length;
   const totalValue = allFlat.reduce((s, t) => s + (t.value_pln ?? 0), 0);
-  const wonCount = (tendersByStatus['WON'] ?? []).length;
-  const closedCount = wonCount + (tendersByStatus['LOST'] ?? []).length;
-  const winRate = closedCount > 0 ? Math.round((wonCount / closedCount) * 100) : null;
+  const goCount = (tendersByStatus['decided_go'] ?? []).length;
+  const closedCount = goCount + (tendersByStatus['decided_nogo'] ?? []).length;
+  const winRate = closedCount > 0 ? Math.round((goCount / closedCount) * 100) : null;
 
   // ── Actions bar ───────────────────────────────────────────────────────────
   const actions = (

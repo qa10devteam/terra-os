@@ -431,3 +431,34 @@ def me(current_user: AuthUser):
         org_id=current_user.org_id,
         role=current_user.role,
     )
+
+
+@router.get("/me/full")
+def me_full(current_user: AuthUser):
+    """Extended user profile with organization details and feature flags."""
+    org_data = None
+    if current_user.org_id:
+        try:
+            engine = get_engine()
+            with engine.connect() as conn:
+                org_row = conn.execute(
+                    text("SELECT id, name FROM organizations WHERE id = CAST(:oid AS UUID)"),
+                    {"oid": current_user.org_id},
+                ).fetchone()
+                if org_row:
+                    org_data = {
+                        "id": str(org_row.id),
+                        "name": org_row.name,
+                        "plan": "free",
+                    }
+        except Exception:
+            pass
+    name = current_user.email.split('@')[0]
+    return {
+        "user_id": current_user.user_id,
+        "email": current_user.email,
+        "name": name,
+        "role": current_user.role,
+        "org": org_data,
+        "feature_flags": [],
+    }

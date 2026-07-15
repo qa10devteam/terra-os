@@ -268,3 +268,36 @@ def delete_notification(notification_id: str, user: AuthUser) -> None:
             status_code=404,
             detail={"error": "not_found", "message": "Powiadomienie nie znalezione"},
         )
+
+
+# ─── POST /notifications/bulk-read — mark multiple notifications as read ───────
+
+from pydantic import BaseModel
+
+class BulkReadRequest(BaseModel):
+    ids: list[str] | None = None
+    all: bool = False
+
+
+@router.post("/bulk-read")
+def bulk_read(body: BulkReadRequest, user: AuthUser) -> dict:
+    """Mark multiple (or all) notifications as read."""
+    engine = get_engine()
+    with engine.begin() as conn:
+        if body.all:
+            result = conn.execute(
+                sa.text("UPDATE notifications SET read = TRUE WHERE org_id = :org_id AND read = FALSE"),
+                {"org_id": user.org_id},
+            )
+        elif body.ids:
+            # Use IN clause with individual binds for compatibility
+            placeholders = ", ".join(f":id_{i}" for i in range(len(body.ids)))
+            params = {f"id_{i}": v for i, v in enumerate(body.ids)}
+            params["org_id"] = user.org_id
+            result = conn.execute(
+                sa.text(f"UPDATE notifications SET read = TRUE WHERE id::text IN ({placeholders}) AND org_id = :org_id"),
+                params,
+            )
+        else:
+            return {"updated": 0}
+    return {"updated": result.rowcount}
