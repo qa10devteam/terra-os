@@ -937,7 +937,7 @@ function KategorieTab() {
     setError(null);
     try {
       const res = await authFetch('/api/v2/icb/categories') as CategoriesResponse;
-      setCategories(res.categories || []);
+      setCategories(Array.isArray(res) ? res : (res.categories || []));
     } catch (e: any) {
       setError(e.message || 'Błąd ładowania kategorii');
     } finally {
@@ -1609,7 +1609,7 @@ export function ICBPage() {
   // Pre-load categories for tabs that need them
   useEffect(() => {
     authFetch('/api/v2/icb/categories')
-      .then((res: any) => setCategories(res?.categories || []))
+      .then((res: any) => setCategories(Array.isArray(res) ? res : (res?.categories || [])))
       .catch(() => {});
   }, [authFetch]);
 
