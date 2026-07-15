@@ -122,7 +122,7 @@ export default function BidIntelligencePage() {
                       </td>
                       <td className="px-6 py-3 text-earth-200 font-mono">{bid.markup_pct}%</td>
                       <td className="px-6 py-3 text-earth-200 font-mono">
-                        {bid.bid_amount.toLocaleString('pl-PL')} PLN
+                        {(bid.bid_amount ?? 0).toLocaleString('pl-PL')} PLN
                       </td>
                       <td className="px-6 py-3">
                         <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${STATUS_META[bid.status] ?? ''}`}>

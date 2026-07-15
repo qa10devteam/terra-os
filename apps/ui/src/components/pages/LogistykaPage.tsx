@@ -754,7 +754,7 @@ function PodwykonawcyTab() {
         {[1,2,3,4,5].map(i => (
           <Star key={i} className={`w-3 h-3 ${i <= full ? 'text-yellow-400 fill-yellow-400' : 'text-earth-700'}`} />
         ))}
-        <span className="ml-1 text-xs text-earth-400">{r.toFixed(1)}</span>
+        <span className="ml-1 text-xs text-earth-400">{(r ?? 0).toFixed(1)}</span>
       </div>
     );
   }

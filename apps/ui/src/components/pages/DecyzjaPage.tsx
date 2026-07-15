@@ -613,7 +613,7 @@ export function DecyzjaPage() {
                         <p className="text-xs text-earth-600 mt-0.5">
                           Marża:{' '}
                           <span className={headroom < 0 ? 'text-accent-danger' : 'text-accent-primary'}>
-                            {headroom.toFixed(1)}%
+                            {(headroom ?? 0).toFixed(1)}%
                           </span>
                         </p>
                       )}

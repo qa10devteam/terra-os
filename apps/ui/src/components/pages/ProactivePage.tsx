@@ -166,7 +166,7 @@ export function ProactivePage() {
                         </div>
                       </div>
                       <div className="text-right shrink-0 ml-4">
-                        <div className={`text-lg font-bold ${cfg.color}`}>{alert.days_left.toFixed(0)}d</div>
+                        <div className={`text-lg font-bold ${cfg.color}`}>{(alert.days_left ?? 0).toFixed(0)}d</div>
                         <div className="text-earth-500 text-xs">{alert.deadline_at?.slice(0, 10)}</div>
                         {alert.value_pln && <div className="text-earth-300 text-xs mt-1">{formatPLN(alert.value_pln)}</div>}
                       </div>
@@ -185,7 +185,7 @@ export function ProactivePage() {
           <div className="grid grid-cols-4 gap-3">
             {[
               { label: 'Expected Value', value: formatPLN(portfolio.metrics.total_expected_value), icon: TrendingUp },
-              { label: 'Effort', value: `${portfolio.metrics.total_effort_hours.toFixed(0)}h`, icon: Clock },
+              { label: 'Effort', value: `${(portfolio.metrics.total_effort_hours ?? 0).toFixed(0)}h`, icon: Clock },
               { label: 'Efficiency', value: `${(portfolio.metrics.portfolio_efficiency / 1000).toFixed(1)}k/h`, icon: Target },
               { label: 'Utilization', value: `${portfolio.metrics.utilization_pct}%`, icon: Zap },
             ].map((kpi, i) => (
@@ -211,12 +211,12 @@ export function ProactivePage() {
                     </span>
                     <div>
                       <div className="text-earth-200 text-sm">{item.title?.slice(0, 60)}</div>
-                      <div className="text-earth-500 text-xs">P(win)={(item.win_probability * 100).toFixed(0)}% · {item.effort_hours}h</div>
+                      <div className="text-earth-500 text-xs">P(win)={(((item.win_probability ?? 0) * 100).toFixed(0))}% · {item.effort_hours}h</div>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-earth-100 font-medium">{formatPLN(item.expected_value)}</div>
-                    <div className="text-earth-500 text-xs">{item.efficiency.toFixed(0)} PLN/h</div>
+                    <div className="text-earth-500 text-xs">{(item.efficiency ?? 0).toFixed(0)} PLN/h</div>
                   </div>
                 </div>
               ))}
