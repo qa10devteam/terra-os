@@ -1157,7 +1157,9 @@ async def test_audit_v2_recent(app, auth_headers):
     conn = _mock_conn(fetchall=[])
     eng = MagicMock()
     eng.return_value.connect.return_value = conn
-    with patch(f"{AUDIT_MOD}.get_engine", eng):
+    # Both audit.py and audit_v2.py share /api/v2/audit prefix
+    with patch("services.api.services.api.routers.audit_v2.get_engine", eng), \
+         patch("services.api.services.api.routers.audit.get_engine", eng):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
             r = await c.get("/api/v2/audit/recent", headers=auth_headers)
     assert r.status_code in (200, 201, 400, 401, 403, 404, 422, 500)
@@ -1340,7 +1342,7 @@ def test_event_bus_publish():
     bus = EventBus()
     q = MagicMock()
     bus._subscribers.append(q)
-    asyncio.get_event_loop().run_until_complete(bus.publish({"type": "test"}))
+    asyncio.run(bus.publish({"type": "test"}))
     q.put_nowait.assert_called_once_with({"type": "test"})
 
 
