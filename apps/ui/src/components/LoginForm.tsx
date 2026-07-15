@@ -50,7 +50,11 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
 
       if (!res.ok) {
         // Human-readable error messages
-        const detail = data.detail ?? '';
+        const detail = typeof (data.detail) === 'string'
+          ? data.detail
+          : Array.isArray(data.detail)
+            ? (data.detail as { msg?: string }[]).map(d => d.msg || '').join('; ')
+            : '';
         if (res.status === 401 || detail.toLowerCase().includes('invalid'))
           setError('Nieprawidłowy e-mail lub hasło. Spróbuj ponownie lub zresetuj hasło.');
         else if (res.status === 409 || detail.toLowerCase().includes('exist'))

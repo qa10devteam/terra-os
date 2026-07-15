@@ -216,7 +216,11 @@ export function ImportPage() {
         let detail = `HTTP ${res.status}`;
         try {
           const body = await res.json();
-          if (body?.detail) detail = body.detail;
+          if (body?.detail) {
+            detail = Array.isArray(body.detail)
+              ? body.detail.map((d: { msg?: string }) => d.msg || '').join('; ')
+              : String(body.detail);
+          }
         } catch { /* ignore */ }
         throw new Error(detail);
       }

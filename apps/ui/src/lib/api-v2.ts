@@ -71,7 +71,12 @@ export function useAuthFetch() {
 
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({}));
-        const msg = errBody?.detail || `Błąd API (HTTP ${res.status})`;
+        const rawDetail = errBody?.detail;
+        const msg: string = Array.isArray(rawDetail)
+          ? rawDetail.map((d: { msg?: string; loc?: string[] }) =>
+              [d.loc?.slice(-1)[0], d.msg].filter(Boolean).join(': ')
+            ).join('; ')
+          : (typeof rawDetail === 'string' ? rawDetail : `Błąd API (HTTP ${res.status})`);
         showToast('error', msg);
         throw new Error(msg);
       }
