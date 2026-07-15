@@ -197,8 +197,8 @@ function IcbSidebar({
     setNotFound(false);
     try {
       const typ = selectedType === 'all' ? '' : `&typ_rms=${selectedType}`;
-      const data = await authFetch(`/api/v2/intelligence/prices/icb?q=${encodeURIComponent(q)}${typ}&limit=30`);
-      const items: IcbItem[] = (data as { items?: IcbItem[] })?.items ?? [];
+      const data = await authFetch(`/api/v2/icb/suggest?q=${encodeURIComponent(q)}${typ}&limit=30`);
+      const items: IcbItem[] = Array.isArray(data) ? data : (data as any)?.results ?? (data as any)?.items ?? [];
       setResults(items);
       setNotFound(items.length === 0);
     } catch {

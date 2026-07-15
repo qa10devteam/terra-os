@@ -583,9 +583,43 @@ function SzukajTab() {
   const [sortField, setSortField] = useState<'cena_netto' | 'nazwa' | 'qoq_change_pct'>('cena_netto');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const suggestDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Suggest state ──────────────────────────────────────────────────────────
+  const [suggestions, setSuggestions] = useState<Array<{id:number;nazwa:string;symbol:string;typ_rms:string;cena_netto:number;jednostka:string}>>([]);
+  const [showSuggest, setShowSuggest] = useState(false);
+  const [suggestIdx, setSuggestIdx] = useState(-1);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const suggestRef = useRef<HTMLDivElement>(null);
+
+  // close on click outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (!suggestRef.current?.contains(e.target as Node) && !inputRef.current?.contains(e.target as Node))
+        setShowSuggest(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const fetchSuggestions = useCallback(async (q: string, typ: string) => {
+    if (q.trim().length < 2) { setSuggestions([]); setShowSuggest(false); return; }
+    try {
+      const params = new URLSearchParams({ q: q.trim(), limit: '8' });
+      if (typ) params.set('typ_rms', typ);
+      const res = await authFetch(`/api/v2/icb/suggest?${params.toString()}`);
+      const items = Array.isArray(res) ? res : (res as any)?.results ?? [];
+      setSuggestions(items);
+      setShowSuggest(items.length > 0);
+      setSuggestIdx(-1);
+    } catch {
+      setSuggestions([]); setShowSuggest(false);
+    }
+  }, [authFetch]);
 
   const doSearch = useCallback(async (q: string, typ: string) => {
     if (q.trim().length < 2) return;
+    setShowSuggest(false);
     setLoading(true);
     setError(null);
     try {
@@ -601,9 +635,14 @@ function SzukajTab() {
     }
   }, [authFetch]);
 
-  // Debounced search — fires 400ms after last keystroke
+  // Debounced suggest — fires 180ms after keystroke
+  // Debounced search — fires 400ms after keystroke
   const handleInput = (val: string) => {
     setInputVal(val);
+    // suggest
+    if (suggestDebounceRef.current) clearTimeout(suggestDebounceRef.current);
+    suggestDebounceRef.current = setTimeout(() => fetchSuggestions(val, typRms), 180);
+    // full search
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (val.trim().length >= 2) {
       debounceRef.current = setTimeout(() => doSearch(val, typRms), 400);
@@ -613,9 +652,42 @@ function SzukajTab() {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggest || suggestions.length === 0) {
+      if (e.key === 'Enter') doSearch(inputVal, typRms);
+      return;
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSuggestIdx(i => Math.min(i + 1, suggestions.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSuggestIdx(i => Math.max(i - 1, -1));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (suggestIdx >= 0) {
+        const s = suggestions[suggestIdx];
+        setInputVal(s.nazwa);
+        setShowSuggest(false);
+        doSearch(s.nazwa, typRms);
+      } else {
+        setShowSuggest(false);
+        doSearch(inputVal, typRms);
+      }
+    } else if (e.key === 'Escape') {
+      setShowSuggest(false);
+    }
+  };
+
   const handleTypChange = (typ: string) => {
     setTypRms(typ);
     if (inputVal.trim().length >= 2) doSearch(inputVal, typ);
+  };
+
+  const RMS_BADGE: Record<string, string> = {
+    R: 'text-accent-info bg-accent-info/10',
+    M: 'text-accent-primary bg-accent-primary/10',
+    S: 'text-amber-400 bg-amber-500/10',
   };
 
   const sortedResults = result?.results ? [...result.results].sort((a, b) => {
@@ -646,20 +718,54 @@ function SzukajTab() {
           <div className="flex-1 relative">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-earth-400 pointer-events-none" />
             <input
+              ref={inputRef}
               type="text"
               value={inputVal}
               onChange={e => handleInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && doSearch(inputVal, typRms)}
+              onKeyDown={handleKeyDown}
+              onFocus={() => suggestions.length > 0 && setShowSuggest(true)}
               placeholder="Szukaj materiału, symbolu, indeksu ETO… (min. 2 znaki)"
               className="w-full bg-earth-900/60 border border-earth-800 rounded-token pl-9 pr-10 py-2.5 text-sm text-earth-100 placeholder-earth-500 focus:outline-none focus:border-accent-info/60 focus:ring-1 focus:ring-accent-info/30 transition-all"
+              autoComplete="off"
             />
             {inputVal && (
               <button
-                onClick={() => { setInputVal(''); setResult(null); setError(null); }}
+                onClick={() => { setInputVal(''); setResult(null); setError(null); setSuggestions([]); setShowSuggest(false); }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-earth-500 hover:text-earth-300 transition-colors"
               >
                 <X size={14} />
               </button>
+            )}
+            {/* ── Suggest dropdown ── */}
+            {showSuggest && suggestions.length > 0 && (
+              <div
+                ref={suggestRef}
+                className="absolute left-0 right-0 top-full mt-1 z-50 bg-earth-900 border border-earth-700 rounded-token shadow-xl overflow-hidden"
+              >
+                {suggestions.map((s, i) => (
+                  <button
+                    key={s.id}
+                    onMouseDown={e => {
+                      e.preventDefault();
+                      setInputVal(s.nazwa);
+                      setShowSuggest(false);
+                      doSearch(s.nazwa, typRms);
+                    }}
+                    className={`w-full flex items-center gap-3 px-3 py-2 text-left transition-colors ${
+                      i === suggestIdx ? 'bg-earth-700' : 'hover:bg-earth-800'
+                    }`}
+                  >
+                    <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded ${RMS_BADGE[s.typ_rms] ?? 'text-earth-400 bg-earth-800'}`}>
+                      {s.typ_rms}
+                    </span>
+                    <span className="flex-1 text-sm text-earth-100 truncate">{s.nazwa}</span>
+                    <span className="shrink-0 text-xs text-earth-500 font-mono">{s.symbol}</span>
+                    <span className="shrink-0 text-xs text-accent-primary font-semibold">
+                      {s.cena_netto ? `${s.cena_netto.toFixed(2)} zł/${s.jednostka}` : '—'}
+                    </span>
+                  </button>
+                ))}
+              </div>
             )}
           </div>
           <button

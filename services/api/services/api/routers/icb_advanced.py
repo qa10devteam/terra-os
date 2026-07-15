@@ -109,7 +109,72 @@ def search_icb_prices(
         "quarter": f"{rok}-Q{nr}",
         "count": len(results),
         "results": results,
+        "total": len(results),
     }
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# GET /suggest — szybkie podpowiedzi (prefix + trigram), max 8 wyników, ~10ms
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@router.get("/suggest")
+def suggest_icb(
+    q: str = Query(..., min_length=2, description="Prefiks do podpowiedzi"),
+    typ_rms: str | None = Query(None, description="R, M, S"),
+    limit: int = Query(8, ge=1, le=20),
+) -> list[dict]:
+    """Autocomplete — prefix ILIKE + trigram fallback. Zwraca id, nazwa, symbol, typ_rms, cena_netto, jednostka."""
+    from ..intelligence.icb_service import get_latest_quarter
+    rok, nr = get_latest_quarter()
+
+    engine = get_engine()
+    params: dict = {"rok": rok, "nr": nr, "limit": limit, "q_prefix": f"{q}%", "q_any": f"%{q}%"}
+    typ_filter = ""
+    if typ_rms and typ_rms.upper() in ("R", "M", "S"):
+        typ_filter = "AND typ_rms = :typ"
+        params["typ"] = typ_rms.upper()
+
+    with engine.connect() as conn:
+        # Priority 1: prefix match (startswith)
+        rows = conn.execute(sa.text(f"""
+            SELECT id, nazwa, symbol, indeks_eto, typ_rms, jednostka, cena_netto
+            FROM icb_ceny_srednie
+            WHERE kwartalrok = :rok AND kwartalnr = :nr
+              AND nazwa ILIKE :q_prefix
+              {typ_filter}
+            ORDER BY nazwa
+            LIMIT :limit
+        """), params).fetchall()
+
+        # Priority 2: if not enough results — substring anywhere
+        if len(rows) < limit:
+            params2 = {**params, "limit": limit - len(rows), "existing": [r[0] for r in rows] or [-1]}
+            already = tuple(r[0] for r in rows) or (-1,)
+            placeholders = ",".join(str(x) for x in already)
+            rows2 = conn.execute(sa.text(f"""
+                SELECT id, nazwa, symbol, indeks_eto, typ_rms, jednostka, cena_netto
+                FROM icb_ceny_srednie
+                WHERE kwartalrok = :rok AND kwartalnr = :nr
+                  AND nazwa ILIKE :q_any
+                  AND id NOT IN ({placeholders})
+                  {typ_filter}
+                ORDER BY nazwa
+                LIMIT :limit
+            """), params2).fetchall()
+            rows = rows + rows2
+
+    return [
+        {
+            "id": r[0],
+            "nazwa": r[1],
+            "symbol": r[2],
+            "indeks_eto": r[3],
+            "typ_rms": r[4],
+            "jednostka": r[5],
+            "cena_netto": float(r[6]) if r[6] else 0.0,
+        }
+        for r in rows
+    ]
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
