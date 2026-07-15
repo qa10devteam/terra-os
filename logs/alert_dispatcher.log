@@ -759,3 +759,8 @@
 2026-07-15 17:00:19,981 [INFO] ingestion.alert_dispatcher: Aktywnych alertów: 0
 2026-07-15 17:00:19,981 [INFO] ingestion.alert_dispatcher: Alert dispatcher zakończony: {'alerts_checked': 0, 'alerts_fired': 0, 'emails_sent': 0, 'tenders_found': 0, 'skipped': 0, 'since_minutes': 65}
 2026-07-15 17:00:19,981 [INFO] run_alert_dispatcher: Alert dispatcher complete: checked=0 fired=0 emails=0 tenders=0 skipped=0
+2026-07-15 18:00:28,117 [INFO] run_alert_dispatcher: Starting alert dispatcher (since_minutes=65, dry_run=False)
+2026-07-15 18:00:29,280 [INFO] ingestion.alert_dispatcher: Alert dispatcher: szukam przetargów od 2026-07-15T16:55:29.280283+00:00 (ostatnie 65 min)
+2026-07-15 18:00:29,289 [INFO] ingestion.alert_dispatcher: Aktywnych alertów: 0
+2026-07-15 18:00:29,289 [INFO] ingestion.alert_dispatcher: Alert dispatcher zakończony: {'alerts_checked': 0, 'alerts_fired': 0, 'emails_sent': 0, 'tenders_found': 0, 'skipped': 0, 'since_minutes': 65}
+2026-07-15 18:00:29,290 [INFO] run_alert_dispatcher: Alert dispatcher complete: checked=0 fired=0 emails=0 tenders=0 skipped=0
