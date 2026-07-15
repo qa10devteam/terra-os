@@ -332,7 +332,7 @@ function ActivityItem({ entry, index, isLast }: ActivityItemProps) {
       <div className="pb-4 flex-1 min-w-0">
         <p className="text-xs text-earth-200 leading-relaxed">
           <span className="font-medium text-earth-100">
-            {entry.user_email.split('@')[0]}
+            {(entry.user_email ?? 'system').split('@')[0]}
           </span>{' '}
           <span className="text-earth-400">{entry.action}</span>
         </p>
