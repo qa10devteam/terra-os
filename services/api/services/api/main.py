@@ -252,6 +252,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # pragma: no co
         install_rls_on_engine(get_engine())
     except Exception:
         pass
+    # Warm-up: preload cost estimator so first /predict call isn't slow
+    try:
+        from .analytics.cost_estimation import get_estimator
+        get_estimator()  # triggers lazy init + ICB data load
+        logging.getLogger(__name__).info("Cost estimator warm-up OK")
+    except Exception as e:
+        logging.getLogger(__name__).warning("Cost estimator warm-up failed: %s", e)
     # Faza 8.02: BZP Auto-sync scheduler
     _scheduler = None
     try:

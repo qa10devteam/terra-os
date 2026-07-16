@@ -589,6 +589,12 @@ class CostEstimator:
 
     def __init__(self) -> None:
         self._is_trained = False
+        # Warm-up: trigger first ICB query so subsequent /predict calls are fast
+        try:
+            from terra_db.session import get_engine
+            estimate_from_icb(cpv="45", area_m2=100.0, region="mazowieckie", engine=get_engine())
+        except Exception:
+            pass
 
     def train(self, data: list[dict]) -> dict:
         if len(data) < 10:

@@ -183,28 +183,39 @@ def predict_cost(
     bm = _resolve_cpv_benchmark(cpv)
     price_per_m2 = bm.get("price_per_m2", 0)
 
-    # Fetch similar historical projects for context
+    # Fetch similar historical projects for context (with Redis cache, TTL=1h)
     similar_projects = []
     try:
-        engine = get_engine()
-        cpv_prefix = cpv[:4] if len(cpv) >= 4 else cpv
-        with engine.connect() as conn:
-            rows = conn.execute(sa.text("""
-                SELECT title, estimated_value, date, province, offers_count
-                FROM historical_tenders
-                WHERE left(cpv_code, 4) = :cpv
-                  AND estimated_value BETWEEN :min_val AND :max_val
-                ORDER BY date DESC LIMIT 5
-            """), {
-                "cpv": cpv_prefix,
-                "min_val": total * 0.5 if total else 0,
-                "max_val": total * 2.0 if total else 999_999_999,
-            }).fetchall()
-        similar_projects = [
-            {"title": r[0][:80], "value_pln": float(r[1]) if r[1] else None,
-             "date": str(r[2])[:10], "province": r[3], "offers": r[4]}
-            for r in rows
-        ]
+        from ..redis_cache import _get_redis
+        import json as _json
+        _cpv_prefix = cpv[:2] if len(cpv) >= 2 else cpv
+        _cache_key = f"sim_proj:{_cpv_prefix}:{int(total / 200_000) * 200_000}"  # bucket by 200k PLN
+        _redis = _get_redis()
+        if _redis:
+            _cached = _redis.get(_cache_key)
+            if _cached:
+                similar_projects = _json.loads(_cached)
+        if not similar_projects:
+            engine = get_engine()
+            with engine.connect() as conn:
+                rows = conn.execute(sa.text("""
+                    SELECT title, estimated_value, date, province, offers_count
+                    FROM historical_tenders
+                    WHERE left(cpv_code, 2) = :cpv2
+                      AND estimated_value BETWEEN :min_val AND :max_val
+                    ORDER BY date DESC LIMIT 5
+                """), {
+                    "cpv2": _cpv_prefix,
+                    "min_val": total * 0.5 if total else 0,
+                    "max_val": total * 2.0 if total else 999_999_999,
+                }).fetchall()
+            similar_projects = [
+                {"title": r[0][:80], "value_pln": float(r[1]) if r[1] else None,
+                 "date": str(r[2])[:10], "province": r[3], "offers": r[4]}
+                for r in rows
+            ]
+            if _redis and similar_projects:
+                _redis.setex(_cache_key, 3600, _json.dumps(similar_projects, default=str))
     except Exception:
         pass
 

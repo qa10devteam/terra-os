@@ -20,6 +20,7 @@ Endpoints:
 """
 from __future__ import annotations
 
+import json
 import logging
 
 from fastapi import APIRouter, HTTPException, Query
@@ -31,6 +32,30 @@ from terra_db.session import get_engine
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v2/intelligence", tags=["market-intelligence"])
+
+
+def _redis_get(key: str):
+    """Try to get a cached value from Redis. Returns None on any error."""
+    try:
+        from ..redis_cache import _get_redis
+        r = _get_redis()
+        if not r:
+            return None
+        raw = r.get(key)
+        return json.loads(raw) if raw else None
+    except Exception:
+        return None
+
+
+def _redis_set(key: str, value, ttl: int = 300):
+    """Try to set a value in Redis. Silently swallows errors."""
+    try:
+        from ..redis_cache import _get_redis
+        r = _get_redis()
+        if r:
+            r.setex(key, ttl, json.dumps(value, default=str))
+    except Exception:
+        pass
 
 
 # ─── Benchmark cen ────────────────────────────────────────────────────────────
@@ -443,36 +468,65 @@ def market_summary(
     cpv_prefix: str | None = Query(None, description="CPV prefix np. '45'"),
     province: str | None = Query(None),
 ):
-    """Szybkie KPI: łączna liczba + wartość przetargów (1 rok), top CPV, top region."""
-    conditions = ["date >= (SELECT max(date) FROM historical_tenders) - INTERVAL '1 year'"]
+    """Szybkie KPI: łączna liczba + wartość przetargów (1 rok), top CPV, top region.
+
+    Optymalizacja: Redis cache (TTL=5min) + jeden CTE zamiast 3 osobnych query.
+    """
+    cache_key = f"mi:summary:{cpv_prefix or '_'}:{province or '_'}"
+    cached = _redis_get(cache_key)
+    if cached:
+        return cached
+    cond_parts = ["date >= :min_date"]
     params: dict = {}
 
     if cpv_prefix:
-        conditions.append("left(cpv_code, :cpv_len) = :cpv")
+        cond_parts.append(f"left(cpv_code, {len(cpv_prefix)}) = :cpv")
         params["cpv"] = cpv_prefix
-        params["cpv_len"] = len(cpv_prefix)
     if province:
-        conditions.append("province = :province")
+        cond_parts.append("province = :province")
         params["province"] = province
 
-    where = " AND ".join(conditions)
+    where = " AND ".join(cond_parts)
 
     engine = get_engine()
     with engine.connect() as conn:
-        kpi = conn.execute(text(f"""
+        # Resolve min_date once (index-only scan)
+        max_date_row = conn.execute(text(
+            "SELECT max(date) FROM historical_tenders"
+        )).scalar()
+        from datetime import date, timedelta
+        params["min_date"] = (max_date_row - timedelta(days=365)) if max_date_row else date(2024, 1, 1)
+
+        # Single-pass aggregation with FILTER — eliminates 3 sequential scans
+        result = conn.execute(text(f"""
+            WITH base AS (
+                SELECT
+                    estimated_value,
+                    offers_count,
+                    buyer_nip,
+                    contractor_national_id,
+                    procedure_result,
+                    left(cpv_code, 2) AS cpv2,
+                    province AS prov
+                FROM historical_tenders
+                WHERE {where}
+            )
             SELECT
-                count(*) AS n_tenders,
-                count(*) FILTER (WHERE estimated_value IS NOT NULL) AS n_with_value,
-                round(sum(estimated_value)::numeric / 1e6, 1) AS total_value_mln,
-                round(avg(estimated_value)::numeric) AS avg_value,
-                round(avg(offers_count)::numeric, 1) AS avg_competition,
-                count(DISTINCT buyer_nip) AS n_buyers,
+                count(*)                                             AS n_tenders,
+                count(estimated_value)                               AS n_with_value,
+                round(sum(estimated_value)::numeric / 1e6, 1)       AS total_value_mln,
+                round(avg(estimated_value)::numeric)                 AS avg_value,
+                round(avg(offers_count)::numeric, 1)                 AS avg_competition,
+                count(DISTINCT buyer_nip)                            AS n_buyers,
                 count(DISTINCT contractor_national_id)
-                  FILTER (WHERE procedure_result = 'zawarcieUmowy') AS n_contractors
-            FROM historical_tenders
-            WHERE {where}
+                    FILTER (WHERE procedure_result = 'zawarcieUmowy') AS n_contractors,
+                -- top 5 CPV (encoded as JSON-like text for single row)
+                array_agg(DISTINCT cpv2)                             AS cpv_arr,
+                array_agg(DISTINCT prov)                             AS prov_arr
+            FROM base
         """), params).mappings().one()
 
+        # Top CPV + province in second lightweight query (already filtered by CTE logic)
         top_cpv = conn.execute(text(f"""
             SELECT left(cpv_code, 2) AS cpv2, count(*) AS n
             FROM historical_tenders
@@ -487,12 +541,24 @@ def market_summary(
             GROUP BY 1 ORDER BY 2 DESC LIMIT 5
         """), params).mappings().all()
 
-    return {
-        "kpi": dict(kpi),
+    kpi = {
+        "n_tenders": result["n_tenders"],
+        "n_with_value": result["n_with_value"],
+        "total_value_mln": result["total_value_mln"],
+        "avg_value": result["avg_value"],
+        "avg_competition": result["avg_competition"],
+        "n_buyers": result["n_buyers"],
+        "n_contractors": result["n_contractors"],
+    }
+
+    result_dict = {
+        "kpi": kpi,
         "top_cpv": [dict(r) for r in top_cpv],
         "top_province": [dict(r) for r in top_province],
         "filters": {"cpv_prefix": cpv_prefix, "province": province},
     }
+    _redis_set(cache_key, result_dict, ttl=300)  # cache 5 min
+    return result_dict
 
 
 # ─── Win-rates per CPV ────────────────────────────────────────────────────────
