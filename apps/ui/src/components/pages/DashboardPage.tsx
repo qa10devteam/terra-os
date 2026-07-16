@@ -21,9 +21,7 @@ import {
   Bell,
   ArrowRight,
   RefreshCw,
-  BarChart3,
   Search,
-  Package,
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -345,44 +343,6 @@ function ActivityItem({ entry, index, isLast }: ActivityItemProps) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// QuickActionCard — kafelki szybkich akcji
-// ─────────────────────────────────────────────────────────────────────────────
-
-interface QuickActionProps {
-  icon: React.ReactNode;
-  label: string;
-  onClick: () => void;
-  delay: number;
-}
-
-function QuickActionCard({ icon, label, onClick, delay }: QuickActionProps) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.4, delay }}
-      whileHover={{ scale: 1.03 }}
-      whileTap={{ scale: 0.97 }}
-      onClick={onClick}
-      className="group relative cursor-pointer"
-    >
-      {/* Gradient border on hover */}
-      <div className="absolute -inset-[1px] rounded-token-lg bg-gradient-to-br from-accent-primary/0 via-accent-primary/0 to-accent-primary/0 group-hover:from-accent-primary/50 group-hover:via-accent-primary/20 group-hover:to-accent-primary/50 transition-all duration-500" />
-      <div className="relative p-6 rounded-token-lg bg-earth-900/60 border border-earth-800 group-hover:border-transparent transition-all duration-300">
-        <div className="flex flex-col items-center gap-3">
-          <div className="p-3 rounded-token-lg bg-earth-800/60 group-hover:bg-accent-primary/10 transition-colors duration-300">
-            {icon}
-          </div>
-          <span className="text-sm font-medium text-earth-200 group-hover:text-earth-100 transition-colors">
-            {label}
-          </span>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // DigestSkeleton — loading state digestu AI
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -397,7 +357,7 @@ function DigestSkeleton() {
 function TenderListSkeleton() {
   return (
     <div className="space-y-3">
-      {[...Array(5)].map((_, i) => (
+      {[...Array(4)].map((_, i) => (
         <SkeletonCard key={i} lines={2} />
       ))}
     </div>
@@ -432,7 +392,6 @@ export function DashboardPage() {
     kpi?.pipeline_value ? Math.round((kpi.pipeline_value / 1_000_000) * 10) : 0,
   );
   const animWinRate  = useAnimatedCounter(kpi?.win_rate_mtd ?? 0);
-  const animAvgDeal  = useAnimatedCounter(kpi?.avg_deal_size ?? 0);
   const animNewToday = useAnimatedCounter(kpi?.new_today ?? 0);
 
   // ── Formatted KPI values ───────────────────────────────────────────────────
@@ -574,13 +533,13 @@ export function DashboardPage() {
       }
     >
       {/* ════════════════════════════════════════════════════════════════════
-          ROW 1 — Karty KPI
+          ROW 1 — 4 kluczowe KPI
           ════════════════════════════════════════════════════════════════════ */}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {loading ? (
           <>
-            {[...Array(6)].map((_, i) => (
+            {[...Array(4)].map((_, i) => (
               <SkeletonKPI key={i} />
             ))}
           </>
@@ -619,20 +578,6 @@ export function DashboardPage() {
             <motion.div
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.15 }}
-            >
-              <MetricCard
-                icon={Package}
-                label="Wartość portfela"
-                value={formatPLN(kpi?.total_value ?? kpi?.pipeline_value ?? 0)}
-                trendLabel="wszystkie przetargi"
-                iconColor="text-accent-success"
-              />
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
               <MetricCard
@@ -651,21 +596,6 @@ export function DashboardPage() {
               transition={{ duration: 0.5, delay: 0.3 }}
             >
               <MetricCard
-                icon={Zap}
-                label="Śr. wartość oferty"
-                value={formatPLN(animAvgDeal)}
-                trend={3}
-                trendLabel="vs. poprzedni miesiąc"
-                iconColor="text-accent-warning"
-              />
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-            >
-              <MetricCard
                 icon={Bell}
                 label="Nowe dziś"
                 value={animNewToday.toLocaleString('pl-PL')}
@@ -677,11 +607,11 @@ export function DashboardPage() {
       </div>
 
       {/* ════════════════════════════════════════════════════════════════════
-          ROW 2 — Najgorętsze przetargi (3/5) + Feed aktywności (2/5)
+          ROW 2 — Najgorętsze przetargi (hero) + AI Digest
           ════════════════════════════════════════════════════════════════════ */}
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
-        {/* Najgorętsze przetargi */}
+        {/* Najgorętsze przetargi — hero section */}
         <div className="lg:col-span-3">
           <GlassCard className="p-6 h-full">
             {/* Nagłówek sekcji */}
@@ -705,14 +635,14 @@ export function DashboardPage() {
               <TenderListSkeleton />
             ) : tenders.length === 0 ? (
               <EmptyState
-                icon={<Target className="w-6 h-6" />}
+                icon={<Search className="w-6 h-6" />}
                 title="Brak gorących przetargów"
                 description="Nowe przetargi pojawią się po następnym skanie rynku."
                 compact
               />
             ) : (
               <div className="space-y-3">
-                {tenders.map((tender, i) => (
+                {tenders.slice(0, 5).map((tender, i) => (
                   <TenderCard
                     key={tender.id}
                     tender={tender}
@@ -728,12 +658,71 @@ export function DashboardPage() {
           </GlassCard>
         </div>
 
-        {/* Feed aktywności */}
+        {/* AI Digest — compact */}
         <div className="lg:col-span-2">
           <GlassCard className="p-6 h-full flex flex-col">
-            {/* Nagłówek sekcji */}
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-base font-semibold text-earth-100">Aktywność</h2>
+            {/* Nagłówek digestu */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-gradient-to-br from-accent-primary/20 to-accent-violet/20">
+                  <Zap className="w-4 h-4 text-accent-primary" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold text-earth-100">AI Digest</h2>
+                  <p className="text-[11px] text-earth-500 leading-tight">
+                    Inteligencja rynkowa YU-NA
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                iconLeft={
+                  <RefreshCw
+                    className={`w-3.5 h-3.5 ${digestLoading ? 'animate-spin' : ''}`}
+                  />
+                }
+                loading={digestLoading}
+                onClick={generateDigest}
+              >
+                Odśwież
+              </Button>
+            </div>
+
+            {/* Zawartość digestu */}
+            <div className="flex-1 overflow-y-auto">
+              {digestLoading ? (
+                <DigestSkeleton />
+              ) : digestError || !digest ? (
+                <EmptyState
+                  icon={<Zap className="w-5 h-5" />}
+                  title="Digest zostanie wygenerowany dziś o 8:00"
+                  description='Kliknij „Odśwież" aby wygenerować teraz.'
+                  compact
+                />
+              ) : (
+                <div className="prose prose-invert prose-sm max-w-none">
+                  {renderSimpleMarkdown(digest)}
+                </div>
+              )}
+            </div>
+          </GlassCard>
+        </div>
+      </div>
+
+      {/* ════════════════════════════════════════════════════════════════════
+          ROW 3 — Feed aktywności (collapsible, secondary)
+          ════════════════════════════════════════════════════════════════════ */}
+
+      {!auditError && auditLog.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+        >
+          <GlassCard className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-semibold text-earth-100">Ostatnia aktywność</h2>
               <div className="flex items-center gap-2">
                 {refreshingAudit && (
                   <RefreshCw className="w-3.5 h-3.5 text-earth-500 animate-spin" />
@@ -744,142 +733,21 @@ export function DashboardPage() {
               </div>
             </div>
 
-            {/* Zawartość */}
-            {auditError ? (
-              <EmptyState
-                icon={<Activity className="w-6 h-6" />}
-                title="Feed aktywności niedostępny"
-                description="Dane pojawią się wkrótce."
-                compact
-              />
-            ) : auditLog.length === 0 ? (
-              <EmptyState
-                icon={<Activity className="w-6 h-6" />}
-                title="Brak ostatniej aktywności"
-                compact
-              />
-            ) : (
-              <div className="flex-1 max-h-[420px] overflow-y-auto pr-2 scrollbar-thin scrollbar-track-earth-900 scrollbar-thumb-earth-700">
-                <AnimatePresence mode="popLayout">
-                  {auditLog.map((entry, i) => (
-                    <ActivityItem
-                      key={entry.id}
-                      entry={entry}
-                      index={i}
-                      isLast={i === auditLog.length - 1}
-                    />
-                  ))}
-                </AnimatePresence>
-              </div>
-            )}
+            <div className="max-h-48 overflow-y-auto pr-2 scrollbar-thin scrollbar-track-earth-900 scrollbar-thumb-earth-700">
+              <AnimatePresence mode="popLayout">
+                {auditLog.slice(0, 8).map((entry, i) => (
+                  <ActivityItem
+                    key={entry.id}
+                    entry={entry}
+                    index={i}
+                    isLast={i === Math.min(auditLog.length, 8) - 1}
+                  />
+                ))}
+              </AnimatePresence>
+            </div>
           </GlassCard>
-        </div>
-      </div>
-
-      {/* ════════════════════════════════════════════════════════════════════
-          ROW 3 — Szybkie akcje
-          ════════════════════════════════════════════════════════════════════ */}
-
-      <div className="mb-8">
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="section-label mb-4"
-        >
-          Szybkie akcje
-        </motion.p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <QuickActionCard
-            icon={
-              <Bell className="w-6 h-6 text-accent-info group-hover:text-blue-300 transition-colors" />
-            }
-            label="Nowy Alert"
-            onClick={() => setCurrentModule('notifications')}
-            delay={0.7}
-          />
-          <QuickActionCard
-            icon={
-              <BarChart3 className="w-6 h-6 text-accent-primary group-hover:text-emerald-300 transition-colors" />
-            }
-            label="Pipeline"
-            onClick={() => setCurrentModule('pipeline')}
-            delay={0.8}
-          />
-          <QuickActionCard
-            icon={
-              <Search className="w-6 h-6 text-accent-violet group-hover:text-violet-300 transition-colors" />
-            }
-            label="Zwiad AI"
-            onClick={() => setCurrentModule('zwiad')}
-            delay={0.9}
-          />
-          <QuickActionCard
-            icon={
-              <Package className="w-6 h-6 text-accent-warning group-hover:text-amber-300 transition-colors" />
-            }
-            label="InterCenBud"
-            onClick={() => setCurrentModule('icb')}
-            delay={1.0}
-          />
-        </div>
-      </div>
-
-      {/* ════════════════════════════════════════════════════════════════════
-          ROW 4 — AI Digest
-          ════════════════════════════════════════════════════════════════════ */}
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 1.0 }}
-      >
-        <GlassCard className="p-6">
-          {/* Nagłówek digestu */}
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-token-lg bg-gradient-to-br from-accent-primary/20 to-accent-violet/20">
-                <Zap className="w-5 h-5 text-accent-primary" />
-              </div>
-              <div>
-                <h2 className="text-base font-semibold text-earth-100">AI Digest</h2>
-                <p className="text-xs text-earth-500">
-                  Podsumowanie inteligencji rynkowej
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              iconLeft={
-                <RefreshCw
-                  className={`w-3.5 h-3.5 ${digestLoading ? 'animate-spin' : ''}`}
-                />
-              }
-              loading={digestLoading}
-              onClick={generateDigest}
-            >
-              Odśwież
-            </Button>
-          </div>
-
-          {/* Zawartość digestu */}
-          {digestLoading ? (
-            <DigestSkeleton />
-          ) : digestError || !digest ? (
-            <EmptyState
-              icon={<Zap className="w-6 h-6" />}
-              title="Digest zostanie wygenerowany dziś o 8:00"
-              description='Kliknij „Odśwież" aby wygenerować teraz.'
-              compact
-            />
-          ) : (
-            <div className="prose prose-invert prose-sm max-w-none">
-              {renderSimpleMarkdown(digest)}
-            </div>
-          )}
-        </GlassCard>
-      </motion.div>
+        </motion.div>
+      )}
 
       {/* Spacer dolny */}
       <div className="h-8" />

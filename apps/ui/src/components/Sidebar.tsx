@@ -11,26 +11,16 @@ import {
   Brain,
   BarChart3,
   TrendingUp,
-  Users,
-  Bookmark as BookmarkIcon,
   Scale,
-  Truck,
-  ShieldCheck,
   GitBranch,
   Settings,
-  CloudSun,
   LogOut,
-  Upload,
   Menu,
   X,
-  Building2,
-  Bell,
-  Download,
   FileText,
   Target,
   Hammer,
   Wrench,
-  Zap,
   PackageSearch,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -45,46 +35,40 @@ type ModuleGroup = {
 
 const moduleGroups: ModuleGroup[] = [
   {
-    label:     'Zdobywanie kontraktów',
+    label:     'Przetargi',
     GroupIcon: Target,
     items: [
-      { id: 'zwiad',    icon: Radar,     name: 'Zwiad',              desc: 'Zwiad przetargowy BZP/TED' },
-      { id: 'pipeline', icon: GitBranch, name: 'Lejek ofertowy',     desc: 'Kanban przetargów' },
-      { id: 'silnik',   icon: Brain,     name: 'Silnik decyzyjny AI', desc: 'Analiza AHP + Friedman' },
-      { id: 'decyzja',  icon: Scale,     name: 'Decyzja',            desc: 'Rekomendacje AI' },
+      { id: 'zwiad',    icon: Radar,     name: 'Zwiad',      desc: 'Zwiad przetargowy BZP/TED' },
+      { id: 'pipeline', icon: GitBranch, name: 'Lejek',      desc: 'Kanban przetargów' },
+      { id: 'silnik',   icon: Brain,     name: 'Silnik AI',  desc: 'Analiza AHP + Friedman' },
+      { id: 'decyzja',  icon: Scale,     name: 'Decyzja',    desc: 'Rekomendacje AI' },
     ],
   },
   {
     label:     'Realizacja',
     GroupIcon: Hammer,
     items: [
-      { id: 'kosztorys',    icon: Calculator,  name: 'Kosztorys',        desc: 'Wycena KNR i materiały' },
-      { id: 'automations',  icon: Zap,         name: 'Automatyzacje',    desc: 'n8n i webhooki' },
-      { id: 'oferta',       icon: FileText,    name: 'Oferta',           desc: 'Kreator oferty PDF' },
-      { id: 'logistyka',    icon: Truck,       name: 'Logistyka',        desc: 'Sprzęt i pracownicy' },
-      { id: 'resources',    icon: Users,       name: 'Zasoby',           desc: 'Pracownicy i sprzęt' },
-      { id: 'contracts',    icon: FileText,    name: 'Kontrakty',        desc: 'Tracker + cashflow' },
-      { id: 'rfq',          icon: ShieldCheck, name: 'Zapytania ofertowe', desc: 'RFQ do podwykonawców' },
+      { id: 'kosztorys', icon: Calculator, name: 'Kosztorys', desc: 'Wycena KNR i materiały' },
+      { id: 'oferta',    icon: FileText,   name: 'Oferta',    desc: 'Kreator oferty PDF' },
+      { id: 'contracts', icon: FileText,   name: 'Kontrakty', desc: 'Tracker + cashflow' },
     ],
   },
   {
-    label:     'Analiza i zarządzanie',
+    label:     'Inteligencja',
     GroupIcon: BarChart3,
     items: [
-      { id: 'dashboard',    icon: LayoutDashboard, name: 'Dashboard',         desc: 'Panel główny' },
-      { id: 'analytics',    icon: BarChart3,       name: 'Analityka',         desc: 'AHP, Friedman, Ryzyko' },
-      { id: 'icb',          icon: PackageSearch,   name: 'Cennik materiałów', desc: 'Baza cen InterCenBud' },
-      { id: 'market-intel', icon: TrendingUp,      name: 'Rynek',             desc: 'Trendy i benchmarki CPV' },
-      { id: 'competitors',  icon: Users,           name: 'Konkurenci',        desc: 'Obserwowani wykonawcy' },
-      { id: 'bookmarks',    icon: BookmarkIcon,    name: 'Zakładki',          desc: 'Kanban + alerty' },
-      { id: 'buyer-crm',    icon: Building2,       name: 'CRM Zamawiających', desc: 'Zamawiający i kontakty' },
-      { id: 'notifications',icon: Bell,            name: 'Powiadomienia',     desc: 'Alerty i zdarzenia' },
-      { id: 'export',       icon: Download,        name: 'Eksport',           desc: 'Pobierz dane XLSX/CSV' },
-      { id: 'reports',      icon: FileText,        name: 'Raporty',           desc: 'PDF i zestawienia' },
-      { id: 'team',         icon: Users,           name: 'Zespół',            desc: 'Użytkownicy i role' },
-      { id: 'pogoda',       icon: CloudSun,        name: 'Pogoda',            desc: 'Prognoza 14-dniowa' },
-      { id: 'settings',     icon: Settings,        name: 'Ustawienia',        desc: 'Organizacja i konto' },
-      { id: 'system',       icon: Wrench,          name: 'Konfiguracja',      desc: 'Parametry systemu' },
+      { id: 'dashboard',    icon: LayoutDashboard, name: 'Dashboard',  desc: 'Panel główny' },
+      { id: 'analytics',    icon: BarChart3,       name: 'Analityka',  desc: 'AHP, Friedman, Ryzyko' },
+      { id: 'icb',          icon: PackageSearch,   name: 'Cennik ICB', desc: 'Baza cen InterCenBud' },
+      { id: 'market-intel', icon: TrendingUp,      name: 'Rynek',      desc: 'Trendy i benchmarki CPV' },
+    ],
+  },
+  {
+    label:     'System',
+    GroupIcon: Settings,
+    items: [
+      { id: 'settings', icon: Settings, name: 'Ustawienia', desc: 'Organizacja i konto' },
+      { id: 'system',   icon: Wrench,   name: 'System',     desc: 'Parametry systemu' },
     ],
   },
 ];
@@ -116,10 +100,14 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
       <div className="flex items-center justify-between px-3 h-16 border-b border-earth-700/50 flex-shrink-0">
         {isMenuOpen ? (
           /* Full logo */
-          <span className="text-base font-bold text-accent-primary tracking-tight select-none">
-            budos
-            <span className="text-earth-600 text-[10px] font-normal ml-1">by YU‑NA</span>
-          </span>
+          <div className="flex flex-col leading-none select-none">
+            <span className="text-base font-bold text-accent-primary tracking-tight leading-tight">
+              budos
+            </span>
+            <span className="text-[10px] text-earth-600 font-normal leading-tight mt-0.5">
+              Powered by YU‑NA Intelligence
+            </span>
+          </div>
         ) : (
           /* Signet icon */
           <div className="w-8 h-8 rounded-lg bg-accent-primary/10 border border-accent-primary/30 flex items-center justify-center mx-auto">
