@@ -23,6 +23,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
 from ..auth.deps import AuthUser, get_current_user as _get_current_user
+from ..redis_cache import (
+    rcache_get, rcache_set,
+    TTL_INTELLIGENCE_SUMMARY, TTL_ICB_SUGGEST,
+)
 
 router = APIRouter(prefix="/api/v2/intelligence", tags=["intelligence"])
 
@@ -118,15 +122,22 @@ def api_search_icb(
     limit: int = Query(20, le=100),
 ) -> dict:
     """Wyszukaj pozycje z bazy ICB (784k wierszy, Q1-2008→Q2-2026)."""
+    # Redis cache: TTL 5min (ICB data changes quarterly)
+    _cache_key = f"intel:icb_search:{q}:{typ_rms}:{category}:{year}:{quarter}:{limit}"
+    _cached = rcache_get(_cache_key)
+    if _cached is not None:
+        return _cached
     try:
         svc = _icb()
         results = svc["search_icb"](q, typ_rms, year, quarter, category, limit)
-        return {
+        data = {
             "query": q,
             "period": f"{year}-Q{quarter}",
             "results": results,
             "count": len(results),
         }
+        rcache_set(_cache_key, data, ttl=TTL_INTELLIGENCE_SUMMARY)
+        return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

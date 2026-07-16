@@ -27,13 +27,22 @@ OPENAI_API_KEY  = os.getenv("OPENAI_API_KEY", "")
 OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
 OPENAI_MODEL    = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
-TERRA_SYSTEM_PROMPT = """Jesteś budos — AI asystentem platformy YU-NA do zarządzania przetargami budowlanymi.
-Odpowiadasz po polsku, zwięźle i merytorycznie. Pomagasz w:
-- Analizie przetargów i SWZ
-- Ocenie szans wygranej
-- Strategii cenowej i kosztorysach
-- Monitoringu rynku i konkurencji
-Używaj danych z systemu do konkretnych odpowiedzi."""
+TERRA_SYSTEM_PROMPT = """Jesteś **budos** — ekspertowy AI asystent platformy YU-NA do zarządzania przetargami budowlanymi w Polsce.
+
+**Zasady odpowiedzi:**
+- Odpowiadaj po polsku, konkretnie i merytorycznie
+- Gdy masz dane z systemu — cytuj liczby, kwoty, daty; nie zgaduj
+- Gdy brak danych — powiedz wprost "nie mam tej informacji" i zaproponuj co możesz sprawdzić
+- Formatuj odpowiedzi czytelnie: używaj list, pogrubień, liczb PLN z separatorem tysięcy
+- Maksymalnie 3-4 akapity, chyba że pytanie wymaga więcej
+
+**Ekspertyza:**
+- Analiza SIWZ/SWZ i warunków udziału
+- Ocena szans wygranej i strategia ofertowania
+- Wycena robót budowlanych i kosztorysowanie (ICB/Sekocenbud)
+- Monitoring rynku i analiza konkurencji
+- Przepisy PZP i Prawo Budowlane
+- Marże, narzuty, ryzyko cenowe materiałów budowlanych"""
 
 
 # ─── Bedrock backend ─────────────────────────────────────────────────────────
@@ -82,8 +91,38 @@ def _bedrock_stream(prompt: str, system: str, max_tokens: int = 1024) -> Generat
             continue
         data = json.loads(chunk["bytes"])
         if data.get("type") == "content_block_delta":
-            delta = data.get("delta", {})
-            text = delta.get("text", "")
+            text = data.get("delta", {}).get("text", "")
+            if text:
+                yield text
+
+
+def _bedrock_stream_messages(
+    messages: list[dict], system: str, max_tokens: int = 2048
+) -> Generator[str, None, None]:
+    """Stream with proper messages array (multi-turn history)."""
+    import boto3
+
+    client = boto3.client("bedrock-runtime", region_name=BEDROCK_REGION)
+    body = {
+        "anthropic_version": "bedrock-2023-05-31",
+        "max_tokens": max_tokens,
+        "system": system,
+        "messages": messages,
+        "temperature": 0.7,
+    }
+    resp = client.invoke_model_with_response_stream(
+        modelId=BEDROCK_MODEL,
+        body=json.dumps(body),
+        contentType="application/json",
+        accept="application/json",
+    )
+    for event in resp.get("body", []):
+        chunk = event.get("chunk")
+        if not chunk:
+            continue
+        data = json.loads(chunk["bytes"])
+        if data.get("type") == "content_block_delta":
+            text = data.get("delta", {}).get("text", "")
             if text:
                 yield text
 
@@ -196,7 +235,7 @@ class VLLMClient:
         self,
         prompt: str,
         system: str = TERRA_SYSTEM_PROMPT,
-        max_tokens: int = 1024,
+        max_tokens: int = 2048,
     ) -> Generator[str, None, None]:
         # Try Bedrock stream
         try:
@@ -219,6 +258,23 @@ class VLLMClient:
             yield text
         except Exception as e3:
             yield f"Błąd AI: {e3}"
+
+    def generate_stream_messages(
+        self,
+        messages: list[dict],
+        system: str = TERRA_SYSTEM_PROMPT,
+        max_tokens: int = 2048,
+    ) -> Generator[str, None, None]:
+        """Stream with proper messages array for multi-turn conversations."""
+        try:
+            yield from _bedrock_stream_messages(messages, system, max_tokens)
+            return
+        except Exception as e:
+            logger.warning("Bedrock stream_messages failed: %s — fallback to prompt mode", e)
+
+        # Fallback: flatten messages to prompt
+        prompt = "\n".join(f"{m['role']}: {m['content']}" for m in messages)
+        yield from self.generate_stream(prompt, system, max_tokens)
 
 
 _client: VLLMClient | None = None

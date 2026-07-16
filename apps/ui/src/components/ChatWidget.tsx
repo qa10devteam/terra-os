@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { MessageCircle, X, Send, Brain, User, RefreshCw } from 'lucide-react';
+import { useStore } from '@/store/useStore';
 
 interface Message {
   id: string;
@@ -29,6 +30,7 @@ function TypingDots() {
 const STREAM_TIMEOUT_MS = 45_000; // 45 s — poniżej limitu Cloudflare (~60 s)
 
 export function ChatWidget() {
+  const { accessToken } = useStore();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -45,6 +47,9 @@ export function ChatWidget() {
   const inputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const lastUserTextRef = useRef<string>('');
+  // Keep a ref so sendMessage always reads the latest token without stale closure
+  const accessTokenRef = useRef<string | null>(accessToken);
+  useEffect(() => { accessTokenRef.current = accessToken; }, [accessToken]);
 
   // Cleanup on unmount — abort any open stream
   useEffect(() => {
@@ -63,7 +68,7 @@ export function ChatWidget() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const sendMessage = async (retryText?: string) => {
+  const sendMessage = useCallback(async (retryText?: string) => {
     const text = retryText ?? input.trim();
     if (!text || loading) return;
 
@@ -88,9 +93,14 @@ export function ChatWidget() {
     const timeoutId = setTimeout(() => controller.abort(), STREAM_TIMEOUT_MS);
 
     try {
+      // Build auth headers — inject Bearer token if available
+      const authHeaders: Record<string, string> = {};
+      const token = accessTokenRef.current;
+      if (token) authHeaders['Authorization'] = `Bearer ${token}`;
+
       const res = await fetch('/api/v2/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({ message: text }),
         signal: controller.signal,
       });
@@ -145,7 +155,8 @@ export function ChatWidget() {
       clearTimeout(timeoutId);
       setLoading(false);
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, input]);
 
   const handleRetry = () => {
     const text = lastUserTextRef.current;

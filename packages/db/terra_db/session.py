@@ -20,7 +20,14 @@ def get_db_url() -> str:
 
 @lru_cache(maxsize=1)
 def get_engine() -> Engine:
-    return create_engine(get_db_url(), pool_pre_ping=True)
+    return create_engine(
+        get_db_url(),
+        pool_pre_ping=True,
+        pool_size=10,
+        max_overflow=20,
+        pool_timeout=30,
+        pool_recycle=1800,
+    )
 
 
 def get_session() -> sessionmaker:
