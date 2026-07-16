@@ -688,6 +688,13 @@ if 'metrics' in _opt_map:
 if 'bzp_sync' in _opt_map:
     app.include_router(_opt_map['bzp_sync'].router)
 
+# ── Asystent SWZ ─────────────────────────────────────────────────────────────
+try:
+    from .routers import swz as _swz_mod
+    app.include_router(_swz_mod.router)
+except Exception as _e:  # pragma: no cover
+    logging.getLogger(__name__).warning("swz router error: %s", _e)
+
 # ── v1 compat aliases — frontend używa /api/v1/tenders ──────────────────────
 from fastapi import Request as _Request
 from fastapi.responses import JSONResponse as _JSONResponse

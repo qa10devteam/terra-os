@@ -1,0 +1,39 @@
+2026-07-16 18:31:35,898 [INFO] scrape_bk: === BK scraper start: date_from=2026-07-09 date_to=2026-07-16 dry_run=True ===
+2026-07-16 18:31:37,060 [INFO] ingestion.bk_connector: source=bk fetching date_from=2026-07-09 date_to=2026-07-16 status=PUBLISHED
+2026-07-16 18:31:37,216 [INFO] ingestion.bk_connector: source=bk page=1 got=100 total_so_far=100 / 889
+2026-07-16 18:31:37,854 [INFO] ingestion.bk_connector: source=bk page=2 got=100 total_so_far=197 / 889
+2026-07-16 18:31:38,506 [INFO] ingestion.bk_connector: source=bk page=3 got=100 total_so_far=237 / 889
+2026-07-16 18:31:39,169 [INFO] ingestion.bk_connector: source=bk page=4 got=100 total_so_far=337 / 889
+2026-07-16 18:31:39,827 [INFO] ingestion.bk_connector: source=bk page=5 got=100 total_so_far=437 / 889
+2026-07-16 18:31:40,490 [INFO] ingestion.bk_connector: source=bk page=6 got=100 total_so_far=465 / 889
+2026-07-16 18:31:41,145 [INFO] ingestion.bk_connector: source=bk page=7 got=100 total_so_far=562 / 889
+2026-07-16 18:31:41,810 [INFO] ingestion.bk_connector: source=bk page=8 got=100 total_so_far=617 / 889
+2026-07-16 18:31:42,453 [INFO] ingestion.bk_connector: source=bk page=9 got=89 total_so_far=692 / 889
+2026-07-16 18:31:42,453 [INFO] ingestion.bk_connector: source=bk fetch complete: 692 notices
+2026-07-16 18:31:42,453 [INFO] scrape_bk: Pobrano 692 surowych ogłoszeń z BK
+2026-07-16 18:31:42,467 [INFO] scrape_bk: Znormalizowano: 692 / 692 (błędy: 0)
+2026-07-16 18:31:42,467 [INFO] scrape_bk: DRY RUN — pomijam zapis do DB.
+2026-07-16 18:31:42,467 [INFO] scrape_bk:   [SAMPLE] 283438 | ZAPYTANIE OFERTOWE  nr 2/FENG/2026 | cpv=[]
+2026-07-16 18:31:42,467 [INFO] scrape_bk:   [SAMPLE] 284434 | „ZOBACZ WE MNIE CZŁOWIEKA - Wałbrzyskie Centrum Integracji O | cpv=[]
+2026-07-16 18:31:42,467 [INFO] scrape_bk:   [SAMPLE] 284435 | Kompleksowy program wsparcia dla animatorów współpracy w bra | cpv=[]
+2026-07-16 18:31:42,467 [INFO] scrape_bk:   [SAMPLE] 284428 | Krajowy Plan Odbudowy i Zwiększania Odporności finansowany z | cpv=[]
+2026-07-16 18:31:42,467 [INFO] scrape_bk:   [SAMPLE] 284433 | ZAPYTANIE OFERTOWE nr 2/1.4/FEPW z dnia 09.07.2026 | cpv=[]
+2026-07-16 18:34:03,556 [INFO] scrape_bk: === BK scraper start: date_from=2026-06-16 date_to=2026-07-16 dry_run=False ===
+2026-07-16 18:34:04,755 [INFO] ingestion.bk_connector: source=bk fetching date_from=2026-06-16 date_to=2026-07-16 status=PUBLISHED
+2026-07-16 18:34:04,917 [INFO] ingestion.bk_connector: source=bk page=1 got=100 total_so_far=100 / 1200
+2026-07-16 18:34:05,556 [INFO] ingestion.bk_connector: source=bk page=2 got=100 total_so_far=176 / 1200
+2026-07-16 18:34:06,199 [INFO] ingestion.bk_connector: source=bk page=3 got=100 total_so_far=276 / 1200
+2026-07-16 18:34:06,853 [INFO] ingestion.bk_connector: source=bk page=4 got=100 total_so_far=376 / 1200
+2026-07-16 18:34:07,510 [INFO] ingestion.bk_connector: source=bk page=5 got=100 total_so_far=476 / 1200
+2026-07-16 18:34:08,181 [INFO] ingestion.bk_connector: source=bk page=6 got=100 total_so_far=516 / 1200
+2026-07-16 18:34:08,835 [INFO] ingestion.bk_connector: source=bk page=7 got=100 total_so_far=557 / 1200
+2026-07-16 18:34:09,462 [INFO] ingestion.bk_connector: source=bk page=8 got=100 total_so_far=646 / 1200
+2026-07-16 18:34:10,130 [INFO] ingestion.bk_connector: source=bk page=9 got=100 total_so_far=709 / 1200
+2026-07-16 18:34:10,804 [INFO] ingestion.bk_connector: source=bk page=10 got=100 total_so_far=790 / 1200
+2026-07-16 18:34:11,462 [INFO] ingestion.bk_connector: source=bk page=11 got=100 total_so_far=834 / 1200
+2026-07-16 18:34:12,092 [INFO] ingestion.bk_connector: source=bk page=12 got=100 total_so_far=930 / 1200
+2026-07-16 18:34:12,644 [INFO] ingestion.bk_connector: source=bk fetch complete: 930 notices
+2026-07-16 18:34:12,645 [INFO] scrape_bk: Pobrano 930 surowych ogłoszeń z BK
+2026-07-16 18:34:12,670 [INFO] scrape_bk: Znormalizowano: 930 / 930 (błędy: 0)
+2026-07-16 18:34:12,680 [INFO] scrape_bk: Tenant ID: ec3d1e16-2139-48c2-93b5-ffe0defd606d
+2026-07-16 18:34:14,320 [INFO] scrape_bk: === BK scraper zakończony: created=930 updated=0 errors=0 ===

@@ -15,6 +15,7 @@ from .normalize import normalize_bzp_notice, normalize_ted_notice
 from .repository import get_or_create_default_tenant, upsert_tender
 from .scorer import OwnerProfileSnap, ScoringWeights, load_scoring_config, score_tender
 from .ted_connector import TEDConnector
+from .bk_connector import fetch_bk_notices, normalize_bk_notice
 
 try:
     from terra_shared.audit import AuditWriter
@@ -58,6 +59,7 @@ def run_ingest(
     include_bip: bool = False,
     bip_region: str | None = None,
     bip_max_sites: int = 50,
+    include_bk: bool = True,
     run_dedup: bool = True,
     tenant_id: str | None = None,  # explicit tenant override (multitenant SaaS)
     progress_cb: "Callable[[str, int], None] | None" = None,  # S23: (step, pct)
@@ -114,6 +116,18 @@ def run_ingest(
 
     result.raw_fetched = len(bzp_raw) + len(ted_raw)
 
+    # Step 1c: BK fetch (Baza Konkurencyjności)
+    _progress("fetching_bk", 35)
+    bk_raw: list = []
+    if include_bk and not use_fixtures:
+        try:
+            bk_raw = fetch_bk_notices(date_from=date_from, date_to=date_to)
+            logger.info("BK fetched %d raw notices", len(bk_raw))
+        except Exception as exc:
+            logger.error("BK fetch failed: %s", exc)
+
+    result.raw_fetched += len(bk_raw)
+
     # Step 2a: Normalize BZP
     _progress("normalizing", 60)
     tenders_in = []
@@ -134,6 +148,16 @@ def run_ingest(
                 tenders_in.append(tin)
         except Exception as exc:
             logger.warning("TED normalize error: %s", exc)
+            result.errors += 1
+
+    # Step 2c: Normalize BK
+    for notice in bk_raw:
+        try:
+            tin = normalize_bk_notice(notice)
+            if tin is not None:
+                tenders_in.append(tin)
+        except Exception as exc:
+            logger.warning("BK normalize error: %s", exc)
             result.errors += 1
 
     result.normalized = len(tenders_in)

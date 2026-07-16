@@ -880,3 +880,161 @@ def similar_tenders(tender_id: str, user: AuthUser) -> dict:
         for r in rows
     ]
     return {"items": items, "count": len(items)}
+
+
+# ─── GET /tenders/{tender_id}/score — CPV-based match score ────────────────────
+
+@router.get("/{tender_id}/score", summary="Match score (go/no-go %) przetargu")
+def get_tender_score(tender_id: str, user: AuthUser) -> dict:
+    """
+    Zwraca match score (0–100) dla przetargu względem profilu CPV tenanta.
+
+    Algorytm:
+    - Pobiera CPV przetargu i preferred_cpvs tenanta z scoring_config
+    - Pełne dopasowanie (cpv startswith pref lub pref startswith cpv[:n]) → wynik proporcjonalny
+    - Jeśli tenant nie ma preferred_cpvs → zwraca istniejący match_score z bazy lub 50 (neutral)
+    - Wynik jest też zapisywany do tender.match_score (rescore on demand)
+
+    Odpowiedź:
+      {
+        "tender_id": "...",
+        "match_score": 82.0,
+        "match_label": "Świetne dopasowanie",
+        "match_reason": "CPV 45233120 pasuje do preferencji: 45",
+        "preferred_cpvs": ["45", "45100000"],
+        "tender_cpvs": ["45233120-6"],
+        "go_nogo": "go"
+      }
+    """
+    org_id = user.org_id
+    if not org_id:
+        raise HTTPException(status_code=403, detail={"error": "no_org"})
+    _validate_uuid(tender_id, "tender_id")
+    engine = get_engine()
+    tenant_id = _resolve_tenant_id(engine, org_id)
+
+    with engine.connect() as conn:
+        # Pobierz dane przetargu
+        row = conn.execute(sa.text("""
+            SELECT id, cpv, value_pln, deadline_at, match_score, match_reason
+            FROM tender
+            WHERE id = CAST(:id AS UUID) AND tenant_id = :tid
+        """), {"id": tender_id, "tid": tenant_id}).fetchone()
+
+        if not row:
+            raise HTTPException(status_code=404, detail={"error": "not_found", "message": "Przetarg nie znaleziony"})
+
+        # Pobierz preferred_cpvs z scoring_config tenanta
+        cfg_row = conn.execute(sa.text("""
+            SELECT preferred_cpvs, cpv_weight, value_weight, min_value_pln, max_value_pln
+            FROM scoring_config
+            WHERE tenant_id = :tid
+            LIMIT 1
+        """), {"tid": tenant_id}).fetchone()
+
+    tender_cpvs: list[str] = list(row.cpv or [])
+    preferred_cpvs: list[str] = []
+    cpv_weight: float = 0.35
+
+    if cfg_row:
+        preferred_cpvs = list(cfg_row.preferred_cpvs or [])
+        cpv_weight = float(cfg_row.cpv_weight or 0.35)
+
+    # ─── CPV Match Score Algorithm ─────────────────────────────────────────────
+    def _cpv_match(t_cpv: str, preferred: list[str]) -> tuple[float, str]:
+        """
+        Zwraca (score 0.0–1.0, matched_pref | "").
+        Logika: im dłuższy pasujący prefiks, tym wyższy score.
+          - pełne 8-cyfrowe dopasowanie → 1.0
+          - 5-cyfrowe (dywizja) → 0.9
+          - 4-cyfrowe (grupa) → 0.75
+          - 2-cyfrowe (dział) → 0.6
+          - brak → 0.0
+        """
+        cpv_clean = t_cpv.split("-")[0].strip()  # usuń -numer z końca
+        for pref in preferred:
+            p = pref.split("-")[0].strip()
+            # Tender pasuje do preferencji
+            if cpv_clean.startswith(p):
+                plen = len(p)
+                if plen >= 8:
+                    return 1.0, pref
+                elif plen >= 5:
+                    return 0.9, pref
+                elif plen >= 4:
+                    return 0.75, pref
+                elif plen >= 2:
+                    return 0.6, pref
+                return 0.5, pref
+            # Preferencja jest bardziej szczegółowa niż CPV tenderu
+            if p.startswith(cpv_clean[:max(2, len(cpv_clean))]):
+                return 0.5, pref
+        return 0.0, ""
+
+    score_raw: float
+    match_reason: str
+    matched_pref: str = ""
+
+    if not preferred_cpvs:
+        # Brak konfiguracji — użyj istniejącego match_score z bazy lub neutral
+        existing = float(row.match_score) if row.match_score is not None else 0.5
+        score_raw = existing
+        match_reason = row.match_reason or "Brak konfiguracji CPV — score neutralny"
+    elif not tender_cpvs:
+        score_raw = 0.3
+        match_reason = "Przetarg bez kodu CPV"
+    else:
+        # Weź najlepszy wynik ze wszystkich CPV przetargu
+        best_score = 0.0
+        best_reason = ""
+        for t_cpv in tender_cpvs:
+            s, pref = _cpv_match(t_cpv, preferred_cpvs)
+            if s > best_score:
+                best_score = s
+                matched_pref = pref
+                best_reason = f"CPV {t_cpv.split('-')[0]} pasuje do preferencji: {pref}" if pref else f"CPV {t_cpv} — brak dopasowania"
+        score_raw = best_score
+        match_reason = best_reason if best_reason else "Brak dopasowania CPV do preferencji tenanta"
+
+    # Przelicz na procenty (0–100)
+    score_pct = round(score_raw * 100, 1)
+
+    # Label i go/no-go
+    if score_pct >= 80:
+        label = "Świetne dopasowanie"
+        go_nogo = "go"
+    elif score_pct >= 50:
+        label = "Dobre dopasowanie"
+        go_nogo = "go"
+    else:
+        label = "Słabe dopasowanie"
+        go_nogo = "nogo"
+
+    # Zaktualizuj match_score w bazie (rescore on demand) jeśli preferred_cpvs istnieje
+    if preferred_cpvs:
+        try:
+            with engine.begin() as upd_conn:
+                upd_conn.execute(sa.text("""
+                    UPDATE tender
+                    SET match_score = :score, match_reason = :reason
+                    WHERE id = CAST(:id AS UUID) AND tenant_id = :tid
+                """), {
+                    "score": score_raw,
+                    "reason": match_reason,
+                    "id": tender_id,
+                    "tid": tenant_id,
+                })
+        except Exception as e:
+            logger.warning("Could not update match_score for tender %s: %s", tender_id, e)
+
+    return {
+        "tender_id": tender_id,
+        "match_score": score_pct,
+        "match_score_raw": score_raw,
+        "match_label": label,
+        "match_reason": match_reason,
+        "preferred_cpvs": preferred_cpvs,
+        "tender_cpvs": tender_cpvs,
+        "matched_pref": matched_pref,
+        "go_nogo": go_nogo,
+    }

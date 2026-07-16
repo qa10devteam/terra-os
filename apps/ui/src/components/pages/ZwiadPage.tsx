@@ -191,6 +191,69 @@ function scoreColor(score: number): { text: string; bg: string; bar: string } {
   };
 }
 
+// ─── MatchBadge — widoczny badge go/no-go z tooltipem ─────────────────────────
+
+interface MatchBadgeProps {
+  score: number | null;
+  matchReason?: string | null;
+}
+
+function MatchBadge({ score, matchReason }: MatchBadgeProps) {
+  const [showTip, setShowTip] = useState(false);
+
+  if (score === null) return null;
+
+  const pct = Math.round(score > 1 ? score : score * 100);
+
+  let label: string;
+  let classes: string;
+  let dotColor: string;
+
+  if (pct >= 80) {
+    label = 'Świetne dopasowanie 🎯';
+    classes = 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400';
+    dotColor = '#10b981';
+  } else if (pct >= 50) {
+    label = 'Dobre dopasowanie';
+    classes = 'bg-amber-500/15 border-amber-500/40 text-amber-400';
+    dotColor = '#f59e0b';
+  } else {
+    label = 'Słabe dopasowanie';
+    classes = 'bg-earth-700/30 border-earth-600/40 text-earth-500';
+    dotColor = '#6b7280';
+  }
+
+  const tooltipText = matchReason
+    ? `${pct}% dopasowania\n${matchReason}`
+    : `${pct}% dopasowania do profilu CPV firmy`;
+
+  return (
+    <div className="relative inline-flex" onMouseEnter={() => setShowTip(true)} onMouseLeave={() => setShowTip(false)}>
+      <span
+        className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full border cursor-default select-none ${classes}`}
+      >
+        <span
+          className="inline-block w-1.5 h-1.5 rounded-full shrink-0"
+          style={{ backgroundColor: dotColor }}
+        />
+        <span className="font-bold tabular-nums">{pct}%</span>
+        <span>{label}</span>
+      </span>
+      {showTip && (
+        <div className="absolute bottom-full left-0 mb-1.5 z-50 w-64 rounded-lg border border-earth-700 bg-earth-900 px-3 py-2 shadow-xl text-xs text-earth-200 whitespace-pre-line pointer-events-none">
+          <div className="font-semibold text-earth-100 mb-0.5">Match Score: {pct}%</div>
+          <div className="text-earth-400 leading-relaxed">
+            {matchReason || 'Dopasowanie obliczone na podstawie kodów CPV przetargu i preferencji firmy.'}
+          </div>
+          <div className="mt-1.5 pt-1.5 border-t border-earth-700/60 text-[10px] text-earth-500">
+            {pct >= 80 ? '✅ Zalecane złożenie oferty (GO)' : pct >= 50 ? '🟡 Rozważ złożenie oferty' : '⛔ Niska zgodność z profilem (NO-GO)'}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function fmtMln(v: number): string {
   const n = v ?? 0;
   if (n >= 1000) return (n / 1000).toFixed(1) + ' mld';
@@ -336,6 +399,13 @@ function TenderCard({
         <p className="text-sm font-medium text-earth-100 line-clamp-2 leading-snug flex-1">{tender.title}</p>
         <MatchScoreBar score={tender.match_score} compact />
       </div>
+
+      {/* Match badge — widoczny go/no-go % */}
+      {tender.match_score !== null && (
+        <div className="pl-2">
+          <MatchBadge score={tender.match_score} matchReason={tender.match_reason} />
+        </div>
+      )}
 
       {/* Meta row */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-2 text-xs text-earth-500">
