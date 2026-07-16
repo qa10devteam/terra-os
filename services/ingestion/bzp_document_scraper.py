@@ -186,6 +186,46 @@ class BZPDocumentScraper:
 
     # ── Public API ───────────────────────────────────────────────────
 
+    async def fetch_notice_list(
+        self,
+        *,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+        page_size: int = 50,
+        page_number: int = 0,
+        notice_type: str = "ContractNotice",
+    ) -> list[dict]:
+        """Pobiera listę ogłoszeń z BZP API (async wrapper dla backward-compat).
+
+        Returns lista dictów z polami bzpNumber, name, htmlBody, itp.
+        """
+        now = datetime.now(timezone.utc)
+        d_from = date_from or (now - timedelta(days=1))
+        d_to = date_to or now
+
+        def _fmt(dt: datetime) -> str:
+            return dt.strftime("%Y-%m-%dT%H:%M:%S")
+
+        client = self._get_client()
+        try:
+            resp = client.get(
+                NOTICE_LIST_API,
+                params={
+                    "NoticeType": notice_type,
+                    "PublicationDateFrom": _fmt(d_from),
+                    "PublicationDateTo": _fmt(d_to),
+                    "pageSize": page_size,
+                    "pageNumber": page_number,
+                },
+                timeout=30,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            return data if isinstance(data, list) else []
+        except Exception as exc:
+            logger.warning("source=bzp_docs fetch_notice_list error=%s", exc)
+            return []
+
     def list_documents(self, tender_id: str) -> list[TenderDocument]:
         """Lista dokumentów dostępnych dla przetargu.
 
@@ -227,6 +267,38 @@ class BZPDocumentScraper:
                 url=swz_url,
                 doc_type="SWZ",
             ))
+
+            # 3. Dokumenty z zewnętrznej platformy SWZ (state-of-art multi-platform scraper)
+            try:
+                from services.ingestion.platform_document_scraper import PlatformDocumentScraper
+                with PlatformDocumentScraper() as platform_scraper:
+                    platform_docs = platform_scraper.scrape(swz_url)
+                if platform_docs:
+                    logger.info(
+                        "source=bzp_docs platform_scraper: %d dokumentów z %s",
+                        len(platform_docs), swz_url[:60],
+                    )
+                    for pdoc in platform_docs:
+                        # Pomijamy jeśli URL jest taki sam jak swz_url (link do strony)
+                        if pdoc.url == swz_url:
+                            continue
+                        docs.append(TenderDocument(
+                            object_id=f"platform_doc_{safe_bzp}_{len(docs)}",
+                            name=pdoc.name or pdoc.filename or pdoc.url.split("/")[-1],
+                            filename=pdoc.filename or pdoc.name[:80],
+                            url=pdoc.url,
+                            doc_type=pdoc.doc_type,
+                        ))
+                else:
+                    logger.info(
+                        "source=bzp_docs platform_scraper: brak dokumentów dla %s",
+                        swz_url[:60],
+                    )
+            except Exception as exc:
+                logger.warning(
+                    "source=bzp_docs platform_scraper failed for %s: %s",
+                    swz_url[:60], exc,
+                )
 
         logger.info("source=bzp_docs tender_id=%s znaleziono %d dokumentów (bzp=%s)", tender_id, len(docs), bzp_number)
         return docs
