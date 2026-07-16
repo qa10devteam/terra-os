@@ -326,7 +326,7 @@ Szukaj szczególnie: kar umownych, braku waloryzacji, krótkich terminów, solid
 
         response = client.messages.create(
             model="claude-haiku-4-5",
-            max_tokens=2048,
+            max_tokens=4096,
             messages=[{"role": "user", "content": prompt}],
         )
 

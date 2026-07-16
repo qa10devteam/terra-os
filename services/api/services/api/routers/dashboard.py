@@ -234,7 +234,7 @@ def generate_dashboard_digest(user: AuthUser) -> dict:
                         },
                         {"role": "user", "content": user_prompt},
                     ],
-                    "max_tokens": 600,
+                    "max_tokens": 4096,
                     "temperature": 0.7,
                 },
             )

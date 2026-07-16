@@ -27,27 +27,38 @@ OPENAI_API_KEY  = os.getenv("OPENAI_API_KEY", "")
 OPENAI_BASE_URL = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
 OPENAI_MODEL    = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
-TERRA_SYSTEM_PROMPT = """Jesteś **budos** — ekspertowy AI asystent platformy YU-NA do zarządzania przetargami budowlanymi w Polsce.
+# Bedrock Claude Sonnet obsługuje do 8192 tokenów output
+MAX_TOKENS_DEFAULT = int(os.getenv("BEDROCK_MAX_TOKENS", "4096"))
+
+TERRA_SYSTEM_PROMPT = """Jesteś **budos** — ekspertowy AI asystent platformy YU-NA (Terra.OS) do zarządzania przetargami budowlanymi w Polsce.
+
+**Kim jesteś:**
+Pomagasz firmom budowlanym wygrywać przetargi publiczne. Masz dostęp do danych rynkowych, historycznych ofert, benchmarków cenowych ICB/Sekocenbud oraz aktualnej bazy 3500+ przetargów. Jesteś konkretny, precyzyjny i działasz jak doświadczony konsultant przetargowy.
 
 **Zasady odpowiedzi:**
-- Odpowiadaj po polsku, konkretnie i merytorycznie
-- Gdy masz dane z systemu — cytuj liczby, kwoty, daty; nie zgaduj
-- Gdy brak danych — powiedz wprost "nie mam tej informacji" i zaproponuj co możesz sprawdzić
-- Formatuj odpowiedzi czytelnie: używaj list, pogrubień, liczb PLN z separatorem tysięcy
-- Maksymalnie 3-4 akapity, chyba że pytanie wymaga więcej
+- Odpowiadaj po polsku, profesjonalnie i merytorycznie
+- Gdy masz dane z systemu — zawsze cytuj liczby, kwoty PLN, daty, nazwy zamawiających
+- Gdy brak konkretnych danych — powiedz wprost co wiesz, a czego nie, i zaproponuj co sprawdzić
+- Formatuj czytelnie: używaj nagłówków (##), list punktowych, **pogrubień** dla kluczowych liczb
+- Kwoty zawsze w formacie: 1 234 567 zł lub 1,23 mln zł
+- Nie ograniczaj długości odpowiedzi — jeśli temat wymaga szczegółów, daj pełną analizę
 
-**Ekspertyza:**
-- Analiza SIWZ/SWZ i warunków udziału
-- Ocena szans wygranej i strategia ofertowania
-- Wycena robót budowlanych i kosztorysowanie (ICB/Sekocenbud)
-- Monitoring rynku i analiza konkurencji
-- Przepisy PZP i Prawo Budowlane
-- Marże, narzuty, ryzyko cenowe materiałów budowlanych"""
+**Twoja ekspertyza:**
+- **Analiza SWZ/SIWZ**: warunki udziału, kryteria oceny, pułapki formalne, terminy
+- **Strategia ofertowania**: pozycjonowanie cenowe, analiza konkurencji, optymalna marża
+- **Kosztorysowanie**: wycena robót wg ICB/Sekocenbud, narzuty, stawki robocizny i sprzętu
+- **Rynek zamówień publicznych**: trendy, aktywność zamawiających, sezonowość, CPV
+- **Prawo zamówień publicznych (PZP)**: procedury, odwołania, wyjaśnienia treści SIWZ
+- **Ryzyko materiałowe**: zmienność cen stali, betonu, materiałów izolacyjnych
+- **Analiza finansowa oferty**: przepływy, zaliczki, kary umowne, waloryzacja
+
+**Styl:**
+Jesteś jak senior konsultant — mówisz do prezesa firmy budowlanej. Nie używasz korporacyjnego bełkotu. Dajesz konkretne rekomendacje z uzasadnieniem."""
 
 
 # ─── Bedrock backend ─────────────────────────────────────────────────────────
 
-def _bedrock_generate(prompt: str, system: str, max_tokens: int = 1024, *, json_mode: bool = False) -> str:
+def _bedrock_generate(prompt: str, system: str, max_tokens: int = MAX_TOKENS_DEFAULT, *, json_mode: bool = False) -> str:
     import boto3
 
     client = boto3.client("bedrock-runtime", region_name=BEDROCK_REGION)
@@ -68,7 +79,7 @@ def _bedrock_generate(prompt: str, system: str, max_tokens: int = 1024, *, json_
     return result["content"][0]["text"]
 
 
-def _bedrock_stream(prompt: str, system: str, max_tokens: int = 1024) -> Generator[str, None, None]:
+def _bedrock_stream(prompt: str, system: str, max_tokens: int = MAX_TOKENS_DEFAULT) -> Generator[str, None, None]:
     import boto3
 
     client = boto3.client("bedrock-runtime", region_name=BEDROCK_REGION)
@@ -97,7 +108,7 @@ def _bedrock_stream(prompt: str, system: str, max_tokens: int = 1024) -> Generat
 
 
 def _bedrock_stream_messages(
-    messages: list[dict], system: str, max_tokens: int = 2048
+    messages: list[dict], system: str, max_tokens: int = MAX_TOKENS_DEFAULT
 ) -> Generator[str, None, None]:
     """Stream with proper messages array (multi-turn history)."""
     import boto3
@@ -138,7 +149,7 @@ def _vllm_available() -> bool:
         return False
 
 
-def _vllm_generate(prompt: str, system: str, max_tokens: int = 1024) -> str:
+def _vllm_generate(prompt: str, system: str, max_tokens: int = MAX_TOKENS_DEFAULT) -> str:
     import httpx
     resp = httpx.post(
         f"{VLLM_BASE_URL}/chat/completions",
@@ -149,13 +160,13 @@ def _vllm_generate(prompt: str, system: str, max_tokens: int = 1024) -> str:
             "max_tokens": max_tokens,
             "temperature": 0.7,
         },
-        timeout=60.0,
+        timeout=120.0,
     )
     resp.raise_for_status()
     return resp.json()["choices"][0]["message"]["content"]
 
 
-def _vllm_stream(prompt: str, system: str, max_tokens: int = 1024) -> Generator[str, None, None]:
+def _vllm_stream(prompt: str, system: str, max_tokens: int = MAX_TOKENS_DEFAULT) -> Generator[str, None, None]:
     import httpx
     with httpx.stream(
         "POST",
@@ -168,7 +179,7 @@ def _vllm_stream(prompt: str, system: str, max_tokens: int = 1024) -> Generator[
             "temperature": 0.7,
             "stream": True,
         },
-        timeout=60.0,
+        timeout=120.0,
     ) as resp:
         for line in resp.iter_lines():
             if not line.startswith("data: "):
@@ -194,7 +205,7 @@ class VLLMClient:
         self,
         prompt: str,
         system: str = TERRA_SYSTEM_PROMPT,
-        max_tokens: int = 1024,
+        max_tokens: int = MAX_TOKENS_DEFAULT,
         *,
         json_mode: bool = False,
     ) -> str:
@@ -223,7 +234,7 @@ class VLLMClient:
                         "messages": [{"role": "system", "content": system}, {"role": "user", "content": prompt}],
                         "max_tokens": max_tokens,
                     },
-                    timeout=60.0,
+                    timeout=120.0,
                 )
                 return resp.json()["choices"][0]["message"]["content"]
             except Exception as e3:
@@ -235,7 +246,7 @@ class VLLMClient:
         self,
         prompt: str,
         system: str = TERRA_SYSTEM_PROMPT,
-        max_tokens: int = 2048,
+        max_tokens: int = MAX_TOKENS_DEFAULT,
     ) -> Generator[str, None, None]:
         # Try Bedrock stream
         try:
@@ -263,7 +274,7 @@ class VLLMClient:
         self,
         messages: list[dict],
         system: str = TERRA_SYSTEM_PROMPT,
-        max_tokens: int = 2048,
+        max_tokens: int = MAX_TOKENS_DEFAULT,
     ) -> Generator[str, None, None]:
         """Stream with proper messages array for multi-turn conversations."""
         try:

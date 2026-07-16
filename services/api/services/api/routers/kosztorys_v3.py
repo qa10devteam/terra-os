@@ -161,7 +161,7 @@ async def ai_wycena_v2(kosztorys_id: str, user: AuthUser) -> StreamingResponse:
                 {"role": "user", "content": prompt},
             ],
             "stream": True,
-            "max_tokens": 2048,
+            "max_tokens": 4096,
             "temperature": 0.3,
         }
         try:

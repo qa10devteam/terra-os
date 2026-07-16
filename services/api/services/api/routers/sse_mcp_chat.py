@@ -289,7 +289,7 @@ def chat_v2(req: ChatV2Request, user: AuthUser) -> dict:
             with httpx.Client(timeout=30) as client:
                 r = client.post(
                     "https://api.openai.com/v1/chat/completions",
-                    json={"model": "gpt-4o-mini", "messages": messages, "max_tokens": 800},
+                    json={"model": "gpt-4o-mini", "messages": messages, "max_tokens": 4096},
                     headers={"Authorization": f"Bearer {api_key}"},
                 )
                 r.raise_for_status()

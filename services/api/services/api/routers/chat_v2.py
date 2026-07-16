@@ -297,7 +297,7 @@ def send_message(session_id: str, body: SendMessageRequest, user: AuthUser) -> S
     def stream():
         full_response = []
         try:
-            for token in llm.generate_stream_messages(llm_messages, system=system, max_tokens=2048):
+            for token in llm.generate_stream_messages(llm_messages, system=system, max_tokens=4096):
                 full_response.append(token)
                 yield f"data: {json.dumps({'type': 'token', 'content': token})}\n\n"
         except Exception as e:
@@ -321,7 +321,7 @@ def send_message(session_id: str, body: SendMessageRequest, user: AuthUser) -> S
                 new_summary = llm.generate(
                     f"Podsumuj zwięźle tę rozmowę w 3-4 zdaniach, zachowaj kluczowe fakty:\n{old_text}",
                     system="Jesteś asystentem do podsumowań. Odpowiadaj po polsku. Bądź konkretny.",
-                    max_tokens=256,
+                    max_tokens=512,
                 )
                 messages_to_save = messages[-12:]
             except Exception:

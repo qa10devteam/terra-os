@@ -16,7 +16,7 @@ class LLMClient(Protocol):
         ...
 
     def generate_stream(
-        self, prompt: str, *, system: str = "", max_tokens: int = 1024
+        self, prompt: str, *, system: str = "", max_tokens: int = 4096
     ) -> Generator[str, None, None]:
         ...
 
@@ -130,7 +130,7 @@ class StubClient:
         return json.dumps({"result": "ok", "confidence": 0.7})
 
     def generate_stream(
-        self, prompt: str, *, system: str = "", max_tokens: int = 1024
+        self, prompt: str, *, system: str = "", max_tokens: int = 4096
     ) -> Generator[str, None, None]:
         """Stream stub — yields one chunk per sentence."""
         response = self.generate(prompt, system=system)
