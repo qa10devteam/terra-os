@@ -26,6 +26,51 @@ interface DashboardData {
   latest_quarter_by_type: { R?: string; M?: string; S?: string };
 }
 
+// Raw API shape (may differ from the typed interface above)
+interface DashboardApiResponse {
+  overview?: { total_records?: number; unique_symbols?: number; categories?: number };
+  total_records?: number;
+  unique_symbols?: number;
+  categories_count?: number;
+  yoy_inflation_pct?: number;
+  narzuty?: { branza?: string; branża?: string; ko_pct: number; z_pct: number; kz_pct: number }[];
+  regional_coefficients?: { voivodeship: string; coefficient?: number; avg_coefficient?: number }[];
+  latest_quarter_by_type?: { R?: string; M?: string; S?: string } | { typ_rms: string; avg_price: number }[];
+}
+
+function normalizeDashboard(raw: DashboardApiResponse): DashboardData {
+  const ov = raw.overview || {};
+  // Normalize latest_quarter_by_type: may be dict {R,M,S} or list [{typ_rms, avg_price}]
+  let lqbt: { R?: string; M?: string; S?: string } = {};
+  const lqRaw = raw.latest_quarter_by_type;
+  if (Array.isArray(lqRaw)) {
+    lqRaw.forEach((row: { typ_rms: string; avg_price: number }) => {
+      if (row.typ_rms === 'R' || row.typ_rms === 'M' || row.typ_rms === 'S') {
+        (lqbt as Record<string, string>)[row.typ_rms] = `${row.avg_price?.toFixed(2)} zł`;
+      }
+    });
+  } else if (lqRaw && typeof lqRaw === 'object') {
+    lqbt = lqRaw as { R?: string; M?: string; S?: string };
+  }
+  return {
+    total_records: ov.total_records ?? raw.total_records ?? 0,
+    unique_symbols: ov.unique_symbols ?? raw.unique_symbols ?? 0,
+    categories_count: ov.categories ?? raw.categories_count ?? 0,
+    yoy_inflation_pct: raw.yoy_inflation_pct ?? 0,
+    narzuty: (raw.narzuty || []).map(n => ({
+      branza: (n as any).branża || n.branza || '',
+      ko_pct: n.ko_pct,
+      z_pct: n.z_pct,
+      kz_pct: n.kz_pct,
+    })),
+    regional_coefficients: (raw.regional_coefficients || []).map(r => ({
+      voivodeship: r.voivodeship,
+      coefficient: r.coefficient ?? (r as any).avg_coefficient ?? 1,
+    })),
+    latest_quarter_by_type: lqbt,
+  };
+}
+
 interface SearchResult {
   id: number;
   nazwa: string;
@@ -88,6 +133,27 @@ interface ForecastResponse {
   category: string;
   typ_rms: string;
   forecasts: ForecastRow[];
+}
+
+// API may return a flat list of rows instead of the wrapped response
+type ForecastApiRow = ForecastRow & { category?: string; typ_rms?: string };
+
+function normalizeForecast(raw: unknown, category: string, typ: string): ForecastResponse {
+  if (Array.isArray(raw)) {
+    const rows = raw as ForecastApiRow[];
+    return {
+      category: rows[0]?.category ?? category,
+      typ_rms: rows[0]?.typ_rms ?? typ,
+      forecasts: rows.map(r => ({
+        period: r.period,
+        predicted_price: r.predicted_price,
+        lower_bound: r.lower_bound,
+        upper_bound: r.upper_bound,
+        mape_pct: r.mape_pct,
+      })),
+    };
+  }
+  return raw as ForecastResponse;
 }
 
 interface RegionCompareDatum {
@@ -405,7 +471,7 @@ function DashboardTab() {
     setError(null);
     try {
       const res = await authFetch('/api/v2/icb/dashboard');
-      setData(res as DashboardData);
+      setData(normalizeDashboard(res as DashboardApiResponse));
     } catch (e: any) {
       setError(e.message || 'Błąd ładowania danych');
     } finally {
@@ -1120,7 +1186,7 @@ function ProgNozaTab({ categories }: { categories: CategoryItem[] }) {
     setData(null);
     try {
       const res = await authFetch(`/api/v2/icb/forecast?category=${encodeURIComponent(cat)}&typ_rms=${typ}`);
-      setData(res as ForecastResponse);
+      setData(normalizeForecast(res, cat, typ));
     } catch (e: any) {
       setError(e.message || 'Błąd ładowania prognoz');
     } finally {

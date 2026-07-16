@@ -864,7 +864,17 @@ function DocumentsTab({
   };
 
   const handleDownload = (doc: BzpDocument) => {
-    window.open(`/api/v1/bzp/documents/${tenderId}/download/${doc.id}`, '_blank');
+    // Prefer the direct external download_url stored on the document (no auth needed).
+    // Fall back to the proxied backend route but pass token as query param so the
+    // browser can open it directly without Authorization header.
+    if (doc.download_url && doc.download_url.startsWith('http')) {
+      window.open(doc.download_url, '_blank');
+    } else {
+      // Use the backend download endpoint; window.open can't send headers so we
+      // rely on the Next.js rewrite proxy which will forward cookies/query params.
+      // As a fallback, open the document via the download_url on the backend.
+      window.open(`/api/v1/bzp/documents/${tenderId}/download/${doc.id}`, '_blank');
+    }
   };
 
   if (source && source !== 'bzp') {
