@@ -1337,3 +1337,46 @@ def fetch_bip_announcements(
         len(all_tenders), len(deduped), cutoff,
     )
     return deduped
+
+
+# ---------------------------------------------------------------------------
+# BIPScraper — convenience class wrapper (backward-compat for live tests)
+# ---------------------------------------------------------------------------
+
+class BIPScraper:
+    """Convenience wrapper around bip_connector module functions.
+
+    Provides a class-based API for discovering BIP sites and scraping tenders.
+    """
+
+    def __init__(self) -> None:
+        self._client = _get_client()
+
+    def discover_sites(
+        self,
+        region: str | None = None,
+        max_sites: int = 0,
+        group_id: int = GROUP_GMINY,
+    ) -> list[BIPSite]:
+        """Discover BIP sites, optionally filtered by region (e.g. 'slaskie')."""
+        return build_site_index(
+            self._client,
+            group_id=group_id,
+            region_filter=region,
+            max_sites=max_sites,
+        )
+
+    def scrape_site(self, site: BIPSite) -> list[BIPTender]:
+        """Scrape tenders from a single BIP site."""
+        _, tenders = _scrape_site((site, {}))
+        return tenders
+
+    def close(self) -> None:
+        if self._client and not self._client.is_closed:
+            self._client.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        self.close()
