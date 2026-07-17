@@ -5,11 +5,18 @@ Maps OPZ (Opis Przedmiotu Zamówienia) positions to KNR catalog entries.
 """
 import json
 import logging
+import os
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Optional
 
-from app.core.config import settings
+
+class _Settings:
+    QDRANT_URL: str = os.getenv('QDRANT_URL', 'http://localhost:6333')
+    QDRANT_COLLECTION_KNR: str = os.getenv('QDRANT_COLLECTION_KNR', 'knr_embeddings')
+    AWS_REGION: str = os.getenv('AWS_REGION', 'eu-central-1')
+
+settings = _Settings()
 
 logger = logging.getLogger(__name__)
 
@@ -101,6 +108,138 @@ KNR_KEYWORD_RULES: dict[str, list[str]] = {
         "obróbka blacharska", "rynna", "krokiew", "więźba",
     ],
 }
+
+
+# ─── DB helpers ─────────────────────────────────────────────────────────────
+
+def _get_db_connection():
+    """Return a new psycopg2 connection using env vars."""
+    import psycopg2
+    return psycopg2.connect(
+        host=os.getenv('DB_HOST', '127.0.0.1'),
+        port=int(os.getenv('DB_PORT', '5432')),
+        dbname=os.getenv('DB_NAME', 'terraos'),
+        user=os.getenv('DB_USER', 'terraos'),
+        password=os.getenv('DB_PASSWORD', ''),
+        connect_timeout=5,
+    )
+
+
+def _lookup_knr_direct(knr_code: str) -> Optional[dict]:
+    """
+    Look up a KNR code in sekocenbud_items table.
+    Returns dict with naklady_r/m/s and unit, or None if not found.
+    """
+    try:
+        conn = _get_db_connection()
+        try:
+            with conn.cursor() as cur:
+                # Discover available columns first (cached per process would be nicer,
+                # but correctness > micro-optimisation here)
+                cur.execute(
+                    "SELECT column_name FROM information_schema.columns "
+                    "WHERE table_name = 'sekocenbud_items';"
+                )
+                columns = {row[0] for row in cur.fetchall()}
+
+                if not columns:
+                    return None
+
+                # Build SELECT list based on what actually exists
+                select_r = "naklady_r" if "naklady_r" in columns else "0.0"
+                select_m = "naklady_m" if "naklady_m" in columns else "0.0"
+                select_s = "naklady_s" if "naklady_s" in columns else "0.0"
+                select_u = "unit" if "unit" in columns else "NULL"
+                select_d = "description" if "description" in columns else "NULL"
+
+                # Determine the code column name
+                code_col = None
+                for candidate in ("knr_code", "kod", "code", "symbol"):
+                    if candidate in columns:
+                        code_col = candidate
+                        break
+
+                if code_col is None:
+                    return None
+
+                cur.execute(
+                    f"SELECT {select_r}, {select_m}, {select_s}, {select_u}, {select_d} "
+                    f"FROM sekocenbud_items WHERE {code_col} = %s LIMIT 1;",
+                    (knr_code,),
+                )
+                row = cur.fetchone()
+                if row:
+                    return {
+                        "naklady_r": float(row[0] or 0.0),
+                        "naklady_m": float(row[1] or 0.0),
+                        "naklady_s": float(row[2] or 0.0),
+                        "unit": row[3] or "szt",
+                        "description": row[4] or "",
+                    }
+        finally:
+            conn.close()
+    except Exception as e:
+        logger.debug(f"DB lookup (direct) failed: {e}")
+    return None
+
+
+def _lookup_knr_group_avg(knr_group: str) -> Optional[dict]:
+    """
+    Look up average naklady_r/m/s for a KNR group (e.g. 'KNR 2-02') in sekocenbud_items.
+    Uses GROUP BY avg. Returns dict or None.
+    """
+    try:
+        conn = _get_db_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT column_name FROM information_schema.columns "
+                    "WHERE table_name = 'sekocenbud_items';"
+                )
+                columns = {row[0] for row in cur.fetchall()}
+
+                if not columns:
+                    return None
+
+                select_r = "AVG(naklady_r)" if "naklady_r" in columns else "0.0"
+                select_m = "AVG(naklady_m)" if "naklady_m" in columns else "0.0"
+                select_s = "AVG(naklady_s)" if "naklady_s" in columns else "0.0"
+
+                code_col = None
+                for candidate in ("knr_code", "kod", "code", "symbol"):
+                    if candidate in columns:
+                        code_col = candidate
+                        break
+
+                if code_col is None:
+                    return None
+
+                # Strip suffixes like "-I", "-T", "-D" from group key to get base group
+                base_group = knr_group.split(" (")[0]  # remove "(group match)" if present
+                # Remove artificial sub-suffixes used only as dict keys
+                for suffix in ("-I", "-T", "-D"):
+                    if base_group.endswith(suffix):
+                        base_group = base_group[: -len(suffix)]
+                        break
+
+                cur.execute(
+                    f"SELECT {select_r}, {select_m}, {select_s} "
+                    f"FROM sekocenbud_items "
+                    f"WHERE {code_col} LIKE %s;",
+                    (f"{base_group}%",),
+                )
+                row = cur.fetchone()
+                if row and any(v is not None for v in row):
+                    return {
+                        "naklady_r": float(row[0] or 0.0),
+                        "naklady_m": float(row[1] or 0.0),
+                        "naklady_s": float(row[2] or 0.0),
+                    }
+        finally:
+            conn.close()
+    except Exception as e:
+        logger.debug(f"DB lookup (group avg) failed: {e}")
+    return None
 
 
 # ─── KNR Mapper Class ──────────────────────────────────────────────────────
@@ -202,15 +341,27 @@ class KNRMapper:
 
         knr_code = f"KNR {match.group(1)} {match.group(2)}".replace("/", "-")
 
-        # TODO: lookup knr_code in DB (knr_catalog table)
-        # For now, return with high confidence since we found explicit reference
+        # Lookup knr_code in sekocenbud_items table
+        naklady_r = 0.0
+        naklady_m = 0.0
+        naklady_s = 0.0
+        unit = position.unit or "szt"
+
+        db_row = _lookup_knr_direct(knr_code)
+        if db_row:
+            naklady_r = db_row["naklady_r"]
+            naklady_m = db_row["naklady_m"]
+            naklady_s = db_row["naklady_s"]
+            if not position.unit:
+                unit = db_row.get("unit", unit)
+
         return KNRMapping(
             knr_code=knr_code,
             description=position.description,
-            naklady_r=0.0,  # TODO: fill from DB
-            naklady_m=0.0,
-            naklady_s=0.0,
-            unit=position.unit or "szt",
+            naklady_r=naklady_r,
+            naklady_m=naklady_m,
+            naklady_s=naklady_s,
+            unit=unit,
             confidence=0.98,
             strategy_used=MappingStrategy.DIRECT,
         )
@@ -300,13 +451,23 @@ class KNRMapper:
         # Confidence based on number of keyword matches
         confidence = min(0.5 + (best_score * 0.1), 0.85)
 
-        # TODO: lookup specific position within group from DB
+        # Lookup average naklady values for this KNR group from DB
+        naklady_r = 0.0
+        naklady_m = 0.0
+        naklady_s = 0.0
+
+        db_avg = _lookup_knr_group_avg(best_group)
+        if db_avg:
+            naklady_r = db_avg["naklady_r"]
+            naklady_m = db_avg["naklady_m"]
+            naklady_s = db_avg["naklady_s"]
+
         return KNRMapping(
             knr_code=f"{best_group} (group match)",
             description=position.description,
-            naklady_r=0.0,  # TODO: average for group
-            naklady_m=0.0,
-            naklady_s=0.0,
+            naklady_r=naklady_r,
+            naklady_m=naklady_m,
+            naklady_s=naklady_s,
             unit=position.unit or "szt",
             confidence=round(confidence, 2),
             strategy_used=MappingStrategy.RULES,

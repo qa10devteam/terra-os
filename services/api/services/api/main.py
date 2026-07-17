@@ -703,6 +703,19 @@ try:
 except Exception as _e:  # pragma: no cover
     logging.getLogger(__name__).warning("swz router error: %s", _e)
 
+# ── Validation Engine — 47-point PZP checklist ──────────────────────────────
+try:
+    from .routers import validation as _validation_mod
+    app.include_router(_validation_mod.router)
+except Exception as _e:  # pragma: no cover
+    logging.getLogger(__name__).warning("validation router error: %s", _e)
+
+try:
+    from .routers import offer_assembly as _offer_assembly_mod
+    app.include_router(_offer_assembly_mod.router)
+except Exception as _e:
+    logging.getLogger(__name__).warning("offer_assembly router error: %s", _e)
+
 # ── v1 compat aliases — frontend używa /api/v1/tenders ──────────────────────
 from fastapi import Request as _Request
 from fastapi.responses import JSONResponse as _JSONResponse
