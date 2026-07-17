@@ -290,37 +290,37 @@ function KPIRow({ kpi, loading }: { kpi?: KPI; loading: boolean }) {
     {
       icon: Activity,
       label: 'BZP wyniki (30 dni)',
-      value: loading ? '—' : kpi!.bzp_30d.toLocaleString('pl'),
+      value: kpi ? kpi.bzp_30d.toLocaleString('pl') : '—',
       iconColor: 'text-accent-primary',
     },
     {
       icon: Building2,
       label: 'Unikalnych wykonawców',
-      value: loading ? '—' : kpi!.unique_contractors.toLocaleString('pl'),
+      value: kpi ? kpi.unique_contractors.toLocaleString('pl') : '—',
       iconColor: 'text-accent-info',
     },
     {
       icon: TrendingUp,
       label: 'Śr. wartość (tys. PLN)',
-      value: loading ? '—' : `${kpi!.avg_value_k.toFixed(0)} k`,
+      value: kpi ? `${kpi.avg_value_k.toFixed(0)} k` : '—',
       iconColor: 'text-accent-warning',
     },
     {
       icon: BarChart3,
       label: 'Łączna wartość BZP (mld)',
-      value: loading ? '—' : `${kpi!.total_value_bln} mld`,
+      value: kpi ? `${kpi.total_value_bln} mld` : '—',
       iconColor: 'text-accent-violet',
     },
     {
       icon: Globe2,
       label: 'TED UE (30 dni)',
-      value: loading ? '—' : kpi!.ted_30d.toLocaleString('pl'),
+      value: kpi ? kpi.ted_30d.toLocaleString('pl') : '—',
       iconColor: 'text-cyan-400',
     },
     {
       icon: Zap,
       label: 'Pre-tender sygnały (30 dni)',
-      value: loading ? '—' : kpi!.pretender_30d.toLocaleString('pl'),
+      value: kpi ? kpi.pretender_30d.toLocaleString('pl') : '—',
       iconColor: 'text-accent-danger',
     },
   ];
@@ -358,7 +358,7 @@ export function MarketDashboardPage() {
   const [data,       setData]       = useState<MarketData | null>(null);
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState<string | null>(null);
-  const [refreshedAt, setRefreshedAt] = useState<Date>(new Date());
+  const [refreshedAt, setRefreshedAt] = useState<Date | null>(null);
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
 
@@ -429,7 +429,7 @@ export function MarketDashboardPage() {
     <div className="flex items-center gap-2">
       <span className="text-[11px] text-earth-600 flex items-center gap-1">
         <Clock className="w-3 h-3" />
-        {refreshedAt.toLocaleTimeString('pl', { hour: '2-digit', minute: '2-digit' })}
+        {refreshedAt ? refreshedAt.toLocaleTimeString('pl', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
       </span>
       <button
         onClick={fetchData}
