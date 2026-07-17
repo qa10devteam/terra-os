@@ -14,7 +14,7 @@ from uuid import UUID, uuid4
 
 import psycopg2
 import psycopg2.extras
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
 from ..auth.deps import AuthUser
@@ -427,7 +427,7 @@ def _get_wizard_steps_from_db(cur, bid_id: str, tender_id: str, offer_row: dict)
 # ─── Endpoints ──────────────────────────────────────────────────────────────
 
 @router.get("/wizard/{bid_id}", response_model=WizardResponse)
-async def get_wizard_status(bid_id: UUID):
+async def get_wizard_status(bid_id: UUID, user: AuthUser, _gate: None = require_plan(PlanLevel.STARTER)):
     """
     Status Submission Wizard — 7 kroków do złożenia oferty.
 
@@ -544,7 +544,7 @@ async def get_wizard_status(bid_id: UUID):
 
 
 @router.post("/wizard/{bid_id}/step/{step_nr}", response_model=StepConfirmResponse)
-async def confirm_step(bid_id: UUID, step_nr: int, payload: StepConfirmRequest):
+async def confirm_step(bid_id: UUID, step_nr: int, payload: StepConfirmRequest, user: AuthUser, _gate: None = require_plan(PlanLevel.STARTER)):
     """
     Potwierdź ukończenie kroku w wizard.
 
@@ -671,7 +671,7 @@ async def confirm_step(bid_id: UUID, step_nr: int, payload: StepConfirmRequest):
 
 
 @router.post("/confirm/{bid_id}", response_model=FinalConfirmResponse)
-async def final_confirm(bid_id: UUID, payload: FinalConfirmRequest):
+async def final_confirm(bid_id: UUID, payload: FinalConfirmRequest, user: AuthUser, _gate: None = require_plan(PlanLevel.STARTER)):
     """
     Final confirmation — ostatni krok przed złożeniem oferty.
 
@@ -808,7 +808,7 @@ async def final_confirm(bid_id: UUID, payload: FinalConfirmRequest):
 
 
 @router.get("/tracking/{bid_id}", response_model=TrackingResponse)
-async def get_tracking(bid_id: UUID):
+async def get_tracking(bid_id: UUID, user: AuthUser, _gate: None = require_plan(PlanLevel.STARTER)):
     """
     Post-submission tracking — śledzenie statusu złożonej oferty.
 

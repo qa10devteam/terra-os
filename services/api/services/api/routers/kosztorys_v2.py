@@ -272,7 +272,7 @@ def delete_kosztorys(kid: str, user: AuthUser) -> None:
             "DELETE FROM kosztorys WHERE id=:id AND tenant_id=:tid"
         ), {"id": kid, "tid": tenant_id})
         if r.rowcount == 0:
-            raise HTTPException(404)
+            raise HTTPException(status_code=404, detail={"error": "not_found", "message": "Nie znaleziono zasobu."})
 
 
 @router.post("/{kid}/recalc")
@@ -467,8 +467,11 @@ def acknowledge_material_alert(alert_id: str, user: AuthUser) -> dict:
         ok = acknowledge_alert(alert_id, tenant_id)
         return {"ok": ok}
     except Exception as e:
-        logger.exception("acknowledge alert failed: %s", exc_info=True)
-        return {"ok": False}
+        logger.exception("acknowledge alert failed: %s", alert_id)
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "acknowledge_failed", "message": "Nie udało się potwierdzić alertu."},
+        )
 
 
 # ─── Działy ───────────────────────────────────────────────────────────────────
@@ -519,7 +522,7 @@ def delete_dzial(kid: str, did: str, user: AuthUser) -> None:
             WHERE id=:did AND kosztorys_id=:kid AND tenant_id=:tid
         """), {"did": did, "kid": kid, "tid": tenant_id})
         if r.rowcount == 0:
-            raise HTTPException(404)
+            raise HTTPException(status_code=404, detail={"error": "not_found", "message": "Nie znaleziono zasobu."})
 
 
 # ─── Pozycje ──────────────────────────────────────────────────────────────────
@@ -609,7 +612,7 @@ def update_pozycja(kid: str, pid: str, body: PozycjaUpdate, user: AuthUser) -> d
             WHERE id=:pid AND kosztorys_id=:kid AND tenant_id=:tid
         """), {"pid": pid, "kid": kid, "tid": tenant_id, **updates})
         if r.rowcount == 0:
-            raise HTTPException(404)
+            raise HTTPException(status_code=404, detail={"error": "not_found", "message": "Nie znaleziono zasobu."})
 
     # Trigger material risk check jeśli zmieniono cenę materiału
     if "m_jcena" in updates or "icb_id_m" in updates:
@@ -632,7 +635,7 @@ def delete_pozycja(kid: str, pid: str, user: AuthUser) -> None:
             WHERE id=:pid AND kosztorys_id=:kid AND tenant_id=:tid
         """), {"pid": pid, "kid": kid, "tid": tenant_id})
         if r.rowcount == 0:
-            raise HTTPException(404)
+            raise HTTPException(status_code=404, detail={"error": "not_found", "message": "Nie znaleziono zasobu."})
 
 
 # ─── ATH Import / Export ──────────────────────────────────────────────────────
