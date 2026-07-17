@@ -25,6 +25,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import text
 
 from ..auth.deps import AuthUser
+from ..auth.plan_gate import require_plan, PlanLevel
 from terra_db.session import get_engine
 
 logger = logging.getLogger(__name__)
@@ -334,6 +335,7 @@ def _build_fallback_sections(
 async def generate_bid_writing(
     req: BidWritingRequest,
     user: AuthUser,
+    _gate: None = require_plan(PlanLevel.PRO),
 ) -> BidWritingResponse:
     """Generuje profesjonalny szkielet oferty technicznej dla przetargu.
 
@@ -465,6 +467,7 @@ async def generate_bid_writing(
 async def get_bid_writing_history(
     user: AuthUser,
     tender_id: str = Query(..., description="UUID przetargu"),
+    _gate: None = require_plan(PlanLevel.PRO),
 ) -> list[BidWritingHistoryItem]:
     """Zwraca listę wygenerowanych bid writingów dla danego przetargu.
 

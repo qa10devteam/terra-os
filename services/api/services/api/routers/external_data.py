@@ -16,6 +16,7 @@ from fastapi import APIRouter, Query
 from sqlalchemy import text
 
 from ..auth.deps import AuthUser
+from ..auth.plan_gate import require_plan, PlanLevel
 from terra_db.session import get_engine
 
 logger = logging.getLogger(__name__)
@@ -32,6 +33,7 @@ async def get_ted_notices(
     days_back: int = Query(30, ge=1, le=365),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
+    _gate: None = require_plan(PlanLevel.PRO),
 ):
     """Ogłoszenia przetargowe TED (UE) dla Polski z filtrem CPV."""
     try:
@@ -83,6 +85,7 @@ async def get_ted_notices(
 async def get_gus_indicators(
     user: AuthUser,
     year: Optional[int] = Query(None, description="Rok danych, np. 2024"),
+    _gate: None = require_plan(PlanLevel.PRO),
 ):
     """Wskaźniki GUS BDL dla budownictwa (produkcja, liczba budów, wynagrodzenia)."""
     try:
@@ -134,6 +137,7 @@ async def get_pretender_signals(
     source: Optional[str] = Query(None, description="np. bzp_pin, ezamowienia_plan"),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
+    _gate: None = require_plan(PlanLevel.PRO),
 ):
     """Sygnały pre-przetargowe (PIN, plany zamówień) — informacje przed formalnym przetargiem."""
     try:
@@ -186,6 +190,7 @@ async def get_pretender_signals(
 async def get_market_intelligence(
     user: AuthUser,
     cpv_prefix: str = Query("45", description="Prefix CPV np. '45' (budownictwo)"),
+    _gate: None = require_plan(PlanLevel.BUSINESS),
 ):
     """AI summary kondycji rynku zamówień dla danego CPV (TED + GUS + Pre-tender)."""
     try:

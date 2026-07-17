@@ -27,6 +27,7 @@ from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import text
 
 from ..auth.deps import AuthUser
+from ..auth.plan_gate import require_plan, PlanLevel
 from terra_db.session import get_engine
 
 logger = logging.getLogger(__name__)
@@ -66,6 +67,7 @@ def benchmark(
     cpv_prefix: str = Query(..., min_length=2, description="CPV prefix np. '4523' lub '45'"),
     province: str | None = Query(None, description="Kod NUTS województwa np. 'PL22'"),
     quarters: int = Query(8, ge=1, le=20, description="Ile ostatnich kwartałów"),
+    _gate: None = require_plan(PlanLevel.BUSINESS),
 ):
     """Benchmark cen bezpośrednio z historical_tenders — dokładniejszy niż MV dla wąskich filtrów."""
     conditions = ["left(cpv_code, :cpv_len) = :cpv"]
@@ -122,6 +124,7 @@ def market_trends(
     cpv_prefix: str | None = Query(None, description="CPV prefix np. '45'"),
     province: str | None = Query(None),
     quarters: int = Query(12, ge=1, le=24),
+    _gate: None = require_plan(PlanLevel.BUSINESS),
 ):
     """Dane z mv_market_trend — wstępnie zagregowane, sub-10ms."""
     conditions = ["quarter >= (SELECT max(quarter) FROM mv_market_trend) - ((:quarters - 1) * INTERVAL '3 months')"]
@@ -165,6 +168,7 @@ def top_competitors(
     cpv_prefix: str | None = Query(None),
     province: str | None = Query(None),
     limit: int = Query(20, le=100),
+    _gate: None = require_plan(PlanLevel.BUSINESS),
 ):
     """Dane z mv_contractor_ranking — wstępnie zagregowane."""
     conditions = ["contractor_nip IS NOT NULL"]
@@ -207,6 +211,7 @@ def top_buyers(
     cpv_prefix: str | None = Query(None),
     province: str | None = Query(None),
     limit: int = Query(20, le=100),
+    _gate: None = require_plan(PlanLevel.BUSINESS),
 ):
     conditions = ["buyer_nip IS NOT NULL"]
     params: dict = {"limit": limit}
@@ -245,6 +250,7 @@ def icb_prices(
     quarter: int | None = Query(None, ge=1, le=4),
     symbol: str | None = Query(None, description="Symbol ICB np. '1690000'"),
     limit: int = Query(100, le=500),
+    _gate: None = require_plan(PlanLevel.BUSINESS),
 ):
     conditions = ["1=1"]
     params: dict = {"limit": limit}
@@ -290,6 +296,7 @@ def price_inflation(
     user: AuthUser,
     category: str | None = Query(None),
     typ_rms: str | None = Query(None, description="R|M|S"),
+    _gate: None = require_plan(PlanLevel.BUSINESS),
 ):
     """YoY i QoQ indeks zmian cen z mv_labor_inflation_index."""
     if typ_rms and typ_rms.upper() not in ("R", "M", "S"):
@@ -330,6 +337,7 @@ def regional_prices(
     cpv_prefix: str | None = Query(None, min_length=2),
     quarter: str | None = Query(None, description="Kwartał ISO np. '2025-01-01'"),
     nuts2_code: str | None = Query(None, description="Kod NUTS2 np. 'PL22'"),
+    _gate: None = require_plan(PlanLevel.BUSINESS),
 ):
     conditions = ["1=1"]
     params: dict = {}
@@ -367,6 +375,7 @@ def seasonality(
     user: AuthUser,
     cpv_prefix: str | None = Query(None),
     province: str | None = Query(None),
+    _gate: None = require_plan(PlanLevel.BUSINESS),
 ):
     """Sezonowość ogłoszeń + wartości per miesiąc — agregat wieloletni."""
     conditions = ["date IS NOT NULL", "estimated_value IS NOT NULL", "estimated_value > 0"]
@@ -411,6 +420,7 @@ def fts_search(
     notice_type: str | None = Query(None),
     limit: int = Query(20, le=100),
     offset: int = Query(0, ge=0),
+    _gate: None = require_plan(PlanLevel.BUSINESS),
 ):
     conditions = ["title_tsv @@ plainto_tsquery('simple', :q)"]
     params: dict = {"q": q, "limit": limit, "offset": offset}
@@ -467,6 +477,7 @@ def market_summary(
     user: AuthUser,
     cpv_prefix: str | None = Query(None, description="CPV prefix np. '45'"),
     province: str | None = Query(None),
+    _gate: None = require_plan(PlanLevel.BUSINESS),
 ):
     """Szybkie KPI: łączna liczba + wartość przetargów (1 rok), top CPV, top region.
 
@@ -568,6 +579,7 @@ def win_rates(
     user: AuthUser,
     cpv_prefix: str = Query(..., min_length=2, max_length=8, description="CPV prefix np. '45' lub '45233'"),
     limit: int = Query(20, ge=1, le=100),
+    _gate: None = require_plan(PlanLevel.BUSINESS),
 ):
     """Top wykonawcy wg liczby wygranych przetargów dla danego prefixu CPV.
 
@@ -612,6 +624,7 @@ def top_buyers_cpv(
     user: AuthUser,
     cpv_prefix: str = Query(..., min_length=2, max_length=8, description="CPV prefix np. '45' lub '45233'"),
     limit: int = Query(20, ge=1, le=100),
+    _gate: None = require_plan(PlanLevel.BUSINESS),
 ):
     """Top zamawiający wg liczby przetargów dla danego prefixu CPV.
 
@@ -657,6 +670,7 @@ def sekocenbud_search(
     chapter: str | None = Query(None, description="Filtr po chapter_name"),
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
+    _gate: None = require_plan(PlanLevel.BUSINESS),
 ) -> dict:
     """Full-text search w bazie SEKOCENBUD. Zwraca pozycje z ceną, jednostką i symbolem."""
     params: dict = {"limit": limit, "offset": offset}

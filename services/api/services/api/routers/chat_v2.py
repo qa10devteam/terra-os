@@ -21,6 +21,7 @@ import sqlalchemy as sa
 from terra_db.session import get_engine
 from services.ai.vllm_client import get_llm_client, TERRA_SYSTEM_PROMPT
 from ..auth.deps import AuthUser
+from ..auth.plan_gate import require_plan, PlanLevel
 
 router = APIRouter(prefix="/api/v2/chat", tags=["chat-v2"])
 logger = logging.getLogger(__name__)
@@ -231,7 +232,7 @@ class SendMessageRequest(BaseModel):
 
 
 @router.post("/sessions")
-def create_session(body: CreateSessionRequest, user: AuthUser) -> dict:
+def create_session(body: CreateSessionRequest, user: AuthUser, _gate: None = require_plan(PlanLevel.STARTER)) -> dict:
     """Create a new chat session."""
     engine = get_engine()
     session_id = str(uuid.uuid4())
@@ -246,7 +247,7 @@ def create_session(body: CreateSessionRequest, user: AuthUser) -> dict:
 
 
 @router.post("/sessions/{session_id}/messages")
-def send_message(session_id: str, body: SendMessageRequest, user: AuthUser) -> StreamingResponse:
+def send_message(session_id: str, body: SendMessageRequest, user: AuthUser, _gate: None = require_plan(PlanLevel.STARTER)) -> StreamingResponse:
     """Send a message and get SSE-streamed AI response."""
     engine = get_engine()
     tenant_id = str(user.org_id) if user.org_id else "demo"

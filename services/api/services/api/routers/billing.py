@@ -65,6 +65,27 @@ PLANS = [
         ],
     },
     {
+        "id": "starter",
+        "name": "Starter",
+        "price_pln": 199,
+        "price_label": "199 PLN/mies",
+        "billing": "miesięcznie",
+        "stripe_price_id": os.getenv("STRIPE_PRICE_STARTER", "price_starter_placeholder"),
+        "limits": {
+            "tenders": 15,
+            "ai_analysis": True,
+            "team_members": 2,
+            "api_access": False,
+        },
+        "features": [
+            "Do 15 przetargów",
+            "AI analiza ryzyka SWZ",
+            "Automatyczny BZP sync",
+            "2 członków zespołu",
+            "Eksport Excel",
+        ],
+    },
+    {
         "id": "pro",
         "name": "Pro",
         "price_pln": 499,
@@ -757,6 +778,50 @@ def cancel_subscription(current_user: AuthUser, db: DB) -> dict[str, Any]:
         "message": "Subskrypcja zostanie anulowana na koniec okresu rozliczeniowego.",
         "cancel_at_period_end": True,
         "org_id": current_user.org_id,
+    }
+
+
+@router.get("/usage")
+def get_usage(current_user: AuthUser, db: DB) -> dict:
+    """Zwraca aktualne zużycie + limity planu dla orga."""
+    sub = _get_or_create_subscription(db, str(current_user.org_id))
+    plan_id = sub.get("plan", "free")
+    plan_def = next((p for p in PLANS if p["id"] == plan_id), PLANS[0])
+
+    # Pobierz tenant_id dla org (tabela tender używa tenant_id zamiast org_id)
+    org_row = db.execute(
+        text("SELECT tenant_id FROM organizations WHERE id = :oid"),
+        {"oid": str(current_user.org_id)},
+    ).fetchone()
+    tenant_id = str(org_row.tenant_id) if org_row and org_row.tenant_id else None
+
+    # Policz aktywne przetargi orga (przez tenant_id)
+    if tenant_id:
+        tender_count = db.execute(
+            text(
+                "SELECT COUNT(*) FROM tender WHERE tenant_id = :tid AND status != 'archived'"
+            ),
+            {"tid": tenant_id},
+        ).scalar() or 0
+    else:
+        tender_count = 0
+
+    # Policz memberów (tabela users używa org_id)
+    member_count = db.execute(
+        text("SELECT COUNT(*) FROM users WHERE org_id = :oid"),
+        {"oid": str(current_user.org_id)},
+    ).scalar() or 0
+
+    limits = plan_def.get("limits", {})
+
+    return {
+        "plan": plan_id,
+        "usage": {
+            "tenders": {"used": tender_count, "limit": limits.get("tenders", 0)},
+            "team_members": {"used": member_count, "limit": limits.get("team_members", 1)},
+        },
+        "ai_analysis": limits.get("ai_analysis", False),
+        "api_access": limits.get("api_access", False),
     }
 
 

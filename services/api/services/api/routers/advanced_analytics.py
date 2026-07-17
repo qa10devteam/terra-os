@@ -22,6 +22,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
 from ..auth.deps import get_current_user, AuthUser
+from ..auth.plan_gate import require_plan, PlanLevel
 
 router = APIRouter(prefix="/api/v2", tags=["ai", "decisions", "reports"])
 
@@ -59,6 +60,7 @@ PAYMENT_PATTERN = re.compile(r"termin\s+płatności.*?(\d+)\s*dni", re.IGNORECAS
 def analyze_swz(
     req: AnalyzeSWZRequest,
     _user=Depends(get_current_user),
+    _gate: None = require_plan(PlanLevel.BUSINESS),
 ):
     """Analiza SWZ — ekstrakcja ryzyk, terminów, kar, waloryzacji.
     
@@ -214,6 +216,7 @@ CRITERION_LABELS = {
 def score_decision(
     req: DecisionScoreRequest,
     _user=Depends(get_current_user),
+    _gate: None = require_plan(PlanLevel.BUSINESS),
 ):
     """AHP-style GO/NO-GO scoring dla konkretnego przetargu.
     
@@ -288,6 +291,7 @@ class FullRecommendationRequest(BaseModel):
 def full_recommendation(
     req: FullRecommendationRequest,
     _user=Depends(get_current_user),
+    _gate: None = require_plan(PlanLevel.BUSINESS),
 ):
     """Faza 37 — Bid Recommendation Engine.
     
@@ -385,6 +389,7 @@ class FeedbackRequest(BaseModel):
 def submit_feedback(
     req: FeedbackRequest,
     _user=Depends(get_current_user),
+    _gate: None = require_plan(PlanLevel.BUSINESS),
 ):
     """Faza 38 — Feedback loop: zapisz wynik przetargu, recalibruj modele.
     
@@ -440,6 +445,7 @@ def get_report(
     tender_id: str,
     format: str = Query(default="json", description="json | pdf | excel"),
     _user=Depends(get_current_user),
+    _gate: None = require_plan(PlanLevel.BUSINESS),
 ):
     """Faza 39 — Executive Summary + pełny raport dla przetargu.
     
@@ -530,6 +536,7 @@ class SensitivityRequest(BaseModel):
 def sensitivity_analysis(
     req: SensitivityRequest,
     _user=Depends(get_current_user),
+    _gate: None = require_plan(PlanLevel.BUSINESS),
 ):
     """Faza 36 — Tornado diagram / sensitivity analysis.
     
@@ -591,6 +598,7 @@ def cost_trends(
     cpv: Optional[str] = Query(default="45000000"),
     region: Optional[str] = Query(default="PL91"),
     _user=Depends(get_current_user),
+    _gate: None = require_plan(PlanLevel.BUSINESS),
 ):
     """Faza 35 — Time-series cost trends per CPV × region z prognozą."""
     rng = random.Random(_seed(f"{cpv}{region}"))

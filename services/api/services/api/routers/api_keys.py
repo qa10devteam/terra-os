@@ -17,6 +17,7 @@ from pydantic import BaseModel
 from sqlalchemy import text
 
 from ..auth.deps import AuthUser
+from ..auth.plan_gate import require_plan, PlanLevel
 from terra_db.session import get_engine
 
 router = APIRouter(prefix="/api/v2/api-keys", tags=["api-keys"])
@@ -75,7 +76,7 @@ def _generate_key() -> tuple[str, str, str]:
 # ─── Routes ────────────────────────────────────────────────────────────────────
 
 @router.post("", response_model=ApiKeyCreated, status_code=201)
-def create_api_key(body: CreateApiKeyRequest, current_user: AuthUser, db: DB) -> ApiKeyCreated:
+def create_api_key(body: CreateApiKeyRequest, current_user: AuthUser, db: DB, _gate: None = require_plan(PlanLevel.BUSINESS)) -> ApiKeyCreated:
     """Generate a new API key. The plain-text key is returned ONLY in this response."""
     plain_key, key_hash, prefix = _generate_key()
     key_id = str(uuid.uuid4())
@@ -116,7 +117,7 @@ def create_api_key(body: CreateApiKeyRequest, current_user: AuthUser, db: DB) ->
 
 
 @router.get("", response_model=list[ApiKeyInfo])
-def list_api_keys(current_user: AuthUser, db: DB) -> list[ApiKeyInfo]:
+def list_api_keys(current_user: AuthUser, db: DB, _gate: None = require_plan(PlanLevel.BUSINESS)) -> list[ApiKeyInfo]:
     """List API keys for the current user (no plain text, only metadata)."""
     rows = db.execute(
         text(
