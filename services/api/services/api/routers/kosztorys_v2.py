@@ -28,7 +28,7 @@ from typing import Any
 import logging
 
 import sqlalchemy as sa
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, HTTPException, Path, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
@@ -203,8 +203,99 @@ def list_kosztorysy(user: AuthUser, limit: int = 50, offset: int = 0) -> dict:
     }
 
 
+# ─── Static routes MUST be declared before /{kid} to prevent shadowing ────────
+
+@router.get("/estimate")
+def list_estimates(user: AuthUser, tender_id: str | None = None) -> dict:
+    """Zwraca zapisane szacowania kosztów dla tenanta (opcjonalnie filtr po przetargu)."""
+    tenant_id = user.org_id
+    engine = get_engine()
+
+    with engine.connect() as conn:
+        q = """
+            SELECT id, method, variant, tender_id,
+                   area_m2, cpv_prefix, region,
+                   total_net_pln, confidence_low, confidence_high,
+                   lines, params, notes, created_at
+            FROM cost_estimate
+            WHERE tenant_id = :tid
+        """
+        params: dict = {"tid": tenant_id}
+        if tender_id:
+            q += " AND tender_id = :tender_id"
+            params["tender_id"] = tender_id
+        q += " ORDER BY created_at DESC LIMIT 50"
+
+        rows = conn.execute(sa.text(q), params).fetchall()
+
+    items = []
+    for r in rows:
+        items.append({
+            "id": str(r[0]),
+            "method": r[1],
+            "variant": r[2],
+            "tender_id": str(r[3]) if r[3] else None,
+            "area_m2": float(r[4]) if r[4] else None,
+            "cpv_prefix": r[5],
+            "region": r[6],
+            "total_net_pln": float(r[7]) if r[7] else 0,
+            "confidence_low": float(r[8]) if r[8] else 0,
+            "confidence_high": float(r[9]) if r[9] else 0,
+            "lines": r[10] if isinstance(r[10], list) else [],
+            "params": r[11] if isinstance(r[11], dict) else {},
+            "notes": r[12],
+            "created_at": r[13].isoformat() if r[13] else None,
+        })
+
+    return {"items": items, "total": len(items)}
+
+
+@router.get("/material-alerts")
+def get_material_alerts(user: AuthUser, limit: int = 50) -> list[dict]:
+    """Pobierz aktywne alerty cen materiałów dla tenanta."""
+    tenant_id = _require_tenant(user)
+    try:
+        from ..intelligence.material_risk import get_active_alerts
+        return get_active_alerts(tenant_id, limit=limit)
+    except Exception as e:
+        logger.exception("material alerts failed: %s", e, exc_info=True)
+        return []
+
+
+@router.get("/user-rates")
+def list_user_rates(user: AuthUser) -> dict:
+    """Zwraca cennik własny tenanta."""
+    tenant_id = user.org_id
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(sa.text("""
+            SELECT id, symbol, nazwa, jednostka, typ_rms, cena_netto, updated_at
+            FROM user_rates WHERE tenant_id=:tid ORDER BY typ_rms, symbol
+        """), {"tid": tenant_id}).fetchall()
+
+    return {
+        "items": [
+            {
+                "id": str(r[0]),
+                "symbol": r[1],
+                "nazwa": r[2],
+                "jednostka": r[3],
+                "typ_rms": r[4].strip(),
+                "cena_netto": float(r[5]),
+                "updated_at": r[6].isoformat() if r[6] else None,
+            }
+            for r in rows
+        ],
+        "total": len(rows),
+    }
+
+
 @router.get("/{kid}")
-def get_kosztorys(kid: str, user: AuthUser) -> dict:
+def get_kosztorys(
+    kid: str = Path(..., pattern=r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"),
+    *,
+    user: AuthUser,
+) -> dict:
     tenant_id = _require_tenant(user)
     engine = get_engine()
     with engine.connect() as conn:
@@ -445,18 +536,7 @@ def get_win_probability(kid: str, cpv: str | None = None, user: AuthUser = None)
 
 
 # ─── Material Alerts ──────────────────────────────────────────────────────────
-
-@router.get("/material-alerts")
-def get_material_alerts(user: AuthUser, limit: int = 50) -> list[dict]:
-    """Pobierz aktywne alerty cen materiałów dla tenanta."""
-    tenant_id = _require_tenant(user)
-    try:
-        from ..intelligence.material_risk import get_active_alerts
-        return get_active_alerts(tenant_id, limit=limit)
-    except Exception as e:
-        logger.exception("material alerts failed: %s", e, exc_info=True)
-        return []
-
+# NOTE: get_material_alerts was moved above /{kid} to prevent route shadowing.
 
 @router.post("/material-alerts/{alert_id}/acknowledge")
 def acknowledge_material_alert(alert_id: str, user: AuthUser) -> dict:
@@ -1021,51 +1101,6 @@ def create_estimate(req: CostEstimateRequest, user: AuthUser) -> dict:
     return {"ids": saved_ids, "estimates": estimates, "count": len(estimates)}
 
 
-@router.get("/estimate")
-def list_estimates(user: AuthUser, tender_id: str | None = None) -> dict:
-    """Zwraca zapisane szacowania kosztów dla tenanta (opcjonalnie filtr po przetargu)."""
-    tenant_id = user.org_id
-    engine = get_engine()
-
-    with engine.connect() as conn:
-        q = """
-            SELECT id, method, variant, tender_id,
-                   area_m2, cpv_prefix, region,
-                   total_net_pln, confidence_low, confidence_high,
-                   lines, params, notes, created_at
-            FROM cost_estimate
-            WHERE tenant_id = :tid
-        """
-        params: dict = {"tid": tenant_id}
-        if tender_id:
-            q += " AND tender_id = :tender_id"
-            params["tender_id"] = tender_id
-        q += " ORDER BY created_at DESC LIMIT 50"
-
-        rows = conn.execute(sa.text(q), params).fetchall()
-
-    items = []
-    for r in rows:
-        items.append({
-            "id": str(r[0]),
-            "method": r[1],
-            "variant": r[2],
-            "tender_id": str(r[3]) if r[3] else None,
-            "area_m2": float(r[4]) if r[4] else None,
-            "cpv_prefix": r[5],
-            "region": r[6],
-            "total_net_pln": float(r[7]) if r[7] else 0,
-            "confidence_low": float(r[8]) if r[8] else 0,
-            "confidence_high": float(r[9]) if r[9] else 0,
-            "lines": r[10] if isinstance(r[10], list) else [],
-            "params": r[11] if isinstance(r[11], dict) else {},
-            "notes": r[12],
-            "created_at": r[13].isoformat() if r[13] else None,
-        })
-
-    return {"items": items, "total": len(items)}
-
-
 @router.delete("/estimate/{estimate_id}", status_code=204)
 def delete_estimate(estimate_id: str, user: AuthUser) -> None:
     tenant_id = user.org_id
@@ -1079,34 +1114,7 @@ def delete_estimate(estimate_id: str, user: AuthUser) -> None:
 
 
 # ─── User Rates (stawki własne) endpoints ────────────────────────────────────
-
-@router.get("/user-rates")
-def list_user_rates(user: AuthUser) -> dict:
-    """Zwraca cennik własny tenanta."""
-    tenant_id = user.org_id
-    engine = get_engine()
-    with engine.connect() as conn:
-        rows = conn.execute(sa.text("""
-            SELECT id, symbol, nazwa, jednostka, typ_rms, cena_netto, updated_at
-            FROM user_rates WHERE tenant_id=:tid ORDER BY typ_rms, symbol
-        """), {"tid": tenant_id}).fetchall()
-
-    return {
-        "items": [
-            {
-                "id": str(r[0]),
-                "symbol": r[1],
-                "nazwa": r[2],
-                "jednostka": r[3],
-                "typ_rms": r[4].strip(),
-                "cena_netto": float(r[5]),
-                "updated_at": r[6].isoformat() if r[6] else None,
-            }
-            for r in rows
-        ],
-        "total": len(rows),
-    }
-
+# NOTE: list_user_rates (GET) was moved above /{kid} to prevent route shadowing.
 
 @router.post("/user-rates", status_code=201)
 def create_user_rate(rate: UserRateCreate, user: AuthUser) -> dict:

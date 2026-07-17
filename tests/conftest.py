@@ -161,3 +161,46 @@ def _reset_rate_limiter():
     except Exception:
         pass
 
+
+# ─── RLS tenant context fixture ───────────────────────────────────────────────
+# Some RLS policies use 'app.current_tenant' or 'app.current_tenant_id' (strict
+# equality — no NULL pass-through).  The test session must set these settings
+# on every real DB connection so integration tests that INSERT into such tables
+# (automation_webhook, ingest_task, offers, …) don't hit InsufficientPrivilege.
+
+_DEMO_TENANT_ID = os.getenv("DEFAULT_TENANT_ID", "c4879c87-016c-4580-b913-212c904c20fd")
+
+@pytest.fixture(autouse=True)
+def _set_rls_tenant_context():
+    """Set app.current_tenant + app.current_tenant_id on every DB connection
+    used by integration tests so strict RLS policies pass.
+
+    Uses SQLAlchemy 'checkout' event listener so pooled connections also get
+    the tenant context on every checkout (not just on initial connect).
+    No-ops when the DB is unavailable.
+    """
+    try:
+        from terra_db.session import get_engine
+        from sqlalchemy import event as _ev
+
+        engine = get_engine()
+        tid = _DEMO_TENANT_ID
+
+        @_ev.listens_for(engine, "checkout")
+        def _set_tenant_on_checkout(dbapi_conn, conn_record, conn_proxy):
+            cursor = dbapi_conn.cursor()
+            cursor.execute(
+                "SELECT set_config('app.current_tenant', %s, false), "
+                "set_config('app.current_tenant_id', %s, false), "
+                "set_config('app.tenant_id', %s, false)",
+                (tid, tid, tid),
+            )
+            dbapi_conn.commit()
+            cursor.close()
+
+        yield
+
+        _ev.remove(engine, "checkout", _set_tenant_on_checkout)
+    except Exception:
+        yield  # DB not available — skip silently
+
