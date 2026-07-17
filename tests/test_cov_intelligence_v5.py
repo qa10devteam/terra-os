@@ -50,7 +50,7 @@ class TestValidationEngineTechnicalPoint46:
         tender = {"min_polisa_oc": 500_000}
         company = {"polisa_oc_kwota": 100_000}
 
-        asyncio.get_event_loop().run_until_complete(
+        asyncio.run(
             engine._check_technical(point, company, tender)
         )
 
@@ -67,7 +67,7 @@ class TestValidationEngineTechnicalPoint46:
         tender = {"min_polisa_oc": 200_000}
         company = {"polisa_oc_kwota": 0}
 
-        asyncio.get_event_loop().run_until_complete(
+        asyncio.run(
             engine._check_technical(point, company, tender)
         )
 
@@ -82,7 +82,7 @@ class TestValidationEngineTechnicalPoint46:
         tender = {"min_polisa_oc": 100_000}
         company = {"polisa_oc_kwota": 500_000}
 
-        asyncio.get_event_loop().run_until_complete(
+        asyncio.run(
             engine._check_technical(point, company, tender)
         )
 
@@ -94,7 +94,7 @@ class TestValidationEngineTechnicalPoint46:
         engine = ValidationEngine()
         point = self._make_point(46)
 
-        asyncio.get_event_loop().run_until_complete(
+        asyncio.run(
             engine._check_technical(point, {}, {})
         )
 
@@ -106,7 +106,7 @@ class TestValidationEngineTechnicalPoint46:
         engine = ValidationEngine()
         point = self._make_point(99)  # not 42, 44, or 46
 
-        asyncio.get_event_loop().run_until_complete(
+        asyncio.run(
             engine._check_technical(point, {}, {})
         )
 
