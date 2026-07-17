@@ -692,6 +692,14 @@ if 'bzp_sync' in _opt_map:
 try:
     from .routers import swz as _swz_mod
     app.include_router(_swz_mod.router)
+
+    # YU-NA Intelligence — nowe moduły (Submission Wizard, KNR Mapper)
+    try:
+        from .routers import submit_wizard as _submit_wizard_mod
+        app.include_router(_submit_wizard_mod.router, prefix="/api/v2/submit", tags=["submit-wizard"])
+    except Exception as _e:
+        import logging as _log
+        _log.getLogger(__name__).warning("submit_wizard load failed: %s", _e)
 except Exception as _e:  # pragma: no cover
     logging.getLogger(__name__).warning("swz router error: %s", _e)
 
