@@ -68,13 +68,14 @@ async def test_create_session_with_page_context(app, auth_headers):
 
 @pytest.mark.asyncio
 async def test_create_session_missing_tenant_422(app, auth_headers):
-    """POST /api/v2/chat/sessions without tenant_id → 422."""
+    """POST /api/v2/chat/sessions without body → 200 (tenant comes from auth token, not body)."""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.post(
             "/api/v2/chat/sessions",
             json={},
         )
-    assert resp.status_code == 422
+    # tenant_id is resolved from auth token, not required in body; empty body is valid
+    assert resp.status_code == 200
 
 
 @pytest.mark.asyncio
@@ -91,10 +92,11 @@ async def test_list_sessions_200(app, auth_headers):
 
 @pytest.mark.asyncio
 async def test_list_sessions_missing_tenant_422(app):
-    """GET /api/v2/chat/sessions without tenant_id → 422."""
+    """GET /api/v2/chat/sessions without query param → 200 (tenant from auth token)."""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.get("/api/v2/chat/sessions")
-    assert resp.status_code == 422
+    # tenant_id is resolved from auth token, not a required query param
+    assert resp.status_code == 200
 
 
 @pytest.mark.asyncio
@@ -129,17 +131,15 @@ async def test_get_session_after_create(app, auth_headers):
 
 @pytest.mark.asyncio
 async def test_send_message_session_not_found(app, auth_headers):
-    """POST /api/v2/chat/sessions/{bad_id}/messages → SSE stream with error."""
+    """POST /api/v2/chat/sessions/{bad_id}/messages → 404 when session not found."""
     fake_id = str(uuid.uuid4())
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         resp = await client.post(
             f"/api/v2/chat/sessions/{fake_id}/messages",
             json={"message": "Hello"},
         )
-    # Returns SSE stream regardless
-    assert resp.status_code == 200
-    # Should contain error event in body
-    assert b"error" in resp.content.lower()
+    # Router raises 404 HTTPException when session not found in DB
+    assert resp.status_code == 404
 
 
 @pytest.mark.asyncio

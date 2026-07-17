@@ -723,7 +723,7 @@ async def test_auth_register_duplicate_email(app):
             resp = await c.post("/api/v2/auth/register", json={
                 "email": "existing@example.com",
                 "name": "Test",
-                "password": "password123",
+                "password": "ValidPass1!secureXX",
             })
     assert resp.status_code == 409
 
@@ -780,7 +780,8 @@ class TestChatV2Tools:
         mock_conn.__exit__ = MagicMock(return_value=False)
         mock_engine.connect.return_value = mock_conn
 
-        row = ("id-1", "Przetarg na drogę", 500000, 0.85)
+        # Function accesses indices 0-5: id, title, value_pln, match_score, status, deadline_at
+        row = ("id-1", "Przetarg na drogę", 500000, 0.85, "active", None)
         mock_conn.execute.return_value.fetchall.return_value = [row]
 
         result = _tool_search_tenders(mock_engine, "tenant-id", "droga")
@@ -795,7 +796,8 @@ class TestChatV2Tools:
         mock_conn.__exit__ = MagicMock(return_value=False)
         mock_engine.connect.return_value = mock_conn
 
-        row = (10, 3, 2500000)
+        # Function accesses indices 0-4: total, won, active, pipeline_val, won_val
+        row = (10, 3, 5, 2500000, 1000000)
         mock_conn.execute.return_value.fetchone.return_value = row
 
         result = _tool_get_pipeline_kpi(mock_engine, "tenant-id")
@@ -913,14 +915,15 @@ class TestChatV2Tools:
         mock_conn.__exit__ = MagicMock(return_value=False)
         mock_engine.connect.return_value = mock_conn
 
-        row = ("Przetarg testowy", "Urząd Gminy", 500000, "2024-12-31")
+        # 8-column row: title, buyer, value_pln, deadline_at, status, match_score, nuts_code, cpv
+        row = ("Przetarg testowy", "Urząd Gminy", 500000, "2024-12-31", "active", 0.85, "PL51", "45000000")
         mock_conn.execute.return_value.fetchone.return_value = row
 
         session_data = {
             "page_context": "tender_detail",
             "tender_id": str(uuid.uuid4()),
         }
-        result = _build_context(mock_engine, session_data)
+        result = _build_context(mock_engine, session_data, "tenant-id")
         assert "Przetarg testowy" in result
         assert "tender_detail" in result
 
@@ -935,14 +938,14 @@ class TestChatV2Tools:
         mock_conn.execute.return_value.fetchone.return_value = None
 
         session_data = {"page_context": None, "tender_id": str(uuid.uuid4())}
-        result = _build_context(mock_engine, session_data)
+        result = _build_context(mock_engine, session_data, "tenant-id")
         assert isinstance(result, str)
 
     def test_build_context_empty_session(self):
         """_build_context with empty session → empty string."""
         from services.api.services.api.routers.chat_v2 import _build_context
         mock_engine = MagicMock()
-        result = _build_context(mock_engine, {"page_context": None, "tender_id": None})
+        result = _build_context(mock_engine, {"page_context": None, "tender_id": None}, "tenant-id")
         assert result == ""
 
 
@@ -1041,7 +1044,8 @@ async def test_chat_send_message_streaming_error(app):
     def raise_on_stream(*args, **kwargs):
         raise RuntimeError("LLM service unavailable")
 
-    mock_llm.generate_stream.side_effect = raise_on_stream
+    # The actual implementation calls generate_stream_messages, not generate_stream
+    mock_llm.generate_stream_messages.side_effect = raise_on_stream
 
     mock_conn = MagicMock()
     mock_conn.__enter__ = MagicMock(return_value=mock_conn)
@@ -1068,15 +1072,15 @@ async def test_chat_send_message_streaming_error(app):
 
 @pytest.mark.asyncio
 async def test_chat_send_message_more_than_20_messages(app):
-    """POST /messages with >20 messages triggers compression (llm.generate call)."""
+    """POST /messages with >24 messages triggers compression (llm.generate call)."""
     mock_llm = MagicMock()
-    mock_llm.generate_stream.return_value = iter(["Response"])
+    mock_llm.generate_stream_messages.return_value = iter(["Response"])
     mock_llm.generate.return_value = "Podsumowanie rozmowy"
 
-    # Build 21 fake messages
+    # Build 25 fake messages to trigger compression (threshold is > 24)
     many_messages = [
         {"role": "user" if i % 2 == 0 else "assistant", "content": f"msg {i}", "ts": "2024-01-01T00:00:00"}
-        for i in range(21)
+        for i in range(25)
     ]
 
     mock_conn = MagicMock()

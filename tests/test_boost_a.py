@@ -1123,7 +1123,8 @@ class TestChatV2Extra:
         """_tool_search_tenders formats rows properly."""
         from services.api.services.api.routers.chat_v2 import _tool_search_tenders
         row = MagicMock()
-        row.__getitem__ = lambda s, i: [uuid.uuid4(), "Przetarg budowlany", 500000.0, 0.9][i]
+        # Function accesses indices 0-5: id, title, value_pln, match_score, status, deadline_at
+        row.__getitem__ = lambda s, i: [uuid.uuid4(), "Przetarg budowlany", 500000.0, 0.9, "active", None][i]
         engine, conn = _mock_engine(fetchall=[row])
         result = _tool_search_tenders(engine, TENANT_ID, "budowlany")
         assert isinstance(result, str)
@@ -1132,7 +1133,8 @@ class TestChatV2Extra:
         """_tool_get_pipeline_kpi returns string summary."""
         from services.api.services.api.routers.chat_v2 import _tool_get_pipeline_kpi
         row = MagicMock()
-        row.__getitem__ = lambda s, i: [10, 2, 5000000.0][i]
+        # Function accesses indices 0-4: total, won, active, pipeline_val, won_val
+        row.__getitem__ = lambda s, i: [10, 2, 5, 5000000.0, 2000000.0][i]
         engine, conn = _mock_engine(fetchone=row)
         result = _tool_get_pipeline_kpi(engine, TENANT_ID)
         assert isinstance(result, str)
@@ -1142,7 +1144,7 @@ class TestChatV2Extra:
         from services.api.services.api.routers.chat_v2 import _build_context
         engine, _ = _mock_engine(fetchone=None)
         session_data = {"page_context": "dashboard", "tender_id": None}
-        ctx = _build_context(engine, session_data)
+        ctx = _build_context(engine, session_data, TENANT_ID)
         assert "dashboard" in ctx
 
     def test_build_context_with_tender(self):
@@ -1153,14 +1155,14 @@ class TestChatV2Extra:
         engine, conn = _mock_engine(fetchone=row)
         tid = str(uuid.uuid4())
         session_data = {"page_context": "tender-detail", "tender_id": tid}
-        ctx = _build_context(engine, session_data)
+        ctx = _build_context(engine, session_data, TENANT_ID)
         assert isinstance(ctx, str)
 
     def test_build_context_no_context(self):
         """_build_context with no page_context and no tender_id returns empty."""
         from services.api.services.api.routers.chat_v2 import _build_context
         engine, _ = _mock_engine(fetchone=None)
-        ctx = _build_context(engine, {"page_context": None, "tender_id": None})
+        ctx = _build_context(engine, {"page_context": None, "tender_id": None}, TENANT_ID)
         assert ctx == ""
 
     def test_tool_icb_cena_error_fallback(self):
