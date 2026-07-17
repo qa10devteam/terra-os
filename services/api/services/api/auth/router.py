@@ -5,12 +5,16 @@ import sys
 sys.path.insert(0, "/home/ubuntu/terra-os/packages/vendor")
 
 import hashlib
+import io
+import base64
 import re
 import uuid as _uuid_mod
 from datetime import datetime, timezone, timedelta
 from secrets import token_urlsafe
 from typing import Annotated, Any
 
+import pyotp
+import qrcode
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, field_validator
 import sqlalchemy as sa
@@ -84,6 +88,7 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: str
     password: str
+    totp_code: str | None = None  # required only if 2FA enabled
 
 
 class RefreshRequest(BaseModel):
@@ -272,7 +277,7 @@ def register(request: Request, body: RegisterRequest, response: Response, db: DB
 @limiter.limit("5/minute")
 def login(request: Request, body: LoginRequest, response: Response, db: DB):
     user_row = db.execute(
-        text("SELECT id, email, name, password_hash, org_id, role, is_active FROM users WHERE email = :email"),
+        text("SELECT id, email, name, password_hash, org_id, role, is_active, totp_enabled, totp_secret FROM users WHERE email = :email"),
         {"email": body.email},
     ).fetchone()
 
@@ -281,6 +286,15 @@ def login(request: Request, body: LoginRequest, response: Response, db: DB):
 
     if not user_row.is_active:
         raise HTTPException(status_code=403, detail="Konto dezaktywowane")
+
+    # 2FA check — if enabled, require totp_code in body
+    if user_row.totp_enabled:
+        totp_code = getattr(body, 'totp_code', None)
+        if not totp_code:
+            raise HTTPException(401, "Wymagany kod 2FA")
+        totp = pyotp.TOTP(user_row.totp_secret)
+        if not totp.verify(totp_code, valid_window=1):
+            raise HTTPException(401, "Nieprawidłowy kod 2FA")
 
     token_resp = _token_response(db, user_row._mapping)
     _set_auth_cookies(response, token_resp.access_token)
@@ -494,3 +508,68 @@ def me_full(current_user: AuthUser):
         "org": org_data,
         "feature_flags": [],
     }
+
+
+# ─── 2FA / TOTP ──────────────────────────────────────────────────────────────
+
+class TOTPEnableRequest(BaseModel):
+    token: str  # 6-digit code from authenticator app, to confirm setup
+
+
+class TOTPVerifyRequest(BaseModel):
+    token: str  # 6-digit code
+
+
+@router.post("/2fa/setup", status_code=200)
+@limiter.limit("5/minute")
+def setup_2fa(request: Request, user: AuthUser):
+    """Generate TOTP secret and return QR code. Does NOT enable 2FA yet."""
+    engine = get_engine()
+    secret = pyotp.random_base32()
+    with engine.begin() as conn:
+        conn.execute(
+            text("UPDATE users SET totp_secret = :secret WHERE id = :uid"),
+            {"secret": secret, "uid": str(user.user_id)}
+        )
+    totp = pyotp.TOTP(secret)
+    provisioning_uri = totp.provisioning_uri(name=user.email, issuer_name="Yuna Bud-OS")
+    # Generate QR code as base64 PNG
+    qr = qrcode.make(provisioning_uri)
+    buf = io.BytesIO()
+    qr.save(buf, format="PNG")
+    qr_b64 = base64.b64encode(buf.getvalue()).decode()
+    return {"secret": secret, "qr_code": f"data:image/png;base64,{qr_b64}", "provisioning_uri": provisioning_uri}
+
+
+@router.post("/2fa/enable", status_code=200)
+@limiter.limit("5/minute")
+def enable_2fa(request: Request, body: TOTPEnableRequest, user: AuthUser):
+    """Confirm TOTP code and enable 2FA on the account."""
+    engine = get_engine()
+    with engine.connect() as conn:
+        row = conn.execute(text("SELECT totp_secret FROM users WHERE id = :uid"), {"uid": str(user.user_id)}).fetchone()
+    if not row or not row.totp_secret:
+        raise HTTPException(400, "Najpierw skonfiguruj 2FA przez /2fa/setup")
+    totp = pyotp.TOTP(row.totp_secret)
+    if not totp.verify(body.token, valid_window=1):
+        raise HTTPException(400, "Nieprawidłowy kod 2FA")
+    with engine.begin() as conn:
+        conn.execute(text("UPDATE users SET totp_enabled = true WHERE id = :uid"), {"uid": str(user.user_id)})
+    return {"message": "2FA włączone pomyślnie"}
+
+
+@router.post("/2fa/disable", status_code=200)
+@limiter.limit("5/minute")
+def disable_2fa(request: Request, body: TOTPVerifyRequest, user: AuthUser):
+    """Disable 2FA — requires current TOTP code to confirm."""
+    engine = get_engine()
+    with engine.connect() as conn:
+        row = conn.execute(text("SELECT totp_secret, totp_enabled FROM users WHERE id = :uid"), {"uid": str(user.user_id)}).fetchone()
+    if not row or not row.totp_enabled:
+        raise HTTPException(400, "2FA nie jest włączone")
+    totp = pyotp.TOTP(row.totp_secret)
+    if not totp.verify(body.token, valid_window=1):
+        raise HTTPException(400, "Nieprawidłowy kod 2FA")
+    with engine.begin() as conn:
+        conn.execute(text("UPDATE users SET totp_enabled = false, totp_secret = null WHERE id = :uid"), {"uid": str(user.user_id)})
+    return {"message": "2FA wyłączone"}

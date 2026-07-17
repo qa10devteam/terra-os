@@ -27,7 +27,7 @@ services:
 
   # -- Next.js UI -----------------------------------------------
   ui:
-    image: ghcr.io/qa10devteam/terra-os-ui:${IMAGE_TAG:-latest}
+    image: ghcr.io/qa10devteam/terra-os-ui:${IMAGE_TAG:?IMAGE_TAG must be set for production deployment}
     restart: unless-stopped
     env_file: .env.prod
     environment:
@@ -50,7 +50,7 @@ services:
 
   # -- FastAPI (uvicorn) ----------------------------------------
   api:
-    image: ghcr.io/qa10devteam/terra-os-api:${IMAGE_TAG:-latest}
+    image: ghcr.io/qa10devteam/terra-os-api:${IMAGE_TAG:?IMAGE_TAG must be set for production deployment}
     restart: unless-stopped
     env_file: .env.prod
     environment:
@@ -88,7 +88,7 @@ services:
 
   # -- Celery worker -------------------------------------------
   celery-worker:
-    image: ghcr.io/qa10devteam/terra-os-api:${IMAGE_TAG:-latest}
+    image: ghcr.io/qa10devteam/terra-os-api:${IMAGE_TAG:?IMAGE_TAG must be set for production deployment}
     restart: unless-stopped
     env_file: .env.prod
     environment:

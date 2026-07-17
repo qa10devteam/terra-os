@@ -5,18 +5,32 @@ import asyncio
 import logging
 from datetime import datetime
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
+
+from ...auth.utils import decode_access_token
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["ws-v3"])
 
 
 @router.websocket("/api/v3/ws/tenders/{tenant_id}")
-async def ws_tender_feed(ws: WebSocket, tenant_id: str) -> None:  # pragma: no cover
+async def ws_tender_feed(ws: WebSocket, tenant_id: str, token: str = Query(...)) -> None:  # pragma: no cover
     """S110 — WebSocket feed przetargów dla danego tenanta.
 
     Wysyła heartbeat co 30s. Po ingest pipeline emituje zdarzenia.
+    Wymaga JWT token przekazanego jako query param: ?token=<jwt>
     """
+    # Validate JWT token before accepting the connection
+    try:
+        payload = decode_access_token(token)
+        token_tenant = payload.get("org_id") or payload.get("tenant_id")
+        if token_tenant != tenant_id:
+            await ws.close(code=4001)  # 4001 = Unauthorized (custom WS code)
+            return
+    except Exception:
+        await ws.close(code=4001)
+        return
+
     await ws.accept()
     logger.info("WS connected: tenant=%s", tenant_id)
     try:

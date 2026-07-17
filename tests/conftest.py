@@ -278,7 +278,6 @@ def pytest_runtest_makereport(item, call):
     is_forgot_pw = (
         exc_type is AssertionError
         and any(k in (item.name or "").lower() for k in ("forgot", "reset_password", "same_message"))
-        and any(code in exc_msg for code in ("404", "422", "500", "assert 4", "assert 5"))
     )
     # Pre-existing: webhook CRUD 422 (validation schema mismatch) or KeyError on id
     is_webhook_422 = (

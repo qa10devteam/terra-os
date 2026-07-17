@@ -243,7 +243,9 @@ from .middleware.rate_limit import limiter
 from .middleware.rate_limiter import rate_limit_middleware
 from .middleware.tenant import TenantMiddleware, install_rls_on_engine
 from .middleware.csrf import CSRFMiddleware
+from .middleware.ip_security import IPSecurityMiddleware
 from .middleware.error_boundary import error_boundary_handler
+from .middleware.audit_log import AuditLogMiddleware  # Faza 2 — audit logging
 
 
 # ─── Lifespan ──────────────────────────────────────────────────────────────────
@@ -340,16 +342,20 @@ except ImportError:  # pragma: no cover
 app.state.limiter = limiter
 
 
-# ─── Faza 64: Security Headers Middleware ──────────────────────────────────────
+# ─── Faza 64 / Faza 2: Security Headers Middleware ─────────────────────────────
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["X-XSS-Protection"] = "0"  # Disabled — modern browsers use CSP instead
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Cache-Control"] = (
+            "no-store" if request.url.path.startswith("/api/v2/auth")
+            else response.headers.get("Cache-Control", "")
+        )
         return response
 
 
@@ -380,16 +386,19 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
 # ─── Register middleware (order matters: outer → inner) ────────────────────────
 
 app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(AuditLogMiddleware)  # Faza 2 — centralized audit logging
 app.add_middleware(CSRFMiddleware)
 app.add_middleware(RequestCounterMiddleware)
 app.add_middleware(RequestIDMiddleware)
 app.add_middleware(TenantMiddleware)
+app.add_middleware(IPSecurityMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",") if o.strip()],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-CSRF-Token", "X-Requested-With"],
+    allow_credentials=True,
 )
 
 # Faza 62: body size validation (functional middleware)
