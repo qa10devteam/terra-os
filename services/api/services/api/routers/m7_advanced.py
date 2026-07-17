@@ -19,6 +19,7 @@ import sqlalchemy as sa
 
 from terra_db.session import get_engine
 from services.ai.vllm_client import get_llm_client
+from ..auth.deps import TenantDep
 
 router = APIRouter(prefix="/api/v2", tags=["m7-advanced"])
 logger = logging.getLogger(__name__)
@@ -29,7 +30,7 @@ logger = logging.getLogger(__name__)
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @router.post("/offers/generate-pdf/{tender_id}")
-def generate_offer_pdf(tender_id: str, tenant_id: str) -> dict:
+def generate_offer_pdf(tender_id: str, tenant_id: TenantDep) -> dict:
     """Generate offer PDF brief using AI."""
     engine = get_engine()
 
@@ -83,7 +84,7 @@ class LearningRecord(BaseModel):
 
 
 @router.post("/learning/record")
-def record_outcome(tenant_id: str, body: LearningRecord) -> dict:
+def record_outcome(tenant_id: TenantDep, body: LearningRecord) -> dict:
     """Record a real-world outcome for the learning loop."""
     engine = get_engine()
     record_id = str(uuid.uuid4())
@@ -99,7 +100,7 @@ def record_outcome(tenant_id: str, body: LearningRecord) -> dict:
 
 
 @router.get("/learning/stats")
-def learning_stats(tenant_id: str) -> dict:
+def learning_stats(tenant_id: TenantDep) -> dict:
     """Learning loop stats: outcomes, accuracy improvement."""
     engine = get_engine()
     with engine.connect() as conn:
@@ -125,7 +126,7 @@ def learning_stats(tenant_id: str) -> dict:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @router.post("/finetune/trigger")
-def trigger_finetune(tenant_id: str) -> dict:
+def trigger_finetune(tenant_id: TenantDep) -> dict:
     """Trigger fine-tuning data collection from feedback."""
     engine = get_engine()
     with engine.connect() as conn:

@@ -261,11 +261,19 @@ def update_crm(crm_id: UUID, body: BuyerCRMUpdate, user: AuthUser, db: DB):
     if not updates:
         raise HTTPException(status_code=400, detail="Brak pól do aktualizacji")
 
-    set_parts = ", ".join([f"{k} = :{k}" for k in updates])
-    updates["id"] = str(crm_id)
+    ALLOWED_CRM_COLUMNS = {
+        "crm_stage", "priority", "contact_name", "contact_email", "contact_phone",
+        "annual_budget_est", "preferred_cpv", "territory", "notes",
+        "last_contact", "next_followup",
+    }
+    updates_safe = {k: v for k, v in updates.items() if k in ALLOWED_CRM_COLUMNS}
+    if not updates_safe:
+        raise HTTPException(status_code=400, detail="No valid fields to update")
+    set_parts = ", ".join([f"{k} = :{k}" for k in updates_safe])
+    updates_safe["id"] = str(crm_id)
     db.execute(text(
         f"UPDATE buyer_crm SET {set_parts} WHERE id = :id"
-    ), updates)
+    ), updates_safe)
     db.commit()
     return {"status": "ok", "id": str(crm_id), "updated_fields": list(updates.keys())}
 

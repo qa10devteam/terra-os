@@ -14,6 +14,7 @@ from services.documents.parse_przedmiar import parse_przedmiar
 from services.documents.classify import classify_document
 from services.documents.chunk import chunk_and_embed
 from services.documents.analysis import analyze_tender
+from ..auth.deps import AuthUser
 
 router = APIRouter(prefix="/api/v1", tags=["documents"])
 
@@ -50,7 +51,7 @@ class AnalysisResponse(BaseModel):
 # ──────────────────────────────────────────────────────────────── #
 
 @router.post("/tenders/{tender_id}/analyze", response_model=AnalyzeResponse)
-def analyze_tender_endpoint(tender_id: str) -> AnalyzeResponse:
+def analyze_tender_endpoint(tender_id: str, user: AuthUser) -> AnalyzeResponse:
     """Fetch docs + OCR + parse przedmiar + RAG analysis + red flags.
 
     In offline mode (M2 CI): uses fixture documents + StubClient.
@@ -108,7 +109,7 @@ def analyze_tender_endpoint(tender_id: str) -> AnalyzeResponse:
 # ──────────────────────────────────────────────────────────────── #
 
 @router.get("/tenders/{tender_id}/analysis", response_model=AnalysisResponse)
-def get_analysis(tender_id: str) -> AnalysisResponse:
+def get_analysis(tender_id: str, user: AuthUser) -> AnalysisResponse:
     """Get stored analysis for a tender."""
     import sqlalchemy as sa
     engine = get_engine()

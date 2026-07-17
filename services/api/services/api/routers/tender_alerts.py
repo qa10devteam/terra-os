@@ -339,9 +339,17 @@ def update_alert(alert_id: UUID, body: AlertUpdate, user: AuthUser, db: DB):
         if dup:
             raise HTTPException(status_code=409, detail="Alert o tej nazwie już istnieje")
 
-    set_parts = ", ".join([f"{k} = :{k}" for k in updates])
-    updates["id"] = str(alert_id)
-    db.execute(text(f"UPDATE tender_alert SET {set_parts} WHERE id = :id"), updates)
+    ALLOWED_ALERT_COLUMNS = {
+        "name", "cpv_prefixes", "provinces", "keywords",
+        "value_min", "value_max", "notice_types", "buyer_nips",
+        "is_active", "frequency", "channel", "webhook_url",
+    }
+    updates_safe = {k: v for k, v in updates.items() if k in ALLOWED_ALERT_COLUMNS}
+    if not updates_safe:
+        raise HTTPException(status_code=400, detail="No valid fields to update")
+    set_parts = ", ".join([f"{k} = :{k}" for k in updates_safe])
+    updates_safe["id"] = str(alert_id)
+    db.execute(text(f"UPDATE tender_alert SET {set_parts} WHERE id = :id"), updates_safe)
     db.commit()
     return {"status": "ok", "id": str(alert_id), "updated_fields": list(updates.keys())}
 

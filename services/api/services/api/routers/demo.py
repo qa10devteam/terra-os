@@ -13,7 +13,7 @@ from sqlalchemy import text
 
 router = APIRouter(prefix="/api/v2/demo", tags=["demo"])
 
-DEMO_ENABLED = os.getenv("DEMO_MODE", "true").lower() in ("1", "true", "yes")
+DEMO_ENABLED = os.getenv("DEMO_MODE", "false").lower() in ("1", "true", "yes")
 
 
 def _check_demo_enabled():
@@ -123,7 +123,14 @@ def demo_status() -> dict[str, Any]:
 # ── S3-05: Demo tenant auto-reset ──────────────────────────────────────────────
 
 DEMO_ORG_ID: str = os.getenv("DEMO_ORG_ID", "ec3d1e16-2139-48c2-93b5-ffe0defd606d")
-DEMO_RESET_SECRET: str = os.getenv("DEMO_RESET_SECRET", "demo-reset-secret-change-in-prod")
+DEMO_RESET_SECRET: str = os.getenv("DEMO_RESET_SECRET", "")
+_demo_env = os.getenv("ENVIRONMENT", "").lower()
+if not DEMO_RESET_SECRET and _demo_env not in ("dev", "test"):
+    raise RuntimeError(
+        "FATAL: DEMO_RESET_SECRET must be set to a strong random value. "
+        "Set ENVIRONMENT=dev only for local development. "
+        "Generate with: python -c 'import secrets; print(secrets.token_hex(32))'"
+    )
 
 _SEED_TENDERS = [
     {"title": "Budowa drogi gminnej w miejscowości Kowale", "buyer": "Gmina Kowale",

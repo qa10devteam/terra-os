@@ -124,14 +124,18 @@ def update_webhook(wid: str, body: WebhookUpdate, user: CurrentUser = Depends(ge
     updates = {k: v for k, v in body.model_dump().items() if v is not None}
     if not updates:
         raise HTTPException(400, "No fields to update")
-    set_clause = ", ".join(f"{k} = :{k}" for k in updates)
-    updates["wid"] = wid
-    updates["tid"] = tenant_id
+    ALLOWED_WEBHOOK_COLUMNS = {"name", "url", "events", "active", "secret"}
+    updates_safe = {k: v for k, v in updates.items() if k in ALLOWED_WEBHOOK_COLUMNS}
+    if not updates_safe:
+        raise HTTPException(400, "No valid fields to update")
+    set_clause = ", ".join(f"{k} = :{k}" for k in updates_safe)
+    updates_safe["wid"] = wid
+    updates_safe["tid"] = tenant_id
     with get_engine().connect() as conn:
         result = conn.execute(sa.text(f"""
             UPDATE automation_webhook SET {set_clause}
             WHERE id = :wid AND tenant_id = :tid
-        """), updates)
+        """), updates_safe)
         conn.commit()
     if result.rowcount == 0:
         raise HTTPException(404, "Webhook not found")

@@ -26,6 +26,7 @@ from fastapi import APIRouter, File, UploadFile, HTTPException, Query
 import sqlalchemy as sa
 
 from terra_db.session import get_engine
+from ..auth.deps import AuthUser
 
 router = APIRouter(prefix="/api/v2/documents", tags=["multimodal"])
 logger = logging.getLogger(__name__)
@@ -36,6 +37,7 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 @router.post("/upload")
 async def upload_document(
+    user: AuthUser,
     file: UploadFile = File(...),
     tender_id: Optional[str] = None,
 ) -> dict[str, Any]:
@@ -77,7 +79,7 @@ async def upload_document(
 
 
 @router.get("/{doc_id}")
-def get_document(doc_id: str) -> dict[str, Any]:
+def get_document(doc_id: str, user: AuthUser) -> dict[str, Any]:
     """Get document metadata and processing status."""
     engine = get_engine()
     with engine.connect() as conn:
@@ -104,7 +106,7 @@ def get_document(doc_id: str) -> dict[str, Any]:
 
 
 @router.post("/{doc_id}/analyze")
-async def analyze_document(doc_id: str) -> dict[str, Any]:
+async def analyze_document(doc_id: str, user: AuthUser) -> dict[str, Any]:
     """Run AI analysis on uploaded document — extract text, identify elements."""
     engine = get_engine()
     with engine.connect() as conn:
@@ -214,7 +216,7 @@ def _detect_elements(text: str, page_num: int) -> list[dict]:
 
 
 @router.get("/{doc_id}/estimate")
-def get_cost_estimate(doc_id: str) -> dict[str, Any]:
+def get_cost_estimate(doc_id: str, user: AuthUser) -> dict[str, Any]:
     """Generate cost estimate from document analysis using ICB data."""
     engine = get_engine()
     with engine.connect() as conn:

@@ -15,7 +15,8 @@ import uuid
 from datetime import datetime
 from typing import Any, AsyncGenerator, Optional
 
-from fastapi import APIRouter, Query, Request
+from fastapi import APIRouter, Depends, Query, Request
+from ..auth.deps import AuthUser, get_current_user
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import sqlalchemy as sa
@@ -113,6 +114,7 @@ async def emit_event(event: EmitEvent) -> dict[str, Any]:
 def get_notifications(
     limit: int = Query(20, ge=1, le=100),
     unread_only: bool = Query(False),
+    user: AuthUser = Depends(get_current_user),
 ) -> list[dict[str, Any]]:
     """Get user notifications from DB."""
     engine = get_engine()
@@ -140,7 +142,7 @@ def get_notifications(
 
 
 @router.post("/notifications/mark-read")
-def mark_read(notification_ids: list[str] = []) -> dict[str, Any]:
+def mark_read(notification_ids: list[str] = [], user: AuthUser = Depends(get_current_user)) -> dict[str, Any]:
     """Mark notifications as read."""
     engine = get_engine()
     

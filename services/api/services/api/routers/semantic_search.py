@@ -21,6 +21,7 @@ from terra_db.session import get_engine
 from services.ai.embedder import embed_text, embed_tenders_batch
 from services.ai.rag import rag_query, rag_generate, embed_document_chunks
 from services.ai.vllm_client import get_llm_client
+from ..auth.deps import AuthUser, TenantDep
 
 router = APIRouter(prefix="/api/v2", tags=["semantic-search", "rag"])
 
@@ -28,7 +29,6 @@ router = APIRouter(prefix="/api/v2", tags=["semantic-search", "rag"])
 class SemanticSearchRequest(BaseModel):
     query: str
     limit: int = 20
-    tenant_id: str
 
 
 class RAGQueryRequest(BaseModel):
@@ -45,7 +45,7 @@ class EmbedDocRequest(BaseModel):
 # ─── Semantic Search ──────────────────────────────────────────────────────────
 
 @router.post("/tenders/semantic-search")
-def semantic_search(body: SemanticSearchRequest) -> list[dict[str, Any]]:
+def semantic_search(body: SemanticSearchRequest, tenant_id: TenantDep) -> list[dict[str, Any]]:
     """Vector similarity search over tenders."""
     query_emb = embed_text(body.query)
     emb_str = "[" + ",".join(str(x) for x in query_emb) + "]"
@@ -61,7 +61,7 @@ def semantic_search(body: SemanticSearchRequest) -> list[dict[str, Any]]:
                 ORDER BY embedding <=> CAST(:emb AS vector)
                 LIMIT :lim
             """),
-            {"emb": emb_str, "tid": body.tenant_id, "lim": body.limit},
+            {"emb": emb_str, "tid": tenant_id, "lim": body.limit},
         ).fetchall()
 
     return [
@@ -114,7 +114,7 @@ def embed_document(tender_id: str, body: EmbedDocRequest) -> dict:
 # ─── Batch Embedding ──────────────────────────────────────────────────────────
 
 @router.post("/embeddings/run-batch")
-def run_batch_embedding(tenant_id: str | None = None, limit: int = 500) -> dict:
+def run_batch_embedding(tenant_id: TenantDep, limit: int = 500) -> dict:
     """Embed tenders without embeddings."""
     engine = get_engine()
     count = embed_tenders_batch(engine, tenant_id, limit)

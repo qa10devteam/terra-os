@@ -16,6 +16,7 @@ from fastapi import APIRouter
 import sqlalchemy as sa
 
 from terra_db.session import get_engine
+from ..auth.deps import TenantDep
 
 router = APIRouter(prefix="/api/v2", tags=["mv", "scoring-v3"])
 
@@ -23,7 +24,7 @@ router = APIRouter(prefix="/api/v2", tags=["mv", "scoring-v3"])
 # ─── Materialized Views ──────────────────────────────────────────────────────
 
 @router.get("/mv/pipeline-kpi")
-def pipeline_kpi(tenant_id: str) -> dict[str, Any]:
+def pipeline_kpi(tenant_id: TenantDep) -> dict[str, Any]:
     """Pipeline KPI from materialized view."""
     engine = get_engine()
     with engine.connect() as conn:
@@ -130,7 +131,7 @@ def refresh_mvs() -> dict:
 # ─── Scoring V3 (Window Functions) ───────────────────────────────────────────
 
 @router.get("/scoring/v3/percentile")
-def scoring_percentile(tenant_id: str, tender_id: str | None = None) -> list[dict]:
+def scoring_percentile(tenant_id: TenantDep, tender_id: str | None = None) -> list[dict]:
     """Score percentile ranking using window functions."""
     engine = get_engine()
     sql = """
@@ -168,7 +169,7 @@ def scoring_percentile(tenant_id: str, tender_id: str | None = None) -> list[dic
 
 
 @router.get("/scoring/v3/hot-tenders")
-def hot_tenders(tenant_id: str, days: int = 14) -> list[dict]:
+def hot_tenders(tenant_id: TenantDep, days: int = 14) -> list[dict]:
     """Hot tenders: high score + deadline within N days."""
     engine = get_engine()
     sql = """

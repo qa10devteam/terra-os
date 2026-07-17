@@ -73,7 +73,7 @@ class AuditEntry(BaseModel):
 # ──────────────────────────────────────────────────────────────────────────────
 
 @router.get("/agents/{run_id}", response_model=AgentRunResponse)
-def get_agent_run(run_id: str) -> AgentRunResponse:
+def get_agent_run(run_id: str, user: AuthUser) -> AgentRunResponse:
     engine = get_engine()
     with engine.connect() as conn:
         row = conn.execute(sa.text(
@@ -106,17 +106,17 @@ def _transition_agent(run_id: str, new_status: str) -> dict:
 
 
 @router.post("/agents/{run_id}/pause")
-def pause_agent(run_id: str) -> dict:
+def pause_agent(run_id: str, user: AuthUser) -> dict:
     return _transition_agent(run_id, "paused")
 
 
 @router.post("/agents/{run_id}/resume")
-def resume_agent(run_id: str) -> dict:
+def resume_agent(run_id: str, user: AuthUser) -> dict:
     return _transition_agent(run_id, "running")
 
 
 @router.post("/agents/{run_id}/cancel")
-def cancel_agent(run_id: str) -> dict:
+def cancel_agent(run_id: str, user: AuthUser) -> dict:
     return _transition_agent(run_id, "cancelled")
 
 
@@ -125,7 +125,7 @@ def cancel_agent(run_id: str) -> dict:
 # ──────────────────────────────────────────────────────────────────────────────
 
 @router.post("/pipeline/run", status_code=202)
-def trigger_pipeline() -> dict:
+def trigger_pipeline(user: AuthUser) -> dict:
     """Enqueue a full pipeline run. Returns agent_run_id to poll."""
     engine = get_engine()
     with engine.connect() as conn:
@@ -177,7 +177,7 @@ def _run_pipeline_sync(run_id: str, tenant_id: str) -> None:
 # ──────────────────────────────────────────────────────────────────────────────
 
 @router.post("/contracts/{contract_id}/close")
-def close_contract_endpoint(contract_id: str, body: ContractCloseRequest) -> dict:
+def close_contract_endpoint(contract_id: str, body: ContractCloseRequest, user: AuthUser) -> dict:
     """Close contract + trigger calibration update (learning loop)."""
     engine = get_engine()
     with engine.connect() as conn:
@@ -329,6 +329,7 @@ def read_audit(
     entity: str | None = Query(default=None),
     cursor: int | None = Query(default=None),
     limit: int = Query(default=20, le=100),
+    user: AuthUser = Depends(get_current_user),
 ) -> list[AuditEntry]:
     engine = get_engine()
     with engine.connect() as conn:

@@ -192,11 +192,17 @@ def update_competitor(watch_id: UUID, body: CompetitorUpdate, user: AuthUser, db
     if not existing:
         raise HTTPException(status_code=404, detail="Konkurent nie znaleziony")
 
-    set_parts = ", ".join([f"{k} = :{k}" for k in updates])
-    updates["id"] = str(watch_id)
+    ALLOWED_COMPETITOR_COLUMNS = {
+        "competitor_name", "notes", "tags", "notify_on_win",
+    }
+    updates_safe = {k: v for k, v in updates.items() if k in ALLOWED_COMPETITOR_COLUMNS}
+    if not updates_safe:
+        raise HTTPException(status_code=400, detail="No valid fields to update")
+    set_parts = ", ".join([f"{k} = :{k}" for k in updates_safe])
+    updates_safe["id"] = str(watch_id)
     db.execute(text(
         f"UPDATE competitor_watch SET {set_parts} WHERE id = :id"
-    ), updates)
+    ), updates_safe)
     db.commit()
     return {"status": "ok", "id": str(watch_id)}
 

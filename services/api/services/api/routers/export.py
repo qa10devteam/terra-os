@@ -20,6 +20,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from terra_db.session import get_engine
+from ..auth.deps import AuthUser
 
 router = APIRouter(prefix="/api/v1", tags=["export"])
 
@@ -115,6 +116,7 @@ class ExportRequest(BaseModel):
 @router.post("/estimates/{estimate_id}/export/docx")
 def export_docx(
     estimate_id: str,
+    user: AuthUser,
     req: ExportRequest = Body(default_factory=ExportRequest),
 ):
     from services.estimator.export_docx import DocxExportConfig, export_estimate_docx
@@ -155,6 +157,7 @@ def export_docx(
 @router.post("/estimates/{estimate_id}/export/xlsx")
 def export_xlsx(
     estimate_id: str,
+    user: AuthUser,
     req: ExportRequest = Body(default_factory=ExportRequest),
 ):
     from services.estimator.export_xlsx import XlsxExportConfig, export_estimate_xlsx
@@ -190,6 +193,7 @@ def export_xlsx(
 @router.post("/tenders/{tender_id}/estimate/export/zip")
 def export_zip(
     tender_id: str,
+    user: AuthUser,
     req: ExportRequest = Body(default_factory=ExportRequest),
 ):
     from services.estimator.export_docx import DocxExportConfig, export_estimate_docx
@@ -256,6 +260,7 @@ def export_zip(
 @router.post("/estimates/{estimate_id}/export/preview")
 def export_preview(
     estimate_id: str,
+    user: AuthUser,
     req: ExportRequest = Body(default_factory=ExportRequest),
 ):
     from services.estimator.export_docx import DocxExportConfig, export_estimate_docx

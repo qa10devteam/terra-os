@@ -17,7 +17,7 @@ import sqlalchemy as sa
 
 from terra_db.session import get_engine
 from services.ai.vllm_client import get_llm_client
-from ..auth.deps import AuthUser
+from ..auth.deps import AuthUser, TenantDep
 
 router = APIRouter(prefix="/api/v2", tags=["m7-backend"])
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/settings/usage")
-def get_usage(tenant_id: str) -> dict:
+def get_usage(tenant_id: TenantDep) -> dict:
     engine = get_engine()
     with engine.connect() as conn:
         tenders = conn.execute(sa.text(
@@ -45,7 +45,7 @@ def get_usage(tenant_id: str) -> dict:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/reports/monthly")
-def monthly_report(tenant_id: str) -> dict:
+def monthly_report(tenant_id: TenantDep) -> dict:
     engine = get_engine()
     with engine.connect() as conn:
         row = conn.execute(sa.text("""
@@ -67,7 +67,7 @@ def monthly_report(tenant_id: str) -> dict:
 
 
 @router.post("/reports/ai-summary")
-def ai_summary(tenant_id: str) -> StreamingResponse:
+def ai_summary(tenant_id: TenantDep) -> StreamingResponse:
     """AI-generated executive summary. SSE stream."""
     engine = get_engine()
     with engine.connect() as conn:
@@ -134,7 +134,7 @@ def market_kpi_bar() -> dict:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/bookmarks")
-def get_bookmarks(tenant_id: str) -> list[dict]:
+def get_bookmarks(tenant_id: TenantDep) -> list[dict]:
     engine = get_engine()
     with engine.connect() as conn:
         rows = conn.execute(sa.text("""
@@ -159,7 +159,7 @@ class BookmarkRequest(BaseModel):
 
 
 @router.post("/bookmarks/{tender_id}")
-def add_bookmark(tender_id: str, tenant_id: str, body: BookmarkRequest | None = None) -> dict:
+def add_bookmark(tender_id: str, tenant_id: TenantDep, body: BookmarkRequest | None = None) -> dict:
     engine = get_engine()
     bm_id = str(uuid.uuid4())
     with engine.begin() as conn:
@@ -173,7 +173,7 @@ def add_bookmark(tender_id: str, tenant_id: str, body: BookmarkRequest | None = 
 
 
 @router.delete("/bookmarks/{tender_id}")
-def remove_bookmark(tender_id: str, tenant_id: str) -> dict:
+def remove_bookmark(tender_id: str, tenant_id: TenantDep) -> dict:
     engine = get_engine()
     with engine.begin() as conn:
         conn.execute(sa.text(
@@ -184,7 +184,7 @@ def remove_bookmark(tender_id: str, tenant_id: str) -> dict:
 
 # Alerts
 @router.get("/alerts")
-def get_alerts(tenant_id: str) -> list[dict]:
+def get_alerts(tenant_id: TenantDep) -> list[dict]:
     engine = get_engine()
     with engine.connect() as conn:
         rows = conn.execute(sa.text("""
@@ -237,36 +237,27 @@ class AlertRequest(BaseModel):
 
 
 @router.post("/alerts")
-def create_alert(body: AlertRequest, user: AuthUser, tenant_id: str | None = None) -> dict:
-    """Create a tender alert. tenant_id is optional (legacy query param).
-    Accepts both the original schema and convenience fields (keyword/cpv/region)."""
+def create_alert(body: AlertRequest, tenant_id: TenantDep) -> dict:
+    """Create a tender alert. tenant_id is resolved from JWT."""
     engine = get_engine()
     alert_id = str(uuid.uuid4())
-    # Prefer auth org_id; fall back to query param; finally use first available tenant
-    resolved_tid = (user.org_id if user and user.org_id else None) or tenant_id
-    if not resolved_tid:
-        with engine.connect() as conn:
-            row = conn.execute(sa.text("SELECT id FROM tenant LIMIT 1")).fetchone()
-            resolved_tid = str(row[0]) if row else None
-    if not resolved_tid:
-        return {"error": "tenant_id required"}
     with engine.begin() as conn:
         # Set RLS tenant context for this connection/transaction (uses app.current_tenant_id per policy)
-        conn.execute(sa.text("SELECT set_config('app.current_tenant_id', :tid, true)"), {"tid": resolved_tid})
+        conn.execute(sa.text("SELECT set_config('app.current_tenant_id', :tid, true)"), {"tid": tenant_id})
         conn.execute(sa.text("""
             INSERT INTO tender_alert (id, tenant_id, name, cpv_prefixes, keywords, value_min, value_max)
             VALUES (:id, :tid, :name, :cpv, :kw, :min, :max)
             ON CONFLICT (tenant_id, name)
             DO UPDATE SET cpv_prefixes=EXCLUDED.cpv_prefixes, keywords=EXCLUDED.keywords,
                           value_min=EXCLUDED.value_min, value_max=EXCLUDED.value_max
-        """), {"id": alert_id, "tid": resolved_tid, "name": body.resolved_name(),
+        """), {"id": alert_id, "tid": tenant_id, "name": body.resolved_name(),
                "cpv": body.resolved_cpv_prefixes(), "kw": body.resolved_keywords(),
                "min": body.min_value, "max": body.max_value})
     return {"id": alert_id, "status": "created"}
 
 
 @router.post("/alerts/{alert_id}/test")
-def test_alert(alert_id: str, tenant_id: str) -> dict:
+def test_alert(alert_id: str, tenant_id: TenantDep) -> dict:
     engine = get_engine()
     with engine.connect() as conn:
         alert = conn.execute(sa.text(
@@ -295,7 +286,7 @@ def test_alert(alert_id: str, tenant_id: str) -> dict:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/webhooks")
-def list_webhooks(tenant_id: str) -> list[dict]:
+def list_webhooks(tenant_id: TenantDep) -> list[dict]:
     engine = get_engine()
     with engine.connect() as conn:
         rows = conn.execute(sa.text("""
@@ -316,7 +307,7 @@ class WebhookRequest(BaseModel):
 
 
 @router.post("/webhooks")
-def create_webhook(tenant_id: str, body: WebhookRequest) -> dict:
+def create_webhook(tenant_id: TenantDep, body: WebhookRequest) -> dict:
     engine = get_engine()
     wh_id = str(uuid.uuid4())
     with engine.begin() as conn:
@@ -341,7 +332,7 @@ def delete_webhook(webhook_id: str) -> dict:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/team/members")
-def team_members(tenant_id: str) -> list[dict]:
+def team_members(tenant_id: TenantDep) -> list[dict]:
     engine = get_engine()
     with engine.connect() as conn:
         rows = conn.execute(sa.text("""
@@ -358,7 +349,7 @@ def team_members(tenant_id: str) -> list[dict]:
 
 
 @router.get("/team/activity")
-def team_activity(tenant_id: str) -> list[dict]:
+def team_activity(tenant_id: TenantDep) -> list[dict]:
     engine = get_engine()
     with engine.connect() as conn:
         rows = conn.execute(sa.text("""
@@ -389,7 +380,7 @@ class FeedbackRequest(BaseModel):
 
 
 @router.post("/feedback")
-def submit_feedback(tenant_id: str, body: FeedbackRequest) -> dict:
+def submit_feedback(tenant_id: TenantDep, body: FeedbackRequest) -> dict:
     engine = get_engine()
     fb_id = str(uuid.uuid4())
     with engine.begin() as conn:
@@ -402,7 +393,7 @@ def submit_feedback(tenant_id: str, body: FeedbackRequest) -> dict:
 
 
 @router.get("/feedback/stats")
-def feedback_stats(tenant_id: str) -> dict:
+def feedback_stats(tenant_id: TenantDep) -> dict:
     engine = get_engine()
     with engine.connect() as conn:
         row = conn.execute(sa.text("""
@@ -421,7 +412,7 @@ def feedback_stats(tenant_id: str) -> dict:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/axioms")
-def list_axioms(tenant_id: str) -> list[dict]:
+def list_axioms(tenant_id: TenantDep) -> list[dict]:
     engine = get_engine()
     with engine.connect() as conn:
         rows = conn.execute(sa.text("""
@@ -442,7 +433,7 @@ class AxiomRequest(BaseModel):
 
 
 @router.post("/axioms")
-def create_axiom(tenant_id: str, body: AxiomRequest) -> dict:
+def create_axiom(tenant_id: TenantDep, body: AxiomRequest) -> dict:
     engine = get_engine()
     ax_id = str(uuid.uuid4())
     with engine.begin() as conn:
@@ -455,7 +446,7 @@ def create_axiom(tenant_id: str, body: AxiomRequest) -> dict:
 
 
 @router.post("/axioms/evaluate/{tender_id}")
-def evaluate_axioms(tender_id: str, tenant_id: str) -> list[dict]:
+def evaluate_axioms(tender_id: str, tenant_id: TenantDep) -> list[dict]:
     """Evaluate all active axioms against a tender."""
     engine = get_engine()
     with engine.connect() as conn:
@@ -498,7 +489,7 @@ def evaluate_axioms(tender_id: str, tenant_id: str) -> list[dict]:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/bid-intelligence")
-def get_bid_intelligence(tenant_id: str, limit: int = 50) -> list[dict]:
+def get_bid_intelligence(tenant_id: TenantDep, limit: int = 50) -> list[dict]:
     engine = get_engine()
     with engine.connect() as conn:
         rows = conn.execute(sa.text("""
@@ -530,7 +521,7 @@ class BidIntelRequest(BaseModel):
 
 
 @router.post("/bid-intelligence")
-def add_bid_intel(tenant_id: str, body: BidIntelRequest) -> dict:
+def add_bid_intel(tenant_id: TenantDep, body: BidIntelRequest) -> dict:
     engine = get_engine()
     bi_id = str(uuid.uuid4())
     with engine.begin() as conn:
@@ -544,7 +535,7 @@ def add_bid_intel(tenant_id: str, body: BidIntelRequest) -> dict:
 
 
 @router.get("/bid-intelligence/optimal-markup")
-def optimal_markup(tenant_id: str, cpv5: str | None = None) -> dict:
+def optimal_markup(tenant_id: TenantDep, cpv5: str | None = None) -> dict:
     engine = get_engine()
     sql = """
         SELECT
@@ -583,7 +574,7 @@ def optimal_markup(tenant_id: str, cpv5: str | None = None) -> dict:
 
 
 @router.get("/bid-intelligence/stats")
-def bid_intel_stats(tenant_id: str) -> dict:
+def bid_intel_stats(tenant_id: TenantDep) -> dict:
     engine = get_engine()
     with engine.connect() as conn:
         row = conn.execute(sa.text("""

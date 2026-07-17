@@ -21,7 +21,8 @@ import threading
 import time
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
+from ..auth.deps import AuthUser, get_current_user
 from pydantic import BaseModel
 import sqlalchemy as sa
 
@@ -43,7 +44,7 @@ _DASHBOARD_TTL = 3600  # 1 hour
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @router.post("/forecast/compute")
-def compute_forecasts(horizon: int = 4) -> dict:
+def compute_forecasts(horizon: int = 4, user: AuthUser = Depends(get_current_user)) -> dict:
     """Uruchom Holt-Winters forecasting dla wszystkich kategorii × R/M/S."""
     from ..intelligence.forecaster import compute_all_forecasts
     result = compute_all_forecasts(horizon)
@@ -54,6 +55,7 @@ def compute_forecasts(horizon: int = 4) -> dict:
 def get_forecast(
     category: str | None = None,
     typ_rms: str = "M",
+    user: AuthUser = Depends(get_current_user),
 ) -> list[dict]:
     """Pobierz prognozy cen z icb_forecast."""
     from ..intelligence.forecaster import get_forecasts
@@ -71,6 +73,7 @@ def search_icb_prices(
     category: str | None = None,
     quarter: str | None = Query(None, description="np. 2026-2"),
     limit: int = 30,
+    user: AuthUser = Depends(get_current_user),
 ) -> dict:
     """Fuzzy search po ICB cenach średnich. Zwraca pozycje z cenami + trend info."""
     from ..intelligence.icb_service import search_icb, get_latest_quarter
@@ -124,6 +127,7 @@ def suggest_icb(
     q: str = Query(..., min_length=2, description="Prefiks do podpowiedzi"),
     typ_rms: str | None = Query(None, description="R, M, S"),
     limit: int = Query(8, ge=1, le=20),
+    user: AuthUser = Depends(get_current_user),
 ) -> list[dict]:
     """Autocomplete — prefix ILIKE + trigram fallback. Zwraca id, nazwa, symbol, typ_rms, cena_netto, jednostka."""
     from ..intelligence.icb_service import get_latest_quarter
@@ -438,7 +442,7 @@ class AutofillRequest(BaseModel):
 
 
 @router.post("/kosztorys-autofill")
-def kosztorys_autofill(body: AutofillRequest) -> dict:
+def kosztorys_autofill(body: AutofillRequest, user: AuthUser = Depends(get_current_user)) -> dict:
     """Auto-fill puste ceny w kosztorysie używając ICB + korekta regionalna."""
     from ..intelligence.icb_service import get_latest_quarter, search_icb, get_regional_coefficient
 
@@ -618,7 +622,7 @@ def icb_dashboard() -> dict:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/robocizna/map")
-def robocizna_map() -> dict:
+def robocizna_map(user: AuthUser = Depends(get_current_user)) -> dict:
     """Mapa stawek robocizny kosztorysowej per województwo z ICB."""
     from ..intelligence.icb_service import get_latest_quarter
 
@@ -669,7 +673,7 @@ def robocizna_map() -> dict:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @router.get("/volatility-matrix")
-def volatility_matrix(quarters: int = 8) -> list[dict]:
+def volatility_matrix(quarters: int = 8, user: AuthUser = Depends(get_current_user)) -> list[dict]:
     """Macierz zmienności (CV) per category × typ_rms za ostatnich N kwartałów."""
     engine = get_engine()
     with engine.connect() as conn:

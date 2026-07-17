@@ -264,16 +264,28 @@ def update_offer(offer_id: str, body: OfferUpdate, user: AuthUser) -> dict:
     if not updates:
         raise HTTPException(status_code=422, detail={"error": "no_fields", "message": "Brak pól do aktualizacji"})
 
+    ALLOWED_OFFER_COLUMNS = {
+        "title", "tender_id", "estimate_id", "status",
+        "contractor_name", "contractor_nip", "contractor_address",
+        "delivery_days", "warranty_months", "payment_terms",
+        "notes", "price_gross_pln", "vat_pct", "metadata", "source",
+    }
+
     set_parts = []
     params: dict[str, Any] = {"id": offer_id, "tid": tenant_id}
 
     for key, val in updates.items():
+        if key not in ALLOWED_OFFER_COLUMNS:
+            continue
         if key == "metadata":
             set_parts.append(f"{key} = CAST(:{key} AS jsonb)")
             params[key] = json.dumps(val)
         else:
             set_parts.append(f"{key} = :{key}")
             params[key] = val
+
+    if not set_parts:
+        raise HTTPException(status_code=422, detail={"error": "no_valid_fields", "message": "Brak poprawnych pól do aktualizacji"})
 
     set_parts.append("updated_at = NOW()")
     set_clause = ", ".join(set_parts)

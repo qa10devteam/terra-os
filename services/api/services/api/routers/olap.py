@@ -8,11 +8,12 @@ GET  /api/v2/analytics/cohort
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 from typing import Any, Optional
 import sqlalchemy as sa
 
 from terra_db.session import get_engine
+from ..auth.deps import AuthUser, get_current_user
 
 router = APIRouter(prefix="/api/v2/analytics", tags=["analytics-olap"])
 
@@ -22,6 +23,7 @@ def market_olap(
     cpv_division: Optional[str] = None,
     year: Optional[int] = None,
     group_by: str = Query("quarter", pattern="^(quarter|month|year)$"),
+    user: AuthUser = Depends(get_current_user),
 ) -> list[dict[str, Any]]:
     """OLAP market evolution cube query."""
     engine = get_engine()
@@ -60,7 +62,7 @@ def market_olap(
 
 
 @router.get("/price-index")
-def price_index(cpv_group: Optional[str] = None) -> list[dict[str, Any]]:
+def price_index(cpv_group: Optional[str] = None, user: AuthUser = Depends(get_current_user)) -> list[dict[str, Any]]:
     """CPV price index — quarterly price evolution with YoY delta."""
     engine = get_engine()
     conditions = ["1=1"]
@@ -96,6 +98,7 @@ def price_index(cpv_group: Optional[str] = None) -> list[dict[str, Any]]:
 def buyer_trajectory(
     buyer: Optional[str] = None,
     top_n: int = Query(10, le=50),
+    user: AuthUser = Depends(get_current_user),
 ) -> list[dict[str, Any]]:
     """Buyer lifecycle trajectory — monthly activity trends."""
     engine = get_engine()
@@ -132,7 +135,7 @@ def buyer_trajectory(
 
 
 @router.get("/seasonal")
-def seasonal_patterns(cpv_division: Optional[str] = None) -> list[dict[str, Any]]:
+def seasonal_patterns(cpv_division: Optional[str] = None, user: AuthUser = Depends(get_current_user)) -> list[dict[str, Any]]:
     """Seasonal patterns — which months/days peak per CPV."""
     engine = get_engine()
     conditions = ["1=1"]
@@ -176,7 +179,7 @@ def seasonal_patterns(cpv_division: Optional[str] = None) -> list[dict[str, Any]
 
 
 @router.get("/cohort")
-def buyer_cohort() -> list[dict[str, Any]]:
+def buyer_cohort(user: AuthUser = Depends(get_current_user)) -> list[dict[str, Any]]:
     """Buyer cohort analysis — first-seen month → lifecycle retention."""
     engine = get_engine()
     sql = sa.text("""

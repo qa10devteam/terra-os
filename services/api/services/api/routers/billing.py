@@ -629,23 +629,25 @@ async def stripe_webhook(
     payload = await request.body()
 
     webhook_secret = os.getenv("STRIPE_WEBHOOK_SECRET", "")
-    if webhook_secret:
-        sig = stripe_signature or ""
-        # Try official stripe SDK first
-        if sig:
-            try:
-                import stripe  # type: ignore
-                stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "")
-                stripe.Webhook.construct_event(payload, sig, webhook_secret)
-            except Exception:
-                # Fallback to manual HMAC verification
-                if not _verify_stripe_signature(payload, sig, webhook_secret):
-                    logger.warning("Invalid Stripe webhook signature — rejecting")
-                    raise HTTPException(status_code=400, detail="Invalid webhook signature")
-        else:
-            logger.warning("Webhook received without stripe-signature header (secret configured)")
-            raise HTTPException(status_code=400, detail="Missing stripe-signature header")
-    # If no STRIPE_WEBHOOK_SECRET configured → test/mock mode, accept all
+    if not webhook_secret:
+        logger.error("STRIPE_WEBHOOK_SECRET not configured — rejecting webhook (fail-closed)")
+        raise HTTPException(status_code=503, detail="Stripe webhook not configured")
+
+    sig = stripe_signature or ""
+    if not sig:
+        logger.warning("Webhook received without stripe-signature header")
+        raise HTTPException(status_code=400, detail="Missing stripe-signature header")
+
+    # Try official stripe SDK first
+    try:
+        import stripe  # type: ignore
+        stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "")
+        stripe.Webhook.construct_event(payload, sig, webhook_secret)
+    except Exception:
+        # Fallback to manual HMAC verification
+        if not _verify_stripe_signature(payload, sig, webhook_secret):
+            logger.warning("Invalid Stripe webhook signature — rejecting")
+            raise HTTPException(status_code=400, detail="Invalid webhook signature")
 
     try:
         event = json.loads(payload)
