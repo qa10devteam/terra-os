@@ -17,6 +17,8 @@ from fastapi.responses import StreamingResponse
 import sqlalchemy as sa
 
 from terra_db.session import get_engine
+from ..auth.deps import AuthUser
+from ..auth.plan_gate import require_plan, PlanLevel
 
 router = APIRouter(prefix="/api/v2", tags=["agent-pipeline"])
 logger = logging.getLogger(__name__)
@@ -75,7 +77,7 @@ def _run_pipeline_sse(tender_id: str, version: str = "v1"):
 
 
 @router.post("/agent/analyze/{tender_id}")
-def agent_analyze(tender_id: str) -> StreamingResponse:
+def agent_analyze(tender_id: str, user: AuthUser, _gate: None = require_plan(PlanLevel.BUSINESS)) -> StreamingResponse:
     """Run v1 pipeline: fetch → analyze → score. Returns SSE stream."""
     return StreamingResponse(
         _run_pipeline_sse(tender_id, "v1"),
@@ -84,7 +86,7 @@ def agent_analyze(tender_id: str) -> StreamingResponse:
 
 
 @router.post("/agent/decision/{tender_id}")
-def agent_decision(tender_id: str) -> StreamingResponse:
+def agent_decision(tender_id: str, user: AuthUser, _gate: None = require_plan(PlanLevel.BUSINESS)) -> StreamingResponse:
     """Run v2 full pipeline: + AHP → competitor → bid strategy → brief. SSE."""
     return StreamingResponse(
         _run_pipeline_sse(tender_id, "v2"),
@@ -93,7 +95,7 @@ def agent_decision(tender_id: str) -> StreamingResponse:
 
 
 @router.get("/agent/runs/{agent_run_id}")
-def get_agent_run(agent_run_id: str) -> dict:
+def get_agent_run(agent_run_id: str, user: AuthUser, _gate: None = require_plan(PlanLevel.BUSINESS)) -> dict:
     """Get agent run result."""
     engine = get_engine()
     with engine.connect() as conn:
@@ -117,7 +119,7 @@ def get_agent_run(agent_run_id: str) -> dict:
 
 
 @router.get("/agent/brief/{tender_id}")
-def get_brief(tender_id: str) -> dict:
+def get_brief(tender_id: str, user: AuthUser, _gate: None = require_plan(PlanLevel.BUSINESS)) -> dict:
     """Get latest decision brief for a tender."""
     engine = get_engine()
     with engine.connect() as conn:
@@ -203,7 +205,7 @@ def _stream_analysis(tender_id: str):
 
 
 @router.get("/agent/analyze/{tender_id}/stream")
-def agent_analyze_stream(tender_id: str) -> StreamingResponse:
+def agent_analyze_stream(tender_id: str, user: AuthUser, _gate: None = require_plan(PlanLevel.BUSINESS)) -> StreamingResponse:
     """Stream existing agent_run analysis as SSE events."""
     return StreamingResponse(
         _stream_analysis(tender_id),

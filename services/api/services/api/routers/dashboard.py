@@ -134,20 +134,43 @@ def _cached_dashboard(tenant_id: str) -> dict:
 def dashboard_stats_v1(user: AuthUser) -> dict:
     """Panel główny — statystyki przetargów (v1)."""
     tenant_id = str(user.org_id) if user.org_id else "default"
-    return _cached_dashboard(tenant_id)
+    try:
+        return _cached_dashboard(tenant_id)
+    except Exception:
+        logger.exception("Dashboard stats v1 query failed for tenant=%s", tenant_id)
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "dashboard_query_failed", "message": "Błąd pobierania statystyk dashboardu."},
+        )
 
 
 @router.get("/api/v2/dashboard/stats")
 def dashboard_stats_v2(user: AuthUser) -> dict:
     """Panel główny — statystyki przetargów (v2)."""
     tenant_id = str(user.org_id) if user.org_id else "default"
-    return _cached_dashboard(tenant_id)
+    try:
+        return _cached_dashboard(tenant_id)
+    except Exception:
+        logger.exception("Dashboard stats v2 query failed for tenant=%s", tenant_id)
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "dashboard_query_failed", "message": "Błąd pobierania statystyk dashboardu."},
+        )
 
 
 @router.get("/api/v2/dashboard")
 def dashboard_kpi_root(user: AuthUser) -> dict:
     """Root dashboard KPI — active_tenders, pipeline_value, win_rate_mtd, avg_deal_size, new_today."""
-    kpi = get_pipeline_kpi(user)
+    try:
+        kpi = get_pipeline_kpi(user)
+    except HTTPException:
+        raise
+    except Exception:
+        logger.exception("Dashboard KPI root query failed")
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "kpi_query_failed", "message": "Błąd pobierania KPI dashboardu."},
+        )
     # Map active_count → active_tenders for frontend compatibility
     return {
         "active_tenders": kpi.get("active_count", 0),
@@ -283,7 +306,7 @@ def get_pipeline_kpi(user: AuthUser) -> dict:
                     "source": "mv_pipeline_kpi",
                 }
         except Exception:
-            pass  # mv doesn't exist — fall through to inline
+            logger.debug("mv_pipeline_kpi not available, using inline fallback", exc_info=True)
 
         # Inline fallback from tender table
         agg = conn.execute(sa.text("""
@@ -336,9 +359,8 @@ def get_market_charts(user: AuthUser) -> dict:
     - pretender_monthly: pre-tender sygnały wg miesiąca (BarChart)
     """
     engine = get_engine()
-    with engine.connect() as conn:
-
-        # ── 0. KPI header ────────────────────────────────────────────────────
+    try:
+        with engine.connect() as conn:
         bzp_kpi = conn.execute(sa.text("""
             SELECT
                 COUNT(*)                                              AS bzp_30d,

@@ -14,8 +14,11 @@ from uuid import UUID, uuid4
 
 import psycopg2
 import psycopg2.extras
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
+
+from ..auth.deps import AuthUser
+from ..auth.plan_gate import require_plan, PlanLevel
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

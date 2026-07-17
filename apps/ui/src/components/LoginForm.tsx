@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '@/store/useStore';
 import type { AuthUser } from '@/store/useStore';
-import { AlertCircle, Eye, EyeOff, Loader2, Lock, LogIn, Mail, UserPlus } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Eye, EyeOff, Loader2, Lock, LogIn, Mail, UserPlus } from 'lucide-react';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -18,6 +18,11 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
   const setAuth = useStore((s) => s.setAuth);
 
   const [tab,          setTab]          = useState<'login' | 'register'>('login');
+  const [forgotMode, setForgotMode] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotSuccess, setForgotSuccess] = useState(false);
+  const [forgotError, setForgotError] = useState('');
   const [email,        setEmail]        = useState('');
   const [password,     setPassword]     = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -75,6 +80,28 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
     }
   }
 
+  async function handleForgotPassword(e: React.FormEvent) {
+    e.preventDefault();
+    setForgotLoading(true);
+    setForgotError('');
+    try {
+      const res = await fetch('/api/v2/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail }),
+      });
+      if (res.ok) {
+        setForgotSuccess(true);
+      } else {
+        setForgotError('Wystąpił błąd. Spróbuj ponownie.');
+      }
+    } catch {
+      setForgotError('Brak połączenia z serwerem.');
+    } finally {
+      setForgotLoading(false);
+    }
+  }
+
   function switchTab(next: 'login' | 'register') {
     setTab(next);
     setError('');
@@ -126,7 +153,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
 
         {/* ── Card ──────────────────────────────────────────────────── */}
         <div
-          className="rounded-token-xl p-6 backdrop-blur-xl shadow-token-lg border border-earth-700/40 border-t-earth-600/60"
+          className="relative rounded-token-xl p-6 backdrop-blur-xl shadow-token-lg border border-earth-700/40 border-t-earth-600/60"
           style={{
             background: 'linear-gradient(135deg, rgba(15,13,10,0.8), rgba(28,26,22,0.6))',
             boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04), 0 25px 50px rgba(0,0,0,0.5)',
@@ -272,7 +299,90 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
                   : <UserPlus className="w-4 h-4" />}
               {tab === 'login' ? 'Zaloguj się' : 'Zarejestruj się'}
             </button>
+
+            {/* Forgot password link */}
+            {tab === 'login' && (
+              <button
+                type="button"
+                onClick={() => { setForgotMode(true); setForgotEmail(email); setForgotSuccess(false); setForgotError(''); }}
+                className="w-full text-center text-sm text-earth-500 hover:text-accent-primary transition-colors mt-2"
+              >
+                Zapomniałeś hasła?
+              </button>
+            )}
           </form>
+
+          {/* ── Forgot password modal overlay ─────────────────────────── */}
+          <AnimatePresence>
+            {forgotMode && (
+              <motion.div
+                key="forgot-overlay"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 z-20 flex items-center justify-center bg-earth-950/80 backdrop-blur-sm rounded-token-xl"
+              >
+                <div className="w-full max-w-sm p-6">
+                  {forgotSuccess ? (
+                    <div className="text-center space-y-3">
+                      <div className="w-12 h-12 mx-auto rounded-full bg-accent-primary/20 flex items-center justify-center">
+                        <Mail className="w-6 h-6 text-accent-primary" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-earth-100">Sprawdź skrzynkę</h3>
+                      <p className="text-earth-400 text-sm">Jeśli konto istnieje, wysłaliśmy link do resetowania hasła.</p>
+                      <button
+                        type="button"
+                        onClick={() => setForgotMode(false)}
+                        className="btn-primary w-full py-2.5 mt-4"
+                        style={{ background: 'linear-gradient(to right, #10b981, #34d399)' }}
+                      >
+                        Wróć do logowania
+                      </button>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleForgotPassword} className="space-y-4">
+                      <button
+                        type="button"
+                        onClick={() => setForgotMode(false)}
+                        className="flex items-center gap-1 text-earth-500 hover:text-earth-300 text-sm transition-colors"
+                      >
+                        <ArrowLeft className="w-3.5 h-3.5" /> Wróć
+                      </button>
+                      <h3 className="text-lg font-semibold text-earth-100">Odzyskaj dostęp</h3>
+                      <p className="text-earth-400 text-sm">Podaj adres e-mail powiązany z kontem.</p>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-earth-500 pointer-events-none" />
+                        <input
+                          type="email"
+                          value={forgotEmail}
+                          onChange={(e) => setForgotEmail(e.target.value)}
+                          required
+                          autoFocus
+                          placeholder="twoj@firma.pl"
+                          className="input-base pl-9"
+                        />
+                      </div>
+                      {forgotError && (
+                        <div className="flex items-start gap-2 px-3 py-2 bg-accent-danger/10 border border-accent-danger/20 rounded-token text-accent-danger text-sm">
+                          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                          <span>{forgotError}</span>
+                        </div>
+                      )}
+                      <button
+                        type="submit"
+                        disabled={forgotLoading}
+                        className="btn-primary w-full py-2.5 font-semibold"
+                        style={{ background: forgotLoading ? undefined : 'linear-gradient(to right, #10b981, #34d399)' }}
+                      >
+                        {forgotLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                        Wyślij link resetujący
+                      </button>
+                    </form>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Footer */}

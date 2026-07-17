@@ -18,6 +18,7 @@ from fastapi.responses import StreamingResponse
 
 from terra_db.session import get_engine
 from ..auth.deps import AuthUser
+from ..auth.plan_gate import require_plan, PlanLevel
 
 router = APIRouter(tags=["kosztorys-v3"])
 logger = logging.getLogger(__name__)
@@ -34,6 +35,7 @@ def get_icb_rates(
     user: AuthUser,
     cpv5: str,
     nuts2: str,
+    _gate: None = require_plan(PlanLevel.STARTER),
 ) -> dict:
     """Stawki ICB/KNR dla danego CPV5 i regionu NUTS2 (ostatnie 4 kwartały)."""
     engine = get_engine()
@@ -72,7 +74,7 @@ def get_icb_rates(
 # ─── POST /api/v2/kosztorys/{id}/ai-wycena-v2  (SSE) ─────────────────────────
 
 @router.post("/api/v2/kosztorys/{kosztorys_id}/ai-wycena-v2")
-async def ai_wycena_v2(kosztorys_id: str, user: AuthUser) -> StreamingResponse:
+async def ai_wycena_v2(kosztorys_id: str, user: AuthUser, _gate: None = require_plan(PlanLevel.STARTER)) -> StreamingResponse:
     """AI-wycena pozycji kosztorysu na podstawie stawek ICB. SSE stream."""
     engine = get_engine()
 

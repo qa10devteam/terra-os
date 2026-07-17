@@ -14,6 +14,8 @@ from fastapi import APIRouter, Query
 import sqlalchemy as sa
 
 from terra_db.session import get_engine
+from ..auth.deps import AuthUser
+from ..auth.plan_gate import require_plan, PlanLevel
 
 router = APIRouter(prefix="/api/v2/forecast", tags=["forecasting"])
 
@@ -96,6 +98,8 @@ def _linear_forecast(values: list[float], periods: int) -> list[dict]:
 
 @router.get("/timeseries")
 def timeseries(
+    user: AuthUser,
+    _gate: None = require_plan(PlanLevel.PRO),
     cpv_division: Optional[str] = None,
     granularity: str = Query("quarter", pattern="^(month|quarter)$"),
 ) -> dict[str, Any]:
@@ -135,7 +139,7 @@ def timeseries(
 
 
 @router.get("/seasonality")
-def seasonality_analysis(cpv_division: Optional[str] = None) -> dict[str, Any]:
+def seasonality_analysis(user: AuthUser, _gate: None = require_plan(PlanLevel.PRO), cpv_division: Optional[str] = None) -> dict[str, Any]:
     """Detect seasonal patterns — monthly index for given CPV."""
     engine = get_engine()
     conditions = ["cpv IS NOT NULL AND array_length(cpv, 1) > 0"]
@@ -185,6 +189,8 @@ def seasonality_analysis(cpv_division: Optional[str] = None) -> dict[str, Any]:
 
 @router.get("/predict")
 def predict(
+    user: AuthUser,
+    _gate: None = require_plan(PlanLevel.PRO),
     cpv_division: Optional[str] = None,
     periods: int = Query(6, ge=1, le=12),
     method: str = Query("holt_winters", pattern="^(holt_winters|linear)$"),

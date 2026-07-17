@@ -14,6 +14,9 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
+from ..auth.deps import AuthUser
+from ..auth.plan_gate import require_plan, PlanLevel
+
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v2", tags=["offer-assembly"])
 
@@ -93,7 +96,7 @@ class KNRMapRequest(BaseModel):
 
 @router.post("/documents/generate", response_class=Response,
              responses={200: {"content": {"application/zip": {}}}})
-async def generate_documents(req: GenerateDocsRequest):
+async def generate_documents(req: GenerateDocsRequest, user: AuthUser, _gate: None = require_plan(PlanLevel.STARTER)):
     """
     Generuj komplet dokumentów ofertowych jako ZIP.
     Dokumenty: Formularz Oferty + Załączniki 1-4 + Kosztorys PDF.
@@ -206,7 +209,7 @@ async def generate_documents(req: GenerateDocsRequest):
 
 
 @router.post("/knr/map")
-async def map_knr_positions(req: KNRMapRequest):
+async def map_knr_positions(req: KNRMapRequest, user: AuthUser, _gate: None = require_plan(PlanLevel.STARTER)):
     """
     Mapuj pozycje OPZ na pozycje katalogu KNR.
     4 strategie: direct → vector → keyword rules → LLM fallback.

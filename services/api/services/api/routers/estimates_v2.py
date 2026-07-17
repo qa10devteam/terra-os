@@ -217,7 +217,8 @@ def predict_cost(
             if _redis and similar_projects:
                 _redis.setex(_cache_key, 3600, _json.dumps(similar_projects, default=str))
     except Exception:
-        pass
+        import logging as _log
+        _log.getLogger(__name__).warning("Failed to fetch similar projects for cost prediction", exc_info=True)
 
     return {
         "benchmark": round(price_per_m2 * area_m2, 2),

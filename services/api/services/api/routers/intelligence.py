@@ -139,7 +139,12 @@ def api_search_icb(
         rcache_set(_cache_key, data, ttl=TTL_INTELLIGENCE_SUMMARY)
         return data
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import logging as _log
+        _log.getLogger(__name__).exception("ICB search failed for q=%r", q)
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "icb_search_failed", "message": "Błąd wyszukiwania ICB. Spróbuj ponownie."},
+        )
 
 
 @router.get("/prices/inflation")
@@ -154,7 +159,12 @@ def api_inflation_index(
         data = pi["get_inflation_index"](category, typ_rms, quarters)
         return {"data": data, "n": len(data)}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import logging as _log
+        _log.getLogger(__name__).exception("Inflation index query failed")
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "inflation_query_failed", "message": "Błąd pobierania indeksu inflacji."},
+        )
 
 
 @router.get("/prices/trend")
@@ -177,7 +187,12 @@ def api_price_trend(
             "n": len(data),
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import logging as _log
+        _log.getLogger(__name__).exception("Price trend query failed")
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "price_trend_failed", "message": "Błąd pobierania trendu cen."},
+        )
 
 
 @router.get("/prices/forecast")
@@ -192,7 +207,12 @@ def api_price_forecast(
         pi = _pi()
         return pi["forecast_price"](category, symbol, typ_rms, horizon)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import logging as _log
+        _log.getLogger(__name__).exception("Price forecast failed")
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "forecast_failed", "message": "Błąd generowania prognozy cen."},
+        )
 
 
 @router.get("/prices/index")
@@ -205,7 +225,12 @@ def api_price_index(
         data = pi["get_price_index"](quarters)
         return {"data": data, "n": len(data)}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import logging as _log
+        _log.getLogger(__name__).exception("Price index query failed")
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "price_index_failed", "message": "Błąd pobierania indeksu cen."},
+        )
 
 
 @router.get("/material-risk")
@@ -223,7 +248,12 @@ def api_material_risk(
             results = pi["get_all_material_risks"](quarters)
             return {"risks": results, "n": len(results)}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import logging as _log
+        _log.getLogger(__name__).exception("Material risk query failed")
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "material_risk_failed", "message": "Błąd pobierania Material Risk Score."},
+        )
 
 
 @router.get("/narzuty")
@@ -242,7 +272,12 @@ def api_narzuty(
         else:
             return svc["get_narzuty"](year, quarter, branża)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import logging as _log
+        _log.getLogger(__name__).exception("Narzuty query failed")
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "narzuty_failed", "message": "Błąd pobierania narzutów ICB."},
+        )
 
 
 @router.get("/regional")
@@ -263,7 +298,12 @@ def api_regional_coefficient(
             "coefficient": coeff,
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import logging as _log
+        _log.getLogger(__name__).exception("Regional coefficient query failed")
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "regional_coeff_failed", "message": "Błąd pobierania współczynnika regionalnego."},
+        )
 
 
 @router.get("/robocizna-rates")
@@ -277,7 +317,12 @@ def api_robocizna_rates(
         svc = _icb()
         return svc["get_robocizna_rates"](voivodeship, year, quarter)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import logging as _log
+        _log.getLogger(__name__).exception("Robocizna rates query failed")
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "robocizna_rates_failed", "message": "Błąd pobierania stawek robocizny."},
+        )
 
 
 @router.get("/benchmark")
@@ -297,7 +342,12 @@ def api_benchmark(
         rcache_set(_cache_key, result, ttl=TTL_INTELLIGENCE_SUMMARY)
         return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import logging as _log
+        _log.getLogger(__name__).exception("Benchmark query failed")
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "benchmark_failed", "message": "Błąd pobierania benchmarku CPV."},
+        )
 
 
 @router.get("/categories")
@@ -307,7 +357,12 @@ def api_categories() -> dict:
         svc = _icb()
         return {"categories": svc["get_categories"]()}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import logging as _log
+        _log.getLogger(__name__).exception("Categories query failed")
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "categories_failed", "message": "Błąd pobierania kategorii ICB."},
+        )
 
 
 @router.post("/anomaly/bid")
@@ -323,7 +378,12 @@ def api_anomaly_bid(req: BidAnomalyRequest) -> dict:
             req.province, req.n_competitors,
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import logging as _log
+        _log.getLogger(__name__).exception("Bid anomaly detection failed")
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "anomaly_detection_failed", "message": "Błąd wykrywania anomalii oferty."},
+        )
 
 
 @router.post("/anomaly/kosztorys")
@@ -337,7 +397,12 @@ def api_anomaly_kosztorys(req: KosztorysAnomalyRequest) -> dict:
         items_dicts = [it.model_dump() for it in req.items]
         return bi["detect_kosztorys_anomalies"](items_dicts, req.cpv_prefix, req.province)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import logging as _log
+        _log.getLogger(__name__).exception("Kosztorys anomaly detection failed")
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "kosztorys_anomaly_failed", "message": "Błąd wykrywania anomalii kosztorysu."},
+        )
 
 
 @router.post("/win-probability")
@@ -354,7 +419,12 @@ def api_win_probability(req: WinProbRequest) -> dict:
             req.province, req.n_competitors,
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import logging as _log
+        _log.getLogger(__name__).exception("Win probability estimation failed")
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "win_prob_failed", "message": "Błąd szacowania prawdopodobieństwa wygranej."},
+        )
 
 
 # ─── S48: ML Win Probability per tender_id ─────────────────────────────────────
@@ -378,7 +448,12 @@ def get_win_prob_ml(tender_id: str, user: AuthUser) -> dict:
             "model": "logistic_regression",
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import logging as _log
+        _log.getLogger(__name__).exception("ML win-prob prediction failed for tender=%s", tender_id)
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "win_prob_ml_failed", "message": "Błąd modelu ML predykcji wygranej."},
+        )
 
 
 # ─── Agent Brief proxy — /api/v2/intelligence/agent/brief ─────────────────────
@@ -389,25 +464,33 @@ def get_agent_brief_by_query(tender_id: str = Query(...)) -> dict:
 
     Delegates to agent_run table — same logic as /api/v2/agent/brief/{tender_id}.
     """
-    from sqlalchemy import text as _text
-    engine = _get_engine()
-    with engine.connect() as conn:
-        row = conn.execute(_text("""
-            SELECT id, output, finished_at FROM agent_run
-            WHERE status='succeeded'
-              AND input::jsonb->>'tender_id' = :tid
-            ORDER BY finished_at DESC LIMIT 1
-        """), {"tid": tender_id}).fetchone()
+    import logging as _log
+    try:
+        from sqlalchemy import text as _text
+        engine = _get_engine()
+        with engine.connect() as conn:
+            row = conn.execute(_text("""
+                SELECT id, output, finished_at FROM agent_run
+                WHERE status='succeeded'
+                  AND input::jsonb->>'tender_id' = :tid
+                ORDER BY finished_at DESC LIMIT 1
+            """), {"tid": tender_id}).fetchone()
 
-    if not row:
-        return {"tender_id": tender_id, "brief": None, "status": "not_found"}
+        if not row:
+            return {"tender_id": tender_id, "brief": None, "status": "not_found"}
 
-    output = row[1] if isinstance(row[1], dict) else {}
-    return {
-        "tender_id": tender_id,
-        "agent_run_id": str(row[0]),
-        "brief": output.get("brief"),
-        "go_decision": output.get("go_decision"),
-        "finished_at": str(row[2]) if row[2] else None,
-        "status": "ok",
-    }
+        output = row[1] if isinstance(row[1], dict) else {}
+        return {
+            "tender_id": tender_id,
+            "agent_run_id": str(row[0]),
+            "brief": output.get("brief"),
+            "go_decision": output.get("go_decision"),
+            "finished_at": str(row[2]) if row[2] else None,
+            "status": "ok",
+        }
+    except Exception as e:
+        _log.getLogger(__name__).exception("Agent brief query failed for tender=%s", tender_id)
+        raise HTTPException(
+            status_code=500,
+            detail={"error": "agent_brief_failed", "message": "Błąd pobierania briefu agenta."},
+        )
