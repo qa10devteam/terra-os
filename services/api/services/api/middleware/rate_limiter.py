@@ -1,6 +1,7 @@
-"""Redis-based per-IP rate limiter middleware (60 req/min general, 5 req/min auth).
+"""Redis-based per-IP rate limiter middleware (100 req/min general, 5 req/min auth).
 
 Uses Redis sliding window counters. No localhost whitelist (reverse proxy scenario).
+Adds X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset headers.
 """
 from __future__ import annotations
 
@@ -15,7 +16,7 @@ _redis = redis.Redis(host="localhost", port=6379, db=1, decode_responses=True)
 
 # Limits
 _AUTH_LIMIT = 5
-_GENERAL_LIMIT = 60
+_GENERAL_LIMIT = 100
 _WINDOW = 60  # seconds
 
 
@@ -55,11 +56,23 @@ async def rate_limit_middleware(request: Request, call_next):
     results = pipe.execute()
 
     current_count = results[1]
+    remaining = max(0, limit - current_count - 1)
+    reset_at = int(now) + _WINDOW
 
     if current_count >= limit:
         return JSONResponse(
             status_code=429,
-            content={"detail": f"Rate limit exceeded: {limit} req/min"},
+            content={"error": f"Rate limit exceeded: {limit} req/min"},
+            headers={
+                "X-RateLimit-Limit": str(limit),
+                "X-RateLimit-Remaining": "0",
+                "X-RateLimit-Reset": str(reset_at),
+                "Retry-After": str(_WINDOW),
+            },
         )
 
-    return await call_next(request)
+    response = await call_next(request)
+    response.headers["X-RateLimit-Limit"] = str(limit)
+    response.headers["X-RateLimit-Remaining"] = str(remaining)
+    response.headers["X-RateLimit-Reset"] = str(reset_at)
+    return response

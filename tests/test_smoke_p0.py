@@ -1,6 +1,6 @@
 """S5-3 — Smoke tests for P0 endpoints (10 tests).
 
-Tests run against live API at localhost:8765.
+Tests run against live API at localhost:8000.
 Uses real HTTP via httpx — marks: integration (skipped in CI unless DB present).
 All tests share a single auth token obtained in module setup.
 """
@@ -10,7 +10,7 @@ import os
 import pytest
 import httpx
 
-API_BASE = os.getenv("TERRA_API_BASE", "http://127.0.0.1:8765")
+API_BASE = os.getenv("TERRA_API_BASE", "http://127.0.0.1:8000")
 TEST_EMAIL = os.getenv("TERRA_TEST_EMAIL", "rsk.centrala@gmail.com")
 TEST_PASS = os.getenv("TERRA_TEST_PASS", "demo1234")
 
