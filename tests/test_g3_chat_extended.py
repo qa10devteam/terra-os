@@ -139,7 +139,7 @@ async def test_chat_tool_pipeline_kpi():
         conn.__enter__ = lambda s: s
         conn.__exit__ = MagicMock(return_value=False)
         mock_row = MagicMock()
-        mock_row.__getitem__ = lambda s, i: [10, 3, 500000.0][i]
+        mock_row.__getitem__ = lambda s, i: [10, 3, 5, 500000.0, 200000.0][i]
         conn.execute.return_value.fetchone.return_value = mock_row
         mock_eng.return_value.connect.return_value = conn
 

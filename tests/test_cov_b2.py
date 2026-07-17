@@ -975,10 +975,8 @@ async def test_system_backup_status_200(app, auth_headers):
 async def test_system_backup_run_200(app, auth_headers):
     """POST /api/v1/system/backup/run → 200 (pg_dump may not be present)."""
     from httpx import ASGITransport, AsyncClient
-    with patch("services.api.services.api.routers.orchestration.subprocess") as sp, \
-         patch("services.api.services.api.routers.orchestration.asyncio.create_subprocess_exec") as asp:
-        sp.Popen.return_value = MagicMock(returncode=0, communicate=MagicMock(return_value=(b"", b"")))
-        asp.return_value = MagicMock(returncode=0, communicate=MagicMock(return_value=(b"", b"")))
+    with patch("services.api.services.api.routers.system.subprocess") as sp:
+        sp.run.return_value = MagicMock(returncode=0, stderr=b"")
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
             resp = await c.post("/api/v1/system/backup/run", headers=auth_headers)
     assert resp.status_code in (200, 403, 500)
@@ -996,10 +994,8 @@ async def test_system_backup_run_non_admin(app):
         role="viewer",
     )
     hdrs = {"Authorization": f"Bearer {token}"}
-    with patch("services.api.services.api.routers.orchestration.subprocess") as sp, \
-         patch("services.api.services.api.routers.orchestration.asyncio.create_subprocess_exec") as asp:
-        sp.Popen.return_value = MagicMock(returncode=0, communicate=MagicMock(return_value=(b"", b"")))
-        asp.return_value = MagicMock(returncode=0, communicate=MagicMock(return_value=(b"", b"")))
+    with patch("services.api.services.api.routers.system.subprocess") as sp:
+        sp.run.return_value = MagicMock(returncode=0, stderr=b"")
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
             resp = await c.post("/api/v1/system/backup/run", headers=hdrs)
     # May be 200 if demo override is active, or 403
