@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session
 from terra_db.session import get_session, get_engine
 
 from .deps import AuthUser
+from .encryption import encrypt_field, decrypt_field
 from ..services.email_service import send_welcome_email, send_password_reset_email
 from .utils import (
     create_access_token,
@@ -292,7 +293,7 @@ def login(request: Request, body: LoginRequest, response: Response, db: DB):
         totp_code = getattr(body, 'totp_code', None)
         if not totp_code:
             raise HTTPException(401, "Wymagany kod 2FA")
-        totp = pyotp.TOTP(user_row.totp_secret)
+        totp = pyotp.TOTP(decrypt_field(user_row.totp_secret))
         if not totp.verify(totp_code, valid_window=1):
             raise HTTPException(401, "Nieprawidłowy kod 2FA")
 
@@ -529,7 +530,7 @@ def setup_2fa(request: Request, user: AuthUser):
     with engine.begin() as conn:
         conn.execute(
             text("UPDATE users SET totp_secret = :secret WHERE id = :uid"),
-            {"secret": secret, "uid": str(user.user_id)}
+            {"secret": encrypt_field(secret), "uid": str(user.user_id)}
         )
     totp = pyotp.TOTP(secret)
     provisioning_uri = totp.provisioning_uri(name=user.email, issuer_name="Yuna Bud-OS")
@@ -550,7 +551,7 @@ def enable_2fa(request: Request, body: TOTPEnableRequest, user: AuthUser):
         row = conn.execute(text("SELECT totp_secret FROM users WHERE id = :uid"), {"uid": str(user.user_id)}).fetchone()
     if not row or not row.totp_secret:
         raise HTTPException(400, "Najpierw skonfiguruj 2FA przez /2fa/setup")
-    totp = pyotp.TOTP(row.totp_secret)
+    totp = pyotp.TOTP(decrypt_field(row.totp_secret))
     if not totp.verify(body.token, valid_window=1):
         raise HTTPException(400, "Nieprawidłowy kod 2FA")
     with engine.begin() as conn:
@@ -567,7 +568,7 @@ def disable_2fa(request: Request, body: TOTPVerifyRequest, user: AuthUser):
         row = conn.execute(text("SELECT totp_secret, totp_enabled FROM users WHERE id = :uid"), {"uid": str(user.user_id)}).fetchone()
     if not row or not row.totp_enabled:
         raise HTTPException(400, "2FA nie jest włączone")
-    totp = pyotp.TOTP(row.totp_secret)
+    totp = pyotp.TOTP(decrypt_field(row.totp_secret))
     if not totp.verify(body.token, valid_window=1):
         raise HTTPException(400, "Nieprawidłowy kod 2FA")
     with engine.begin() as conn:

@@ -246,6 +246,7 @@ from .middleware.csrf import CSRFMiddleware
 from .middleware.ip_security import IPSecurityMiddleware
 from .middleware.error_boundary import error_boundary_handler
 from .middleware.audit_log import AuditLogMiddleware  # Faza 2 — audit logging
+from .middleware.ids import IDSMiddleware  # Faza 3 — IDS / anomaly detection
 
 
 # ─── Lifespan ──────────────────────────────────────────────────────────────────
@@ -386,6 +387,7 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
 # ─── Register middleware (order matters: outer → inner) ────────────────────────
 
 app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(IDSMiddleware)  # Faza 3 — IDS runs before audit log
 app.add_middleware(AuditLogMiddleware)  # Faza 2 — centralized audit logging
 app.add_middleware(CSRFMiddleware)
 app.add_middleware(RequestCounterMiddleware)

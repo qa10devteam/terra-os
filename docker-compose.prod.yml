@@ -23,7 +23,7 @@ services:
         condition: service_healthy
     networks:
       - frontend
-      - backend
+      - backend  # nginx bridges both networks to proxy to API
 
   # -- Next.js UI -----------------------------------------------
   ui:
@@ -45,8 +45,7 @@ services:
       api:
         condition: service_healthy
     networks:
-      - frontend
-      - backend
+      - frontend  # UI is public-facing only; API accessed via nginx proxy
 
   # -- FastAPI (uvicorn) ----------------------------------------
   api:
@@ -83,8 +82,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - backend
-      - frontend
+      - backend  # API is backend-only; nginx proxies to it via the backend network
 
   # -- Celery worker -------------------------------------------
   celery-worker:
@@ -168,3 +166,5 @@ networks:
     driver: bridge
   backend:
     driver: bridge
+    # NOTE: internal: true is intentionally omitted — API makes outbound calls
+    # (Stripe, webhooks, external integrations). See Faza 3 security notes.
