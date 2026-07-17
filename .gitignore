@@ -61,3 +61,4 @@ logs/alert_dispatcher.log
 data/intercenbud_kobo_full.json
 finetune_env/
 services/ai/finetune/axon-qwen-7b-lora/
+.coverage
