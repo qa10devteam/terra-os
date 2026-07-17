@@ -2,20 +2,20 @@
   "cookies": [
     {
       "name": "session",
-      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NjYxMmYyMS0zYjVhLTRhNDMtYTg1Ny0xODMxODQ5YWVlM2YiLCJlbWFpbCI6ImUyZV90ZXN0QHRlcnJhLm9zIiwib3JnX2lkIjpudWxsLCJyb2xlIjoib3duZXIiLCJpYXQiOjE3ODQyOTA4NzIsImV4cCI6MTc4NDI5MTc3MiwidHlwZSI6ImFjY2VzcyJ9.uzUzdCWqf7XM7nbh2t3nkMtfnMtmxi-wVjukGe_CWAA",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NjYxMmYyMS0zYjVhLTRhNDMtYTg1Ny0xODMxODQ5YWVlM2YiLCJlbWFpbCI6ImUyZV90ZXN0QHRlcnJhLm9zIiwib3JnX2lkIjpudWxsLCJyb2xlIjoib3duZXIiLCJpYXQiOjE3ODQyOTExNDMsImV4cCI6MTc4NDI5MjA0MywidHlwZSI6ImFjY2VzcyJ9.iiABpsfPVe1wlMPeUPdZP4B4iRaKO11NG89WO6zgzUM",
       "domain": "localhost",
       "path": "/",
-      "expires": 1784294472.81785,
+      "expires": 1784294743.9058,
       "httpOnly": true,
       "secure": true,
       "sameSite": "Strict"
     },
     {
       "name": "csrf_token",
-      "value": "gGUb3KqTmEBK5cyoS58ebWJ__0SYC3K-axpmIoJYceA",
+      "value": "MFK37hi3FpioTwRAjWO_otpxqWgIL1_eKSU7ZKRJ5go",
       "domain": "localhost",
       "path": "/",
-      "expires": 1784294472.817974,
+      "expires": 1784294743.905948,
       "httpOnly": false,
       "secure": true,
       "sameSite": "Strict"
@@ -27,7 +27,7 @@
       "localStorage": [
         {
           "name": "terra-auth",
-          "value": "{\"state\":{\"user\":{\"id\":\"86612f21-3b5a-4a43-a857-1831849aee3f\",\"email\":\"e2e_test@terra.os\",\"name\":\"E2E Tester\",\"org_id\":null,\"role\":\"owner\"},\"accessToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NjYxMmYyMS0zYjVhLTRhNDMtYTg1Ny0xODMxODQ5YWVlM2YiLCJlbWFpbCI6ImUyZV90ZXN0QHRlcnJhLm9zIiwib3JnX2lkIjpudWxsLCJyb2xlIjoib3duZXIiLCJpYXQiOjE3ODQyOTA4NzIsImV4cCI6MTc4NDI5MTc3MiwidHlwZSI6ImFjY2VzcyJ9.uzUzdCWqf7XM7nbh2t3nkMtfnMtmxi-wVjukGe_CWAA\",\"refreshToken\":\"089663f5-7dd2-4ad1-a857-557cb659863b\"},\"version\":0}"
+          "value": "{\"state\":{\"user\":{\"id\":\"86612f21-3b5a-4a43-a857-1831849aee3f\",\"email\":\"e2e_test@terra.os\",\"name\":\"E2E Tester\",\"org_id\":null,\"role\":\"owner\"},\"accessToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4NjYxMmYyMS0zYjVhLTRhNDMtYTg1Ny0xODMxODQ5YWVlM2YiLCJlbWFpbCI6ImUyZV90ZXN0QHRlcnJhLm9zIiwib3JnX2lkIjpudWxsLCJyb2xlIjoib3duZXIiLCJpYXQiOjE3ODQyOTExNDMsImV4cCI6MTc4NDI5MjA0MywidHlwZSI6ImFjY2VzcyJ9.iiABpsfPVe1wlMPeUPdZP4B4iRaKO11NG89WO6zgzUM\",\"refreshToken\":\"2e8d9175-101b-4e73-8907-33506a1b0ca3\"},\"version\":0}"
         }
       ]
     }

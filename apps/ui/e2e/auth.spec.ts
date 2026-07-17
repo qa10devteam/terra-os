@@ -42,8 +42,11 @@ test.describe('Auth – login form', () => {
     await page.locator('button[type="submit"]').click();
 
     // Expect an error message to appear
-    const errorMsg = page.locator('text=/Nieprawidłowy|błąd|spróbuj/i, [role="alert"], .error, [class*="error"]');
-    await expect(errorMsg.first()).toBeVisible({ timeout: 10_000 });
+    // The LoginForm shows error text directly in the DOM
+    const errorMsg = page.locator('[role="alert"], .error, [class*="error"]');
+    const errorText = page.getByText(/Nieprawidłowy|błąd|spróbuj/i);
+    const anyError = errorMsg.or(errorText);
+    await expect(anyError.first()).toBeVisible({ timeout: 10_000 });
 
     // Should still be on the login page (form still visible)
     await expect(page.locator('input[type="email"]')).toBeVisible();
