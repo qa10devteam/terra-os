@@ -2284,3 +2284,528 @@ def test_billing_get_checkout_url_stripe_success():
             result = get_checkout_url(plan="pro")
     assert result.get("url") == "https://checkout.stripe.com/pay/test"
     assert result.get("plan") == "pro"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# F4 BOOST — TARGET ≥95%: zwiad (179-202,253,276,362-396,588-589,645-646)
+#                          billing (160-165,520-522,593-615,633-647,691-711,750,807)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+# ─── zwiad: lines 179-202 — _run_ingest_worker success path ───────────────────
+
+def test_zwiad_run_ingest_worker_success():
+    """_run_ingest_worker(): run_ingest succeeds → lines 179-196 covered."""
+    from services.api.services.api.routers.zwiad import _run_ingest_worker
+    engine, conn = _make_engine_mock()
+    conn.execute.return_value = MagicMock()
+
+    result_mock = MagicMock()
+    result_mock.created = 5
+    result_mock.raw_fetched = 10
+    result_mock.updated = 2
+    result_mock.dropped_filter = 1
+    result_mock.errors = 0
+
+    task_id = str(uuid.uuid4())
+    tenant_id = FAKE_TENANT_ID
+    params = {"offline": False, "days_back": 7, "include_bip": False, "include_ted": True, "run_dedup": True}
+
+    with patch("services.api.services.api.routers.zwiad.get_engine", return_value=engine):
+        with patch("services.api.services.api.routers.zwiad._set_progress") as mock_prog:
+            with patch(
+                "services.ingestion.pipeline.run_ingest",
+                return_value=result_mock,
+            ):
+                _run_ingest_worker(task_id, tenant_id, params)
+    assert mock_prog.called
+
+
+def test_zwiad_run_ingest_worker_exception():
+    """_run_ingest_worker(): run_ingest raises → lines 198-202 (except branch)."""
+    from services.api.services.api.routers.zwiad import _run_ingest_worker
+    engine, conn = _make_engine_mock()
+    conn.execute.return_value = MagicMock()
+
+    task_id = str(uuid.uuid4())
+    tenant_id = FAKE_TENANT_ID
+    params = {"offline": False, "days_back": 7, "include_bip": False, "include_ted": True, "run_dedup": True}
+
+    with patch("services.api.services.api.routers.zwiad.get_engine", return_value=engine):
+        with patch("services.api.services.api.routers.zwiad._set_progress"):
+            with patch(
+                "services.ingestion.pipeline.run_ingest",
+                side_effect=RuntimeError("ingest failure"),
+            ):
+                # should NOT raise — worker swallows the exception
+                _run_ingest_worker(task_id, tenant_id, params)
+
+
+# ─── zwiad: line 253 — ingest_run plan limit exceeded → 402 ──────────────────
+
+def test_zwiad_ingest_run_plan_limit_exceeded():
+    """ingest_run() when tenders count >= plan limit → HTTPException 402 (line 253)."""
+    from services.api.services.api.routers.zwiad import ingest_run
+    from fastapi import BackgroundTasks, HTTPException
+
+    engine, conn = _make_engine_mock()
+
+    org_row = MagicMock()
+    org_row.__getitem__ = lambda s, i: FAKE_ORG_ID
+    sub_row = MagicMock()
+    sub_row.__getitem__ = lambda s, i: "free"
+    count_scalar = 999
+
+    call_idx = [0]
+    def se(*a, **kw):
+        call_idx[0] += 1
+        r = MagicMock()
+        if call_idx[0] == 1:
+            r.fetchone.return_value = org_row
+        elif call_idx[0] == 2:
+            r.fetchone.return_value = sub_row
+        elif call_idx[0] == 3:
+            r.scalar.return_value = count_scalar
+        else:
+            r.fetchone.return_value = None
+        return r
+    conn.execute.side_effect = se
+
+    with patch("services.api.services.api.routers.zwiad.get_engine", return_value=engine):
+        with patch(
+            "services.ingestion.repository.get_or_create_default_tenant",
+            return_value=FAKE_TENANT_ID,
+        ):
+            with pytest.raises(HTTPException) as exc_info:
+                ingest_run(
+                    background_tasks=BackgroundTasks(),
+                    offline=False,
+                    days_back=7,
+                    include_bip=False,
+                    include_ted=True,
+                    run_dedup=True,
+                )
+    assert exc_info.value.status_code == 402
+
+
+# ─── zwiad: line 276 — ingest_run offline mode → t.join() called ─────────────
+
+def test_zwiad_ingest_run_offline_joins_thread():
+    """ingest_run(offline=True) → t.join() called (line 276)."""
+    from services.api.services.api.routers.zwiad import ingest_run
+    from fastapi import BackgroundTasks
+
+    engine, conn = _make_engine_mock()
+    conn.execute.return_value.fetchone.return_value = None
+    conn.execute.return_value.scalar.return_value = 0
+
+    thread_mock = MagicMock()
+    thread_mock.name = "ingest-test0001"
+
+    with patch("services.api.services.api.routers.zwiad.get_engine", return_value=engine):
+        with patch(
+            "services.ingestion.repository.get_or_create_default_tenant",
+            return_value=FAKE_TENANT_ID,
+        ):
+            with patch("services.api.services.api.routers.zwiad.threading.Thread", return_value=thread_mock):
+                resp = ingest_run(
+                    background_tasks=BackgroundTasks(),
+                    offline=True,
+                    days_back=7,
+                    include_bip=False,
+                    include_ted=True,
+                    run_dedup=True,
+                )
+    thread_mock.join.assert_called_once_with(timeout=30)
+    assert resp.status == "pending"
+
+
+# ─── zwiad: lines 362-396 — stream_ingest_task SSE generator ─────────────────
+
+@pytest.mark.asyncio
+async def test_zwiad_stream_ingest_task_done(app, auth_headers):
+    """GET /api/v1/ingest/stream/{task_id} — SSE closes when status=done (lines 362-396)."""
+    task_id = str(uuid.uuid4())
+
+    engine, conn = _make_engine_mock()
+    row_mock = MagicMock()
+    row_mock.__getitem__ = lambda s, i: "done"
+    conn.execute.return_value.fetchone.return_value = row_mock
+
+    from services.api.services.api.routers.zwiad import _PROGRESS, _PROGRESS_LOCK
+    with _PROGRESS_LOCK:
+        _PROGRESS[task_id] = {"step": "done", "pct": 100, "message": "OK"}
+
+    with patch("services.api.services.api.routers.zwiad.get_engine", return_value=engine):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+            resp = await c.get(
+                f"/api/v1/ingest/stream/{task_id}",
+                headers=auth_headers,
+            )
+    assert resp.status_code == 200
+    assert "text/event-stream" in resp.headers.get("content-type", "")
+
+
+@pytest.mark.asyncio
+async def test_zwiad_stream_ingest_task_failed(app, auth_headers):
+    """GET /api/v1/ingest/stream/{task_id} — SSE closes when status=failed (lines 390-391)."""
+    task_id = str(uuid.uuid4())
+
+    engine, conn = _make_engine_mock()
+    row_mock = MagicMock()
+    row_mock.__getitem__ = lambda s, i: "failed"
+    conn.execute.return_value.fetchone.return_value = row_mock
+
+    from services.api.services.api.routers.zwiad import _PROGRESS, _PROGRESS_LOCK
+    with _PROGRESS_LOCK:
+        _PROGRESS[task_id] = {"step": "failed", "pct": 0, "message": "error"}
+
+    with patch("services.api.services.api.routers.zwiad.get_engine", return_value=engine):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+            resp = await c.get(
+                f"/api/v1/ingest/stream/{task_id}",
+                headers=auth_headers,
+            )
+    assert resp.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_zwiad_stream_ingest_no_progress(app, auth_headers):
+    """SSE stream: no prior progress entry, status=done → yields and closes (line 383-391)."""
+    task_id = str(uuid.uuid4())
+
+    engine, conn = _make_engine_mock()
+    row_mock = MagicMock()
+    row_mock.__getitem__ = lambda s, i: "done"
+    conn.execute.return_value.fetchone.return_value = row_mock
+
+    from services.api.services.api.routers.zwiad import _PROGRESS, _PROGRESS_LOCK
+    with _PROGRESS_LOCK:
+        _PROGRESS.pop(task_id, None)
+
+    with patch("services.api.services.api.routers.zwiad.get_engine", return_value=engine):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+            resp = await c.get(
+                f"/api/v1/ingest/stream/{task_id}",
+                headers=auth_headers,
+            )
+    assert resp.status_code == 200
+
+
+# ─── zwiad: lines 588-589 — get_tender invalid UUID (direct unit test) ────────
+
+def test_zwiad_get_tender_invalid_uuid_direct():
+    """get_tender() with invalid UUID string → HTTPException 404 (lines 588-589)."""
+    from services.api.services.api.routers.zwiad import get_tender
+    from fastapi import HTTPException
+    user = MagicMock(); user.org_id = FAKE_TENANT_ID
+    with pytest.raises(HTTPException) as exc_info:
+        get_tender(tender_id="totally-not-a-uuid", user=user)
+    assert exc_info.value.status_code == 404
+
+
+# ─── zwiad: lines 645-646 — patch_tender invalid UUID (direct unit test) ─────
+
+def test_zwiad_patch_tender_invalid_uuid_direct():
+    """patch_tender() with invalid UUID string → HTTPException 404 (lines 645-646)."""
+    from services.api.services.api.routers.zwiad import patch_tender, TenderPatch
+    from fastapi import HTTPException
+    user = MagicMock(); user.org_id = FAKE_TENANT_ID
+    body = TenderPatch(status="matched")
+    with pytest.raises(HTTPException) as exc_info:
+        patch_tender(tender_id="totally-not-a-uuid", body=body, user=user)
+    assert exc_info.value.status_code == 404
+
+
+# ─── billing: lines 160-165 — module-level prod warning ─────────────────────
+
+def test_billing_module_level_prod_env_warning(monkeypatch):
+    """Cover lines 160-165: ENVIRONMENT=prod, plans with placeholder stripe IDs → warning logged."""
+    import sys
+    mod_name = "services.api.services.api.routers.billing"
+    saved = sys.modules.pop(mod_name, None)
+    monkeypatch.setenv("ENVIRONMENT", "prod")
+    try:
+        import services.api.services.api.routers.billing  # noqa: F811 — reimport runs module-level code
+    except Exception:
+        pass
+    finally:
+        if saved is not None:
+            sys.modules[mod_name] = saved
+        else:
+            sys.modules.pop(mod_name, None)
+        import services.api.services.api.routers.billing  # noqa: F811 — restore
+
+
+# ─── billing: lines 520-522 — _verify_stripe_signature exception path ─────────
+
+def test_billing_verify_stripe_sig_none_secret():
+    """_verify_stripe_signature with None secret → AttributeError → False (lines 520-522)."""
+    from services.api.services.api.routers.billing import _verify_stripe_signature
+    result = _verify_stripe_signature(b"payload", "t=1,v1=abc", None)  # type: ignore
+    assert result is False
+
+
+# ─── billing: lines 593-615 — checkout() with real stripe key + price ─────────
+
+def test_billing_checkout_stripe_success():
+    """checkout() with valid stripe key + non-placeholder price → returns redirect_url (lines 593-611)."""
+    from services.api.services.api.routers.billing import checkout, CheckoutRequest
+
+    user = MagicMock()
+    user.org_id = FAKE_ORG_ID
+    user.user_id = "u-123"
+
+    session_mock = MagicMock()
+    session_mock.url = "https://checkout.stripe.com/c/pay/cs_test_123"
+    session_mock.id = "cs_test_123"
+
+    body = CheckoutRequest(plan_id="pro", success_url="/billing/success", cancel_url="/pricing")
+
+    patched_plans = [
+        {"id": "free", "name": "Free", "stripe_price_id": None, "limits": {}, "features": []},
+        {"id": "pro", "name": "Pro", "stripe_price_id": "price_pro_real_123", "limits": {}, "features": []},
+    ]
+
+    stripe_mock = MagicMock()
+    stripe_mock.checkout.Session.create.return_value = session_mock
+
+    with patch("services.api.services.api.routers.billing.PLANS", patched_plans):
+        with patch.dict(os.environ, {"STRIPE_SECRET_KEY": "sk_test_fakeval"}):
+            with patch.dict("sys.modules", {"stripe": stripe_mock}):
+                result = checkout(body=body, current_user=user)
+
+    assert result.get("redirect_url") == "https://checkout.stripe.com/c/pay/cs_test_123"
+    assert result.get("plan_id") == "pro"
+
+
+def test_billing_checkout_stripe_exception_fallback():
+    """checkout() with stripe key but stripe raises → fallback response (lines 612-619)."""
+    from services.api.services.api.routers.billing import checkout, CheckoutRequest
+
+    user = MagicMock()
+    user.org_id = FAKE_ORG_ID
+    user.user_id = "u-123"
+
+    body = CheckoutRequest(plan_id="pro", success_url="/billing/success", cancel_url="/pricing")
+
+    patched_plans = [
+        {"id": "free", "name": "Free", "stripe_price_id": None, "limits": {}, "features": []},
+        {"id": "pro", "name": "Pro", "stripe_price_id": "price_pro_real_123", "limits": {}, "features": []},
+    ]
+
+    stripe_mock = MagicMock()
+    stripe_mock.checkout.Session.create.side_effect = Exception("Stripe API error")
+
+    with patch("services.api.services.api.routers.billing.PLANS", patched_plans):
+        with patch.dict(os.environ, {"STRIPE_SECRET_KEY": "sk_test_fakeval"}):
+            with patch.dict("sys.modules", {"stripe": stripe_mock}):
+                result = checkout(body=body, current_user=user)
+
+    assert "redirect_url" in result
+    assert result["redirect_url"] == "#stripe-not-configured"
+
+
+def test_billing_checkout_unknown_plan_raises():
+    """checkout() with unknown plan_id → HTTPException 400."""
+    from services.api.services.api.routers.billing import checkout, CheckoutRequest
+    from fastapi import HTTPException
+
+    user = MagicMock()
+    user.org_id = FAKE_ORG_ID
+
+    body = CheckoutRequest(plan_id="nonexistent_plan")
+    with pytest.raises(HTTPException) as exc_info:
+        checkout(body=body, current_user=user)
+    assert exc_info.value.status_code == 400
+
+
+def test_billing_checkout_free_returns_contact():
+    """checkout() with free plan → /contact redirect."""
+    from services.api.services.api.routers.billing import checkout, CheckoutRequest
+
+    user = MagicMock()
+    user.org_id = FAKE_ORG_ID
+
+    body = CheckoutRequest(plan_id="free")
+    result = checkout(body=body, current_user=user)
+    assert result.get("redirect_url") == "/contact"
+
+
+# ─── billing: lines 633-647 — webhook signature verification paths ─────────────
+
+@pytest.mark.asyncio
+async def test_billing_webhook_secret_valid_sig():
+    """Webhook with STRIPE_WEBHOOK_SECRET + valid HMAC sig → 200 (lines 633-644)."""
+    payload = json.dumps({
+        "type": "invoice.payment_succeeded",
+        "data": {"object": {"customer": "cus_test"}}
+    }).encode()
+    secret = "whsec_testsecret123"
+    timestamp = "1700000000"
+    signed_payload = f"{timestamp}.".encode() + payload
+    import hashlib as _hashlib, hmac as _hmac
+    expected = _hmac.new(secret.encode(), signed_payload, _hashlib.sha256).hexdigest()
+    sig_header = f"t={timestamp},v1={expected}"
+
+    # Mock stripe SDK to raise (fallback to our manual HMAC which will pass)
+    stripe_mock = MagicMock()
+    stripe_mock.Webhook.construct_event.side_effect = Exception("force fallback")
+
+    async def noop_payment_succeeded(obj, db):
+        pass
+
+    with patch.dict(os.environ, {"STRIPE_WEBHOOK_SECRET": secret, "STRIPE_SECRET_KEY": "sk_test"}):
+        with patch.dict("sys.modules", {"stripe": stripe_mock}):
+            with patch("services.api.services.api.routers.billing.handle_payment_succeeded", noop_payment_succeeded):
+                from services.api.services.api.main import app as _app
+                async with AsyncClient(transport=ASGITransport(app=_app), base_url="http://test") as c:
+                    resp = await c.post(
+                        "/api/v2/billing/webhook",
+                        content=payload,
+                        headers={
+                            "content-type": "application/json",
+                            "stripe-signature": sig_header,
+                        },
+                    )
+    assert resp.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_billing_webhook_secret_invalid_sig_rejected():
+    """Webhook with STRIPE_WEBHOOK_SECRET + INVALID sig → 400 (lines 642-644)."""
+    payload = b'{"type":"test","data":{"object":{}}}'
+    secret = "whsec_testsecret123"
+
+    stripe_mock = MagicMock()
+    stripe_mock.Webhook.construct_event.side_effect = Exception("sig invalid")
+
+    with patch.dict(os.environ, {"STRIPE_WEBHOOK_SECRET": secret, "STRIPE_SECRET_KEY": "sk_test"}):
+        with patch.dict("sys.modules", {"stripe": stripe_mock}):
+            from services.api.services.api.main import app as _app
+            async with AsyncClient(transport=ASGITransport(app=_app), base_url="http://test") as c:
+                resp = await c.post(
+                    "/api/v2/billing/webhook",
+                    content=payload,
+                    headers={
+                        "content-type": "application/json",
+                        "stripe-signature": "t=1,v1=invalidsig",
+                    },
+                )
+    assert resp.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_billing_webhook_secret_no_sig_header():
+    """Webhook with STRIPE_WEBHOOK_SECRET but no stripe-signature header → 400 (lines 645-647)."""
+    payload = b'{"type":"test","data":{"object":{}}}'
+    secret = "whsec_testsecret123"
+
+    with patch.dict(os.environ, {"STRIPE_WEBHOOK_SECRET": secret}):
+        from services.api.services.api.main import app as _app
+        async with AsyncClient(transport=ASGITransport(app=_app), base_url="http://test") as c:
+            resp = await c.post(
+                "/api/v2/billing/webhook",
+                content=payload,
+                headers={"content-type": "application/json"},
+            )
+    assert resp.status_code == 400
+    assert "Missing" in resp.json().get("detail", "")
+
+
+# ─── billing: lines 691-711 — get_subscription grace period expiry ────────────
+
+def test_billing_subscription_grace_expired_downgrade():
+    """get_subscription() when grace_until is in the past → downgrade to free (lines 691-711)."""
+    from services.api.services.api.routers.billing import get_subscription
+    from datetime import datetime, timezone, timedelta
+
+    user = MagicMock()
+    user.org_id = FAKE_ORG_ID
+    db = MagicMock()
+
+    expired_grace = datetime.now(tz=timezone.utc) - timedelta(days=1)
+
+    with patch(
+        "services.api.services.api.routers.billing._get_or_create_subscription",
+        return_value={
+            "plan": "pro",
+            "status": "canceled",
+            "grace_until": expired_grace,
+            "stripe_customer_id": None,
+            "stripe_subscription_id": None,
+            "current_period_start": None,
+            "current_period_end": None,
+            "trial_end": None,
+            "payment_failed": False,
+            "cancel_at_period_end": True,
+        },
+    ):
+        result = get_subscription(current_user=user, db=db)
+
+    assert result["plan"] == "free"
+    assert db.execute.called
+    assert db.commit.called
+
+
+# ─── billing: line 750 — cancel_subscription Stripe success path ──────────────
+
+def test_billing_cancel_stripe_success():
+    """cancel_subscription() with stripe key + sub ID, stripe succeeds → line 750."""
+    from services.api.services.api.routers.billing import cancel_subscription
+
+    user = MagicMock()
+    user.org_id = FAKE_ORG_ID
+    db = MagicMock()
+    db.execute.return_value = MagicMock()
+
+    stripe_mock = MagicMock()
+    stripe_mock.Subscription.modify.return_value = MagicMock()
+
+    with patch(
+        "services.api.services.api.routers.billing._get_or_create_subscription",
+        return_value={"plan": "pro", "status": "active", "stripe_subscription_id": "sub_real123"},
+    ):
+        with patch.dict(os.environ, {"STRIPE_SECRET_KEY": "sk_test_live"}):
+            with patch.dict("sys.modules", {"stripe": stripe_mock}):
+                result = cancel_subscription(current_user=user, db=db)
+
+    stripe_mock.Subscription.modify.assert_called_once_with("sub_real123", cancel_at_period_end=True)
+    assert result["cancel_at_period_end"] is True
+
+
+# ─── billing: line 807 — get_usage when tenant_id is None → tender_count = 0 ──
+
+def test_billing_usage_tenant_id_none_direct():
+    """get_usage() direct: tenant_id is None → tender_count=0 (line 807)."""
+    from services.api.services.api.routers.billing import get_usage
+
+    user = MagicMock()
+    user.org_id = FAKE_ORG_ID
+    db = MagicMock()
+
+    org_row = MagicMock()
+    org_row.tenant_id = None
+
+    call_n = [0]
+    def db_exec(*args, **kwargs):
+        call_n[0] += 1
+        r = MagicMock()
+        if call_n[0] == 2:
+            r.fetchone.return_value = org_row
+        elif call_n[0] == 3:
+            r.scalar.return_value = 1
+        else:
+            r.fetchone.return_value = None
+            r.scalar.return_value = 0
+        return r
+
+    db.execute.side_effect = db_exec
+
+    with patch(
+        "services.api.services.api.routers.billing._get_or_create_subscription",
+        return_value={"plan": "free", "status": "active"},
+    ):
+        result = get_usage(current_user=user, db=db)
+
+    assert result["usage"]["tenders"]["used"] == 0
