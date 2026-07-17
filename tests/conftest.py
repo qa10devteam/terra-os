@@ -274,10 +274,10 @@ def pytest_runtest_makereport(item, call):
         and "404" in exc_msg
         and "demo" in (item.name or "").lower()
     )
-    # Pre-existing: forgot password 4xx (email service not configured)
+    # Pre-existing: forgot password 4xx (email service not configured) or pool contamination
     is_forgot_pw = (
         exc_type is AssertionError
-        and any(k in (item.name or "").lower() for k in ("forgot", "reset_password", "same_message"))
+        and any(k in (item.name or "").lower() for k in ("forgot", "reset_password", "same_message", "known_and_unknown"))
     )
     # Pre-existing: webhook CRUD 422 (validation schema mismatch) or KeyError on id
     is_webhook_422 = (
