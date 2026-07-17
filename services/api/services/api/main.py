@@ -328,9 +328,7 @@ try:
 except ImportError:  # pragma: no cover
     pass  # prometheus_fastapi_instrumentator not installed — skip
 
-@app.get("/health", include_in_schema=False)
-def health_root():
-    return {"status": "ok"}
+# NOTE: /health is now served by health.router (F3 production health endpoint)
 
 # Attach slowapi limiter state to app
 app.state.limiter = limiter

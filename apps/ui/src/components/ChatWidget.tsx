@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { MessageCircle, X, Send, Brain, User, RefreshCw } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 
+// ── Types ─────────────────────────────────────────────────────────────────────
+
 interface Message {
   id: string;
   role: 'user' | 'assistant';
@@ -12,6 +14,65 @@ interface Message {
   streaming?: boolean;
   isError?: boolean;
 }
+
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const STREAM_TIMEOUT_MS = 45_000;
+const CHAT_HISTORY_KEY = 'terra_chat_history';
+const MAX_HISTORY = 10;
+
+// ── Quick-reply suggestions by page context ───────────────────────────────────
+
+function getQuickReplies(pathname: string): string[] {
+  if (pathname.startsWith('/zwiad')) {
+    return ['Pokaż top przetargi', 'Filtruj po CPV', 'Analiza deadline'];
+  }
+  if (pathname.startsWith('/kosztorys')) {
+    return ['Oceń kosztorys', 'Szukaj w KNR', 'Porównaj z ICB'];
+  }
+  if (pathname.startsWith('/dashboard')) {
+    return ['Podsumuj dzień', 'Top 5 przetargów', 'Alerty'];
+  }
+  return ['Jak zacząć?', 'Co to jest CPV?', 'Pomoc'];
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function loadHistory(): Message[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(CHAT_HISTORY_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw) as Message[];
+  } catch {
+    return [];
+  }
+}
+
+function saveHistory(messages: Message[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    // Keep only non-streaming, non-error messages (stable state), last MAX_HISTORY
+    const stable = messages
+      .filter(m => !m.streaming)
+      .slice(-MAX_HISTORY);
+    localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(stable));
+  } catch { /* ignore quota errors */ }
+}
+
+function getToken(accessToken: string | null): string | null {
+  if (accessToken) return accessToken;
+  if (typeof window === 'undefined') return null;
+  // Fallback: try several localStorage key names used in the project
+  return (
+    localStorage.getItem('terra_token') ||
+    localStorage.getItem('token') ||
+    localStorage.getItem('auth_token') ||
+    null
+  );
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
 
 function TypingDots() {
   return (
@@ -27,60 +88,122 @@ function TypingDots() {
   );
 }
 
-const STREAM_TIMEOUT_MS = 45_000; // 45 s — poniżej limitu Cloudflare (~60 s)
+interface QuickRepliesProps {
+  suggestions: string[];
+  onSelect: (text: string) => void;
+  disabled: boolean;
+}
+
+function QuickReplies({ suggestions, onSelect, disabled }: QuickRepliesProps) {
+  return (
+    <div className="flex flex-wrap gap-1.5 px-3 pb-2">
+      {suggestions.map(s => (
+        <button
+          key={s}
+          onClick={() => onSelect(s)}
+          disabled={disabled}
+          className="px-2.5 py-1 rounded-lg bg-earth-800/70 border border-earth-700/50 text-earth-300 text-xs
+                     hover:bg-accent-primary/15 hover:border-accent-primary/40 hover:text-earth-100
+                     transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {s}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
+
+const WELCOME_MSG: Message = {
+  id: 'welcome',
+  role: 'assistant',
+  text: 'Cześć! Jestem asystentem YU-NA. Możesz zapytać mnie o przetargi, kosztorysy, analizę ryzyka lub jak korzystać z systemu.',
+};
 
 export function ChatWidget() {
   const { accessToken } = useStore();
+
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'welcome',
-      role: 'assistant',
-      text: 'Cześć! Jestem asystentem YU-NA. Możesz zapytać mnie o przetargi, kosztorysy, analizę ryzyka lub jak korzystać z systemu.',
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const history = loadHistory();
+    return history.length > 0 ? history : [WELCOME_MSG];
+  });
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [pathname, setPathname] = useState('/');
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const lastUserTextRef = useRef<string>('');
-  // Keep a ref so sendMessage always reads the latest token without stale closure
   const accessTokenRef = useRef<string | null>(accessToken);
   useEffect(() => { accessTokenRef.current = accessToken; }, [accessToken]);
 
+  // Capture pathname client-side (window is only available in browser)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setPathname(window.location.pathname);
+    }
+  }, [open]); // re-read on open in case of SPA navigation
+
   // Cleanup on unmount — abort any open stream
   useEffect(() => {
-    return () => {
-      abortControllerRef.current?.abort();
-    };
+    return () => { abortControllerRef.current?.abort(); };
   }, []);
 
   useEffect(() => {
-    if (open) {
-      setTimeout(() => inputRef.current?.focus(), 200);
-    }
+    if (open) setTimeout(() => inputRef.current?.focus(), 200);
   }, [open]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Persist to localStorage whenever messages change (stable state only)
+  useEffect(() => {
+    saveHistory(messages);
+  }, [messages]);
+
+  // ── Session management ──────────────────────────────────────────────────────
+
+  const ensureSession = useCallback(async (pageContext: string): Promise<string> => {
+    if (sessionId) return sessionId;
+
+    const token = getToken(accessTokenRef.current);
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const res = await fetch('/api/v2/chat/sessions', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ page_context: pageContext }),
+    });
+
+    if (!res.ok) throw new Error(`Session creation failed: ${res.status}`);
+    const data = await res.json();
+    const sid: string = data.session_id;
+    setSessionId(sid);
+    return sid;
+  }, [sessionId]);
+
+  // ── Send message with SSE streaming ────────────────────────────────────────
+
   const sendMessage = useCallback(async (retryText?: string) => {
     const text = retryText ?? input.trim();
     if (!text || loading) return;
 
-    // Reset state
     if (!retryText) setInput('');
     setTimedOut(false);
     lastUserTextRef.current = text;
 
-    // Abort any previous in-flight request
     abortControllerRef.current?.abort();
     const controller = new AbortController();
     abortControllerRef.current = controller;
+
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname : pathname;
 
     const userMsg: Message = { id: Date.now().toString(), role: 'user', text };
     const assistantId = (Date.now() + 1).toString();
@@ -89,19 +212,27 @@ export function ChatWidget() {
     setMessages(prev => [...prev, userMsg, assistantMsg]);
     setLoading(true);
 
-    // Kill the stream after STREAM_TIMEOUT_MS — Cloudflare closes it anyway at ~60 s
     const timeoutId = setTimeout(() => controller.abort(), STREAM_TIMEOUT_MS);
 
     try {
-      // Build auth headers — inject Bearer token if available
+      const token = getToken(accessTokenRef.current);
       const authHeaders: Record<string, string> = {};
-      const token = accessTokenRef.current;
       if (token) authHeaders['Authorization'] = `Bearer ${token}`;
 
-      const res = await fetch('/api/v2/chat', {
+      // Ensure we have a session
+      const sid = await ensureSession(currentPath);
+
+      const res = await fetch(`/api/v2/chat/sessions/${sid}/messages`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeaders },
-        body: JSON.stringify({ message: text }),
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders,
+        },
+        body: JSON.stringify({
+          message: text,
+          page_context: currentPath,
+          stream: true,
+        }),
         signal: controller.signal,
       });
 
@@ -120,16 +251,24 @@ export function ChatWidget() {
         buffer = lines.pop() ?? '';
 
         for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              if (data.text) {
-                setMessages(prev => prev.map(m =>
-                  m.id === assistantId ? { ...m, text: m.text + data.text } : m
-                ));
-              }
-            } catch { /* ignore parse errors */ }
-          }
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const data = JSON.parse(line.slice(6));
+            // Backend sends {type: "token", content: "..."} or {type: "done"} or {type: "error"}
+            if (data.type === 'token' && data.content) {
+              setMessages(prev => prev.map(m =>
+                m.id === assistantId ? { ...m, text: m.text + data.content } : m
+              ));
+            } else if (data.type === 'error') {
+              setMessages(prev => prev.map(m =>
+                m.id === assistantId
+                  ? { ...m, text: data.message || 'Błąd AI — spróbuj ponownie.', streaming: false, isError: true }
+                  : m
+              ));
+              return;
+            }
+            // {type: "done"} — stream finished, handled below
+          } catch { /* ignore parse errors */ }
         }
       }
 
@@ -151,12 +290,14 @@ export function ChatWidget() {
       ));
 
       if (wasAborted) setTimedOut(true);
+      // Reset session on error so next message creates a fresh one
+      if (!wasAborted) setSessionId(null);
     } finally {
       clearTimeout(timeoutId);
       setLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, input]);
+  }, [loading, input, ensureSession, pathname]);
 
   const handleRetry = () => {
     const text = lastUserTextRef.current;
@@ -164,6 +305,15 @@ export function ChatWidget() {
     setTimedOut(false);
     sendMessage(text);
   };
+
+  const handleQuickReply = useCallback((text: string) => {
+    if (loading) return;
+    sendMessage(text);
+  }, [loading, sendMessage]);
+
+  const quickReplies = getQuickReplies(pathname);
+
+  // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
@@ -175,7 +325,7 @@ export function ChatWidget() {
             exit={{ opacity: 0, y: 20, scale: 0.92 }}
             transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
             className="glass-card w-[380px] flex flex-col rounded-2xl border border-earth-800/80 shadow-2xl overflow-hidden"
-            style={{ height: '520px', maxHeight: '80vh' }}
+            style={{ height: '540px', maxHeight: '80vh' }}
           >
             {/* Header */}
             <div className="flex items-center gap-3 px-4 py-3 border-b border-earth-800/60 bg-earth-900/70 shrink-0">
@@ -236,8 +386,17 @@ export function ChatWidget() {
               <div ref={bottomRef} />
             </div>
 
+            {/* Quick-reply suggestions (visible when not loading) */}
+            {!loading && (
+              <QuickReplies
+                suggestions={quickReplies}
+                onSelect={handleQuickReply}
+                disabled={loading}
+              />
+            )}
+
             {/* Input + retry bar */}
-            <div className="p-3 border-t border-earth-800/60 bg-earth-900/40 shrink-0 space-y-2">
+            <div className="px-3 pb-3 border-t border-earth-800/60 bg-earth-900/40 shrink-0 space-y-2 pt-2">
               {/* Retry button — shows when stream was cut */}
               {timedOut && (
                 <motion.button
@@ -281,6 +440,8 @@ export function ChatWidget() {
           </motion.div>
         ) : null}
       </AnimatePresence>
+
+      {/* Floating toggle button */}
       <motion.button
         onClick={() => setOpen(v => !v)}
         initial={{ scale: 0 }}
