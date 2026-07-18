@@ -281,9 +281,11 @@ class TestSearchW12:
         """Line 34: _fts_config returns 'polish' when pg has it."""
         from services.api.services.api.routers.search import _fts_config
 
+        _fts_config.cache_clear()
         with _mock_engine(scalar="polish") as (eng, conn):
             with patch("services.api.services.api.routers.search.get_engine", return_value=eng):
                 result = _fts_config()
+        _fts_config.cache_clear()  # restore
         assert result in ("polish", "simple")
 
     def test_save_search_as_alert(self):
