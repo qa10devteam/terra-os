@@ -446,9 +446,10 @@ class TestResourcesHTTP404:
         """Line 127: row is None → HTTPException(404)."""
         from services.api.services.api.routers.resources import get_subcontractor
         from fastapi import HTTPException
+        import terra_db.session as _tdb
 
         with _mock_engine(fetchone=None) as (eng, conn):
-            with patch("services.api.services.api.routers.resources.get_engine", return_value=eng):
+            with patch.object(_tdb, "get_engine", return_value=eng):
                 with pytest.raises(HTTPException) as exc:
                     get_subcontractor(sub_id=str(uuid.uuid4()), user=_user())
                 assert exc.value.status_code == 404
@@ -503,32 +504,27 @@ class TestSubmitWizardExactLine:
 # ─── v3/webhooks.py:34-35: internal IP raises ────────────────────────────────
 class TestWebhooksExact:
     def test_validate_url_localhost_raises(self):
-        """Lines 34-35: localhost → HTTPException(422)."""
-        import importlib
-        try:
-            wh = importlib.import_module("services.api.services.api.routers.v3.webhooks")
-            fn = getattr(wh, "_validate_url", None)
-            if fn is None:
-                pytest.skip("No _validate_url in v3.webhooks")
-            from fastapi import HTTPException
-            with pytest.raises(HTTPException):
-                fn("http://localhost/evil")
-        except ImportError:
-            pytest.skip("v3.webhooks not importable")
+        """Line 34: hostname in bad → HTTPException(422)."""
+        from services.api.services.api.routers.v3.webhooks import _validate_url
+        from fastapi import HTTPException
+        with pytest.raises(HTTPException) as exc:
+            _validate_url("http://localhost/evil")
+        assert exc.value.status_code == 422
 
     def test_validate_url_127_raises(self):
-        """Lines 34-35: 127.0.0.1 → HTTPException(422)."""
-        import importlib
-        try:
-            wh = importlib.import_module("services.api.services.api.routers.v3.webhooks")
-            fn = getattr(wh, "_validate_url", None)
-            if fn is None:
-                pytest.skip("No _validate_url")
-            from fastapi import HTTPException
-            with pytest.raises(HTTPException):
-                fn("http://127.0.0.1/hook")
-        except ImportError:
-            pytest.skip("v3.webhooks not importable")
+        """Line 35: raise HTTPException on 127.0.0.1."""
+        from services.api.services.api.routers.v3.webhooks import _validate_url
+        from fastapi import HTTPException
+        with pytest.raises(HTTPException) as exc:
+            _validate_url("http://127.0.0.1/hook")
+        assert exc.value.status_code == 422
+
+    def test_validate_url_192_168_raises(self):
+        """Lines 39-41: private network → HTTPException."""
+        from services.api.services.api.routers.v3.webhooks import _validate_url
+        from fastapi import HTTPException
+        with pytest.raises(HTTPException):
+            _validate_url("http://192.168.1.100/hook")
 
 
 # ─── zwiad.py:314-318: task found returns response ───────────────────────────
@@ -539,9 +535,9 @@ class TestZwiadExact:
         from fastapi import HTTPException
 
         # Find get_zwiad_task
-        fn = getattr(mod, "get_zwiad_task", None)
+        fn = getattr(mod, "get_ingest_task", None) or getattr(mod, "get_zwiad_task", None)
         if fn is None:
-            pytest.skip("No get_zwiad_task")
+            pytest.skip("No get_ingest_task/get_zwiad_task")
 
         task_id = str(uuid.uuid4())
         row = MagicMock()
@@ -567,9 +563,9 @@ class TestZwiadExact:
         import services.api.services.api.routers.zwiad as mod
         from fastapi import HTTPException
 
-        fn = getattr(mod, "get_zwiad_task", None)
+        fn = getattr(mod, "get_ingest_task", None) or getattr(mod, "get_zwiad_task", None)
         if fn is None:
-            pytest.skip("No get_zwiad_task")
+            pytest.skip("No get_ingest_task/get_zwiad_task")
 
         with _mock_engine(fetchone=None) as (eng, conn):
             with patch("services.api.services.api.routers.zwiad.get_engine", return_value=eng):
