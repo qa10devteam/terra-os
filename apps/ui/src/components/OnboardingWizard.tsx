@@ -224,7 +224,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-earth-950/95 backdrop-blur-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-950/95 backdrop-blur-md">
       <div className="w-full max-w-xl">
 
         {/* ── Karta główna ── */}
@@ -232,11 +232,11 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
           initial={{ opacity: 0, scale: 0.97, y: 16 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="bg-earth-900 border border-earth-700/50 rounded-2xl shadow-2xl overflow-hidden"
+          className="bg-ink-900 border border-ink-700/50 rounded-2xl shadow-2xl overflow-hidden"
         >
 
           {/* ── Pasek kroków ── */}
-          <div className="flex border-b border-earth-800/70">
+          <div className="flex border-b border-ink-800/70">
             {STEPS.map((s, i) => {
               const Icon = s.icon;
               const done = i < step;
@@ -246,18 +246,18 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
                   key={s.id}
                   className={`flex-1 flex flex-col items-center gap-1 py-3 px-2 transition-colors border-b-2 ${
                     active
-                      ? 'border-accent-primary bg-accent-primary/5'
+                      ? 'border-em bg-em/5'
                       : done
-                        ? 'border-accent-primary/30 bg-transparent'
+                        ? 'border-em/30 bg-transparent'
                         : 'border-transparent'
                   }`}
                 >
                   <div className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
                     done
-                      ? 'bg-accent-primary/20 text-accent-primary'
+                      ? 'bg-em/20 text-em'
                       : active
-                        ? 'bg-accent-primary text-earth-950'
-                        : 'bg-earth-800 text-earth-600'
+                        ? 'bg-em text-ink-950'
+                        : 'bg-ink-800 text-slate-600'
                   }`}>
                     {done
                       ? <CheckCircle2 className="w-3.5 h-3.5" />
@@ -265,7 +265,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
                     }
                   </div>
                   <span className={`text-[10px] font-medium hidden sm:block ${
-                    active ? 'text-earth-200' : done ? 'text-earth-500' : 'text-earth-700'
+                    active ? 'text-slate-200' : done ? 'text-slate-500' : 'text-slate-700'
                   }`}>
                     {s.title}
                   </span>
@@ -285,19 +285,19 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
               className="px-6 pt-5 pb-4"
             >
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-accent-primary/10 border border-accent-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <StepIcon className="w-5 h-5 text-accent-primary" />
+                <div className="w-10 h-10 rounded-xl bg-em/10 border border-em/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <StepIcon className="w-5 h-5 text-em" />
                 </div>
                 <div className="min-w-0">
-                  <h2 className="text-base font-bold text-earth-100 leading-tight">{currentStep.title}</h2>
-                  <p className="text-sm text-earth-500 mt-0.5 leading-relaxed">{currentStep.tagline}</p>
+                  <h2 className="text-base font-bold text-slate-100 leading-tight">{currentStep.title}</h2>
+                  <p className="text-sm text-slate-500 mt-0.5 leading-relaxed">{currentStep.tagline}</p>
                 </div>
               </div>
 
               {/* Obietnica wartości */}
-              <div className="mt-3 flex items-center gap-2 bg-earth-800/40 border border-earth-700/40 rounded-xl px-3 py-2">
-                <Zap className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
-                <span className="text-xs text-earth-400">{currentStep.value}</span>
+              <div className="mt-3 flex items-center gap-2 bg-ink-800/40 border border-ink-700/40 rounded-xl px-3 py-2">
+                <Zap className="w-3.5 h-3.5 text-warn flex-shrink-0" />
+                <span className="text-xs text-slate-400">{currentStep.value}</span>
               </div>
             </motion.div>
           </AnimatePresence>
@@ -317,7 +317,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
                 {step === 0 && (
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-xs font-semibold text-earth-400 mb-1.5 uppercase tracking-wide">
+                      <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">
                         Nazwa firmy
                       </label>
                       <input
@@ -328,21 +328,21 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
                         }}
                         placeholder="np. Kowalski Budownictwo Sp. z o.o."
                         autoFocus
-                        className={`w-full bg-earth-800/60 border rounded-xl px-4 py-2.5 text-sm text-earth-100 placeholder-earth-600 focus:outline-none focus:ring-1 transition-all ${
+                        className={`w-full bg-ink-800/60 border rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-ink-600 focus:outline-none focus:ring-1 transition-all ${
                           errors.name
                             ? 'border-red-500/60 focus:border-red-500/60 focus:ring-red-500/20'
-                            : 'border-earth-700/60 focus:border-accent-primary/60 focus:ring-accent-primary/20'
+                            : 'border-ink-700/60 focus:border-em/60 focus:ring-em/20'
                         }`}
                       />
                       {errors.name && (
-                        <p className="mt-1 flex items-center gap-1 text-xs text-red-400">
+                        <p className="mt-1 flex items-center gap-1 text-xs text-nogo">
                           <AlertCircle className="w-3 h-3" />{errors.name}
                         </p>
                       )}
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-earth-400 mb-1.5 uppercase tracking-wide">
-                        NIP <span className="font-normal text-earth-600 normal-case">(opcjonalny, do weryfikacji w GUS)</span>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">
+                        NIP <span className="font-normal text-slate-600 normal-case">(opcjonalny, do weryfikacji w GUS)</span>
                       </label>
                       <input
                         value={formData.nip}
@@ -351,14 +351,14 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
                           setErrors(er => ({ ...er, nip: '' }));
                         }}
                         placeholder="np. 123-456-78-90"
-                        className={`w-full bg-earth-800/60 border rounded-xl px-4 py-2.5 text-sm font-mono text-earth-100 placeholder-earth-600 focus:outline-none focus:ring-1 transition-all ${
+                        className={`w-full bg-ink-800/60 border rounded-xl px-4 py-2.5 text-sm font-mono text-slate-100 placeholder-ink-600 focus:outline-none focus:ring-1 transition-all ${
                           errors.nip
                             ? 'border-red-500/60 focus:border-red-500/60 focus:ring-red-500/20'
-                            : 'border-earth-700/60 focus:border-accent-primary/60 focus:ring-accent-primary/20'
+                            : 'border-ink-700/60 focus:border-em/60 focus:ring-em/20'
                         }`}
                       />
                       {errors.nip && (
-                        <p className="mt-1 flex items-center gap-1 text-xs text-red-400">
+                        <p className="mt-1 flex items-center gap-1 text-xs text-nogo">
                           <AlertCircle className="w-3 h-3" />{errors.nip}
                         </p>
                       )}
@@ -380,22 +380,22 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
                             onClick={() => toggleCpv(wt.code)}
                             className={`relative flex flex-col items-start gap-1 p-3 rounded-xl border text-left transition-all ${
                               selected
-                                ? 'border-accent-primary/60 bg-accent-primary/10 text-earth-100'
-                                : 'border-earth-700/40 bg-earth-800/30 text-earth-400 hover:border-earth-600 hover:text-earth-300'
+                                ? 'border-em/60 bg-em/10 text-slate-100'
+                                : 'border-ink-700/40 bg-ink-800/30 text-slate-400 hover:border-ink-600 hover:text-slate-300'
                             }`}
                           >
                             {selected && (
-                              <CheckCircle2 className="absolute top-2 right-2 w-3.5 h-3.5 text-accent-primary" />
+                              <CheckCircle2 className="absolute top-2 right-2 w-3.5 h-3.5 text-em" />
                             )}
-                            <Icon className={`w-4 h-4 ${selected ? 'text-accent-primary' : 'text-earth-600'}`} />
+                            <Icon className={`w-4 h-4 ${selected ? 'text-em' : 'text-slate-600'}`} />
                             <span className="text-xs font-semibold leading-tight">{wt.label}</span>
-                            <span className="text-[10px] text-earth-600 leading-tight">{wt.hint}</span>
+                            <span className="text-[10px] text-slate-600 leading-tight">{wt.hint}</span>
                           </button>
                         );
                       })}
                     </div>
                     {errors.cpv && (
-                      <p className="mt-2 flex items-center gap-1 text-xs text-red-400">
+                      <p className="mt-2 flex items-center gap-1 text-xs text-nogo">
                         <AlertCircle className="w-3 h-3" />{errors.cpv}
                       </p>
                     )}
@@ -415,8 +415,8 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
                             onClick={() => toggleRegion(v)}
                             className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
                               selected
-                                ? 'border-accent-primary/60 bg-accent-primary/15 text-accent-primary'
-                                : 'border-earth-700/40 bg-earth-800/40 text-earth-500 hover:border-earth-600 hover:text-earth-300'
+                                ? 'border-em/60 bg-em/15 text-em'
+                                : 'border-ink-700/40 bg-ink-800/40 text-slate-500 hover:border-ink-600 hover:text-slate-300'
                             }`}
                           >
                             {VOI_SHORT[v]}
@@ -424,7 +424,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
                         );
                       })}
                     </div>
-                    <p className="mt-3 text-xs text-earth-600">
+                    <p className="mt-3 text-xs text-slate-600">
                       {formData.regions.length === 0
                         ? 'Nie wybrano regionu — system pokaże przetargi z całej Polski.'
                         : `Wybrano ${formData.regions.length} ${formData.regions.length === 1 ? 'województwo' : formData.regions.length < 5 ? 'województwa' : 'województw'}.`
@@ -460,11 +460,11 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
                     </div>
 
                     {/* Info o czasie */}
-                    <div className="flex items-center gap-2 bg-earth-800/40 border border-earth-700/30 rounded-xl px-3 py-2.5">
-                      <Radar className="w-4 h-4 text-accent-primary flex-shrink-0" />
+                    <div className="flex items-center gap-2 bg-ink-800/40 border border-ink-700/30 rounded-xl px-3 py-2.5">
+                      <Radar className="w-4 h-4 text-em flex-shrink-0" />
                       <div>
-                        <p className="text-xs font-semibold text-earth-200">Pierwszy zwiad zajmuje ~30 sekund</p>
-                        <p className="text-[11px] text-earth-600">Pobieramy przetargi z BZP, TED i portali BIP</p>
+                        <p className="text-xs font-semibold text-slate-200">Pierwszy zwiad zajmuje ~30 sekund</p>
+                        <p className="text-[11px] text-slate-600">Pobieramy przetargi z BZP, TED i portali BIP</p>
                       </div>
                     </div>
                   </div>
@@ -475,11 +475,11 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
           </div>
 
           {/* ── Przyciski nawigacji ── */}
-          <div className="px-6 py-4 border-t border-earth-800/60 flex items-center justify-between">
+          <div className="px-6 py-4 border-t border-ink-800/60 flex items-center justify-between">
             {step > 0 ? (
               <button
                 onClick={goPrev}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm text-earth-500 hover:text-earth-300 transition-colors rounded-lg hover:bg-earth-800/50"
+                className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-500 hover:text-slate-300 transition-colors rounded-lg hover:bg-ink-800/50"
               >
                 <ChevronLeft className="w-4 h-4" />
                 Wstecz
@@ -487,7 +487,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
             ) : (
               <button
                 onClick={onComplete}
-                className="px-3 py-2 text-sm text-earth-700 hover:text-earth-500 transition-colors"
+                className="px-3 py-2 text-sm text-slate-700 hover:text-slate-500 transition-colors"
               >
                 Pomiń konfigurację
               </button>
@@ -496,7 +496,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
             {step < STEPS.length - 1 ? (
               <button
                 onClick={goNext}
-                className="flex items-center gap-2 px-5 py-2.5 bg-accent-primary text-earth-950 rounded-xl text-sm font-bold hover:bg-emerald-400 active:scale-[0.98] transition-all"
+                className="flex items-center gap-2 px-5 py-2.5 bg-em text-ink-950 rounded-xl text-sm font-bold hover:bg-em active:scale-[0.98] transition-all"
               >
                 Dalej
                 <ChevronRight className="w-4 h-4" />
@@ -505,7 +505,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
               <button
                 onClick={handleStart}
                 disabled={loading}
-                className="flex items-center gap-2 px-5 py-2.5 bg-accent-primary text-earth-950 rounded-xl text-sm font-bold hover:bg-emerald-400 active:scale-[0.98] transition-all disabled:opacity-60 disabled:pointer-events-none"
+                className="flex items-center gap-2 px-5 py-2.5 bg-em text-ink-950 rounded-xl text-sm font-bold hover:bg-em active:scale-[0.98] transition-all disabled:opacity-60 disabled:pointer-events-none"
               >
                 {loading ? (
                   <>
@@ -525,7 +525,7 @@ export function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
         </motion.div>
 
         {/* ── Przypis ── */}
-        <p className="text-center text-[11px] text-earth-700 mt-3">
+        <p className="text-center text-[11px] text-slate-700 mt-3">
           Dane konfiguracyjne mozna zmienić w dowolnym momencie w Ustawieniach.
         </p>
 
@@ -548,11 +548,11 @@ function SummaryRow({
   value: string;
 }) {
   return (
-    <div className="flex items-start gap-3 bg-earth-800/30 rounded-xl px-3 py-2.5 border border-earth-700/30">
-      <Icon className="w-4 h-4 text-earth-500 flex-shrink-0 mt-0.5" />
+    <div className="flex items-start gap-3 bg-ink-800/30 rounded-xl px-3 py-2.5 border border-ink-700/30">
+      <Icon className="w-4 h-4 text-slate-500 flex-shrink-0 mt-0.5" />
       <div className="min-w-0">
-        <p className="text-[10px] uppercase tracking-wide text-earth-600 font-semibold">{label}</p>
-        <p className="text-xs text-earth-200 mt-0.5 leading-snug truncate">{value}</p>
+        <p className="text-[10px] uppercase tracking-wide text-slate-600 font-semibold">{label}</p>
+        <p className="text-xs text-slate-200 mt-0.5 leading-snug truncate">{value}</p>
       </div>
     </div>
   );

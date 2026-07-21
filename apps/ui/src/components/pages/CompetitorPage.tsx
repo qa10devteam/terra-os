@@ -37,25 +37,25 @@ function IntelPanel({ nip, onClose }: { nip: string; onClose: () => void }) {
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: '100%', opacity: 0 }}
       transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-      className="fixed right-0 top-0 h-full w-full max-w-lg bg-earth-950 border-l border-earth-700 z-50 overflow-y-auto shadow-2xl"
+      className="fixed right-0 top-0 h-full w-full max-w-lg bg-ink-950 border-l border-ink-700 z-50 overflow-y-auto shadow-2xl"
     >
       {/* Header */}
-      <div className="sticky top-0 bg-earth-950/95 backdrop-blur border-b border-earth-800 px-6 py-4 flex items-center justify-between">
+      <div className="sticky top-0 bg-ink-950/95 backdrop-blur border-b border-ink-800 px-6 py-4 flex items-center justify-between">
         <div>
-          <div className="text-xs text-earth-500 uppercase tracking-widest mb-0.5">Profil konkurenta</div>
-          <div className="font-bold text-earth-50 truncate max-w-[300px]">
-            {loading ? <span className="animate-pulse bg-earth-700 rounded h-5 w-48 block" /> : (data?.name || nip)}
+          <div className="text-xs text-slate-500 uppercase tracking-widest mb-0.5">Profil konkurenta</div>
+          <div className="font-bold text-ink-950/30 truncate max-w-[300px]">
+            {loading ? <span className="animate-pulse bg-ink-700 rounded h-5 w-48 block" /> : (data?.name || nip)}
           </div>
         </div>
-        <button onClick={onClose} className="p-2 hover:bg-earth-800 rounded-lg transition-colors">
-          <X size={18} className="text-earth-400" />
+        <button onClick={onClose} className="p-2 hover:bg-ink-800 rounded-lg transition-colors">
+          <X size={18} className="text-slate-400" />
         </button>
       </div>
 
       {loading && (
         <div className="p-6 space-y-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-16 animate-pulse bg-earth-800 rounded-xl" />
+            <div key={i} className="h-16 animate-pulse bg-ink-800 rounded-xl" />
           ))}
         </div>
       )}
@@ -70,26 +70,26 @@ function IntelPanel({ nip, onClose }: { nip: string; onClose: () => void }) {
               { label: 'Win rate', value: `${((data.win_rate ?? 0) * 100).toFixed(0)}%`, color: '#3b82f6' },
               { label: 'Wartość', value: fmtMln((data.total_value ?? 0) / 1_000_000), color: '#f59e0b' },
             ].map(({ label, value, color }) => (
-              <div key={label} className="bg-earth-900 rounded-xl p-3 border border-earth-700 text-center">
-                <div className="text-xs text-earth-500 mb-1">{label}</div>
+              <div key={label} className="bg-ink-900 rounded-xl p-3 border border-ink-700 text-center">
+                <div className="text-xs text-slate-500 mb-1">{label}</div>
                 <div className="font-bold text-lg" style={{ color }}>{value}</div>
               </div>
             ))}
           </div>
 
           {/* Location */}
-          <div className="flex flex-wrap gap-3 text-sm text-earth-400">
+          <div className="flex flex-wrap gap-3 text-sm text-slate-400">
             <div className="flex items-center gap-1.5">
-              <MapPin size={14} className="text-earth-500" />
+              <MapPin size={14} className="text-slate-500" />
               {data.city || '—'}
             </div>
             {data.province && (
               <div className="flex items-center gap-1.5">
-                <Building2 size={14} className="text-earth-500" />
+                <Building2 size={14} className="text-slate-500" />
                 {PROVINCE_MAP[data.province] || data.province}
               </div>
             )}
-            <div className="flex items-center gap-1.5 font-mono text-xs text-earth-600">
+            <div className="flex items-center gap-1.5 font-mono text-xs text-slate-600">
               NIP: {data.nip}
             </div>
           </div>
@@ -97,7 +97,7 @@ function IntelPanel({ nip, onClose }: { nip: string; onClose: () => void }) {
           {/* CPV breakdown */}
           {cpvChart.length > 0 && (
             <div>
-              <h4 className="text-xs uppercase tracking-widest text-earth-500 mb-3">Specjalizacja CPV</h4>
+              <h4 className="text-xs uppercase tracking-widest text-slate-500 mb-3">Specjalizacja CPV</h4>
               <ResponsiveContainer width="100%" height={160}>
                 <BarChart data={cpvChart} margin={{ top: 0, right: 4, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
@@ -118,7 +118,7 @@ function IntelPanel({ nip, onClose }: { nip: string; onClose: () => void }) {
           {/* Recent wins */}
           {data.recent_wins.length > 0 && (
             <div>
-              <h4 className="text-xs uppercase tracking-widest text-earth-500 mb-3">
+              <h4 className="text-xs uppercase tracking-widest text-slate-500 mb-3">
                 Ostatnie wygrane ({data.recent_wins.length})
               </h4>
               <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
@@ -128,22 +128,22 @@ function IntelPanel({ nip, onClose }: { nip: string; onClose: () => void }) {
                     initial={{ opacity: 0, x: 8 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.04 }}
-                    className="p-3 bg-earth-900 rounded-lg border border-earth-800 hover:border-earth-700 transition-colors"
+                    className="p-3 bg-ink-900 rounded-lg border border-ink-800 hover:border-ink-700 transition-colors"
                   >
-                    <div className="text-sm text-earth-100 line-clamp-2">{win.title}</div>
+                    <div className="text-sm text-slate-100 line-clamp-2">{win.title}</div>
                     <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                      <span className="text-xs text-earth-500">{(win.win_date ?? '').slice(0, 10)}</span>
+                      <span className="text-xs text-slate-500">{(win.win_date ?? '').slice(0, 10)}</span>
                       {win.buyer_name && (
-                        <span className="text-xs text-earth-400 truncate max-w-[160px]">{win.buyer_name}</span>
+                        <span className="text-xs text-slate-400 truncate max-w-[160px]">{win.buyer_name}</span>
                       )}
                       {win.value != null && (
-                        <span className="text-xs text-emerald-400 font-mono ml-auto">
+                        <span className="text-xs text-em font-mono ml-auto">
                           {fmtMln(win.value / 1_000_000)}
                         </span>
                       )}
                     </div>
                     {win.cpv5 && (
-                      <span className="inline-block mt-1 text-xs font-mono bg-earth-800 text-earth-500 px-2 py-0.5 rounded">
+                      <span className="inline-block mt-1 text-xs font-mono bg-ink-800 text-slate-500 px-2 py-0.5 rounded">
                         CPV {win.cpv5.slice(0, 8)}
                       </span>
                     )}
@@ -157,8 +157,8 @@ function IntelPanel({ nip, onClose }: { nip: string; onClose: () => void }) {
       )}
 
       {!loading && !data && (
-        <div className="p-12 text-center text-earth-500">
-          <Target size={32} className="mx-auto mb-3 text-earth-700" />
+        <div className="p-12 text-center text-slate-500">
+          <Target size={32} className="mx-auto mb-3 text-slate-700" />
           <p className="text-sm">Brak danych dla NIP {nip}</p>
           <p className="text-xs mt-1">Firma mogła nie wygrywać przetargów w bazie</p>
         </div>
@@ -206,48 +206,48 @@ function AddCompetitorModal({ onClose, onAdd }: { onClose: () => void; onAdd: (n
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.95, y: 16 }}
         onClick={e => e.stopPropagation()}
-        className="bg-earth-900 border border-earth-800/50 rounded-token-xl w-full max-w-md p-6 shadow-token-lg"
+        className="bg-ink-900 border border-ink-800/50 rounded-2xl w-full max-w-md p-6 shadow-xl"
       >
-        <h3 className="text-base font-bold text-earth-50 mb-4">Dodaj do obserwowanych</h3>
+        <h3 className="text-base font-bold text-ink-950/30 mb-4">Dodaj do obserwowanych</h3>
 
         <div className="relative mb-3">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-earth-400" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             ref={inputRef}
             value={q}
             onChange={e => { setQ(e.target.value); setSelected(null); }}
             placeholder="Nazwa firmy lub NIP (10 cyfr)…"
-            className="w-full bg-earth-800 border border-earth-700/50 rounded-token pl-9 pr-4 py-2.5 text-sm text-earth-100 placeholder-earth-500 focus:outline-none focus:border-accent-primary/60 transition-colors"
+            className="w-full bg-ink-800 border border-ink-700/50 rounded-md pl-9 pr-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-em/60 transition-colors"
           />
-          {loading && <RefreshCw size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-earth-400 animate-spin" />}
+          {loading && <RefreshCw size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 animate-spin" />}
         </div>
 
         {/* Search results */}
         {results.length > 0 && !selected && (
-          <div className="mb-3 border border-earth-700 rounded-lg overflow-hidden">
+          <div className="mb-3 border border-ink-700 rounded-lg overflow-hidden">
             {results.map(r => (
               <button
                 key={r.nip}
                 onClick={() => { setSelected(r); setQ(r.name); }}
-                className="w-full flex items-center justify-between px-3 py-2 hover:bg-earth-800 text-left transition-colors border-b border-earth-800 last:border-0"
+                className="w-full flex items-center justify-between px-3 py-2 hover:bg-ink-800 text-left transition-colors border-b border-ink-800 last:border-0"
               >
                 <div>
-                  <div className="text-sm text-earth-100">{r.name}</div>
-                  <div className="text-xs text-earth-500 font-mono">{r.nip} {r.city && `· ${r.city}`}</div>
+                  <div className="text-sm text-slate-100">{r.name}</div>
+                  <div className="text-xs text-slate-500 font-mono">{r.nip} {r.city && `· ${r.city}`}</div>
                 </div>
-                <div className="text-xs text-earth-500">{r.wins} wyg.</div>
+                <div className="text-xs text-slate-500">{r.wins} wyg.</div>
               </button>
             ))}
           </div>
         )}
 
         {selected && (
-          <div className="mb-3 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-lg flex items-center justify-between">
+          <div className="mb-3 p-3 bg-em/10 border border-em-brd rounded-lg flex items-center justify-between">
             <div>
-              <div className="text-sm text-emerald-300">{selected.name}</div>
-              <div className="text-xs text-emerald-600 font-mono">{selected.nip}</div>
+              <div className="text-sm text-em">{selected.name}</div>
+              <div className="text-xs text-em font-mono">{selected.nip}</div>
             </div>
-            <button onClick={() => setSelected(null)} className="text-earth-500 hover:text-earth-300">
+            <button onClick={() => setSelected(null)} className="text-slate-500 hover:text-slate-300">
               <X size={14} />
             </button>
           </div>
@@ -258,7 +258,7 @@ function AddCompetitorModal({ onClose, onAdd }: { onClose: () => void; onAdd: (n
           onChange={e => setNotes(e.target.value)}
           placeholder="Notatka (opcjonalnie)…"
           rows={2}
-          className="w-full bg-earth-800 border border-earth-700/50 rounded-token px-3 py-2 text-sm text-earth-100 placeholder-earth-500 focus:outline-none focus:border-accent-primary/60 focus:ring-1 focus:ring-accent-primary/20 resize-none mb-4 transition-colors"
+          className="w-full bg-ink-800 border border-ink-700/50 rounded-md px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-em/60 focus:ring-1 focus:ring-em/20 resize-none mb-4 transition-colors"
         />
 
         <div className="flex gap-3">
@@ -293,41 +293,41 @@ function CompetitorCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -16 }}
-      className="bg-earth-900 border border-earth-800/50 rounded-token-xl p-4 hover:border-earth-700 transition-all group"
+      className="bg-ink-900 border border-ink-800/50 rounded-2xl p-4 hover:border-ink-700 transition-all group"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="font-semibold text-earth-100 truncate">
+            <span className="font-semibold text-slate-100 truncate">
               {c.competitor_name || c.competitor_nip}
             </span>
             {c.created_at && (
-              <span className="text-xs text-earth-600 shrink-0">
+              <span className="text-xs text-slate-600 shrink-0">
                 dodano {c.created_at.slice(0, 10)}
               </span>
             )}
           </div>
-          <div className="text-xs text-earth-500 font-mono mb-3">{c.competitor_nip}</div>
+          <div className="text-xs text-slate-500 font-mono mb-3">{c.competitor_nip}</div>
 
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <div className="text-xs text-earth-500 mb-0.5">Wygrane</div>
-              <div className="text-base font-bold text-earth-100">{c.total_wins ?? '—'}</div>
+              <div className="text-xs text-slate-500 mb-0.5">Wygrane</div>
+              <div className="text-base font-bold text-slate-100">{c.total_wins ?? '—'}</div>
             </div>
             <div>
-              <div className="text-xs text-earth-500 mb-0.5">Wartość</div>
-              <div className="text-base font-bold text-emerald-400">{fmtMln((c.total_value ?? 0) / 1_000_000)}</div>
+              <div className="text-xs text-slate-500 mb-0.5">Wartość</div>
+              <div className="text-base font-bold text-em">{fmtMln((c.total_value ?? 0) / 1_000_000)}</div>
             </div>
             <div>
-              <div className="text-xs text-earth-500 mb-0.5">Win rate</div>
+              <div className="text-xs text-slate-500 mb-0.5">Win rate</div>
               <div className="flex items-center gap-1.5">
-                <div className="h-1.5 flex-1 bg-earth-700 rounded-full overflow-hidden">
+                <div className="h-1.5 flex-1 bg-ink-700 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-blue-500 rounded-full"
                     style={{ width: `${Math.min(100, (c.win_rate ?? 0) * 100)}%` }}
                   />
                 </div>
-                <span className="text-xs text-earth-300 shrink-0">{((c.win_rate ?? 0) * 100).toFixed(0)}%</span>
+                <span className="text-xs text-slate-300 shrink-0">{((c.win_rate ?? 0) * 100).toFixed(0)}%</span>
               </div>
             </div>
           </div>
@@ -336,7 +336,7 @@ function CompetitorCard({
           {c.top_cpv && Object.keys(c.top_cpv).length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-3">
               {Object.entries(c.top_cpv).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([cpv, count]) => (
-                <span key={cpv} className="text-xs bg-earth-800 text-earth-400 px-2 py-0.5 rounded-full font-mono">
+                <span key={cpv} className="text-xs bg-ink-800 text-slate-400 px-2 py-0.5 rounded-full font-mono">
                   {cpv.slice(0, 5)} ({count})
                 </span>
               ))}
@@ -344,7 +344,7 @@ function CompetitorCard({
           )}
 
           {c.notes && (
-            <div className="mt-2 text-xs text-earth-500 italic line-clamp-1">{c.notes}</div>
+            <div className="mt-2 text-xs text-slate-500 italic line-clamp-1">{c.notes}</div>
           )}
         </div>
 
@@ -352,14 +352,14 @@ function CompetitorCard({
           <button
             onClick={() => onIntel(c.competitor_nip)}
             title="Profil intel"
-            className="p-2 rounded-lg hover:bg-earth-700 text-earth-400 hover:text-emerald-400 transition-colors"
+            className="p-2 rounded-lg hover:bg-ink-700 text-slate-400 hover:text-em transition-colors"
           >
             <Eye size={16} />
           </button>
           <button
             onClick={() => onDelete(c.id)}
             title="Usuń z obserwowanych"
-            className="p-2 rounded-lg hover:bg-red-500/10 text-earth-600 hover:text-red-400 transition-colors"
+            className="p-2 rounded-lg hover:bg-nogo/10 text-slate-600 hover:text-nogo transition-colors"
           >
             <Trash2 size={15} />
           </button>
@@ -422,8 +422,8 @@ export function CompetitorPage() {
                     <Icon size={18} style={{ color }} />
                   </div>
                   <div>
-                    <div className="text-xs text-earth-500">{label}</div>
-                    <div className="text-xl font-bold text-earth-50">{value}</div>
+                    <div className="text-xs text-slate-500">{label}</div>
+                    <div className="text-xl font-bold text-ink-950/30">{value}</div>
                   </div>
                 </div>
               ))}
@@ -433,7 +433,7 @@ export function CompetitorPage() {
           {/* ── Search ───────────────────────────────────────────────────── */}
           {data.length > 0 && (
             <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-earth-400" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 value={searchQ}
                 onChange={e => setSearchQ(e.target.value)}
@@ -454,11 +454,11 @@ export function CompetitorPage() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-20 border border-dashed border-earth-700 rounded-2xl"
+              className="text-center py-20 border border-dashed border-ink-700 rounded-2xl"
             >
-              <Target size={40} className="mx-auto mb-4 text-earth-700" />
-              <h3 className="text-base font-semibold text-earth-400 mb-2">Brak obserwowanych firm</h3>
-              <p className="text-sm text-earth-600 mb-6">Dodaj konkurentów, żeby śledzić ich aktywność przetargową</p>
+              <Target size={40} className="mx-auto mb-4 text-slate-700" />
+              <h3 className="text-base font-semibold text-slate-400 mb-2">Brak obserwowanych firm</h3>
+              <p className="text-sm text-slate-600 mb-6">Dodaj konkurentów, żeby śledzić ich aktywność przetargową</p>
               <button
                 onClick={() => setShowAdd(true)}
                 className="inline-flex items-center gap-2 px-5 py-2.5 btn-primary"
@@ -485,7 +485,7 @@ export function CompetitorPage() {
           )}
 
           {!loading && filtered.length === 0 && data.length > 0 && (
-            <div className="text-center py-8 text-earth-500 text-sm">
+            <div className="text-center py-8 text-slate-500 text-sm">
               Brak wyników dla &quot;{searchQ}&quot;
             </div>
           )}

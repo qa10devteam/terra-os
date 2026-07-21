@@ -117,7 +117,7 @@ export default function WebhooksPage() {
       {loading && (
         <div className="space-y-3">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-24 rounded-token-lg bg-earth-900/50 animate-shimmer" />
+            <div key={i} className="h-24 rounded-xl bg-ink-900/50 animate-shimmer" />
           ))}
         </div>
       )}
@@ -125,8 +125,8 @@ export default function WebhooksPage() {
       {/* Create Modal */}
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-md card p-6 shadow-token-lg">
-            <h3 className="mb-4 text-lg font-semibold text-earth-100">Utwórz webhook</h3>
+          <div className="w-full max-w-md card p-6 shadow-xl">
+            <h3 className="mb-4 text-lg font-semibold text-slate-100">Utwórz webhook</h3>
             <div className="space-y-3">
               <input
                 placeholder="Nazwa webhooka"
@@ -141,16 +141,16 @@ export default function WebhooksPage() {
                 className="input-base"
               />
               <div>
-                <p className="mb-2 text-xs text-earth-400 label-base">Subskrybowane eventy</p>
+                <p className="mb-2 text-xs text-slate-400 label-base">Subskrybowane eventy</p>
                 <div className="flex flex-wrap gap-2">
                   {EVENT_OPTIONS.map((event) => (
                     <button
                       key={event}
                       onClick={() => toggleEvent(event)}
-                      className={`rounded-token px-2.5 py-1 text-xs transition-colors font-mono ${
+                      className={`rounded-md px-2.5 py-1 text-xs transition-colors font-mono ${
                         form.events.includes(event)
-                          ? "bg-accent-primary text-earth-950"
-                          : "bg-earth-800/50 text-earth-400 hover:bg-earth-700/50 border border-earth-700/40"
+                          ? "bg-em text-ink-950"
+                          : "bg-ink-800/50 text-slate-400 hover:bg-ink-700/50 border border-ink-700/40"
                       }`}
                     >
                       {event}
@@ -176,9 +176,9 @@ export default function WebhooksPage() {
       {/* Webhooks List */}
       {!loading && webhooks.length === 0 && (
         <GlassCard className="flex flex-col items-center justify-center py-16">
-          <Link2 size={48} className="text-earth-600 mb-3" />
-          <p className="text-sm text-earth-400">Brak skonfigurowanych webhooków</p>
-          <p className="text-xs text-earth-500">Połącz zewnętrzne serwisy, aby automatyzować workflow</p>
+          <Link2 size={48} className="text-slate-600 mb-3" />
+          <p className="text-sm text-slate-400">Brak skonfigurowanych webhooków</p>
+          <p className="text-xs text-slate-500">Połącz zewnętrzne serwisy, aby automatyzować workflow</p>
         </GlassCard>
       )}
 
@@ -189,23 +189,23 @@ export default function WebhooksPage() {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold text-earth-100">{webhook.name}</h3>
+                    <h3 className="text-sm font-semibold text-slate-100">{webhook.name}</h3>
                     {webhook.last_status && (
-                      <span className={`rounded-token px-1.5 py-0.5 text-xs ${
+                      <span className={`rounded-md px-1.5 py-0.5 text-xs ${
                         webhook.last_status < 300 ? "bg-success/10 text-success" : "bg-danger/10 text-danger"
                       }`}>
                         {webhook.last_status}
                       </span>
                     )}
                   </div>
-                  <p className="mt-1 font-mono text-xs text-earth-500">{webhook.url}</p>
+                  <p className="mt-1 font-mono text-xs text-slate-500">{webhook.url}</p>
                   <div className="mt-2 flex flex-wrap gap-1">
                     {webhook.events.map((ev) => (
-                      <span key={ev} className="rounded-token bg-earth-800/50 border border-earth-700/40 px-2 py-0.5 text-xs text-earth-400 font-mono">{ev}</span>
+                      <span key={ev} className="rounded-md bg-ink-800/50 border border-ink-700/40 px-2 py-0.5 text-xs text-slate-400 font-mono">{ev}</span>
                     ))}
                   </div>
                   {webhook.last_delivery && (
-                    <p className="mt-2 text-xs text-earth-500">
+                    <p className="mt-2 text-xs text-slate-500">
                       Ostatnie dostarczenie: {new Date(webhook.last_delivery).toLocaleString('pl-PL')}
                     </p>
                   )}
@@ -219,14 +219,14 @@ export default function WebhooksPage() {
                   </button>
                   <button
                     onClick={() => toggleWebhook(webhook.id, webhook.enabled)}
-                    className={`relative h-6 w-11 rounded-full transition-colors ${webhook.enabled ? "bg-accent-primary" : "bg-earth-700"}`}
+                    className={`relative h-6 w-11 rounded-full transition-colors ${webhook.enabled ? "bg-em" : "bg-ink-700"}`}
                     aria-label={webhook.enabled ? 'Wyłącz' : 'Włącz'}
                   >
-                    <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-earth-100 transition-transform ${webhook.enabled ? "left-[22px]" : "left-0.5"}`} />
+                    <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-slate-100 transition-transform ${webhook.enabled ? "left-[22px]" : "left-0.5"}`} />
                   </button>
                   <button
                     onClick={() => deleteWebhook(webhook.id)}
-                    className="rounded-token p-1 text-earth-500 hover:bg-danger/10 hover:text-danger transition-colors"
+                    className="rounded-md p-1 text-slate-500 hover:bg-danger/10 hover:text-danger transition-colors"
                     aria-label="Usuń webhook"
                   >
                     <Trash2 size={16} />

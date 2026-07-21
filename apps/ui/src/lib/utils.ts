@@ -24,7 +24,7 @@ export function fmtDate(value: string | null | undefined): string {
 /** Match score color class: ≥80 green, 60-79 yellow, <60 red */
 export function matchColor(score: number | null | undefined): string {
   if (score == null) return 'text-zinc-400';
-  if (score >= 80) return 'text-green-400';
-  if (score >= 60) return 'text-yellow-400';
-  return 'text-red-400';
+  if (score >= 80) return 'text-go';
+  if (score >= 60) return 'text-warn';
+  return 'text-nogo';
 }

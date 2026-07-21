@@ -54,7 +54,7 @@ export default function ICBPriceExplorer() {
       className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4"
     >
       <div className="flex items-center gap-2 mb-4">
-        <DollarSign className="w-4 h-4 text-emerald-400" />
+        <DollarSign className="w-4 h-4 text-em" />
         <h3 className="text-sm font-medium text-zinc-200">Eksplorator cen ICB</h3>
         <span className="text-xs text-zinc-500 ml-auto">784 685 pozycji</span>
       </div>
@@ -69,13 +69,13 @@ export default function ICBPriceExplorer() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && search()}
-            className="w-full pl-9 pr-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-emerald-600"
+            className="w-full pl-9 pr-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-em"
           />
         </div>
         <button
           onClick={() => search()}
           disabled={loading}
-          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 rounded-lg text-sm text-white font-medium transition-colors"
+          className="px-4 py-2 bg-em hover:bg-em disabled:opacity-50 rounded-lg text-sm text-white font-medium transition-colors"
         >
           {loading ? '...' : 'Szukaj'}
         </button>
@@ -102,13 +102,13 @@ export default function ICBPriceExplorer() {
             <div className="flex gap-2">
               <button
                 onClick={() => toggleSort('nazwa')}
-                className={`text-xs px-2 py-0.5 rounded ${sortBy === 'nazwa' ? 'bg-emerald-900/50 text-emerald-400' : 'text-zinc-500 hover:text-zinc-300'}`}
+                className={`text-xs px-2 py-0.5 rounded ${sortBy === 'nazwa' ? 'bg-em/10 text-em' : 'text-zinc-500 hover:text-zinc-300'}`}
               >
                 Nazwa {sortBy === 'nazwa' && (sortDir === 'asc' ? '↑' : '↓')}
               </button>
               <button
                 onClick={() => toggleSort('cena_netto')}
-                className={`text-xs px-2 py-0.5 rounded ${sortBy === 'cena_netto' ? 'bg-emerald-900/50 text-emerald-400' : 'text-zinc-500 hover:text-zinc-300'}`}
+                className={`text-xs px-2 py-0.5 rounded ${sortBy === 'cena_netto' ? 'bg-em/10 text-em' : 'text-zinc-500 hover:text-zinc-300'}`}
               >
                 Cena {sortBy === 'cena_netto' && (sortDir === 'asc' ? '↑' : '↓')}
               </button>
@@ -130,7 +130,7 @@ export default function ICBPriceExplorer() {
                   </div>
                 </div>
                 <div className="text-right ml-3">
-                  <p className="text-sm font-medium text-emerald-400">
+                  <p className="text-sm font-medium text-em">
                     {(item.cena_netto ?? 0).toFixed(2)} PLN
                   </p>
                   <p className="text-xs text-zinc-500">/{item.jm}</p>

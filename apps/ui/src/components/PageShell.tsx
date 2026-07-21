@@ -8,20 +8,16 @@ import { ChevronRight } from 'lucide-react';
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 interface BreadcrumbSegment {
-  label:   string;
-  /** If provided renders as clickable segment */
+  label:    string;
   onClick?: () => void;
 }
 
 interface PageShellProps {
   title:       string;
   subtitle?:   string;
-  /** Explicit breadcrumb segments — auto-generated from module name if omitted */
   breadcrumb?: BreadcrumbSegment[];
-  /** Action buttons — rendered right of the title */
   actions?:    ReactNode;
   children:    ReactNode;
-  /** Override outer padding for full-bleed pages */
   noPadding?:  boolean;
 }
 
@@ -31,20 +27,20 @@ function Breadcrumb({ segments }: { segments: BreadcrumbSegment[] }) {
   return (
     <nav
       aria-label="Breadcrumb"
-      className="flex items-center gap-1 mb-2 text-[11px] text-earth-700 font-medium tracking-normal"
+      className="flex items-center gap-1 mb-2 text-[11px] text-slate-600 font-medium tracking-wide uppercase"
     >
       {segments.map((seg, i) => (
         <span key={i} className="flex items-center gap-1">
-          {i > 0 && <ChevronRight className="w-3 h-3 text-earth-700" />}
+          {i > 0 && <ChevronRight className="w-3 h-3 text-slate-700" />}
           {seg.onClick ? (
             <button
               onClick={seg.onClick}
-              className="hover:text-earth-500 transition-colors"
+              className="hover:text-slate-400 transition-colors duration-150"
             >
               {seg.label}
             </button>
           ) : (
-            <span className={i === segments.length - 1 ? 'text-earth-500' : ''}>
+            <span className={i === segments.length - 1 ? 'text-slate-500' : ''}>
               {seg.label}
             </span>
           )}
@@ -66,12 +62,8 @@ export function PageShell({
 }: PageShellProps) {
   const { setCurrentModule } = useStore();
 
-  // Auto-breadcrumb: YU-NA / <title>
   const segments: BreadcrumbSegment[] = breadcrumb ?? [
-    {
-      label:   'YU-NA',
-      onClick: () => setCurrentModule('dashboard'),
-    },
+    { label: 'BudOS', onClick: () => setCurrentModule('dashboard') },
     { label: title },
   ];
 
@@ -80,31 +72,28 @@ export function PageShell({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+      transition={{ duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
       className={noPadding ? 'w-full' : 'pt-5 px-6 md:px-8 pb-10 max-w-7xl mx-auto w-full'}
     >
-      {/* ── Breadcrumb ──────────────────────────────────────────────── */}
-      <Breadcrumb segments={segments} />
-
-      {/* ── Header ──────────────────────────────────────────────────── */}
-      <div className="flex items-start justify-between gap-4 mb-5">
+      {/* ── Header ─────────────────────────────────────────────── */}
+      <div className="flex items-start justify-between gap-4 mb-6">
         <div className="min-w-0">
-          <h1 className="text-[22px] font-semibold text-earth-100 tracking-tight leading-tight">
+          <Breadcrumb segments={segments} />
+          <h1 className="text-xl font-bold text-slate-100 leading-tight tracking-tight">
             {title}
           </h1>
           {subtitle && (
-            <p className="mt-1 text-[13px] text-earth-600">{subtitle}</p>
+            <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
           )}
         </div>
-
         {actions && (
-          <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
+          <div className="flex items-center gap-2 flex-shrink-0 mt-1">
             {actions}
           </div>
         )}
       </div>
 
-      {/* ── Content ─────────────────────────────────────────────────── */}
+      {/* ── Content ────────────────────────────────────────────── */}
       {children}
     </motion.div>
   );

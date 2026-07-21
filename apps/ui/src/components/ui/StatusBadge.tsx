@@ -22,26 +22,43 @@ interface StatusBadgeProps {
   /** Override display label */
   label?:     string;
   size?:      'xs' | 'sm';
+  /** GO/NO-GO badges animate in — disable for list renders */
+  animate?:   boolean;
   className?: string;
 }
 
-// ── Config ─────────────────────────────────────────────────────────────────────
+// ── Config — Brand Bible BudOS: PRECYZJA · ZWIAD · PRZEWAGA ───────────────────
+// Emerald = TYLKO sygnały decyzji (GO, active states)
+// Indigo = score, analysis
+// Slate = neutral states
 
-const STATUS_MAP: Record<string, { label: string; cls: string }> = {
-  new:           { label: 'Nowy',           cls: 'bg-accent-info/15 text-blue-300 border-accent-info/20' },
-  matched:       { label: 'Dopasowany',     cls: 'bg-accent-violet/15 text-violet-300 border-accent-violet/20' },
-  watching:      { label: 'Obserwowany',    cls: 'bg-sky-500/15 text-sky-300 border-sky-500/20' },
-  analyzing:     { label: 'W analizie',     cls: 'bg-accent-warning/15 text-yellow-300 border-accent-warning/20' },
-  estimated:     { label: 'Wyceniony',      cls: 'bg-accent-primary/15 text-emerald-300 border-accent-primary/20' },
-  decided_go:    { label: 'GO',             cls: 'bg-accent-success/20 text-green-300 border-accent-success/25' },
-  decided_nogo:  { label: 'NO-GO',          cls: 'bg-accent-danger/15 text-red-300 border-accent-danger/20' },
-  archived:      { label: 'Archiwum',       cls: 'bg-earth-700/40 text-earth-500 border-earth-700/30' },
-  // Semantic
-  success:       { label: 'Sukces',         cls: 'bg-accent-success/15 text-green-300 border-accent-success/20' },
-  warning:       { label: 'Ostrzeżenie',    cls: 'bg-accent-warning/15 text-yellow-300 border-accent-warning/20' },
-  danger:        { label: 'Błąd',           cls: 'bg-accent-danger/15 text-red-300 border-accent-danger/20' },
-  info:          { label: 'Info',           cls: 'bg-accent-info/15 text-blue-300 border-accent-info/20' },
-  neutral:       { label: 'Neutralny',      cls: 'bg-earth-700/40 text-earth-400 border-earth-700/30' },
+const STATUS_MAP: Record<string, { label: string; cls: string; mono?: boolean }> = {
+  // ── Decision signals (primary) ────────────────────────────────────────
+  decided_go:   {
+    label: 'GO',
+    cls: 'bg-go-bg border-go-brd text-go',
+    mono: true,
+  },
+  decided_nogo: {
+    label: 'NO-GO',
+    cls: 'bg-nogo-bg border-nogo-brd text-nogo',
+    mono: true,
+  },
+
+  // ── Pipeline states ───────────────────────────────────────────────────
+  new:          { label: 'Nowy',         cls: 'bg-ink-700 border-ink-line text-slate-300' },
+  matched:      { label: 'Dopasowany',   cls: 'bg-score/10 border-score/20 text-score' },
+  watching:     { label: 'Obserwowany',  cls: 'bg-sky-500/10 border-sky-500/20 text-sky-400' },
+  analyzing:    { label: 'W analizie',   cls: 'bg-warn-bg border-warn/20 text-warn' },
+  estimated:    { label: 'Wyceniony',    cls: 'bg-em-bg border-em-brd text-em' },
+  archived:     { label: 'Archiwum',     cls: 'bg-ink-700 border-ink-line text-slate-500' },
+
+  // ── Semantic ──────────────────────────────────────────────────────────
+  success:      { label: 'OK',           cls: 'bg-go-bg border-go-brd text-go', mono: true },
+  warning:      { label: 'Uwaga',        cls: 'bg-warn-bg border-warn/20 text-warn' },
+  danger:       { label: 'Blad',         cls: 'bg-nogo-bg border-nogo-brd text-nogo', mono: true },
+  info:         { label: 'Info',         cls: 'bg-score/10 border-score/20 text-score' },
+  neutral:      { label: 'Neutralny',    cls: 'bg-ink-700 border-ink-line text-slate-500' },
 };
 
 // ── Component ──────────────────────────────────────────────────────────────────
@@ -50,23 +67,33 @@ export function StatusBadge({
   status,
   label,
   size      = 'sm',
+  animate   = false,
   className = '',
 }: StatusBadgeProps) {
   const cfg = STATUS_MAP[status] ?? {
     label: status,
-    cls: 'bg-earth-700/40 text-earth-400 border-earth-700/30',
+    cls: 'bg-ink-700 border-ink-line text-slate-400',
+    mono: false,
   };
 
   const displayLabel = label ?? cfg.label;
-  const sizeClass    = size === 'xs'
-    ? 'px-1.5 py-0.5 text-[10px]'
-    : 'px-2 py-0.5 text-xs';
+
+  const sizeClass = size === 'xs'
+    ? 'px-1.5 py-0.5 text-[10px] tracking-wider'
+    : 'px-2.5 py-1 text-xs tracking-wider';
+
+  // GO/NO-GO animate in — spring pop (Brand Bible: go-pop 500ms)
+  const animClass = animate && (status === 'decided_go' || status === 'decided_nogo')
+    ? 'animate-go-pop'
+    : '';
 
   return (
     <span
       className={[
-        'inline-flex items-center rounded-full border font-semibold whitespace-nowrap',
+        'inline-flex items-center rounded-md border font-semibold whitespace-nowrap uppercase',
+        cfg.mono ? 'font-mono' : '',
         sizeClass,
+        animClass,
         cfg.cls,
         className,
       ]

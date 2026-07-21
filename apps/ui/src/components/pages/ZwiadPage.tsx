@@ -175,18 +175,18 @@ function daysUntil(s: string | null): number | null {
 
 function scoreColor(score: number): { text: string; bg: string; bar: string } {
   if (score >= 0.8) return {
-    text: 'text-accent-primary',
-    bg:   'bg-accent-primary/10 border-accent-primary/30',
+    text: 'text-em',
+    bg:   'bg-em/10 border-em/30',
     bar:  '#10b981',
   };
   if (score >= 0.5) return {
-    text: 'text-accent-warning',
-    bg:   'bg-accent-warning/10 border-accent-warning/30',
+    text: 'text-warn',
+    bg:   'bg-warn/10 border-warn/30',
     bar:  '#f59e0b',
   };
   return {
-    text: 'text-accent-danger',
-    bg:   'bg-accent-danger/10 border-accent-danger/30',
+    text: 'text-nogo',
+    bg:   'bg-nogo/10 border-nogo/30',
     bar:  '#ef4444',
   };
 }
@@ -211,15 +211,15 @@ function MatchBadge({ score, matchReason }: MatchBadgeProps) {
 
   if (pct >= 80) {
     label = 'Świetne dopasowanie 🎯';
-    classes = 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400';
+    classes = 'bg-em/15 border-em/40 text-em';
     dotColor = '#10b981';
   } else if (pct >= 50) {
     label = 'Dobre dopasowanie';
-    classes = 'bg-amber-500/15 border-amber-500/40 text-amber-400';
+    classes = 'bg-warn-bg border-amber-500/40 text-warn';
     dotColor = '#f59e0b';
   } else {
     label = 'Słabe dopasowanie';
-    classes = 'bg-earth-700/30 border-earth-600/40 text-earth-500';
+    classes = 'bg-ink-700/30 border-ink-600/40 text-slate-500';
     dotColor = '#6b7280';
   }
 
@@ -240,12 +240,12 @@ function MatchBadge({ score, matchReason }: MatchBadgeProps) {
         <span>{label}</span>
       </span>
       {showTip && (
-        <div className="absolute bottom-full left-0 mb-1.5 z-50 w-64 rounded-lg border border-earth-700 bg-earth-900 px-3 py-2 shadow-xl text-xs text-earth-200 whitespace-pre-line pointer-events-none">
-          <div className="font-semibold text-earth-100 mb-0.5">Match Score: {pct}%</div>
-          <div className="text-earth-400 leading-relaxed">
+        <div className="absolute bottom-full left-0 mb-1.5 z-50 w-64 rounded-lg border border-ink-700 bg-ink-900 px-3 py-2 shadow-xl text-xs text-slate-200 whitespace-pre-line pointer-events-none">
+          <div className="font-semibold text-slate-100 mb-0.5">Match Score: {pct}%</div>
+          <div className="text-slate-400 leading-relaxed">
             {matchReason || 'Dopasowanie obliczone na podstawie kodów CPV przetargu i preferencji firmy.'}
           </div>
-          <div className="mt-1.5 pt-1.5 border-t border-earth-700/60 text-[10px] text-earth-500">
+          <div className="mt-1.5 pt-1.5 border-t border-ink-700/60 text-[10px] text-slate-500">
             {pct >= 80 ? '✅ Zalecane złożenie oferty (GO)' : pct >= 50 ? '🟡 Rozważ złożenie oferty' : '⛔ Niska zgodność z profilem (NO-GO)'}
           </div>
         </div>
@@ -264,13 +264,13 @@ function fmtMln(v: number): string {
 // ─── MatchScoreBar ────────────────────────────────────────────────────────────
 
 function MatchScoreBar({ score, compact = false }: { score: number | null; compact?: boolean }) {
-  if (score === null) return <span className="text-xs text-earth-600">—</span>;
+  if (score === null) return <span className="text-xs text-slate-600">—</span>;
   const pct = Math.round(score * 100);
   const { text, bar } = scoreColor(score);
   if (compact) {
     return (
       <div className="flex items-center gap-1.5">
-        <div className="h-1 w-16 bg-earth-800 rounded-full overflow-hidden">
+        <div className="h-1 w-16 bg-ink-800 rounded-full overflow-hidden">
           <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: bar }} />
         </div>
         <span className={`text-xs font-bold tabular-nums ${text}`}>{pct}%</span>
@@ -280,10 +280,10 @@ function MatchScoreBar({ score, compact = false }: { score: number | null; compa
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between">
-        <span className="text-xs text-earth-500">Dopasowanie</span>
+        <span className="text-xs text-slate-500">Dopasowanie</span>
         <span className={`text-sm font-bold tabular-nums ${text}`}>{pct}%</span>
       </div>
-      <div className="h-2 w-full bg-earth-800 rounded-full overflow-hidden">
+      <div className="h-2 w-full bg-ink-800 rounded-full overflow-hidden">
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}
@@ -301,10 +301,10 @@ function MatchScoreBar({ score, compact = false }: { score: number | null; compa
 function KPIStrip({ kpi, loading }: { kpi: IntelKPI | null; loading: boolean }) {
   const items = kpi
     ? [
-        { label: 'Przetargi',      value: (kpi.n_tenders ?? 0).toLocaleString('pl-PL'),   icon: FileText,   iconColor: 'text-accent-primary' },
-        { label: 'Łączna wartość', value: fmtMln(kpi.total_value_mln),             icon: DollarSign, iconColor: 'text-accent-info'    },
-        { label: 'Śr. wartość',    value: fmtPLN(kpi.avg_value),                   icon: TrendingUp, iconColor: 'text-accent-warning' },
-        { label: 'Śr. konkurencja',value: kpi.avg_competition?.toFixed(1) ?? '—',  icon: Users,      iconColor: 'text-accent-violet'  },
+        { label: 'Przetargi',      value: (kpi.n_tenders ?? 0).toLocaleString('pl-PL'),   icon: FileText,   iconColor: 'text-em' },
+        { label: 'Łączna wartość', value: fmtMln(kpi.total_value_mln),             icon: DollarSign, iconColor: 'text-indigo'    },
+        { label: 'Śr. wartość',    value: fmtPLN(kpi.avg_value),                   icon: TrendingUp, iconColor: 'text-warn' },
+        { label: 'Śr. konkurencja',value: kpi.avg_competition?.toFixed(1) ?? '—',  icon: Users,      iconColor: 'text-violet'  },
         { label: 'Zamawiający',    value: (kpi.n_buyers ?? 0).toLocaleString('pl-PL'),     icon: Building2,  iconColor: 'text-sky-400'        },
       ]
     : [];
@@ -382,10 +382,10 @@ function TenderCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.97 }}
       onClick={onClick}
-      className={`relative rounded-token-lg border cursor-pointer transition-all duration-150 p-4 space-y-3 ${
+      className={`relative rounded-xl border cursor-pointer transition-all duration-150 p-4 space-y-3 ${
         selected
-          ? 'border-accent-primary/50 bg-accent-primary/5 shadow-token-md'
-          : 'border-earth-800/60 bg-earth-900/50 hover:border-earth-700/80 hover:bg-earth-800/40'
+          ? 'border-em/50 bg-em/5 shadow-md-md'
+          : 'border-ink-800/60 bg-ink-900/50 hover:border-ink-700/80 hover:bg-ink-800/40'
       }`}
     >
       {/* Score accent stripe */}
@@ -396,7 +396,7 @@ function TenderCard({
 
       {/* Top row */}
       <div className="flex items-start justify-between gap-2 pl-2">
-        <p className="text-sm font-medium text-earth-100 line-clamp-2 leading-snug flex-1">{tender.title}</p>
+        <p className="text-sm font-medium text-slate-100 line-clamp-2 leading-snug flex-1">{tender.title}</p>
         <MatchScoreBar score={tender.match_score} compact />
       </div>
 
@@ -408,7 +408,7 @@ function TenderCard({
       )}
 
       {/* Meta row */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-2 text-xs text-earth-500">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-2 text-xs text-slate-500">
         {tender.buyer && (
           <span className="flex items-center gap-1 truncate max-w-[180px]">
             <Building2 size={11} className="shrink-0" />
@@ -422,19 +422,19 @@ function TenderCard({
           </span>
         )}
         {tender.value_pln && (
-          <span className="flex items-center gap-1 text-earth-300 font-mono">
+          <span className="flex items-center gap-1 text-slate-300 font-mono">
             <DollarSign size={11} className="shrink-0" />
             {fmtPLN(tender.value_pln)}
           </span>
         )}
         {tender.deadline_at && (
-          <span className={`flex items-center gap-1 ${urgent ? 'text-accent-danger' : expired ? 'text-earth-600' : ''}`}>
+          <span className={`flex items-center gap-1 ${urgent ? 'text-nogo' : expired ? 'text-slate-600' : ''}`}>
             <Calendar size={11} className="shrink-0" />
             {fmtDate(tender.deadline_at)}
             {days !== null && !expired && days <= 14 && (
-              <span className={`font-bold ${urgent ? 'text-accent-danger' : 'text-accent-warning'}`}>({days}d)</span>
+              <span className={`font-bold ${urgent ? 'text-nogo' : 'text-warn'}`}>({days}d)</span>
             )}
-            {expired && <span className="text-earth-600 italic">(minął)</span>}
+            {expired && <span className="text-slate-600 italic">(minął)</span>}
           </span>
         )}
       </div>
@@ -448,7 +448,7 @@ function TenderCard({
           </span>
         )}
         {tender.cpv[0] && (
-          <span className="text-[10px] text-earth-600 font-mono bg-earth-800/60 px-1.5 py-0.5 rounded-token">
+          <span className="text-[10px] text-slate-600 font-mono bg-ink-800/60 px-1.5 py-0.5 rounded-md">
             {tender.cpv[0]}
           </span>
         )}
@@ -463,10 +463,10 @@ function TenderCard({
 // ─── EstimatesTab ─────────────────────────────────────────────────────────────
 
 const METHOD_META: Record<string, { label: string; icon: string; color: string; desc: string }> = {
-  swz:        { label: 'Dokumentacja SWZ',  icon: '📄', color: 'text-accent-info border-accent-info/30 bg-accent-info/10',         desc: 'Parsowanie przedmiaru z dokumentacji przetargowej' },
-  icb:        { label: 'Intercenbud',       icon: '📊', color: 'text-accent-primary border-accent-primary/30 bg-accent-primary/10', desc: 'Baza cen średnich ICB + CPV + region' },
-  user_rates: { label: 'Stawki własne',     icon: '🏷️', color: 'text-accent-warning border-accent-warning/30 bg-accent-warning/10', desc: 'Własny cennik firmy' },
-  benchmark:  { label: 'Benchmark CPV',     icon: '📐', color: 'text-accent-violet border-accent-violet/30 bg-accent-violet/10',    desc: 'Benchmark statystyczny dla CPV' },
+  swz:        { label: 'Dokumentacja SWZ',  icon: '📄', color: 'text-indigo border-indigo/30 bg-indigo/10',         desc: 'Parsowanie przedmiaru z dokumentacji przetargowej' },
+  icb:        { label: 'Intercenbud',       icon: '📊', color: 'text-em border-em/30 bg-em/10', desc: 'Baza cen średnich ICB + CPV + region' },
+  user_rates: { label: 'Stawki własne',     icon: '🏷️', color: 'text-warn border-warn/30 bg-warn/10', desc: 'Własny cennik firmy' },
+  benchmark:  { label: 'Benchmark CPV',     icon: '📐', color: 'text-violet border-violet/30 bg-violet/10',    desc: 'Benchmark statystyczny dla CPV' },
 };
 
 function EstimatesTab({
@@ -597,11 +597,11 @@ function EstimatesTab({
           onClick={() => setShowRates(v => !v)}
           iconLeft={<Tag size={13} />}
         >
-          Stawki własne {userRates.length > 0 && <span className="text-earth-500 ml-1">({userRates.length})</span>}
+          Stawki własne {userRates.length > 0 && <span className="text-slate-500 ml-1">({userRates.length})</span>}
         </Button>
         <button
           onClick={loadEstimates}
-          className="ml-auto p-2 rounded-token text-earth-500 hover:text-earth-300 transition-colors"
+          className="ml-auto p-2 rounded-md text-slate-500 hover:text-slate-300 transition-colors"
         >
           <RefreshCw size={13} />
         </button>
@@ -609,23 +609,23 @@ function EstimatesTab({
 
       {/* ── Formularz szacowania ── */}
       {showForm && (
-        <div className="rounded-token-lg border border-earth-700/60 bg-earth-900/40 p-4 space-y-4">
+        <div className="rounded-xl border border-ink-700/60 bg-ink-900/40 p-4 space-y-4">
           <p className="section-label">Parametry szacowania</p>
 
           {/* Metoda */}
           <div className="grid grid-cols-2 gap-2">
             {(['all','icb','swz','user_rates'] as const).map(m => {
               const meta = m === 'all'
-                ? { label: 'Wszystkie metody', icon: '⚡', color: 'text-earth-100 border-earth-500 bg-earth-700/40' }
+                ? { label: 'Wszystkie metody', icon: '⚡', color: 'text-slate-100 border-slate-500 bg-ink-700/40' }
                 : METHOD_META[m];
               return (
                 <button
                   key={m}
                   onClick={() => setMethod(m)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-token border text-xs font-medium transition-all ${
+                  className={`flex items-center gap-2 px-3 py-2 rounded-md border text-xs font-medium transition-all ${
                     method === m
                       ? meta.color + ' ring-1 ring-current'
-                      : 'border-earth-700 text-earth-400 hover:border-earth-600'
+                      : 'border-ink-700 text-slate-400 hover:border-ink-600'
                   }`}
                 >
                   <span>{meta.icon}</span>
@@ -673,15 +673,15 @@ function EstimatesTab({
                 onChange={e => setSwzText(e.target.value)}
                 rows={5}
                 placeholder={"Wklej treść przedmiaru robót z dokumentacji...\n\n1. Roboty ziemne  m³  120,00  45.00\n2. Fundamenty    m³   45,00  380.00"}
-                className="w-full bg-earth-800/60 border border-earth-700/50 rounded-token px-3.5 py-2.5 text-xs text-earth-100 placeholder-earth-600 focus:outline-none focus:ring-1 focus:border-accent-primary/60 focus:ring-accent-primary/20 font-mono resize-none transition-colors"
+                className="w-full bg-ink-800/60 border border-ink-700/50 rounded-md px-3.5 py-2.5 text-xs text-slate-100 placeholder-ink-600 focus:outline-none focus:ring-1 focus:border-em/60 focus:ring-em/20 font-mono resize-none transition-colors"
               />
             </div>
           )}
 
           {/* CPV info */}
           {tender.cpv?.[0] && (
-            <p className="text-[10px] text-earth-600">
-              CPV: <span className="text-earth-400 font-mono">{tender.cpv[0]}</span> — używany do mapowania kategorii ICB
+            <p className="text-[10px] text-slate-600">
+              CPV: <span className="text-slate-400 font-mono">{tender.cpv[0]}</span> — używany do mapowania kategorii ICB
             </p>
           )}
 
@@ -700,8 +700,8 @@ function EstimatesTab({
 
       {/* ── Stawki własne ── */}
       {showRates && (
-        <div className="rounded-token-lg border border-accent-warning/20 bg-accent-warning/5 p-4 space-y-3">
-          <p className="text-xs font-semibold text-accent-warning uppercase tracking-wide">Cennik własny firmy</p>
+        <div className="rounded-xl border border-warn/20 bg-warn/5 p-4 space-y-3">
+          <p className="text-xs font-semibold text-warn uppercase tracking-wide">Cennik własny firmy</p>
 
           {/* Dodaj stawkę */}
           <div className="grid grid-cols-5 gap-2 text-xs">
@@ -755,12 +755,12 @@ function EstimatesTab({
           {userRates.length > 0 && (
             <div className="space-y-1 max-h-40 overflow-y-auto">
               {userRates.map(r => (
-                <div key={r.id} className="flex items-center justify-between text-xs px-2 py-1 rounded-token bg-earth-800/40 hover:bg-earth-800/60">
-                  <span className="font-mono text-earth-400 w-16 shrink-0 truncate">{r.symbol}</span>
-                  <span className="text-earth-300 flex-1 px-2 truncate">{r.nazwa}</span>
-                  <span className="text-[10px] text-earth-500 w-6">{r.typ_rms}</span>
-                  <span className="text-accent-warning tabular-nums w-20 text-right">{fmtPLN(r.cena_netto)}/{r.jednostka}</span>
-                  <button onClick={() => handleDeleteRate(r.id)} className="ml-2 text-earth-600 hover:text-accent-danger transition-colors">
+                <div key={r.id} className="flex items-center justify-between text-xs px-2 py-1 rounded-md bg-ink-800/40 hover:bg-ink-800/60">
+                  <span className="font-mono text-slate-400 w-16 shrink-0 truncate">{r.symbol}</span>
+                  <span className="text-slate-300 flex-1 px-2 truncate">{r.nazwa}</span>
+                  <span className="text-[10px] text-slate-500 w-6">{r.typ_rms}</span>
+                  <span className="text-warn tabular-nums w-20 text-right">{fmtPLN(r.cena_netto)}/{r.jednostka}</span>
+                  <button onClick={() => handleDeleteRate(r.id)} className="ml-2 text-slate-600 hover:text-nogo transition-colors">
                     <X size={10} />
                   </button>
                 </div>
@@ -769,7 +769,7 @@ function EstimatesTab({
           )}
 
           {userRates.length === 0 && (
-            <p className="text-[11px] text-earth-600 text-center py-2">
+            <p className="text-[11px] text-slate-600 text-center py-2">
               Brak stawek własnych. Dodaj pozycje powyżej.
             </p>
           )}
@@ -779,9 +779,9 @@ function EstimatesTab({
       {/* ── Lista szacowań ── */}
       {estimates.length === 0 && !showForm ? (
         <div className="py-10 text-center">
-          <BarChart3 size={32} className="text-earth-700 mx-auto mb-3" />
-          <p className="text-earth-500 text-sm">Brak szacowań dla tego przetargu</p>
-          <p className="text-earth-700 text-xs mt-1">Kliknij „Szacuj koszt" aby wygenerować</p>
+          <BarChart3 size={32} className="text-slate-700 mx-auto mb-3" />
+          <p className="text-slate-500 text-sm">Brak szacowań dla tego przetargu</p>
+          <p className="text-slate-700 text-xs mt-1">Kliknij „Szacuj koszt" aby wygenerować</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -795,52 +795,52 @@ function EstimatesTab({
               <GlassCard key={est.id} className="overflow-hidden">
                 {/* Header */}
                 <div
-                  className="flex items-center gap-3 p-4 cursor-pointer hover:bg-earth-800/20 transition-colors"
+                  className="flex items-center gap-3 p-4 cursor-pointer hover:bg-ink-800/20 transition-colors"
                   onClick={() => setExpanded(isOpen ? null : est.id)}
                 >
                   <span className="text-xl">{meta.icon}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`text-[10px] px-2 py-0.5 rounded-token border font-medium ${meta.color}`}>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-md border font-medium ${meta.color}`}>
                         {meta.label}
                       </span>
-                      <span className="text-xs text-earth-400 truncate">{est.variant}</span>
+                      <span className="text-xs text-slate-400 truncate">{est.variant}</span>
                     </div>
-                    {range && <p className="text-[10px] text-earth-600 mt-0.5">Przedział: {range}</p>}
+                    {range && <p className="text-[10px] text-slate-600 mt-0.5">Przedział: {range}</p>}
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-sm font-bold text-accent-primary tabular-nums">{fmtPLN(est.total_net_pln)}</p>
-                    <p className="text-[10px] text-earth-600">netto</p>
+                    <p className="text-sm font-bold text-em tabular-nums">{fmtPLN(est.total_net_pln)}</p>
+                    <p className="text-[10px] text-slate-600">netto</p>
                   </div>
-                  <ChevronDown size={14} className={`text-earth-600 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown size={14} className={`text-slate-600 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                 </div>
 
                 {/* Expanded detail */}
                 {isOpen && (
-                  <div className="border-t border-earth-800/60 px-4 pb-4 pt-3 space-y-3">
+                  <div className="border-t border-ink-800/60 px-4 pb-4 pt-3 space-y-3">
                     {est.notes && (
-                      <p className="text-[11px] text-earth-500 italic">{est.notes}</p>
+                      <p className="text-[11px] text-slate-500 italic">{est.notes}</p>
                     )}
 
                     {/* Params pills */}
                     <div className="flex flex-wrap gap-1.5">
-                      {est.area_m2 && <span className="text-[10px] px-2 py-0.5 rounded-token bg-earth-700/40 text-earth-400">{est.area_m2} m²</span>}
-                      {est.region  && <span className="text-[10px] px-2 py-0.5 rounded-token bg-earth-700/40 text-earth-400">{est.region}</span>}
-                      {est.cpv_prefix && <span className="text-[10px] px-2 py-0.5 rounded-token bg-earth-700/40 text-earth-400 font-mono">CPV {est.cpv_prefix}</span>}
-                      {est.created_at && <span className="text-[10px] px-2 py-0.5 rounded-token bg-earth-700/40 text-earth-400">{new Date(est.created_at).toLocaleDateString('pl-PL')}</span>}
+                      {est.area_m2 && <span className="text-[10px] px-2 py-0.5 rounded-md bg-ink-700/40 text-slate-400">{est.area_m2} m²</span>}
+                      {est.region  && <span className="text-[10px] px-2 py-0.5 rounded-md bg-ink-700/40 text-slate-400">{est.region}</span>}
+                      {est.cpv_prefix && <span className="text-[10px] px-2 py-0.5 rounded-md bg-ink-700/40 text-slate-400 font-mono">CPV {est.cpv_prefix}</span>}
+                      {est.created_at && <span className="text-[10px] px-2 py-0.5 rounded-md bg-ink-700/40 text-slate-400">{new Date(est.created_at).toLocaleDateString('pl-PL')}</span>}
                     </div>
 
                     {/* Lines table */}
                     {est.lines.length > 0 && (
                       <div className="space-y-1">
-                        <p className="text-[10px] text-earth-600 uppercase tracking-wide">{est.lines.length} pozycji</p>
+                        <p className="text-[10px] text-slate-600 uppercase tracking-wide">{est.lines.length} pozycji</p>
                         <div className="max-h-52 overflow-y-auto space-y-px">
                           {est.lines.map((ln, i) => (
-                            <div key={i} className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-baseline text-xs px-2 py-1 rounded-token hover:bg-earth-800/30">
-                              <span className="text-earth-300 truncate" title={ln.name}>{ln.name}</span>
-                              <span className="text-earth-600 tabular-nums text-right">{ln.qty} {ln.unit}</span>
-                              <span className="text-earth-500 tabular-nums text-right">{fmtPLN(ln.unit_price)}</span>
-                              <span className="text-accent-primary tabular-nums text-right font-medium">{fmtPLN(ln.total)}</span>
+                            <div key={i} className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-baseline text-xs px-2 py-1 rounded-md hover:bg-ink-800/30">
+                              <span className="text-slate-300 truncate" title={ln.name}>{ln.name}</span>
+                              <span className="text-slate-600 tabular-nums text-right">{ln.qty} {ln.unit}</span>
+                              <span className="text-slate-500 tabular-nums text-right">{fmtPLN(ln.unit_price)}</span>
+                              <span className="text-em tabular-nums text-right font-medium">{fmtPLN(ln.total)}</span>
                             </div>
                           ))}
                         </div>
@@ -848,14 +848,14 @@ function EstimatesTab({
                     )}
 
                     <div className="flex items-center justify-between pt-1">
-                      <p className="text-[10px] text-earth-600">
-                        Suma netto: <span className="text-accent-primary font-semibold">{fmtPLN(est.total_net_pln)}</span>
-                        {' · '}VAT 23%: <span className="text-earth-400">{fmtPLN(est.total_net_pln * 0.23)}</span>
-                        {' · '}Brutto: <span className="text-earth-300 font-semibold">{fmtPLN(est.total_net_pln * 1.23)}</span>
+                      <p className="text-[10px] text-slate-600">
+                        Suma netto: <span className="text-em font-semibold">{fmtPLN(est.total_net_pln)}</span>
+                        {' · '}VAT 23%: <span className="text-slate-400">{fmtPLN(est.total_net_pln * 0.23)}</span>
+                        {' · '}Brutto: <span className="text-slate-300 font-semibold">{fmtPLN(est.total_net_pln * 1.23)}</span>
                       </p>
                       <button
                         onClick={() => handleDeleteEstimate(est.id)}
-                        className="text-earth-600 hover:text-accent-danger transition-colors text-[10px] flex items-center gap-1"
+                        className="text-slate-600 hover:text-nogo transition-colors text-[10px] flex items-center gap-1"
                       >
                         <X size={11} /> Usuń
                       </button>
@@ -883,14 +883,14 @@ interface BzpDocument {
 }
 
 const DOC_TYPE_LABELS: Record<string, { label: string; color: string }> = {
-  SWZ:         { label: 'SWZ',          color: 'text-accent-primary bg-accent-primary/10 border-accent-primary/30' },
-  FORM:        { label: 'Formularz',    color: 'text-accent-info bg-accent-info/10 border-accent-info/30'          },
-  CONTRACT:    { label: 'Umowa',        color: 'text-accent-warning bg-accent-warning/10 border-accent-warning/30' },
-  DECLARATION: { label: 'Oświadczenie', color: 'text-accent-violet bg-accent-violet/10 border-accent-violet/30'    },
+  SWZ:         { label: 'SWZ',          color: 'text-em bg-em/10 border-em/30' },
+  FORM:        { label: 'Formularz',    color: 'text-indigo bg-indigo/10 border-indigo/30'          },
+  CONTRACT:    { label: 'Umowa',        color: 'text-warn bg-warn/10 border-warn/30' },
+  DECLARATION: { label: 'Oświadczenie', color: 'text-violet bg-violet/10 border-violet/30'    },
   LIST:        { label: 'Wykaz',        color: 'text-sky-400 bg-sky-500/10 border-sky-500/30'                      },
-  TECHNICAL:   { label: 'Dokumentacja', color: 'text-accent-danger bg-accent-danger/10 border-accent-danger/30'    },
+  TECHNICAL:   { label: 'Dokumentacja', color: 'text-nogo bg-nogo/10 border-nogo/30'    },
   AMENDMENT:   { label: 'Zmiana',       color: 'text-orange-400 bg-orange-500/10 border-orange-500/30'             },
-  OTHER:       { label: 'Inny',         color: 'text-earth-400 bg-earth-700/30 border-earth-600/30'                },
+  OTHER:       { label: 'Inny',         color: 'text-slate-400 bg-ink-700/30 border-ink-600/30'                },
 };
 
 function DocumentsTab({
@@ -950,15 +950,15 @@ function DocumentsTab({
   if (source && source !== 'bzp') {
     return (
       <div className="py-8 text-center">
-        <p className="text-earth-400 text-sm">Dokumenty SWZ dostępne tylko dla przetargów z BZP</p>
-        <p className="text-earth-600 text-xs mt-1">To ogłoszenie pochodzi z {source.toUpperCase()}</p>
+        <p className="text-slate-400 text-sm">Dokumenty SWZ dostępne tylko dla przetargów z BZP</p>
+        <p className="text-slate-600 text-xs mt-1">To ogłoszenie pochodzi z {source.toUpperCase()}</p>
       </div>
     );
   }
 
   if (loading && docs.length === 0) {
     return (
-      <div className="flex items-center justify-center py-12 text-earth-500">
+      <div className="flex items-center justify-center py-12 text-slate-500">
         <Loader2 size={20} className="animate-spin mr-2" />
         Ładowanie dokumentów...
       </div>
@@ -984,19 +984,19 @@ function DocumentsTab({
       </Button>
 
       {fetchTriggered && docs.length === 0 && !fetching && (
-        <p className="text-xs text-earth-500 text-center">
+        <p className="text-xs text-slate-500 text-center">
           Dokumenty pobierają się w tle. Odśwież za chwilę.
         </p>
       )}
 
       {fetchError && (
-        <p className="text-xs text-accent-danger text-center py-1">{fetchError}</p>
+        <p className="text-xs text-nogo text-center py-1">{fetchError}</p>
       )}
 
       {/* Document list */}
       {docs.length > 0 && (
         <div className="space-y-1.5">
-          <p className="text-[10px] text-earth-600 uppercase tracking-wide flex items-center gap-1.5">
+          <p className="text-[10px] text-slate-600 uppercase tracking-wide flex items-center gap-1.5">
             <FolderOpen size={10} />
             {docs.length} dokumentów
           </p>
@@ -1007,23 +1007,23 @@ function DocumentsTab({
               <button
                 key={doc.id}
                 onClick={() => handleDownload(doc)}
-                className="w-full flex items-start gap-3 p-3 rounded-token-lg bg-earth-900/50 border border-earth-800/60 hover:border-earth-700/80 hover:bg-earth-800/40 transition-all text-left group"
+                className="w-full flex items-start gap-3 p-3 rounded-xl bg-ink-900/50 border border-ink-800/60 hover:border-ink-700/80 hover:bg-ink-800/40 transition-all text-left group"
               >
                 <div className="shrink-0 mt-0.5">
-                  <FileText size={14} className="text-earth-500 group-hover:text-earth-300 transition-colors" />
+                  <FileText size={14} className="text-slate-500 group-hover:text-slate-300 transition-colors" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-earth-200 font-medium truncate group-hover:text-earth-50 transition-colors">
+                  <p className="text-xs text-slate-200 font-medium truncate group-hover:text-ink-950/30 transition-colors">
                     {doc.filename}
                   </p>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className={`text-[9px] px-1.5 py-0.5 rounded-token border font-medium ${typeInfo.color}`}>
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded-md border font-medium ${typeInfo.color}`}>
                       {typeInfo.label}
                     </span>
-                    <span className="text-[9px] text-earth-600 font-mono">{ext}</span>
+                    <span className="text-[9px] text-slate-600 font-mono">{ext}</span>
                   </div>
                 </div>
-                <Download size={12} className="shrink-0 text-earth-600 group-hover:text-accent-primary transition-colors mt-1" />
+                <Download size={12} className="shrink-0 text-slate-600 group-hover:text-em transition-colors mt-1" />
               </button>
             );
           })}
@@ -1031,10 +1031,10 @@ function DocumentsTab({
       )}
 
       {docs.length === 0 && !fetchTriggered && (
-        <div className="text-center py-8 text-earth-600">
+        <div className="text-center py-8 text-slate-600">
           <FolderOpen size={32} className="mx-auto mb-3 opacity-40" />
           <p className="text-xs">Brak pobranych dokumentów</p>
-          <p className="text-[10px] mt-1 text-earth-700">Kliknij przycisk powyżej aby pobrać SWZ z BZP</p>
+          <p className="text-[10px] mt-1 text-slate-700">Kliknij przycisk powyżej aby pobrać SWZ z BZP</p>
         </div>
       )}
     </div>
@@ -1071,40 +1071,40 @@ function DetailPanel({
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: '100%', opacity: 0 }}
       transition={{ type: 'spring', damping: 28, stiffness: 260 }}
-      className="flex flex-col h-full bg-earth-950 border-l border-earth-800/60 overflow-hidden"
+      className="flex flex-col h-full bg-ink-950 border-l border-ink-800/60 overflow-hidden"
     >
       {/* Panel header */}
-      <div className="flex items-start gap-3 p-5 border-b border-earth-800/60 shrink-0">
+      <div className="flex items-start gap-3 p-5 border-b border-ink-800/60 shrink-0">
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-earth-500 mb-1 flex items-center gap-1.5">
+          <p className="text-xs text-slate-500 mb-1 flex items-center gap-1.5">
             <Activity size={11} />
             {tender.source ?? 'BZP'}
             {tender.external_id && (
-              <span className="font-mono text-earth-600">{tender.external_id}</span>
+              <span className="font-mono text-slate-600">{tender.external_id}</span>
             )}
           </p>
-          <h3 className="text-sm font-semibold text-earth-100 leading-snug line-clamp-3">
+          <h3 className="text-sm font-semibold text-slate-100 leading-snug line-clamp-3">
             {tender.title}
           </h3>
         </div>
         <button
           onClick={onClose}
-          className="shrink-0 mt-0.5 p-1.5 rounded-token text-earth-500 hover:text-earth-200 hover:bg-earth-800 transition-colors"
+          className="shrink-0 mt-0.5 p-1.5 rounded-md text-slate-500 hover:text-slate-200 hover:bg-ink-800 transition-colors"
         >
           <X size={16} />
         </button>
       </div>
 
       {/* Score hero */}
-      <div className={`mx-5 mt-4 p-4 rounded-token-lg border ${scoreBg}`}>
+      <div className={`mx-5 mt-4 p-4 rounded-xl border ${scoreBg}`}>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-semibold text-earth-400 flex items-center gap-1.5">
+          <span className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
             <Target size={12} />
             Score dopasowania
           </span>
           <span className={`text-2xl font-black tabular-nums ${scoreText}`}>{pct}%</span>
         </div>
-        <div className="h-2 w-full bg-earth-900 rounded-full overflow-hidden">
+        <div className="h-2 w-full bg-ink-900 rounded-full overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${pct}%` }}
@@ -1118,9 +1118,9 @@ function DetailPanel({
             {reasonParts.map((r, i) => (
               <span
                 key={i}
-                className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-earth-900/60 border border-earth-700/60 text-earth-400"
+                className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-ink-900/60 border border-ink-700/60 text-slate-400"
               >
-                <CheckCircle2 size={9} className="text-accent-primary" />
+                <CheckCircle2 size={9} className="text-em" />
                 {r}
               </span>
             ))}
@@ -1129,7 +1129,7 @@ function DetailPanel({
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mx-5 mt-4 bg-earth-900 rounded-token-lg p-1 border border-earth-800 shrink-0">
+      <div className="flex gap-1 mx-5 mt-4 bg-ink-900 rounded-xl p-1 border border-ink-800 shrink-0">
         {([
           { key: 'details',    label: 'Szczegóły',     icon: FileText  },
           { key: 'documents',  label: 'Dokumenty',     icon: Download  },
@@ -1139,10 +1139,10 @@ function DetailPanel({
           <button
             key={key}
             onClick={() => setTab(key)}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-token text-xs font-medium transition-all ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs font-medium transition-all ${
               tab === key
-                ? 'bg-earth-700 text-earth-50 shadow-token-sm'
-                : 'text-earth-500 hover:text-earth-300'
+                ? 'bg-ink-700 text-ink-950/30 shadow-md-sm'
+                : 'text-slate-500 hover:text-slate-300'
             }`}
           >
             <Icon size={12} />
@@ -1164,7 +1164,7 @@ function DetailPanel({
               className="space-y-4 pt-4"
             >
               {/* Key fields */}
-              <GlassCard className="divide-y divide-earth-800/60">
+              <GlassCard className="divide-y divide-ink-800/60">
                 {[
                   { icon: Building2, label: 'Zamawiający',      value: tender.buyer ?? '—'        },
                   { icon: MapPin,    label: 'Region',            value: tender.voivodeship ?? '—'  },
@@ -1180,14 +1180,14 @@ function DetailPanel({
                   { icon: Calendar, label: 'Opublikowano', value: fmtDate(tender.published_at) },
                 ].map(({ icon: Icon, label, value, accent, warn }) => (
                   <div key={label} className="flex items-start gap-3 px-4 py-3">
-                    <Icon size={14} className="text-earth-600 mt-0.5 shrink-0" />
+                    <Icon size={14} className="text-slate-600 mt-0.5 shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] text-earth-600 uppercase tracking-wide mb-0.5">{label}</p>
+                      <p className="text-[10px] text-slate-600 uppercase tracking-wide mb-0.5">{label}</p>
                       {label === 'Status' ? (
                         <StatusBadge status={badgeStatus} size="xs" />
                       ) : (
                         <p className={`text-xs font-medium truncate ${
-                          accent ? 'text-accent-primary' : warn ? 'text-accent-danger' : 'text-earth-200'
+                          accent ? 'text-em' : warn ? 'text-nogo' : 'text-slate-200'
                         }`}>
                           {value}
                         </p>
@@ -1200,14 +1200,14 @@ function DetailPanel({
               {/* CPV codes */}
               {tender.cpv.length > 0 && (
                 <div>
-                  <p className="text-[10px] text-earth-600 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                  <p className="text-[10px] text-slate-600 uppercase tracking-wide mb-2 flex items-center gap-1.5">
                     <Tag size={10} /> Kody CPV
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {tender.cpv.map(code => (
                       <span
                         key={code}
-                        className="text-[11px] font-mono text-earth-400 bg-earth-800 px-2 py-0.5 rounded-token border border-earth-700/60"
+                        className="text-[11px] font-mono text-slate-400 bg-ink-800 px-2 py-0.5 rounded-md border border-ink-700/60"
                       >
                         {code}
                       </span>
@@ -1222,11 +1222,11 @@ function DetailPanel({
                   href={tender.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 w-full px-4 py-2.5 rounded-token-lg bg-earth-800/60 border border-earth-700/60 text-sm text-earth-300 hover:text-earth-100 hover:border-earth-600 transition-colors"
+                  className="flex items-center gap-2 w-full px-4 py-2.5 rounded-xl bg-ink-800/60 border border-ink-700/60 text-sm text-slate-300 hover:text-slate-100 hover:border-ink-600 transition-colors"
                 >
-                  <ExternalLink size={14} className="text-earth-500" />
+                  <ExternalLink size={14} className="text-slate-500" />
                   Otwórz ogłoszenie
-                  <ChevronRight size={14} className="ml-auto text-earth-600" />
+                  <ChevronRight size={14} className="ml-auto text-slate-600" />
                 </a>
               )}
             </motion.div>
@@ -1324,30 +1324,30 @@ function AIAnalyzeModal({
   }, [tenderId]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-earth-950/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/80 backdrop-blur-sm">
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1,   opacity: 1 }}
-        className="bg-earth-900 border border-earth-700 rounded-token-xl p-6 w-full max-w-md shadow-token-lg"
+        className="bg-ink-900 border border-ink-700 rounded-2xl p-6 w-full max-w-md shadow-xl"
       >
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-token-lg bg-accent-info/15 flex items-center justify-center">
-            <Brain size={20} className="text-accent-info" />
+          <div className="w-10 h-10 rounded-xl bg-indigo/15 flex items-center justify-center">
+            <Brain size={20} className="text-indigo" />
           </div>
           <div>
-            <h3 className="text-earth-100 font-semibold">Analiza AI</h3>
-            <p className="text-earth-500 text-xs line-clamp-1">{tenderTitle}</p>
+            <h3 className="text-slate-100 font-semibold">Analiza AI</h3>
+            <p className="text-slate-500 text-xs line-clamp-1">{tenderTitle}</p>
           </div>
         </div>
         <div className="space-y-2 mb-5">
           {steps.map((step, i) => (
             <div key={i} className="flex items-center gap-2.5 text-sm">
               {i === steps.length - 1 && !done ? (
-                <Loader2 size={14} className="animate-spin text-accent-info shrink-0" />
+                <Loader2 size={14} className="animate-spin text-indigo shrink-0" />
               ) : (
-                <CheckCircle2 size={14} className="text-accent-primary shrink-0" />
+                <CheckCircle2 size={14} className="text-em shrink-0" />
               )}
-              <span className={i === steps.length - 1 && !done ? 'text-earth-200' : 'text-earth-400'}>{step}</span>
+              <span className={i === steps.length - 1 && !done ? 'text-slate-200' : 'text-slate-400'}>{step}</span>
             </div>
           ))}
         </div>
@@ -1356,9 +1356,9 @@ function AIAnalyzeModal({
             Zamknij
           </Button>
         ) : (
-          <div className="w-full h-1.5 bg-earth-800 rounded-full overflow-hidden">
+          <div className="w-full h-1.5 bg-ink-800 rounded-full overflow-hidden">
             <motion.div
-              className="h-full bg-accent-info rounded-full"
+              className="h-full bg-indigo rounded-full"
               animate={{ width: ['0%', '85%'] }}
               transition={{ duration: 3, ease: 'easeOut' }}
             />
@@ -1417,7 +1417,7 @@ function SemanticSearchTab({
     <div className="flex flex-col gap-4 h-full">
       <div className="flex gap-2">
         <div className="relative flex-1">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-earth-500" />
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
           <input
             type="text"
             value={query}
@@ -1440,22 +1440,22 @@ function SemanticSearchTab({
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 text-sm text-accent-info bg-accent-info/10 border border-accent-info/20 px-4 py-3 rounded-token-lg">
-          <AlertCircle size={16} className="shrink-0 text-accent-info" />
+        <div className="flex items-center gap-2 text-sm text-indigo bg-indigo/10 border border-indigo/20 px-4 py-3 rounded-xl">
+          <AlertCircle size={16} className="shrink-0 text-indigo" />
           <span>{error}</span>
         </div>
       )}
 
       {!searched && !loading && (
         <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center py-12">
-          <Sparkles size={36} className="text-earth-700" />
-          <p className="text-earth-400 text-sm">Wpisz opis, a AI znajdzie semantycznie podobne przetargi</p>
-          <p className="text-earth-600 text-xs">Przykład: &quot;remont instalacji elektrycznej w szkole podstawowej&quot;</p>
+          <Sparkles size={36} className="text-slate-700" />
+          <p className="text-slate-400 text-sm">Wpisz opis, a AI znajdzie semantycznie podobne przetargi</p>
+          <p className="text-slate-600 text-xs">Przykład: &quot;remont instalacji elektrycznej w szkole podstawowej&quot;</p>
         </div>
       )}
 
       {searched && results.length === 0 && !loading && (
-        <div className="text-center py-12 text-earth-500 text-sm">Brak wyników dla podanego zapytania</div>
+        <div className="text-center py-12 text-slate-500 text-sm">Brak wyników dla podanego zapytania</div>
       )}
 
       {results.length > 0 && (
@@ -1464,17 +1464,17 @@ function SemanticSearchTab({
             <button
               key={r.id}
               onClick={() => onSelectTender(r)}
-              className="w-full text-left p-4 rounded-token-lg bg-earth-900 border border-earth-800 hover:border-accent-info/40 hover:bg-earth-800/60 transition-all group"
+              className="w-full text-left p-4 rounded-xl bg-ink-900 border border-ink-800 hover:border-indigo/40 hover:bg-ink-800/60 transition-all group"
             >
               <div className="flex items-start justify-between gap-3">
-                <p className="text-sm text-earth-200 font-medium leading-snug group-hover:text-earth-100 line-clamp-2">{r.title}</p>
+                <p className="text-sm text-slate-200 font-medium leading-snug group-hover:text-slate-100 line-clamp-2">{r.title}</p>
                 {r.similarity && (
-                  <span className="shrink-0 text-xs font-bold px-2 py-0.5 rounded-full bg-accent-info/20 text-accent-info border border-accent-info/30">
+                  <span className="shrink-0 text-xs font-bold px-2 py-0.5 rounded-full bg-indigo/20 text-indigo border border-indigo/30">
                     {Math.round(r.similarity * 100)}% podobne
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-3 mt-2 text-xs text-earth-500">
+              <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
                 <span>{r.buyer ?? '—'}</span>
                 <span>·</span>
                 <span>{fmtSimplePLN(r.value_pln as number | null)}</span>
@@ -1679,11 +1679,11 @@ export function ZwiadPage() {
     <>
       {/* Last-refreshed indicator */}
       {lastRefreshed && (
-        <span className="hidden sm:flex items-center gap-1.5 text-xs text-earth-600 mr-1">
+        <span className="hidden sm:flex items-center gap-1.5 text-xs text-slate-600 mr-1">
           <motion.div
             animate={isRecent ? { opacity: [1, 0.3, 1] } : { opacity: 0.4 }}
             transition={isRecent ? { repeat: Infinity, duration: 2 } : {}}
-            className="w-2 h-2 rounded-full bg-accent-primary"
+            className="w-2 h-2 rounded-full bg-em"
           />
           {fmtLastRefreshed(lastRefreshed)}
         </span>
@@ -1733,7 +1733,7 @@ export function ZwiadPage() {
               <div className="glass-card px-4 pt-3 pb-2 lg:col-span-1">
                 <div className="flex items-center justify-between mb-1">
                   <span className="section-label">Sezonowość — 12 mies.</span>
-                  <span className="text-[10px] text-earth-700 tabular-nums">
+                  <span className="text-[10px] text-slate-700 tabular-nums">
                     max {Math.max(...seasonality.slice(-12).map(d => d.n_tenders))} / mies.
                   </span>
                 </div>
@@ -1785,7 +1785,7 @@ export function ZwiadPage() {
                 <option value="ted">TED EU</option>
                 <option value="bip">BIP</option>
               </select>
-              <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-earth-500 pointer-events-none" />
+              <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
             </div>
 
             {/* Status filter */}
@@ -1799,7 +1799,7 @@ export function ZwiadPage() {
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
-              <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-earth-500 pointer-events-none" />
+              <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
             </div>
 
             {/* Voivodeship filter */}
@@ -1814,12 +1814,12 @@ export function ZwiadPage() {
                   <option key={v} value={v}>{v}</option>
                 ))}
               </select>
-              <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-earth-500 pointer-events-none" />
+              <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
             </div>
 
             {/* Sort */}
             <div className="relative flex items-center gap-1.5">
-              <ArrowUpDown size={12} className="text-earth-600 shrink-0" />
+              <ArrowUpDown size={12} className="text-slate-600 shrink-0" />
               <select
                 value={sortBy}
                 onChange={e => setSortBy(e.target.value)}
@@ -1829,16 +1829,16 @@ export function ZwiadPage() {
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
-              <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-earth-500 pointer-events-none" />
+              <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
             </div>
 
             {/* Filters toggle */}
             <button
               onClick={() => setFiltersExpanded(f => !f)}
-              className={`flex items-center gap-1.5 px-3 h-8 rounded-token text-xs transition-colors ${
+              className={`flex items-center gap-1.5 px-3 h-8 rounded-md text-xs transition-colors ${
                 filtersExpanded
-                  ? 'bg-accent-primary/10 border border-accent-primary/30 text-accent-primary'
-                  : 'bg-earth-800 border border-earth-700/60 text-earth-500 hover:text-earth-200'
+                  ? 'bg-em/10 border border-em/30 text-em'
+                  : 'bg-ink-800 border border-ink-700/60 text-slate-500 hover:text-slate-200'
               }`}
             >
               <Filter size={12} />
@@ -1849,31 +1849,31 @@ export function ZwiadPage() {
             {filterSource && (
               <span className="flex items-center gap-1 text-[11px] bg-sky-500/10 border border-sky-500/30 text-sky-400 px-2 py-1 rounded-full">
                 {filterSource.toUpperCase()}
-                <button onClick={() => setFilterSource('')} className="hover:text-earth-100"><X size={10} /></button>
+                <button onClick={() => setFilterSource('')} className="hover:text-slate-100"><X size={10} /></button>
               </span>
             )}
             {filterStatus && (
-              <span className="flex items-center gap-1 text-[11px] bg-accent-primary/10 border border-accent-primary/30 text-accent-primary px-2 py-1 rounded-full">
+              <span className="flex items-center gap-1 text-[11px] bg-em/10 border border-em/30 text-em px-2 py-1 rounded-full">
                 Status: {STATUS_OPTS.find(s => s.value === filterStatus)?.label}
-                <button onClick={() => setFilterStatus('')} className="hover:text-earth-100"><X size={10} /></button>
+                <button onClick={() => setFilterStatus('')} className="hover:text-slate-100"><X size={10} /></button>
               </span>
             )}
             {filterVoivodeship && (
-              <span className="flex items-center gap-1 text-[11px] bg-accent-info/10 border border-accent-info/30 text-accent-info px-2 py-1 rounded-full">
+              <span className="flex items-center gap-1 text-[11px] bg-indigo/10 border border-indigo/30 text-indigo px-2 py-1 rounded-full">
                 {filterVoivodeship}
-                <button onClick={() => setFilterVoivodeship('')} className="hover:text-earth-100"><X size={10} /></button>
+                <button onClick={() => setFilterVoivodeship('')} className="hover:text-slate-100"><X size={10} /></button>
               </span>
             )}
             {filterCpv && (
-              <span className="flex items-center gap-1 text-[11px] bg-accent-violet/10 border border-accent-violet/30 text-accent-violet px-2 py-1 rounded-full">
+              <span className="flex items-center gap-1 text-[11px] bg-violet/10 border border-violet/30 text-violet px-2 py-1 rounded-full">
                 CPV: {filterCpv}
-                <button onClick={() => setFilterCpv('')} className="hover:text-earth-100"><X size={10} /></button>
+                <button onClick={() => setFilterCpv('')} className="hover:text-slate-100"><X size={10} /></button>
               </span>
             )}
             {(filterMinValue || filterMaxValue) && (
-              <span className="flex items-center gap-1 text-[11px] bg-accent-warning/10 border border-accent-warning/30 text-accent-warning px-2 py-1 rounded-full">
+              <span className="flex items-center gap-1 text-[11px] bg-warn/10 border border-warn/30 text-warn px-2 py-1 rounded-full">
                 {filterMinValue ? fmtPLN(Number(filterMinValue)) : '0'} – {filterMaxValue ? fmtPLN(Number(filterMaxValue)) : '∞'}
-                <button onClick={() => { setFilterMinValue(''); setFilterMaxValue(''); }} className="hover:text-earth-100"><X size={10} /></button>
+                <button onClick={() => { setFilterMinValue(''); setFilterMaxValue(''); }} className="hover:text-slate-100"><X size={10} /></button>
               </span>
             )}
           </div>
@@ -1888,10 +1888,10 @@ export function ZwiadPage() {
                 transition={{ duration: 0.2 }}
                 className="overflow-hidden"
               >
-                <div className="flex items-center gap-3 flex-wrap pt-3 mt-3 border-t border-earth-800/40">
+                <div className="flex items-center gap-3 flex-wrap pt-3 mt-3 border-t border-ink-800/40">
                   {/* CPV input */}
                   <div className="flex items-center gap-1.5">
-                    <Tag size={12} className="text-earth-600 shrink-0" />
+                    <Tag size={12} className="text-slate-600 shrink-0" />
                     <input
                       type="text"
                       value={filterCpv}
@@ -1903,7 +1903,7 @@ export function ZwiadPage() {
 
                   {/* Value range */}
                   <div className="flex items-center gap-1.5">
-                    <DollarSign size={12} className="text-earth-600 shrink-0" />
+                    <DollarSign size={12} className="text-slate-600 shrink-0" />
                     <input
                       type="number"
                       value={filterMinValue}
@@ -1911,7 +1911,7 @@ export function ZwiadPage() {
                       placeholder="Min PLN"
                       className="input-base text-xs py-2 h-8 w-28 tabular-nums"
                     />
-                    <span className="text-earth-600 text-xs">–</span>
+                    <span className="text-slate-600 text-xs">–</span>
                     <input
                       type="number"
                       value={filterMaxValue}
@@ -1927,7 +1927,7 @@ export function ZwiadPage() {
                     size="sm"
                     onClick={resetFilters}
                     iconLeft={<X size={11} />}
-                    className="text-earth-500 hover:text-accent-danger"
+                    className="text-slate-500 hover:text-nogo"
                   >
                     Wyczyść filtry
                   </Button>
@@ -1938,24 +1938,24 @@ export function ZwiadPage() {
         </div>
 
         {/* ── Body: Feed + Detail Panel ────────────────────────────────────────── */}
-        <div className="flex gap-0 rounded-token-xl overflow-hidden border border-earth-800/60 min-h-[520px] h-[65vh]">
+        <div className="flex gap-0 rounded-2xl overflow-hidden border border-ink-800/60 min-h-[520px] h-[65vh]">
 
           {/* Feed — left column */}
           <div
             className={`flex flex-col overflow-hidden transition-all duration-300 ${
               selectedTender ? 'w-[58%]' : 'flex-1'
-            } border-r border-earth-800/60`}
+            } border-r border-ink-800/60`}
           >
-            <div className="flex-1 overflow-y-auto bg-earth-950">
+            <div className="flex-1 overflow-y-auto bg-ink-950">
               {feedError ? (
-                <div className="m-6 p-4 rounded-token-lg bg-accent-danger/10 border border-accent-danger/20 text-accent-danger text-sm flex items-start gap-3">
+                <div className="m-6 p-4 rounded-xl bg-nogo/10 border border-nogo/20 text-nogo text-sm flex items-start gap-3">
                   <AlertCircle size={16} className="shrink-0 mt-0.5" />
                   <div>
                     <p className="font-medium">Błąd ładowania przetargów</p>
-                    <p className="text-accent-danger/70 text-xs mt-1">{feedError}</p>
+                    <p className="text-nogo/70 text-xs mt-1">{feedError}</p>
                     <button
                       onClick={() => fetchFeed(true)}
-                      className="mt-2 underline text-xs hover:text-accent-danger/80"
+                      className="mt-2 underline text-xs hover:text-nogo/80"
                     >
                       Spróbuj ponownie
                     </button>
@@ -1970,11 +1970,11 @@ export function ZwiadPage() {
               ) : tenders.length === 0 ? (
                 /* Empty state */
                 <div className="flex flex-col items-center justify-center h-full py-20 px-6 text-center">
-                  <div className="w-16 h-16 rounded-token-xl bg-earth-800/60 border border-earth-700/60 flex items-center justify-center mb-4">
-                    <RefreshCw size={28} className="text-earth-600" />
+                  <div className="w-16 h-16 rounded-2xl bg-ink-800/60 border border-ink-700/60 flex items-center justify-center mb-4">
+                    <RefreshCw size={28} className="text-slate-600" />
                   </div>
-                  <h3 className="text-earth-200 font-semibold mb-2">Brak przetargów</h3>
-                  <p className="text-earth-500 text-sm max-w-sm mb-1">
+                  <h3 className="text-slate-200 font-semibold mb-2">Brak przetargów</h3>
+                  <p className="text-slate-500 text-sm max-w-sm mb-1">
                     {filterStatus || filterVoivodeship || filterSource || filterCpv || filterMinValue || filterMaxValue
                       ? 'Zmień filtry aby zobaczyć więcej wyników'
                       : 'Baza przetargów jest pusta. Pobierz pierwsze przetargi z BZP.'}
@@ -2017,14 +2017,14 @@ export function ZwiadPage() {
                         loading={loadingMore}
                         onClick={() => fetchFeed(false)}
                         iconLeft={loadingMore ? undefined : <ChevronDown size={14} />}
-                        className="border border-earth-800 hover:border-earth-700"
+                        className="border border-ink-800 hover:border-ink-700"
                       >
                         {loadingMore
                           ? 'Ładowanie…'
                           : `Załaduj więcej (${total - tenders.length} pozostało)`}
                       </Button>
                     ) : tenders.length > 0 ? (
-                      <p className="text-center text-[11px] text-earth-700 py-2">
+                      <p className="text-center text-[11px] text-slate-700 py-2">
                         Wszystkie {total} przetargów załadowane
                       </p>
                     ) : null}

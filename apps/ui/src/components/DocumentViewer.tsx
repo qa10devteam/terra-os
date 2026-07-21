@@ -87,13 +87,13 @@ export function DocumentViewer({ pdfUrl, tenderTitle, tenderId }: DocumentViewer
   if (!pdfUrl && !fetched) {
     return (
       <GlassCard className="p-6 text-center">
-        <FileText className="w-10 h-10 text-earth-700 mx-auto mb-3" />
-        <p className="text-sm text-earth-500">Brak pobranych dokumentów</p>
-        <p className="text-xs text-earth-700 mt-2">Kliknij aby pobrać dokumentację przetargową (SWZ, przedmiar, specyfikacja)</p>
+        <FileText className="w-10 h-10 text-slate-700 mx-auto mb-3" />
+        <p className="text-sm text-slate-500">Brak pobranych dokumentów</p>
+        <p className="text-xs text-slate-700 mt-2">Kliknij aby pobrać dokumentację przetargową (SWZ, przedmiar, specyfikacja)</p>
         <button
           onClick={fetchDocuments}
           disabled={fetching}
-          className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-accent-primary/15 text-accent-primary border border-accent-primary/30 rounded-xl text-sm font-semibold hover:bg-accent-primary/25 transition-colors disabled:opacity-50"
+          className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-em/15 text-em border border-em/30 rounded-xl text-sm font-semibold hover:bg-em/25 transition-colors disabled:opacity-50"
         >
           {fetching ? (
             <><Loader2 className="w-4 h-4 animate-spin" /> Pobieranie z BZP...</>
@@ -108,13 +108,13 @@ export function DocumentViewer({ pdfUrl, tenderTitle, tenderId }: DocumentViewer
   if (fetched && docs.length === 0 && !pdfUrl) {
     return (
       <GlassCard className="p-6 text-center">
-        <FileText className="w-10 h-10 text-accent-warning/50 mx-auto mb-3" />
-        <p className="text-sm text-earth-400">Dokumenty nie są jeszcze dostępne w API BZP</p>
-        <p className="text-xs text-earth-600 mt-1">Spróbuj ponownie później lub dodaj dokumenty ręcznie</p>
+        <FileText className="w-10 h-10 text-warn/50 mx-auto mb-3" />
+        <p className="text-sm text-slate-400">Dokumenty nie są jeszcze dostępne w API BZP</p>
+        <p className="text-xs text-slate-600 mt-1">Spróbuj ponownie później lub dodaj dokumenty ręcznie</p>
         <button
           onClick={fetchDocuments}
           disabled={fetching}
-          className="mt-3 text-xs text-accent-primary hover:underline"
+          className="mt-3 text-xs text-em hover:underline"
         >
           Ponów pobieranie
         </button>
@@ -126,24 +126,24 @@ export function DocumentViewer({ pdfUrl, tenderTitle, tenderId }: DocumentViewer
     return (
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-earth-300">{docs.length} dokumentów</h3>
+          <h3 className="text-sm font-semibold text-slate-300">{docs.length} dokumentów</h3>
           <button
             onClick={fetchDocuments}
             disabled={fetching}
-            className="text-xs text-accent-primary hover:underline"
+            className="text-xs text-em hover:underline"
           >
             Odśwież
           </button>
         </div>
         {docs.map(doc => (
-          <GlassCard key={doc.id} className="p-3 flex items-center gap-3 hover:bg-earth-800/40 transition-colors cursor-pointer">
-            <FileText className="w-5 h-5 text-accent-primary shrink-0" />
+          <GlassCard key={doc.id} className="p-3 flex items-center gap-3 hover:bg-ink-800/40 transition-colors cursor-pointer">
+            <FileText className="w-5 h-5 text-em shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-earth-200 truncate">{doc.name}</p>
-              <p className="text-xs text-earth-600">{doc.type}{doc.size_bytes ? ` • ${(doc.size_bytes / 1024 / 1024).toFixed(1)} MB` : ''}</p>
+              <p className="text-sm text-slate-200 truncate">{doc.name}</p>
+              <p className="text-xs text-slate-600">{doc.type}{doc.size_bytes ? ` • ${(doc.size_bytes / 1024 / 1024).toFixed(1)} MB` : ''}</p>
             </div>
             {doc.url && (
-              <a href={doc.url} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg hover:bg-earth-700 text-earth-500 hover:text-earth-200">
+              <a href={doc.url} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg hover:bg-ink-700 text-slate-500 hover:text-slate-200">
                 <Download className="w-4 h-4" />
               </a>
             )}
@@ -156,11 +156,11 @@ export function DocumentViewer({ pdfUrl, tenderTitle, tenderId }: DocumentViewer
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-earth-300">{tenderTitle ?? 'Dokument przetargu'}</h3>
+        <h3 className="text-sm font-semibold text-slate-300">{tenderTitle ?? 'Dokument przetargu'}</h3>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowSearch(s => !s)}
-            className="p-1.5 rounded-lg hover:bg-earth-800 text-earth-500 hover:text-earth-200 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-ink-800 text-slate-500 hover:text-slate-200 transition-colors"
             title="Szukaj w dokumencie (Ctrl+F)"
           >
             <Search className="w-4 h-4" />
@@ -169,7 +169,7 @@ export function DocumentViewer({ pdfUrl, tenderTitle, tenderId }: DocumentViewer
             href={pdfUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="p-1.5 rounded-lg hover:bg-earth-800 text-earth-500 hover:text-earth-200 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-ink-800 text-slate-500 hover:text-slate-200 transition-colors"
             title="Otwórz PDF w nowej karcie"
           >
             <ExternalLink className="w-4 h-4" />
@@ -178,17 +178,17 @@ export function DocumentViewer({ pdfUrl, tenderTitle, tenderId }: DocumentViewer
       </div>
 
       {showSearch && (
-        <div className="flex items-center gap-2 bg-earth-800/60 border border-earth-700/40 rounded-xl px-3 py-2">
-          <Search className="w-3.5 h-3.5 text-earth-500" />
+        <div className="flex items-center gap-2 bg-ink-800/60 border border-ink-700/40 rounded-xl px-3 py-2">
+          <Search className="w-3.5 h-3.5 text-slate-500" />
           <input
             autoFocus
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Szukaj w dokumencie..."
-            className="flex-1 bg-transparent text-sm text-earth-200 placeholder-earth-600 outline-none"
+            className="flex-1 bg-transparent text-sm text-slate-200 placeholder-ink-600 outline-none"
           />
           <button onClick={() => { setShowSearch(false); setSearchQuery(''); }}>
-            <X className="w-3.5 h-3.5 text-earth-600 hover:text-earth-300" />
+            <X className="w-3.5 h-3.5 text-slate-600 hover:text-slate-300" />
           </button>
         </div>
       )}
@@ -196,17 +196,17 @@ export function DocumentViewer({ pdfUrl, tenderTitle, tenderId }: DocumentViewer
       <div className="relative" onMouseUp={handleTextSelect}>
         <iframe
           src={pdfUrl}
-          className="w-full h-[500px] rounded-xl border border-earth-800/60 bg-white"
+          className="w-full h-[500px] rounded-xl border border-ink-800/60 bg-white"
           title="Dokument przetargu"
         />
         {menuPos && (
           <div
-            className="fixed z-50 bg-earth-800 border border-earth-700/60 rounded-lg shadow-xl px-3 py-1.5"
+            className="fixed z-50 bg-ink-800 border border-ink-700/60 rounded-lg shadow-xl px-3 py-1.5"
             style={{ left: menuPos.x, top: menuPos.y }}
           >
             <button
               onClick={analyzeFragment}
-              className="text-xs text-accent-primary hover:text-emerald-300 whitespace-nowrap"
+              className="text-xs text-em hover:text-em whitespace-nowrap"
             >
               🤖 Analizuj ten fragment
             </button>
@@ -214,8 +214,8 @@ export function DocumentViewer({ pdfUrl, tenderTitle, tenderId }: DocumentViewer
         )}
       </div>
 
-      <p className="text-xs text-earth-700 text-center">
-        Zaznacz tekst aby go przeanalizować • <a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="text-accent-primary hover:underline">Kliknij aby otworzyć PDF</a>
+      <p className="text-xs text-slate-700 text-center">
+        Zaznacz tekst aby go przeanalizować • <a href={pdfUrl} target="_blank" rel="noopener noreferrer" className="text-em hover:underline">Kliknij aby otworzyć PDF</a>
       </p>
     </div>
   );

@@ -158,16 +158,16 @@ export function MarketIntelPage() {
       <div className="space-y-6">
 
         {/* ── Tab Bar ──────────────────────────────────────────────────────── */}
-        <div className="flex gap-1 bg-earth-900/40 p-1 rounded-token-lg border border-earth-800/50">
+        <div className="flex gap-1 bg-ink-900/40 p-1 rounded-xl border border-ink-800/50">
           {tabs.map(t => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
               className={[
-                'flex items-center gap-2 px-4 py-2 rounded-token text-sm font-medium transition-all',
+                'flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all',
                 tab === t.id
-                  ? 'bg-accent-primary/15 text-accent-primary border border-accent-primary/30'
-                  : 'text-earth-400 hover:text-earth-200 hover:bg-earth-800/50',
+                  ? 'bg-em/15 text-em border border-em/30'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-ink-800/50',
               ].join(' ')}
             >
               <t.icon size={14} />
@@ -187,41 +187,41 @@ export function MarketIntelPage() {
           {/* OLAP Tab */}
           {tab === 'olap' && (
             <GlassCard className="p-6">
-              <h2 className="text-lg font-semibold text-earth-100 mb-4">OLAP — Ewolucja rynku</h2>
+              <h2 className="text-lg font-semibold text-slate-100 mb-4">OLAP — Ewolucja rynku</h2>
               {olapData.length === 0 ? (
-                <p className="text-earth-400">Brak danych OLAP{cpvFilter ? ` dla CPV ${cpvFilter}` : ''}</p>
+                <p className="text-slate-400">Brak danych OLAP{cpvFilter ? ` dla CPV ${cpvFilter}` : ''}</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-earth-700">
-                        <th className="text-left py-2 text-earth-400 font-medium">Rok</th>
-                        <th className="text-left py-2 text-earth-400 font-medium">Q</th>
-                        <th className="text-left py-2 text-earth-400 font-medium">CPV</th>
-                        <th className="text-right py-2 text-earth-400 font-medium">Ilość</th>
-                        <th className="text-right py-2 text-earth-400 font-medium">Wartość</th>
-                        <th className="text-right py-2 text-earth-400 font-medium">Śr. wartość</th>
-                        <th className="text-right py-2 text-earth-400 font-medium">Win%</th>
+                      <tr className="border-b border-ink-700">
+                        <th className="text-left py-2 text-slate-400 font-medium">Rok</th>
+                        <th className="text-left py-2 text-slate-400 font-medium">Q</th>
+                        <th className="text-left py-2 text-slate-400 font-medium">CPV</th>
+                        <th className="text-right py-2 text-slate-400 font-medium">Ilość</th>
+                        <th className="text-right py-2 text-slate-400 font-medium">Wartość</th>
+                        <th className="text-right py-2 text-slate-400 font-medium">Śr. wartość</th>
+                        <th className="text-right py-2 text-slate-400 font-medium">Win%</th>
                       </tr>
                     </thead>
                     <tbody>
                       {olapData.slice(0, 30).map((row, i) => (
-                        <tr key={i} className="border-b border-earth-800/50 hover:bg-earth-800/30 transition-colors">
-                          <td className="py-2 text-earth-200">{row.year}</td>
-                          <td className="py-2 text-earth-300">Q{row.quarter}</td>
+                        <tr key={i} className="border-b border-ink-800/50 hover:bg-ink-800/30 transition-colors">
+                          <td className="py-2 text-slate-200">{row.year}</td>
+                          <td className="py-2 text-slate-300">Q{row.quarter}</td>
                           <td className="py-2">
-                            <span className="px-2 py-0.5 bg-accent-info/10 text-accent-info rounded-token text-xs">
+                            <span className="px-2 py-0.5 bg-indigo/10 text-indigo rounded-md text-xs">
                               {row.cpv_division}
                             </span>
                           </td>
-                          <td className="py-2 text-right text-earth-200">{row.tender_count}</td>
-                          <td className="py-2 text-right text-earth-200">{formatPLN(row.total_value)} PLN</td>
-                          <td className="py-2 text-right text-earth-300">{formatPLN(row.avg_value)} PLN</td>
+                          <td className="py-2 text-right text-slate-200">{row.tender_count}</td>
+                          <td className="py-2 text-right text-slate-200">{formatPLN(row.total_value)} PLN</td>
+                          <td className="py-2 text-right text-slate-300">{formatPLN(row.avg_value)} PLN</td>
                           <td className="py-2 text-right">
                             <span className={
-                              row.win_rate > 30 ? 'text-accent-success' :
-                              row.win_rate > 0  ? 'text-accent-warning' :
-                              'text-earth-500'
+                              row.win_rate > 30 ? 'text-go' :
+                              row.win_rate > 0  ? 'text-warn' :
+                              'text-slate-500'
                             }>
                               {row.win_rate}%
                             </span>
@@ -238,25 +238,25 @@ export function MarketIntelPage() {
           {/* Price Index Tab */}
           {tab === 'price' && (
             <GlassCard className="p-6">
-              <h2 className="text-lg font-semibold text-earth-100 mb-4">Indeks cen CPV — kwartalne zmiany</h2>
+              <h2 className="text-lg font-semibold text-slate-100 mb-4">Indeks cen CPV — kwartalne zmiany</h2>
               {priceData.length === 0 ? (
-                <p className="text-earth-400">Brak danych cenowych (za mało przetargów w danej kategorii)</p>
+                <p className="text-slate-400">Brak danych cenowych (za mało przetargów w danej kategorii)</p>
               ) : (
                 <div className="space-y-3">
                   {priceData.slice(0, 20).map((row, i) => (
                     <div key={i} className="card-hover flex items-center justify-between p-3">
                       <div>
-                        <span className="text-earth-200 font-medium">{row.cpv_group}</span>
-                        <span className="ml-3 text-earth-500 text-xs">{row.quarter?.slice(0, 10)}</span>
+                        <span className="text-slate-200 font-medium">{row.cpv_group}</span>
+                        <span className="ml-3 text-slate-500 text-xs">{row.quarter?.slice(0, 10)}</span>
                       </div>
                       <div className="flex items-center gap-4">
-                        <span className="text-earth-300">{formatPLN(row.avg_price)} PLN</span>
+                        <span className="text-slate-300">{formatPLN(row.avg_price)} PLN</span>
                         {row.change_pct !== null && (
-                          <span className={`text-sm font-medium ${row.change_pct > 0 ? 'text-accent-danger' : 'text-accent-success'}`}>
+                          <span className={`text-sm font-medium ${row.change_pct > 0 ? 'text-nogo' : 'text-go'}`}>
                             {row.change_pct > 0 ? '+' : ''}{row.change_pct}%
                           </span>
                         )}
-                        <span className="text-earth-500 text-xs">(n={row.sample_size})</span>
+                        <span className="text-slate-500 text-xs">(n={row.sample_size})</span>
                       </div>
                     </div>
                   ))}
@@ -268,10 +268,10 @@ export function MarketIntelPage() {
           {/* Forecast Tab */}
           {tab === 'forecast' && (
             <GlassCard className="p-6">
-              <h2 className="text-lg font-semibold text-earth-100 mb-2">Prognoza — Holt-Winters</h2>
-              <p className="text-earth-500 text-sm mb-4">{forecastInsight}</p>
+              <h2 className="text-lg font-semibold text-slate-100 mb-2">Prognoza — Holt-Winters</h2>
+              <p className="text-slate-500 text-sm mb-4">{forecastInsight}</p>
               {forecastData.length === 0 ? (
-                <p className="text-earth-400">Brak danych do prognozowania</p>
+                <p className="text-slate-400">Brak danych do prognozowania</p>
               ) : (
                 <div className="space-y-4">
                   {/* SVG forecast chart */}
@@ -318,8 +318,8 @@ export function MarketIntelPage() {
                     {forecastData.map((f, i) => (
                       <div key={i} className="card p-3 text-center">
                         <div className="section-label mb-1">Q+{f.period}</div>
-                        <div className="text-earth-100 font-bold text-lg">{(f.forecast ?? 0).toFixed(0)}</div>
-                        <div className="text-earth-500 text-xs">{(f.lower_ci ?? 0).toFixed(0)}–{(f.upper_ci ?? 0).toFixed(0)}</div>
+                        <div className="text-slate-100 font-bold text-lg">{(f.forecast ?? 0).toFixed(0)}</div>
+                        <div className="text-slate-500 text-xs">{(f.lower_ci ?? 0).toFixed(0)}–{(f.upper_ci ?? 0).toFixed(0)}</div>
                       </div>
                     ))}
                   </div>
@@ -331,10 +331,10 @@ export function MarketIntelPage() {
           {/* Seasonal Tab */}
           {tab === 'seasonal' && (
             <GlassCard className="p-6">
-              <h2 className="text-lg font-semibold text-earth-100 mb-2">Sezonowość przetargów</h2>
-              <p className="text-earth-500 text-sm mb-4">{seasonalInsight}</p>
+              <h2 className="text-lg font-semibold text-slate-100 mb-2">Sezonowość przetargów</h2>
+              <p className="text-slate-500 text-sm mb-4">{seasonalInsight}</p>
               {seasonalData.length === 0 ? (
-                <p className="text-earth-400">Brak danych sezonowych</p>
+                <p className="text-slate-400">Brak danych sezonowych</p>
               ) : (
                 <div className="grid grid-cols-12 gap-2">
                   {seasonalData.map((m, i) => {
@@ -348,12 +348,12 @@ export function MarketIntelPage() {
                             animate={{ height }}
                             transition={{ delay: i * 0.05 }}
                             className={`w-6 rounded-t-md absolute bottom-0 ${
-                              m.peak ? 'bg-accent-primary' : m.trough ? 'bg-accent-danger/60' : 'bg-earth-600'
+                              m.peak ? 'bg-em' : m.trough ? 'bg-nogo/60' : 'bg-ink-600'
                             }`}
                           />
                         </div>
-                        <div className="text-earth-400 text-xs mt-1">{monthNames[m.month - 1]}</div>
-                        <div className="text-earth-500 text-[10px]">{(m.seasonal_index ?? 0).toFixed(2)}</div>
+                        <div className="text-slate-400 text-xs mt-1">{monthNames[m.month - 1]}</div>
+                        <div className="text-slate-500 text-[10px]">{(m.seasonal_index ?? 0).toFixed(2)}</div>
                       </div>
                     );
                   })}
@@ -365,29 +365,29 @@ export function MarketIntelPage() {
           {/* Cohort Tab */}
           {tab === 'cohort' && (
             <GlassCard className="p-6">
-              <h2 className="text-lg font-semibold text-earth-100 mb-4">Kohorty zamawiających</h2>
+              <h2 className="text-lg font-semibold text-slate-100 mb-4">Kohorty zamawiających</h2>
               {cohortData.length === 0 ? (
-                <p className="text-earth-400">Brak danych kohortowych</p>
+                <p className="text-slate-400">Brak danych kohortowych</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-earth-700">
-                        <th className="text-left py-2 text-earth-400">Kohorta</th>
-                        <th className="text-right py-2 text-earth-400">Miesiąc+</th>
-                        <th className="text-right py-2 text-earth-400">Aktywni</th>
-                        <th className="text-right py-2 text-earth-400">Przetargi</th>
-                        <th className="text-right py-2 text-earth-400">Wartość</th>
+                      <tr className="border-b border-ink-700">
+                        <th className="text-left py-2 text-slate-400">Kohorta</th>
+                        <th className="text-right py-2 text-slate-400">Miesiąc+</th>
+                        <th className="text-right py-2 text-slate-400">Aktywni</th>
+                        <th className="text-right py-2 text-slate-400">Przetargi</th>
+                        <th className="text-right py-2 text-slate-400">Wartość</th>
                       </tr>
                     </thead>
                     <tbody>
                       {cohortData.slice(0, 30).map((row, i) => (
-                        <tr key={i} className="border-b border-earth-800/50 hover:bg-earth-800/30 transition-colors">
-                          <td className="py-2 text-earth-200">{row.cohort_month?.slice(0, 7)}</td>
-                          <td className="py-2 text-right text-earth-300">+{row.months_since_first}</td>
-                          <td className="py-2 text-right text-earth-200">{row.active_buyers}</td>
-                          <td className="py-2 text-right text-earth-200">{row.tender_count}</td>
-                          <td className="py-2 text-right text-earth-200">{formatPLN(row.total_value || 0)} PLN</td>
+                        <tr key={i} className="border-b border-ink-800/50 hover:bg-ink-800/30 transition-colors">
+                          <td className="py-2 text-slate-200">{row.cohort_month?.slice(0, 7)}</td>
+                          <td className="py-2 text-right text-slate-300">+{row.months_since_first}</td>
+                          <td className="py-2 text-right text-slate-200">{row.active_buyers}</td>
+                          <td className="py-2 text-right text-slate-200">{row.tender_count}</td>
+                          <td className="py-2 text-right text-slate-200">{formatPLN(row.total_value || 0)} PLN</td>
                         </tr>
                       ))}
                     </tbody>

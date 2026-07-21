@@ -35,15 +35,15 @@ const PL_DAYS_FULL = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwarte
 // ── Weather helpers ───────────────────────────────────────────────────────────
 function WeatherIcon({ code, className = 'w-6 h-6' }: { code?: number | null; className?: string }) {
   const c = code ?? 0;
-  if (c === 0) return <Sun className={`${className} text-yellow-400`} />;
-  if (c <= 3) return <Cloud className={`${className} text-earth-400`} />;
-  if (c <= 49) return <Droplets className={`${className} text-accent-info`} />;
-  if (c <= 59) return <CloudRain className={`${className} text-accent-info`} />;
+  if (c === 0) return <Sun className={`${className} text-warn`} />;
+  if (c <= 3) return <Cloud className={`${className} text-slate-400`} />;
+  if (c <= 49) return <Droplets className={`${className} text-indigo`} />;
+  if (c <= 59) return <CloudRain className={`${className} text-indigo`} />;
   if (c <= 69) return <CloudSnow className={`${className} text-sky-300`} />;
   if (c <= 79) return <Snowflake className={`${className} text-sky-200`} />;
   if (c <= 84) return <CloudRain className={`${className} text-blue-500`} />;
   if (c <= 94) return <CloudSnow className={`${className} text-sky-300`} />;
-  return <CloudLightning className={`${className} text-yellow-400`} />;
+  return <CloudLightning className={`${className} text-warn`} />;
 }
 
 function weatherLabel(code?: number | null): string {
@@ -78,9 +78,9 @@ function apiRiskToLevel(apiRisk?: string | null): RiskLevel | null {
 }
 
 const riskConfig: Record<RiskLevel, { cls: string; dot: string; label: string; icon: string }> = {
-  wysoki: { cls: 'bg-accent-danger/15 text-accent-danger border border-accent-danger/30',   dot: 'bg-accent-danger',   label: 'Stop roboty', icon: '⛔' },
-  średni: { cls: 'bg-accent-warning/15 text-accent-warning border border-accent-warning/30', dot: 'bg-accent-warning', label: 'Ostrożnie',    icon: '⚠️' },
-  niski:  { cls: 'bg-accent-primary/15 text-accent-primary border border-accent-primary/30', dot: 'bg-accent-primary', label: 'OK',           icon: '✓' },
+  wysoki: { cls: 'bg-nogo/15 text-nogo border border-nogo/30',   dot: 'bg-nogo',   label: 'Stop roboty', icon: '⛔' },
+  średni: { cls: 'bg-warn/15 text-warn border border-warn/30', dot: 'bg-warn', label: 'Ostrożnie',    icon: '⚠️' },
+  niski:  { cls: 'bg-em/15 text-em border border-em/30', dot: 'bg-em', label: 'OK',           icon: '✓' },
 };
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -112,11 +112,11 @@ interface WeatherResponse {
 // ── Skeleton cards ────────────────────────────────────────────────────────────
 function SkeletonCard() {
   return (
-    <div className="card p-4 rounded-token-lg animate-pulse-soft">
-      <div className="h-3 bg-earth-800 rounded w-10 mb-3" />
-      <div className="w-10 h-10 bg-earth-800 rounded-token mb-3 mx-auto" />
-      <div className="h-4 bg-earth-800 rounded w-16 mb-1.5 mx-auto" />
-      <div className="h-3 bg-earth-800 rounded w-12 mx-auto" />
+    <div className="card p-4 rounded-xl animate-pulse-soft">
+      <div className="h-3 bg-ink-800 rounded w-10 mb-3" />
+      <div className="w-10 h-10 bg-ink-800 rounded-md mb-3 mx-auto" />
+      <div className="h-4 bg-ink-800 rounded w-16 mb-1.5 mx-auto" />
+      <div className="h-3 bg-ink-800 rounded w-12 mx-auto" />
     </div>
   );
 }
@@ -194,13 +194,13 @@ export function PogodaPage() {
       <motion.div
         whileHover={{ y: -2 }}
         onClick={() => setSelectedDay(isSelected ? null : day)}
-        className={`card rounded-token-lg cursor-pointer transition-all duration-200 ${
+        className={`card rounded-xl cursor-pointer transition-all duration-200 ${
           isSmall ? 'p-3' : 'p-4'
-        } ${isSelected ? 'ring-2 ring-accent-primary/60' : 'card-hover'}`}
+        } ${isSelected ? 'ring-2 ring-em/60' : 'card-hover'}`}
       >
         <div className="text-center">
-          <p className="text-xs font-semibold text-earth-400 uppercase">{dayName}</p>
-          <p className="text-xs text-earth-600 mb-2">{dd}</p>
+          <p className="text-xs font-semibold text-slate-400 uppercase">{dayName}</p>
+          <p className="text-xs text-slate-600 mb-2">{dd}</p>
 
           <WeatherIcon
             code={day.weather_code}
@@ -208,16 +208,16 @@ export function PogodaPage() {
           />
 
           {!isSmall && (
-            <p className="text-earth-500 text-xs mb-2">{weatherLabel(day.weather_code)}</p>
+            <p className="text-slate-500 text-xs mb-2">{weatherLabel(day.weather_code)}</p>
           )}
 
           <div className="flex items-center justify-center gap-1 mb-2">
-            <span className="text-blue-400 font-mono text-xs">{(day.temp_min ?? 0).toFixed(0)}°</span>
-            <span className="text-earth-700 text-xs">/</span>
+            <span className="text-indigo-400 font-mono text-xs">{(day.temp_min ?? 0).toFixed(0)}°</span>
+            <span className="text-slate-700 text-xs">/</span>
             <span className="text-orange-400 font-mono text-xs font-semibold">{(day.temp_max ?? 0).toFixed(0)}°</span>
           </div>
 
-          <div className="flex items-center justify-center gap-2 text-xs text-earth-600 mb-2">
+          <div className="flex items-center justify-center gap-2 text-xs text-slate-600 mb-2">
             <span><CloudRain className="w-3 h-3 inline mr-0.5" />{(day.precipitation_mm ?? 0).toFixed(0)}mm</span>
             <span><Wind className="w-3 h-3 inline mr-0.5" />{(day.wind_max_kmh ?? 0).toFixed(0)}</span>
           </div>
@@ -236,9 +236,9 @@ export function PogodaPage() {
       title="Pogoda Budowlana"
       subtitle="Warunki meteorologiczne dla placów budowy"
       actions={
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-token bg-earth-800/60 border border-earth-700/40">
-          <MapPin className="w-3.5 h-3.5 text-accent-primary" />
-          <span className="text-sm text-earth-300 font-medium">{city}</span>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-ink-800/60 border border-ink-700/40">
+          <MapPin className="w-3.5 h-3.5 text-em" />
+          <span className="text-sm text-slate-300 font-medium">{city}</span>
         </div>
       }
     >
@@ -261,14 +261,14 @@ export function PogodaPage() {
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
-                className="absolute top-full mt-1 left-0 right-0 bg-earth-900 border border-earth-700 rounded-token-lg shadow-token-lg z-50 max-h-60 overflow-y-auto"
+                className="absolute top-full mt-1 left-0 right-0 bg-ink-900 border border-ink-700 rounded-xl shadow-xl z-50 max-h-60 overflow-y-auto"
               >
                 {filteredCities.map((c) => (
                   <button
                     key={c}
                     onMouseDown={() => selectCity(c)}
-                    className={`w-full text-left px-4 py-2 text-sm transition-colors hover:bg-earth-800 ${
-                      c === city ? 'text-accent-primary bg-earth-800/50' : 'text-earth-300'
+                    className={`w-full text-left px-4 py-2 text-sm transition-colors hover:bg-ink-800 ${
+                      c === city ? 'text-em bg-ink-800/50' : 'text-slate-300'
                     }`}
                   >
                     {c}
@@ -281,7 +281,7 @@ export function PogodaPage() {
 
         {/* Error banner */}
         {error && (
-          <div className="flex items-center gap-2 px-4 py-2.5 bg-accent-warning/10 border border-accent-warning/30 rounded-token-lg text-accent-warning text-sm">
+          <div className="flex items-center gap-2 px-4 py-2.5 bg-warn/10 border border-warn/30 rounded-xl text-warn text-sm">
             <AlertTriangle className="w-4 h-4 shrink-0" />
             <span>Dane demonstracyjne (API niedostępne): {error}</span>
           </div>
@@ -297,9 +297,9 @@ export function PogodaPage() {
                 ? firstRow.map(day => <DayCard key={day.date} day={day} size="normal" />)
                 : (
                   <div className="col-span-7 flex flex-col items-center justify-center py-10 text-center">
-                    <CloudRain className="w-10 h-10 text-earth-600 mb-3" />
-                    <p className="text-earth-400 text-sm font-medium">Brak danych pogodowych</p>
-                    <p className="text-earth-600 text-xs mt-1">Wybierz miasto powyżej</p>
+                    <CloudRain className="w-10 h-10 text-slate-600 mb-3" />
+                    <p className="text-slate-400 text-sm font-medium">Brak danych pogodowych</p>
+                    <p className="text-slate-600 text-xs mt-1">Wybierz miasto powyżej</p>
                   </div>
                 )
             }
@@ -327,7 +327,7 @@ export function PogodaPage() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
-              className="card rounded-token-xl p-5 shadow-token-md"
+              className="card rounded-2xl p-5 shadow-md-md"
             >
               {(() => {
                 const risk: RiskLevel =
@@ -341,8 +341,8 @@ export function PogodaPage() {
                       <div className="flex items-center gap-3">
                         <WeatherIcon code={selectedDay.weather_code} className="w-10 h-10" />
                         <div>
-                          <h4 className="text-earth-100 font-semibold">{dayName}, {dd}</h4>
-                          <p className="text-earth-500 text-sm">{weatherLabel(selectedDay.weather_code)}</p>
+                          <h4 className="text-slate-100 font-semibold">{dayName}, {dd}</h4>
+                          <p className="text-slate-500 text-sm">{weatherLabel(selectedDay.weather_code)}</p>
                         </div>
                       </div>
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold ${rc.cls}`}>
@@ -350,25 +350,25 @@ export function PogodaPage() {
                       </span>
                     </div>
                     <div className="grid grid-cols-4 gap-3">
-                      <div className="bg-earth-800/40 rounded-token-lg p-3 text-center">
-                        <Thermometer className="w-4 h-4 text-blue-400 mx-auto mb-1" />
-                        <p className="text-blue-400 font-mono text-lg">{(selectedDay.temp_min ?? 0).toFixed(1)}°C</p>
-                        <p className="text-earth-600 text-xs">Min</p>
+                      <div className="bg-ink-800/40 rounded-xl p-3 text-center">
+                        <Thermometer className="w-4 h-4 text-indigo-400 mx-auto mb-1" />
+                        <p className="text-indigo-400 font-mono text-lg">{(selectedDay.temp_min ?? 0).toFixed(1)}°C</p>
+                        <p className="text-slate-600 text-xs">Min</p>
                       </div>
-                      <div className="bg-earth-800/40 rounded-token-lg p-3 text-center">
+                      <div className="bg-ink-800/40 rounded-xl p-3 text-center">
                         <Thermometer className="w-4 h-4 text-orange-400 mx-auto mb-1" />
                         <p className="text-orange-400 font-mono text-lg">{(selectedDay.temp_max ?? 0).toFixed(1)}°C</p>
-                        <p className="text-earth-600 text-xs">Max</p>
+                        <p className="text-slate-600 text-xs">Max</p>
                       </div>
-                      <div className="bg-earth-800/40 rounded-token-lg p-3 text-center">
-                        <CloudRain className="w-4 h-4 text-accent-info mx-auto mb-1" />
-                        <p className="text-accent-info font-mono text-lg">{(selectedDay.precipitation_mm ?? 0).toFixed(1)}</p>
-                        <p className="text-earth-600 text-xs">Opady mm</p>
+                      <div className="bg-ink-800/40 rounded-xl p-3 text-center">
+                        <CloudRain className="w-4 h-4 text-indigo mx-auto mb-1" />
+                        <p className="text-indigo font-mono text-lg">{(selectedDay.precipitation_mm ?? 0).toFixed(1)}</p>
+                        <p className="text-slate-600 text-xs">Opady mm</p>
                       </div>
-                      <div className="bg-earth-800/40 rounded-token-lg p-3 text-center">
-                        <Wind className="w-4 h-4 text-earth-400 mx-auto mb-1" />
-                        <p className="text-earth-200 font-mono text-lg">{(selectedDay.wind_max_kmh ?? 0).toFixed(0)}</p>
-                        <p className="text-earth-600 text-xs">Wiatr km/h</p>
+                      <div className="bg-ink-800/40 rounded-xl p-3 text-center">
+                        <Wind className="w-4 h-4 text-slate-400 mx-auto mb-1" />
+                        <p className="text-slate-200 font-mono text-lg">{(selectedDay.wind_max_kmh ?? 0).toFixed(0)}</p>
+                        <p className="text-slate-600 text-xs">Wiatr km/h</p>
                       </div>
                     </div>
                   </div>
@@ -379,7 +379,7 @@ export function PogodaPage() {
         </AnimatePresence>
 
         {/* Risk legend */}
-        <div className="flex items-center gap-4 px-4 py-3 bg-earth-900/40 rounded-token-lg border border-earth-800/40">
+        <div className="flex items-center gap-4 px-4 py-3 bg-ink-900/40 rounded-xl border border-ink-800/40">
           <span className="section-label">Ryzyko budowy:</span>
           {(Object.entries(riskConfig) as [RiskLevel, typeof riskConfig[RiskLevel]][]).map(([level, cfg]) => (
             <span key={level} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${cfg.cls}`}>

@@ -23,15 +23,15 @@ interface Notification {
 // ── Config ────────────────────────────────────────────────────────────────────
 
 const TYPE_CONFIG: Record<string, { icon: React.ElementType; color: string; bg: string }> = {
-  deadline:      { icon: Clock,      color: 'text-accent-danger',  bg: 'bg-accent-danger/15'  },
-  new_match:     { icon: Star,       color: 'text-accent-primary', bg: 'bg-accent-primary/15' },
-  status_change: { icon: ArrowRight, color: 'text-accent-info',    bg: 'bg-accent-info/15'    },
-  mention:       { icon: AtSign,     color: 'text-accent-violet',  bg: 'bg-accent-violet/15'  },
+  deadline:      { icon: Clock,      color: 'text-nogo',  bg: 'bg-nogo/15'  },
+  new_match:     { icon: Star,       color: 'text-em', bg: 'bg-em/15' },
+  status_change: { icon: ArrowRight, color: 'text-indigo',    bg: 'bg-indigo/15'    },
+  mention:       { icon: AtSign,     color: 'text-violet',  bg: 'bg-violet/15'  },
   // API event_types
-  'alert.deadline': { icon: Clock,      color: 'text-accent-danger',  bg: 'bg-accent-danger/15'  },
-  'tender.new':     { icon: Star,       color: 'text-accent-primary', bg: 'bg-accent-primary/15' },
-  'agent.done':     { icon: ArrowRight, color: 'text-accent-info',    bg: 'bg-accent-info/15'    },
-  'alert.match':    { icon: Star,       color: 'text-accent-primary', bg: 'bg-accent-primary/15' },
+  'alert.deadline': { icon: Clock,      color: 'text-nogo',  bg: 'bg-nogo/15'  },
+  'tender.new':     { icon: Star,       color: 'text-em', bg: 'bg-em/15' },
+  'agent.done':     { icon: ArrowRight, color: 'text-indigo',    bg: 'bg-indigo/15'    },
+  'alert.match':    { icon: Star,       color: 'text-em', bg: 'bg-em/15' },
 };
 
 const FALLBACK_CFG = TYPE_CONFIG.mention;
@@ -150,7 +150,7 @@ export function NotificationsBell() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(o => !o)}
-        className="relative p-1.5 rounded-lg hover:bg-earth-800 text-earth-500 hover:text-earth-200 transition-colors"
+        className="relative p-1.5 rounded-lg hover:bg-ink-800 text-slate-500 hover:text-slate-200 transition-colors"
         aria-label="Powiadomienia"
       >
         <Bell className="w-4 h-4" />
@@ -158,7 +158,7 @@ export function NotificationsBell() {
           <motion.span
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-accent-danger rounded-full text-earth-50 text-[9px] font-bold flex items-center justify-center"
+            className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-nogo rounded-full text-ink-950/30 text-[9px] font-bold flex items-center justify-center"
           >
             {unreadCount > 9 ? '9+' : unreadCount}
           </motion.span>
@@ -172,37 +172,37 @@ export function NotificationsBell() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -4 }}
             transition={{ duration: 0.15 }}
-            className="absolute left-0 top-full mt-2 w-80 bg-earth-900 border border-earth-700/60 rounded-xl shadow-xl shadow-black/50 z-50 overflow-hidden"
+            className="absolute left-0 top-full mt-2 w-80 bg-ink-900 border border-ink-700/60 rounded-xl shadow-xl shadow-black/50 z-50 overflow-hidden"
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-2.5 border-b border-earth-800/60">
-              <span className="text-sm font-semibold text-earth-100">
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-ink-800/60">
+              <span className="text-sm font-semibold text-slate-100">
                 Powiadomienia
                 {unreadCount > 0 && (
-                  <span className="ml-2 text-xs font-normal text-accent-danger">{unreadCount} nowych</span>
+                  <span className="ml-2 text-xs font-normal text-nogo">{unreadCount} nowych</span>
                 )}
               </span>
               <div className="flex items-center gap-2">
                 {unreadCount > 0 && (
                   <button
                     onClick={markAllRead}
-                    className="text-xs text-accent-primary hover:text-emerald-400 flex items-center gap-1 transition-colors"
+                    className="text-xs text-em hover:text-em flex items-center gap-1 transition-colors"
                   >
                     <CheckCheck className="w-3 h-3" /> Wszystkie
                   </button>
                 )}
-                <button onClick={() => setOpen(false)} className="text-earth-600 hover:text-earth-300 transition-colors">
+                <button onClick={() => setOpen(false)} className="text-slate-600 hover:text-slate-300 transition-colors">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
 
             {/* List */}
-            <div className="max-h-72 overflow-y-auto divide-y divide-earth-800/40">
+            <div className="max-h-72 overflow-y-auto divide-y divide-ink-800/40">
               {notifications.length === 0 ? (
                 <div className="px-4 py-6 text-center">
-                  <Bell className="w-8 h-8 text-earth-700 mx-auto mb-2" />
-                  <p className="text-earth-600 text-sm">Brak powiadomień</p>
+                  <Bell className="w-8 h-8 text-slate-700 mx-auto mb-2" />
+                  <p className="text-slate-600 text-sm">Brak powiadomień</p>
                 </div>
               ) : (
                 notifications.map(n => {
@@ -220,20 +220,20 @@ export function NotificationsBell() {
                         if (n.tender_id) setCurrentModule('zwiad');
                         setOpen(false);
                       }}
-                      className={`flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-earth-800/40 ${n.read ? 'opacity-60' : ''}`}
+                      className={`flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-ink-800/40 ${n.read ? 'opacity-60' : ''}`}
                     >
                       <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${cfg.bg}`}>
                         <Icon className={`w-3.5 h-3.5 ${cfg.color}`} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs text-earth-200 leading-snug line-clamp-2">{message}</p>
-                        {sub && <p className="text-[10px] text-earth-500 mt-0.5 line-clamp-1">{sub}</p>}
-                        <p className="text-[10px] text-earth-600 mt-0.5">{timeAgo(n.created_at)}</p>
+                        <p className="text-xs text-slate-200 leading-snug line-clamp-2">{message}</p>
+                        {sub && <p className="text-[10px] text-slate-500 mt-0.5 line-clamp-1">{sub}</p>}
+                        <p className="text-[10px] text-slate-600 mt-0.5">{timeAgo(n.created_at)}</p>
                       </div>
                       {!n.read && (
                         <button
                           onClick={e => { e.stopPropagation(); markRead(n.id); }}
-                          className="p-1 text-earth-600 hover:text-accent-primary transition-colors shrink-0"
+                          className="p-1 text-slate-600 hover:text-em transition-colors shrink-0"
                           title="Oznacz jako przeczytane"
                         >
                           <Check className="w-3 h-3" />
@@ -246,10 +246,10 @@ export function NotificationsBell() {
             </div>
 
             {/* Footer */}
-            <div className="border-t border-earth-800/60 px-4 py-2">
+            <div className="border-t border-ink-800/60 px-4 py-2">
               <button
                 onClick={() => { setCurrentModule('notifications'); setOpen(false); }}
-                className="text-xs text-accent-primary hover:text-emerald-400 transition-colors w-full text-left"
+                className="text-xs text-em hover:text-em transition-colors w-full text-left"
               >
                 Pokaż wszystkie powiadomienia →
               </button>

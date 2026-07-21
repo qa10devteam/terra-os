@@ -23,17 +23,17 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return this.props.fallback ?? (
-        <div className="min-h-screen bg-earth-950 flex items-center justify-center p-6">
+        <div className="min-h-screen bg-ink-950 flex items-center justify-center p-6">
           <div className="flex flex-col items-center gap-5 max-w-sm w-full text-center">
-            <div className="w-16 h-16 rounded-2xl bg-accent-danger/10 border border-accent-danger/20 flex items-center justify-center">
-              <AlertTriangle className="w-8 h-8 text-accent-danger" />
+            <div className="w-16 h-16 rounded-2xl bg-nogo/10 border border-nogo/20 flex items-center justify-center">
+              <AlertTriangle className="w-8 h-8 text-nogo" />
             </div>
             <div className="space-y-1.5">
-              <h2 className="text-xl font-bold text-earth-100">Coś poszło nie tak</h2>
-              <p className="text-earth-400 text-sm">Spróbuj odświeżyć stronę</p>
+              <h2 className="text-xl font-bold text-slate-100">Coś poszło nie tak</h2>
+              <p className="text-slate-400 text-sm">Spróbuj odświeżyć stronę</p>
             </div>
             {this.state.error?.message && (
-              <p className="text-xs text-earth-600 font-mono px-4 py-2.5 bg-earth-900/60 border border-earth-800/60 rounded-token w-full text-left break-words">
+              <p className="text-xs text-slate-600 font-mono px-4 py-2.5 bg-ink-900/60 border border-ink-800/60 rounded-md w-full text-left break-words">
                 {this.state.error.message}
               </p>
             )}

@@ -84,14 +84,14 @@ type Tab = typeof TABS[number]['id'];
 function ScoreSlider({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="text-xs text-earth-400 w-36 shrink-0">{label}</span>
+      <span className="text-xs text-slate-400 w-36 shrink-0">{label}</span>
       <input
         type="range" min={0} max={10} step={0.5} value={value}
         onChange={e => onChange(parseFloat(e.target.value))}
-        className="flex-1 accent-accent-primary h-1.5"
+        className="flex-1 em h-1.5"
       />
       <span className={`text-xs font-bold w-8 text-right ${
-        value >= 7 ? 'text-accent-primary' : value >= 4 ? 'text-accent-warning' : 'text-accent-danger'
+        value >= 7 ? 'text-em' : value >= 4 ? 'text-warn' : 'text-nogo'
       }`}>{value.toFixed(1)}</span>
     </div>
   );
@@ -224,9 +224,9 @@ export function AnalyticsPage() {
               if (t.id === 'dashboard') loadDashboard();
               if (t.id === 'win') loadWin();
             }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-token text-xs font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
               tab === t.id
-                ? 'bg-accent-primary/15 text-accent-primary'
+                ? 'bg-em/15 text-em'
                 : 'btn-ghost py-1.5 px-3 text-xs'
             }`}
           >
@@ -251,9 +251,9 @@ export function AnalyticsPage() {
         <div className="max-w-2xl space-y-5">
           <div className="card p-5">
             <div className="flex items-center gap-2 mb-4">
-              <Scale className="w-4 h-4 text-accent-primary" />
-              <span className="text-sm font-semibold text-earth-200">Ocena kryteriów AHP</span>
-              <span className="text-xs text-earth-500 ml-auto">Skala 0–10</span>
+              <Scale className="w-4 h-4 text-em" />
+              <span className="text-sm font-semibold text-slate-200">Ocena kryteriów AHP</span>
+              <span className="text-xs text-slate-500 ml-auto">Skala 0–10</span>
             </div>
             <div className="space-y-3">
               {DEFAULT_CRITERIA.map(c => (
@@ -281,38 +281,38 @@ export function AnalyticsPage() {
               animate={{ opacity: 1, scale: 1 }}
               className={`card p-5 ${
                 ahpResult.recommendation === 'GO'
-                  ? 'border-accent-primary/40'
+                  ? 'border-em/40'
                   : ahpResult.recommendation === 'CONSIDER'
-                  ? 'border-accent-warning/40'
-                  : 'border-accent-danger/40'
+                  ? 'border-warn/40'
+                  : 'border-nogo/40'
               }`}
             >
               <div className="flex items-center gap-3 mb-4">
                 {ahpResult.recommendation === 'GO' ? (
-                  <CheckCircle2 className="w-8 h-8 text-accent-primary" />
+                  <CheckCircle2 className="w-8 h-8 text-em" />
                 ) : ahpResult.recommendation === 'CONSIDER' ? (
-                  <HelpCircle className="w-8 h-8 text-accent-warning" />
+                  <HelpCircle className="w-8 h-8 text-warn" />
                 ) : (
-                  <XCircle className="w-8 h-8 text-accent-danger" />
+                  <XCircle className="w-8 h-8 text-nogo" />
                 )}
                 <div>
                   <div className={`text-lg font-bold ${
-                    ahpResult.recommendation === 'GO' ? 'text-accent-primary'
-                    : ahpResult.recommendation === 'CONSIDER' ? 'text-accent-warning'
-                    : 'text-accent-danger'
+                    ahpResult.recommendation === 'GO' ? 'text-em'
+                    : ahpResult.recommendation === 'CONSIDER' ? 'text-warn'
+                    : 'text-nogo'
                   }`}>{ahpResult.recommendation_pl}</div>
-                  <div className="text-xs text-earth-500">Wynik AHP: {(ahpResult.total ?? 0).toFixed(1)}/100</div>
+                  <div className="text-xs text-slate-500">Wynik AHP: {(ahpResult.total ?? 0).toFixed(1)}/100</div>
                 </div>
-                <div className="ml-auto text-3xl font-bold text-earth-200">{(ahpResult.total ?? 0).toFixed(0)}</div>
+                <div className="ml-auto text-3xl font-bold text-slate-200">{(ahpResult.total ?? 0).toFixed(0)}</div>
               </div>
 
               {/* Score bar */}
-              <div className="w-full bg-earth-800 rounded-full h-2 mb-4">
+              <div className="w-full bg-ink-800 rounded-full h-2 mb-4">
                 <div
                   className={`h-2 rounded-full transition-all duration-700 ${
-                    ahpResult.recommendation === 'GO' ? 'bg-accent-primary'
-                    : ahpResult.recommendation === 'CONSIDER' ? 'bg-accent-warning'
-                    : 'bg-accent-danger'
+                    ahpResult.recommendation === 'GO' ? 'bg-em'
+                    : ahpResult.recommendation === 'CONSIDER' ? 'bg-warn'
+                    : 'bg-nogo'
                   }`}
                   style={{ width: `${ahpResult.total}%` }}
                 />
@@ -322,14 +322,14 @@ export function AnalyticsPage() {
               <div className="space-y-2">
                 {ahpResult.breakdown.map(b => (
                   <div key={b.criterion_id} className="flex items-center gap-2 text-xs">
-                    <span className="text-earth-400 w-44 shrink-0">{b.criterion}</span>
-                    <div className="flex-1 bg-earth-800 rounded-full h-1">
+                    <span className="text-slate-400 w-44 shrink-0">{b.criterion}</span>
+                    <div className="flex-1 bg-ink-800 rounded-full h-1">
                       <div
-                        className="bg-accent-primary/60 h-1 rounded-full"
+                        className="bg-em/60 h-1 rounded-full"
                         style={{ width: `${(b.score / 10) * 100}%` }}
                       />
                     </div>
-                    <span className="text-earth-400 w-16 text-right">+{(b.contribution ?? 0).toFixed(1)} pkt</span>
+                    <span className="text-slate-400 w-16 text-right">+{(b.contribution ?? 0).toFixed(1)} pkt</span>
                   </div>
                 ))}
               </div>
@@ -343,9 +343,9 @@ export function AnalyticsPage() {
         <div className="max-w-2xl space-y-5">
           <div className="card p-5">
             <div className="flex items-center gap-2 mb-4">
-              <Target className="w-4 h-4 text-accent-primary" />
-              <span className="text-sm font-semibold text-earth-200">Model Friedman-Gates</span>
-              <span className="text-xs text-earth-500 ml-auto">Maksymalizacja E[zysk]</span>
+              <Target className="w-4 h-4 text-em" />
+              <span className="text-sm font-semibold text-slate-200">Model Friedman-Gates</span>
+              <span className="text-xs text-slate-500 ml-auto">Maksymalizacja E[zysk]</span>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-4">
@@ -386,13 +386,13 @@ export function AnalyticsPage() {
             >
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { label: 'Optymalna marża',  value: `${(biddingResult.optimal_markup_pct ?? 0).toFixed(1)}%`,  color: 'text-accent-primary' },
-                  { label: 'Szansa wygrania',  value: `${(biddingResult.win_probability_pct ?? 0).toFixed(0)}%`, color: 'text-accent-success' },
-                  { label: 'Oczekiwany zysk',  value: fmtPLN(biddingResult.expected_profit),              color: 'text-accent-warning' },
-                  { label: 'Cena oferty',       value: fmtPLN(biddingResult.bid_price),                   color: 'text-accent-info' },
+                  { label: 'Optymalna marża',  value: `${(biddingResult.optimal_markup_pct ?? 0).toFixed(1)}%`,  color: 'text-em' },
+                  { label: 'Szansa wygrania',  value: `${(biddingResult.win_probability_pct ?? 0).toFixed(0)}%`, color: 'text-go' },
+                  { label: 'Oczekiwany zysk',  value: fmtPLN(biddingResult.expected_profit),              color: 'text-warn' },
+                  { label: 'Cena oferty',       value: fmtPLN(biddingResult.bid_price),                   color: 'text-indigo' },
                 ].map(kpi => (
-                  <div key={kpi.label} className="bg-earth-800/60 rounded-token-lg p-3">
-                    <div className="text-xs text-earth-500 mb-1">{kpi.label}</div>
+                  <div key={kpi.label} className="bg-ink-800/60 rounded-xl p-3">
+                    <div className="text-xs text-slate-500 mb-1">{kpi.label}</div>
                     <div className={`text-lg font-bold ${kpi.color}`}>{kpi.value}</div>
                   </div>
                 ))}
@@ -403,14 +403,14 @@ export function AnalyticsPage() {
                 <div className="section-label mb-2">Oczekiwany zysk vs marża</div>
                 {biddingResult.chart_data.filter((_, i) => i % 4 === 0).map(pt => (
                   <div key={pt.markup_pct} className="flex items-center gap-2 text-xs">
-                    <span className="text-earth-500 w-12">{(pt.markup_pct ?? 0).toFixed(0)}%</span>
-                    <div className="flex-1 bg-earth-800 rounded-full h-1.5 overflow-hidden">
+                    <span className="text-slate-500 w-12">{(pt.markup_pct ?? 0).toFixed(0)}%</span>
+                    <div className="flex-1 bg-ink-800 rounded-full h-1.5 overflow-hidden">
                       <div
-                        className="bg-accent-primary/70 h-1.5 rounded-full"
+                        className="bg-em/70 h-1.5 rounded-full"
                         style={{ width: `${Math.min(100, (pt.expected_profit / (biddingResult.expected_profit * 1.2)) * 100)}%` }}
                       />
                     </div>
-                    <span className="text-earth-400 w-20 text-right">{fmtPLN(pt.expected_profit)}</span>
+                    <span className="text-slate-400 w-20 text-right">{fmtPLN(pt.expected_profit)}</span>
                   </div>
                 ))}
               </div>
@@ -424,23 +424,23 @@ export function AnalyticsPage() {
         <div className="max-w-2xl space-y-5">
           <div className="card p-5">
             <div className="flex items-center gap-2 mb-3">
-              <AlertTriangle className="w-4 h-4 text-accent-warning" />
-              <span className="text-sm font-semibold text-earth-200">Analiza ryzyka SWZ</span>
+              <AlertTriangle className="w-4 h-4 text-warn" />
+              <span className="text-sm font-semibold text-slate-200">Analiza ryzyka SWZ</span>
             </div>
-            <p className="text-xs text-earth-500 mb-3">Wklej fragment Specyfikacji Warunków Zamówienia do analizy</p>
+            <p className="text-xs text-slate-500 mb-3">Wklej fragment Specyfikacji Warunków Zamówienia do analizy</p>
             <textarea
               value={swzText}
               onChange={e => setSwzText(e.target.value)}
               rows={8}
               placeholder="Wklej tutaj tekst SWZ, warunki umowy lub klauzule…"
-              className="input-base resize-none placeholder:text-earth-600"
+              className="input-base resize-none placeholder:text-slate-600"
             />
             <button
               onClick={runRisk}
               disabled={loading || !swzText.trim()}
-              className="mt-3 w-full inline-flex items-center justify-center gap-2 py-2 rounded-token
-                         bg-accent-warning/90 text-earth-950 text-sm font-semibold
-                         hover:bg-accent-warning transition-colors
+              className="mt-3 w-full inline-flex items-center justify-center gap-2 py-2 rounded-md
+                         bg-warn/90 text-ink-950 text-sm font-semibold
+                         hover:bg-warn transition-colors
                          disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Analizuję…' : 'Analizuj ryzyka'}
@@ -455,25 +455,25 @@ export function AnalyticsPage() {
             >
               {/* Red flags */}
               {riskResult.red_flags.length > 0 && (
-                <div className="card p-4 border-accent-danger/30">
+                <div className="card p-4 border-nogo/30">
                   <div className="flex items-center gap-2 mb-3">
-                    <AlertTriangle className="w-4 h-4 text-accent-danger" />
-                    <span className="text-sm font-semibold text-accent-danger">Red Flags ({riskResult.red_flags.length})</span>
+                    <AlertTriangle className="w-4 h-4 text-nogo" />
+                    <span className="text-sm font-semibold text-nogo">Red Flags ({riskResult.red_flags.length})</span>
                   </div>
                   <div className="space-y-2">
                     {riskResult.red_flags.map((f, i) => (
-                      <div key={i} className={`rounded-token-lg p-3 ${
+                      <div key={i} className={`rounded-xl p-3 ${
                         f.severity === 'high'
-                          ? 'bg-accent-danger/10 border border-accent-danger/20'
-                          : 'bg-accent-warning/10 border border-accent-warning/20'
+                          ? 'bg-nogo/10 border border-nogo/20'
+                          : 'bg-warn/10 border border-warn/20'
                       }`}>
                         <div className="flex items-start gap-2">
                           <span className={`text-xs font-bold uppercase px-1.5 py-0.5 rounded mt-0.5 ${
                             f.severity === 'high'
-                              ? 'bg-accent-danger/20 text-accent-danger'
-                              : 'bg-accent-warning/20 text-accent-warning'
+                              ? 'bg-nogo/20 text-nogo'
+                              : 'bg-warn/20 text-warn'
                           }`}>{f.severity}</span>
-                          <span className="text-xs text-earth-300">{f.message}</span>
+                          <span className="text-xs text-slate-300">{f.message}</span>
                         </div>
                       </div>
                     ))}
@@ -483,26 +483,26 @@ export function AnalyticsPage() {
 
               {/* Summary */}
               <div className="grid grid-cols-2 gap-3">
-                <div className={`rounded-token-lg p-3 ${
+                <div className={`rounded-xl p-3 ${
                   riskResult.valorization
-                    ? 'bg-accent-primary/10 border border-accent-primary/20'
-                    : 'bg-accent-danger/10 border border-accent-danger/20'
+                    ? 'bg-em/10 border border-em/20'
+                    : 'bg-nogo/10 border border-nogo/20'
                 }`}>
-                  <div className="text-xs text-earth-400 mb-1">Waloryzacja ceny</div>
-                  <div className={`text-sm font-bold ${riskResult.valorization ? 'text-accent-primary' : 'text-accent-danger'}`}>
+                  <div className="text-xs text-slate-400 mb-1">Waloryzacja ceny</div>
+                  <div className={`text-sm font-bold ${riskResult.valorization ? 'text-em' : 'text-nogo'}`}>
                     {riskResult.valorization ? '✓ Jest' : '✗ Brak'}
                   </div>
                 </div>
-                <div className="bg-earth-800/60 border border-earth-700 rounded-token-lg p-3">
-                  <div className="text-xs text-earth-400 mb-1">Kary umowne</div>
-                  <div className="text-sm font-bold text-earth-200">{riskResult.penalties.length} wzmiank.</div>
+                <div className="bg-ink-800/60 border border-ink-700 rounded-xl p-3">
+                  <div className="text-xs text-slate-400 mb-1">Kary umowne</div>
+                  <div className="text-sm font-bold text-slate-200">{riskResult.penalties.length} wzmiank.</div>
                 </div>
               </div>
 
               {riskResult.red_flags.length === 0 && (
-                <div className="bg-accent-primary/10 border border-accent-primary/20 rounded-token-xl p-4 flex items-center gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-accent-primary shrink-0" />
-                  <span className="text-sm text-accent-primary">Nie wykryto krytycznych ryzyk w podanym tekście.</span>
+                <div className="bg-em/10 border border-em/20 rounded-2xl p-4 flex items-center gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-em shrink-0" />
+                  <span className="text-sm text-em">Nie wykryto krytycznych ryzyk w podanym tekście.</span>
                 </div>
               )}
             </motion.div>
@@ -514,7 +514,7 @@ export function AnalyticsPage() {
       {tab === 'dashboard' && (
         <div className="max-w-3xl space-y-4">
           {!dashData ? (
-            <div className="text-center py-16 text-earth-500">
+            <div className="text-center py-16 text-slate-500">
               <BarChart3 className="w-12 h-12 mx-auto mb-3 opacity-40" />
               <p className="text-sm">Ładowanie danych…</p>
             </div>
@@ -522,13 +522,13 @@ export function AnalyticsPage() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {[
-                  { label: 'Aktywne oferty',   value: dashData.active_bids as number,      fmt: (v: number) => String(v),              color: 'text-accent-info' },
-                  { label: 'Wartość pipeline', value: dashData.pipeline_value as number,   fmt: fmtPLN,                                color: 'text-accent-primary' },
-                  { label: 'Win rate',         value: dashData.win_rate_pct as number,     fmt: (v: number) => v.toFixed(1) + '%',     color: 'text-accent-success' },
-                  { label: 'Śr. marża',        value: dashData.avg_margin_pct as number,   fmt: (v: number) => v.toFixed(1) + '%',     color: 'text-accent-warning' },
+                  { label: 'Aktywne oferty',   value: dashData.active_bids as number,      fmt: (v: number) => String(v),              color: 'text-indigo' },
+                  { label: 'Wartość pipeline', value: dashData.pipeline_value as number,   fmt: fmtPLN,                                color: 'text-em' },
+                  { label: 'Win rate',         value: dashData.win_rate_pct as number,     fmt: (v: number) => v.toFixed(1) + '%',     color: 'text-go' },
+                  { label: 'Śr. marża',        value: dashData.avg_margin_pct as number,   fmt: (v: number) => v.toFixed(1) + '%',     color: 'text-warn' },
                 ].map(kpi => (
                   <div key={kpi.label} className="card p-4">
-                    <div className="text-xs text-earth-500 mb-1">{kpi.label}</div>
+                    <div className="text-xs text-slate-500 mb-1">{kpi.label}</div>
                     <div className={`text-xl font-bold ${kpi.color}`}>{kpi.fmt(kpi.value ?? 0)}</div>
                   </div>
                 ))}
@@ -542,14 +542,14 @@ export function AnalyticsPage() {
                   <div className="space-y-2">
                     {((dashData as Record<string, unknown>).funnel as Array<{ status: string; count: number }>).map(f => (
                       <div key={f.status} className="flex items-center gap-3 text-xs">
-                        <span className="text-earth-400 w-28 shrink-0">{f.status}</span>
-                        <div className="flex-1 bg-earth-800 rounded-full h-2">
+                        <span className="text-slate-400 w-28 shrink-0">{f.status}</span>
+                        <div className="flex-1 bg-ink-800 rounded-full h-2">
                           <div
-                            className="bg-accent-primary/60 h-2 rounded-full"
+                            className="bg-em/60 h-2 rounded-full"
                             style={{ width: `${Math.min(100, (f.count / 20) * 100)}%` }}
                           />
                         </div>
-                        <span className="text-earth-300 font-bold w-6 text-right">{f.count}</span>
+                        <span className="text-slate-300 font-bold w-6 text-right">{f.count}</span>
                       </div>
                     ))}
                   </div>
@@ -564,7 +564,7 @@ export function AnalyticsPage() {
       {tab === 'win' && (
         <div className="max-w-2xl space-y-4">
           {!winData ? (
-            <div className="text-center py-16 text-earth-500">
+            <div className="text-center py-16 text-slate-500">
               <TrendingUp className="w-12 h-12 mx-auto mb-3 opacity-40" />
               <p className="text-sm">{loading ? 'Ładowanie danych…' : 'Brak danych'}</p>
             </div>
@@ -573,12 +573,12 @@ export function AnalyticsPage() {
               {/* KPI Cards */}
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { label: 'Win Rate',      value: `${(winData.win_rate ?? 0).toFixed(1)}%`,  color: 'text-accent-primary' },
-                  { label: 'Łączne oferty', value: String(winData.total_bids),          color: 'text-earth-200' },
-                  { label: 'Wygrane',       value: String(winData.wins),                color: 'text-accent-success' },
+                  { label: 'Win Rate',      value: `${(winData.win_rate ?? 0).toFixed(1)}%`,  color: 'text-em' },
+                  { label: 'Łączne oferty', value: String(winData.total_bids),          color: 'text-slate-200' },
+                  { label: 'Wygrane',       value: String(winData.wins),                color: 'text-go' },
                 ].map(kpi => (
                   <div key={kpi.label} className="card p-4">
-                    <div className="text-xs text-earth-500 mb-1">{kpi.label}</div>
+                    <div className="text-xs text-slate-500 mb-1">{kpi.label}</div>
                     <div className={`text-2xl font-bold ${kpi.color}`}>{kpi.value}</div>
                   </div>
                 ))}
@@ -587,12 +587,12 @@ export function AnalyticsPage() {
               {/* Win Rate progress bar */}
               <div className="card p-5">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-earth-400">Skuteczność ofertowania</span>
-                  <span className="text-xs text-accent-primary font-bold">{(winData.win_rate ?? 0).toFixed(1)}%</span>
+                  <span className="text-xs font-semibold text-slate-400">Skuteczność ofertowania</span>
+                  <span className="text-xs text-em font-bold">{(winData.win_rate ?? 0).toFixed(1)}%</span>
                 </div>
-                <div className="w-full bg-earth-800 rounded-full h-3">
+                <div className="w-full bg-ink-800 rounded-full h-3">
                   <div
-                    className="bg-accent-primary h-3 rounded-full transition-all duration-700"
+                    className="bg-em h-3 rounded-full transition-all duration-700"
                     style={{ width: `${Math.min(100, winData.win_rate)}%` }}
                   />
                 </div>
@@ -602,20 +602,20 @@ export function AnalyticsPage() {
               {winData.trend.length > 0 && (
                 <div className="card p-5">
                   <div className="flex items-center gap-2 mb-4">
-                    <TrendingUp className="w-4 h-4 text-accent-primary" />
-                    <span className="text-sm font-semibold text-earth-200">Trend Win Rate</span>
+                    <TrendingUp className="w-4 h-4 text-em" />
+                    <span className="text-sm font-semibold text-slate-200">Trend Win Rate</span>
                   </div>
                   <div className="space-y-2">
                     {winData.trend.map(pt => (
                       <div key={pt.month} className="flex items-center gap-3 text-xs">
-                        <span className="text-earth-400 w-16 shrink-0">{pt.month}</span>
-                        <div className="flex-1 bg-earth-800 rounded-full h-2 overflow-hidden">
+                        <span className="text-slate-400 w-16 shrink-0">{pt.month}</span>
+                        <div className="flex-1 bg-ink-800 rounded-full h-2 overflow-hidden">
                           <div
-                            className="bg-accent-primary/70 h-2 rounded-full transition-all duration-500"
+                            className="bg-em/70 h-2 rounded-full transition-all duration-500"
                             style={{ width: `${Math.min(100, pt.rate)}%` }}
                           />
                         </div>
-                        <span className="text-earth-300 font-semibold w-12 text-right">{(pt.rate ?? 0).toFixed(1)}%</span>
+                        <span className="text-slate-300 font-semibold w-12 text-right">{(pt.rate ?? 0).toFixed(1)}%</span>
                       </div>
                     ))}
                   </div>

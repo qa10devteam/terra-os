@@ -117,16 +117,16 @@ export function ProactivePage() {
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-token text-sm font-medium transition-all ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${
               tab === t.id
                 ? 'bg-info/20 text-info border border-info/30'
-                : 'text-earth-400 hover:text-earth-200 hover:bg-earth-800/50'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-ink-800/50'
             }`}
           >
             <t.icon size={14} />
             {t.label}
             {'count' in t && t.count! > 0 && (
-              <span className="ml-1 px-1.5 py-0.5 bg-accent-danger text-earth-100 text-xs rounded-full">{t.count}</span>
+              <span className="ml-1 px-1.5 py-0.5 bg-nogo text-slate-100 text-xs rounded-full">{t.count}</span>
             )}
           </button>
         ))}
@@ -138,8 +138,8 @@ export function ProactivePage() {
           {alerts.length === 0 ? (
             <GlassCard className="p-8 text-center">
               <Shield size={48} className="mx-auto text-success mb-3" />
-              <p className="text-earth-300">Brak pilnych alertów</p>
-              <p className="text-earth-500 text-sm">Wszystkie deadline&apos;y pod kontrolą</p>
+              <p className="text-slate-300">Brak pilnych alertów</p>
+              <p className="text-slate-500 text-sm">Wszystkie deadline&apos;y pod kontrolą</p>
             </GlassCard>
           ) : (
             alerts.map((alert, i) => {
@@ -153,22 +153,22 @@ export function ProactivePage() {
                   transition={{ delay: i * 0.05 }}
                 >
                   <div
-                    className={`p-4 border rounded-token-lg bg-earth-900/60 backdrop-blur-sm ${cfg.bg} cursor-pointer hover:scale-[1.01] transition-transform`}
+                    className={`p-4 border rounded-xl bg-ink-900/60 backdrop-blur-sm ${cfg.bg} cursor-pointer hover:scale-[1.01] transition-transform`}
                     onClick={() => { setSelectedTender({ id: alert.tender_id } as any); setCurrentModule('decyzja'); }}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3">
                         <Icon size={20} className={cfg.color} />
                         <div>
-                          <h3 className="text-earth-100 font-medium text-sm">{alert.title?.slice(0, 80)}</h3>
-                          <p className="text-earth-400 text-xs mt-1">{alert.buyer}</p>
+                          <h3 className="text-slate-100 font-medium text-sm">{alert.title?.slice(0, 80)}</h3>
+                          <p className="text-slate-400 text-xs mt-1">{alert.buyer}</p>
                           <p className={`text-xs mt-2 ${cfg.color}`}>{alert.action_required}</p>
                         </div>
                       </div>
                       <div className="text-right shrink-0 ml-4">
                         <div className={`text-lg font-bold ${cfg.color}`}>{(alert.days_left ?? 0).toFixed(0)}d</div>
-                        <div className="text-earth-500 text-xs">{alert.deadline_at?.slice(0, 10)}</div>
-                        {alert.value_pln && <div className="text-earth-300 text-xs mt-1">{formatPLN(alert.value_pln)}</div>}
+                        <div className="text-slate-500 text-xs">{alert.deadline_at?.slice(0, 10)}</div>
+                        {alert.value_pln && <div className="text-slate-300 text-xs mt-1">{formatPLN(alert.value_pln)}</div>}
                       </div>
                     </div>
                   </div>
@@ -191,18 +191,18 @@ export function ProactivePage() {
             ].map((kpi, i) => (
               <GlassCard key={i} className="p-4 text-center">
                 <kpi.icon size={16} className="mx-auto text-info mb-1" />
-                <div className="text-earth-100 font-bold text-lg">{kpi.value}</div>
-                <div className="text-earth-500 text-xs">{kpi.label}</div>
+                <div className="text-slate-100 font-bold text-lg">{kpi.value}</div>
+                <div className="text-slate-500 text-xs">{kpi.label}</div>
               </GlassCard>
             ))}
           </div>
           <GlassCard className="p-4">
-            <h3 className="text-earth-100 font-semibold mb-3">Optymalny portfel ({portfolio.optimal_portfolio.length} przetargów)</h3>
+            <h3 className="text-slate-100 font-semibold mb-3">Optymalny portfel ({portfolio.optimal_portfolio.length} przetargów)</h3>
             <div className="space-y-2">
               {portfolio.optimal_portfolio.map((item, i) => (
                 <div
                   key={item.tender_id}
-                  className="flex items-center justify-between p-3 bg-earth-900/40 rounded-token hover:bg-earth-800/50 cursor-pointer"
+                  className="flex items-center justify-between p-3 bg-ink-900/40 rounded-md hover:bg-ink-800/50 cursor-pointer"
                   onClick={() => { setSelectedTender({ id: item.tender_id } as any); setCurrentModule('decyzja'); }}
                 >
                   <div className="flex items-center gap-3">
@@ -210,13 +210,13 @@ export function ProactivePage() {
                       {i + 1}
                     </span>
                     <div>
-                      <div className="text-earth-200 text-sm">{item.title?.slice(0, 60)}</div>
-                      <div className="text-earth-500 text-xs">P(win)={(((item.win_probability ?? 0) * 100).toFixed(0))}% · {item.effort_hours}h</div>
+                      <div className="text-slate-200 text-sm">{item.title?.slice(0, 60)}</div>
+                      <div className="text-slate-500 text-xs">P(win)={(((item.win_probability ?? 0) * 100).toFixed(0))}% · {item.effort_hours}h</div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-earth-100 font-medium">{formatPLN(item.expected_value)}</div>
-                    <div className="text-earth-500 text-xs">{(item.efficiency ?? 0).toFixed(0)} PLN/h</div>
+                    <div className="text-slate-100 font-medium">{formatPLN(item.expected_value)}</div>
+                    <div className="text-slate-500 text-xs">{(item.efficiency ?? 0).toFixed(0)} PLN/h</div>
                   </div>
                 </div>
               ))}
@@ -230,8 +230,8 @@ export function ProactivePage() {
         <div className="space-y-4">
           <GlassCard className="p-6 text-center">
             <Zap size={40} className="mx-auto text-info mb-3" />
-            <h3 className="text-earth-100 font-semibold mb-2">Proactive AI Scan</h3>
-            <p className="text-earth-400 text-sm mb-4">Znajdź przetargi o wysokim potencjale, które nie zostały jeszcze przeanalizowane</p>
+            <h3 className="text-slate-100 font-semibold mb-2">Proactive AI Scan</h3>
+            <p className="text-slate-400 text-sm mb-4">Znajdź przetargi o wysokim potencjale, które nie zostały jeszcze przeanalizowane</p>
             <button
               onClick={runScan}
               disabled={scanning}
@@ -246,17 +246,17 @@ export function ProactivePage() {
             <GlassCard className="p-4">
               <div className="flex items-center gap-3 mb-3">
                 <span className="text-success font-bold text-lg">{scanResult.total_found}</span>
-                <span className="text-earth-400">znalezionych</span>
+                <span className="text-slate-400">znalezionych</span>
                 <span className="px-2 py-0.5 bg-danger/10 text-danger rounded text-xs">{scanResult.high_priority} high-priority</span>
               </div>
               <div className="space-y-2">
                 {scanResult.recommendations.slice(0, 10).map((rec) => (
-                  <div key={rec.tender_id} className="flex items-center justify-between p-2 bg-earth-900/40 rounded-token">
+                  <div key={rec.tender_id} className="flex items-center justify-between p-2 bg-ink-900/40 rounded-md">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full" style={{ background: `hsl(${rec.priority * 120}, 70%, 50%)` }} />
-                      <span className="text-earth-200 text-sm">{rec.title?.slice(0, 50)}</span>
+                      <span className="text-slate-200 text-sm">{rec.title?.slice(0, 50)}</span>
                     </div>
-                    <span className="text-earth-400 text-xs">{rec.recommendation}</span>
+                    <span className="text-slate-400 text-xs">{rec.recommendation}</span>
                   </div>
                 ))}
               </div>

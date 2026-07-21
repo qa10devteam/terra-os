@@ -57,15 +57,15 @@ function CurrencyChip({ rate }: { rate: CurrencyRate }) {
   const changeStr = `${arrow}${Math.abs(rate.change).toFixed(2)}%`;
 
   return (
-    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-earth-800/60 border border-earth-700/40 select-none">
-      <span className="text-[11px] font-semibold text-earth-400 tracking-wide">{rate.code}</span>
-      <span className="font-mono text-[12px] font-medium text-earth-100 stat-value">
+    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-ink-800/60 border border-ink-700/40 select-none">
+      <span className="text-[11px] font-semibold text-slate-400 tracking-wide">{rate.code}</span>
+      <span className="font-mono text-[12px] font-medium text-slate-100 stat-value">
         {rate.rate.toFixed(4)}
       </span>
-      <span className="text-[10px] text-earth-600">PLN</span>
+      <span className="text-[10px] text-slate-600">PLN</span>
       <span
         className={`text-[11px] font-semibold tabular-nums ${
-          positive ? 'text-accent-primary' : 'text-accent-danger'
+          positive ? 'text-em' : 'text-nogo'
         }`}
       >
         {changeStr}
@@ -124,14 +124,14 @@ export function MarketBar() {
     : null;
 
   return (
-    <div className="sticky top-0 z-40 h-10 flex items-center gap-2 px-4 bg-earth-900/95 border-b border-earth-800/80 backdrop-blur-md">
+    <div className="sticky top-0 z-40 h-10 flex items-center gap-2 px-4 bg-ink-900/95 border-b border-ink-800/80 backdrop-blur-md">
       {/* Label */}
-      <span className="text-[11px] font-mono text-earth-700 hidden sm:block mr-1">
+      <span className="text-[11px] font-mono text-slate-700 hidden sm:block mr-1">
         NBP
       </span>
 
       {/* Separator */}
-      <div className="h-4 w-px bg-earth-700/40 hidden sm:block" />
+      <div className="h-4 w-px bg-ink-700/40 hidden sm:block" />
 
       {/* Currency chips */}
       <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-x-auto scrollbar-none">
@@ -144,26 +144,26 @@ export function MarketBar() {
       <div className="ml-auto flex items-center gap-3 flex-shrink-0">
         {/* Last update */}
         {lastUpdateStr && (
-          <span className="text-[10px] text-earth-600 font-mono hidden md:block">
+          <span className="text-[10px] text-slate-600 font-mono hidden md:block">
             akt.&nbsp;{lastUpdateStr}
           </span>
         )}
 
         {/* Demo badge when API unavailable */}
         {error && (
-          <span className="text-[10px] text-accent-warning/80 font-mono">demo</span>
+          <span className="text-[10px] text-warn/80 font-mono">demo</span>
         )}
 
         {/* Separator */}
-        <div className="h-4 w-px bg-earth-700/40" />
+        <div className="h-4 w-px bg-ink-700/40" />
 
         {/* Live clock */}
-        <span className="font-mono text-[11px] font-semibold text-earth-300 tabular-nums tracking-tight stat-value">
+        <span className="font-mono text-[11px] font-semibold text-slate-300 tabular-nums tracking-tight stat-value">
           {clock}
         </span>
 
         {/* Live indicator */}
-        <div className="w-1.5 h-1.5 rounded-full bg-accent-primary/60 animate-pulse-soft" />
+        <div className="w-1.5 h-1.5 rounded-full bg-em/60 animate-pulse-soft" />
       </div>
     </div>
   );

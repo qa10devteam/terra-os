@@ -141,8 +141,8 @@ export default function BillingPage() {
                         <span
                           className={`px-2 py-1 rounded text-xs font-medium ${
                             invoice.status === 'paid'
-                              ? 'bg-green-900/50 text-green-400'
-                              : 'bg-yellow-900/50 text-yellow-400'
+                              ? 'bg-go/10 text-go'
+                              : 'bg-warn/10 text-warn'
                           }`}
                         >
                           {invoice.status === 'paid' ? 'Opłacona' : invoice.status}

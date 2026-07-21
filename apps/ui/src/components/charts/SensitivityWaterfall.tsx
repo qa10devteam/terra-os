@@ -24,28 +24,28 @@ export function SensitivityWaterfall({ drivers }: SensitivityWaterfallProps) {
   const top5 = [...drivers].sort((a, b) => b.sobol_s1 - a.sobol_s1).slice(0, 5);
 
   return (
-    <div className="w-full rounded-token-lg bg-earth-900 border border-earth-800 p-3">
+    <div className="w-full rounded-xl bg-ink-900 border border-ink-800 p-3">
       <p className="section-label mb-2">Główne czynniki kosztów</p>
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={top5} layout="vertical">
           <XAxis
             type="number"
             tickFormatter={(v) => `${(v * 100).toFixed(0)}%`}
-            tick={{ fill: 'var(--color-earth-400)', fontSize: 11 }}
+            tick={{ fill: 'var(--color-slate-400)', fontSize: 11 }}
           />
           <YAxis
             type="category"
             dataKey="name"
             width={120}
-            tick={{ fontSize: 12, fill: 'var(--color-earth-300)' }}
+            tick={{ fontSize: 12, fill: 'var(--color-slate-300)' }}
           />
           <Tooltip
             formatter={(v: number) => `${(v * 100).toFixed(1)}%`}
             contentStyle={{
-              background: 'var(--color-earth-800)',
-              border: '1px solid var(--color-earth-700)',
+              background: 'var(--color-ink-800)',
+              border: '1px solid var(--color-ink-700)',
               borderRadius: 8,
-              color: 'var(--color-earth-100)',
+              color: 'var(--color-slate-100)',
             }}
           />
           <Bar dataKey="sobol_s1">

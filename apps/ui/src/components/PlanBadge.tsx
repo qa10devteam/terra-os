@@ -13,7 +13,7 @@ const PLAN_CONFIG: Record<PlanId, { label: string; className: string }> = {
   },
   starter: {
     label: 'Starter',
-    className: 'bg-blue-900/60 text-blue-300 border border-blue-700/50',
+    className: 'bg-indigo/10 text-indigo-300 border border-indigo/30',
   },
   pro: {
     label: 'Pro',
@@ -21,7 +21,7 @@ const PLAN_CONFIG: Record<PlanId, { label: string; className: string }> = {
   },
   business: {
     label: 'Business',
-    className: 'bg-yellow-900/60 text-yellow-300 border border-yellow-700/50',
+    className: 'bg-warn/10 text-warn border border-warn/30',
   },
   enterprise: {
     label: 'Enterprise',

@@ -1,18 +1,7 @@
 /**
- * SkeletonLoader — warianty shimmer dla loading states.
- *
- * Warianty:
- *   SkeletonRow      — wiersz tabeli (N kolumn)
- *   SkeletonCard     — karta z nagłówkiem + wierszami tekstu
- *   SkeletonBlock    — prosty prostokąt (dowolna wysokość)
- *   SkeletonKPI      — karta KPI (ikona + wartość + label)
- *   SkeletonTextBlock — blok akapitu (kilka wierszy o różnej długości)
- *
- * Wszystkie korzystają z `.animate-shimmer` z globals.css.
- * Obsługuje prefers-reduced-motion — animate-shimmer deaktywuje się automatycznie.
+ * SkeletonLoader — shimmer loading states.
+ * Brand Bible BudOS: ink-800 base, ink-700 shimmer highlight.
  */
-
-// ── Row ────────────────────────────────────────────────────────────────────────
 
 export function SkeletonRow({ cols = 5 }: { cols?: number }) {
   return (
@@ -28,15 +17,12 @@ export function SkeletonRow({ cols = 5 }: { cols?: number }) {
   );
 }
 
-// ── Card ───────────────────────────────────────────────────────────────────────
-
 export function SkeletonCard({ lines = 3 }: { lines?: number }) {
   const widths = ['w-3/4', 'w-full', 'w-5/6', 'w-2/3', 'w-4/5', 'w-1/2'];
   return (
-    <div className="p-4 rounded-token-lg bg-earth-900/60 border border-earth-800/50 space-y-2.5">
-      {/* Header bar */}
+    <div className="p-4 rounded-xl bg-ink-900 border border-ink-line space-y-2.5">
       <div className="h-4 w-2/5 rounded animate-shimmer" />
-      <div className="h-px bg-earth-800/50 my-1" />
+      <div className="h-px bg-ink-line my-1" />
       {Array.from({ length: lines }).map((_, i) => (
         <div
           key={i}
@@ -47,23 +33,15 @@ export function SkeletonCard({ lines = 3 }: { lines?: number }) {
   );
 }
 
-// ── Block ──────────────────────────────────────────────────────────────────────
-
-export function SkeletonBlock({
-  className = 'h-24',
-}: {
-  className?: string;
-}) {
+export function SkeletonBlock({ className = 'h-24' }: { className?: string }) {
   return (
-    <div className={`rounded-token-lg animate-shimmer ${className}`} />
+    <div className={`rounded-xl animate-shimmer ${className}`} />
   );
 }
 
-// ── KPI card ───────────────────────────────────────────────────────────────────
-
 export function SkeletonKPI() {
   return (
-    <div className="p-4 rounded-token-lg bg-earth-900/60 border border-earth-800/50 flex flex-col gap-3">
+    <div className="p-4 rounded-xl bg-ink-900 border border-ink-line flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <div className="h-3 w-24 rounded animate-shimmer" />
         <div className="w-8 h-8 rounded-lg animate-shimmer" />
@@ -74,14 +52,15 @@ export function SkeletonKPI() {
   );
 }
 
-// ── Text block ─────────────────────────────────────────────────────────────────
-
 export function SkeletonTextBlock({ lines = 4 }: { lines?: number }) {
-  const widths = ['w-full', 'w-5/6', 'w-4/5', 'w-full', 'w-2/3', 'w-3/4'];
+  const widths = ['w-full', 'w-5/6', 'w-4/5', 'w-3/4', 'w-2/3', 'w-1/2'];
   return (
     <div className="space-y-2">
       {Array.from({ length: lines }).map((_, i) => (
-        <div key={i} className={`h-3 rounded animate-shimmer ${widths[i % widths.length]}`} />
+        <div
+          key={i}
+          className={`h-3 rounded animate-shimmer ${widths[i % widths.length]}`}
+        />
       ))}
     </div>
   );

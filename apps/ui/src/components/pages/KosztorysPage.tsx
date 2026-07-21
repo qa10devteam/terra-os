@@ -140,9 +140,9 @@ const DEFAULT_NARZUTY: Narzuty = { ko_r_pct: 70, ko_s_pct: 30, z_pct: 12.5, kz_p
 // ── Badge helpers ──────────────────────────────────────────────────────────────
 
 function WinBadge({ p }: { p: number }) {
-  const cls = p > 0.6 ? 'bg-accent-success/15 text-green-400 border-green-500/30'
-    : p > 0.35 ? 'bg-accent-warning/15 text-amber-400 border-amber-500/30'
-    : 'bg-accent-danger/15 text-red-400 border-red-500/30';
+  const cls = p > 0.6 ? 'bg-go/15 text-go border-go/30'
+    : p > 0.35 ? 'bg-warn/15 text-warn border-warn-brd'
+    : 'bg-nogo/15 text-nogo border-nogo-brd';
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${cls}`}>
       <Target className="w-3 h-3" />
@@ -152,9 +152,9 @@ function WinBadge({ p }: { p: number }) {
 }
 
 function PercentileBadge({ p }: { p: number }) {
-  const cls = p < 50 ? 'bg-accent-success/15 text-green-400 border-green-500/30'
-    : p < 75 ? 'bg-accent-warning/15 text-amber-400 border-amber-500/30'
-    : 'bg-accent-danger/15 text-red-400 border-red-500/30';
+  const cls = p < 50 ? 'bg-go/15 text-go border-go/30'
+    : p < 75 ? 'bg-warn/15 text-warn border-warn-brd'
+    : 'bg-nogo/15 text-nogo border-nogo-brd';
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${cls}`}>
       <BarChart2 className="w-3 h-3" />
@@ -164,9 +164,9 @@ function PercentileBadge({ p }: { p: number }) {
 }
 
 function AnomalyBadge({ score }: { score: number }) {
-  const cls = score < 0.1 ? 'bg-accent-success/15 text-green-400 border-green-500/30'
-    : score < 0.25 ? 'bg-accent-warning/15 text-amber-400 border-amber-500/30'
-    : 'bg-accent-danger/15 text-red-400 border-red-500/30';
+  const cls = score < 0.1 ? 'bg-go/15 text-go border-go/30'
+    : score < 0.25 ? 'bg-warn/15 text-warn border-warn-brd'
+    : 'bg-nogo/15 text-nogo border-nogo-brd';
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${cls}`}>
       <Shield className="w-3 h-3" />
@@ -217,9 +217,9 @@ function IcbSidebar({
   }, [query, doSearch]);
 
   const RMS_COLORS: Record<string, string> = {
-    R: 'text-accent-info bg-accent-info/10 border-accent-info/20',
-    M: 'text-accent-primary bg-accent-primary/10 border-accent-primary/20',
-    S: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+    R: 'text-indigo bg-indigo/10 border-indigo/20',
+    M: 'text-em bg-em/10 border-em/20',
+    S: 'text-warn bg-warn-bg border-warn/20',
   };
 
   return (
@@ -228,13 +228,13 @@ function IcbSidebar({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 24 }}
       transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
-      className="w-80 shrink-0 flex flex-col gap-0 bg-earth-900/70 border border-earth-800/60 rounded-token-xl overflow-hidden shadow-token-md"
+      className="w-80 shrink-0 flex flex-col gap-0 bg-ink-900/70 border border-ink-800/60 rounded-2xl overflow-hidden shadow-md-md"
     >
-      <div className="flex items-center justify-between px-4 py-3 border-b border-earth-800/60 bg-earth-900/80">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-ink-800/60 bg-ink-900/80">
         <div className="flex items-center gap-2">
-          <Database className="w-4 h-4 text-blue-400" />
-          <span className="text-earth-200 text-sm font-semibold">ICB — Baza Cen</span>
-          <span className="px-1.5 py-0.5 rounded-full bg-earth-800 text-earth-500 text-[10px]">784k pozycji</span>
+          <Database className="w-4 h-4 text-indigo-400" />
+          <span className="text-slate-200 text-sm font-semibold">ICB — Baza Cen</span>
+          <span className="px-1.5 py-0.5 rounded-full bg-ink-800 text-slate-500 text-[10px]">784k pozycji</span>
         </div>
         <button onClick={onClose} className="btn-ghost w-6 h-6 !p-0 flex items-center justify-center">
           <X className="w-3.5 h-3.5" />
@@ -242,17 +242,17 @@ function IcbSidebar({
       </div>
 
       {/* Filtr R/M/S */}
-      <div className="px-3 pt-2.5 pb-0 border-b border-earth-800/40">
+      <div className="px-3 pt-2.5 pb-0 border-b border-ink-800/40">
         <div className="flex gap-1.5 mb-2">
           {(['all', 'R', 'M', 'S'] as const).map(t => (
             <button
               key={t}
               onClick={() => setSelectedType(t)}
-              className={`px-2.5 py-1 rounded-token text-xs font-semibold transition-colors border ${
+              className={`px-2.5 py-1 rounded-md text-xs font-semibold transition-colors border ${
                 selectedType === t
-                  ? t === 'all' ? 'bg-earth-700 border-earth-600 text-earth-200'
+                  ? t === 'all' ? 'bg-ink-700 border-ink-600 text-slate-200'
                     : RMS_COLORS[t]
-                  : 'bg-transparent border-earth-800 text-earth-600 hover:border-earth-700'
+                  : 'bg-transparent border-ink-800 text-slate-600 hover:border-ink-700'
               }`}
             >
               {t === 'all' ? 'Wszystkie' : t === 'R' ? 'Robocizna' : t === 'M' ? 'Materiały' : 'Sprzęt'}
@@ -260,7 +260,7 @@ function IcbSidebar({
           ))}
         </div>
         <div className="relative mb-2.5">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-earth-500 pointer-events-none" />
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
           <input
             value={query}
             onChange={e => setQuery(e.target.value)}
@@ -273,38 +273,38 @@ function IcbSidebar({
       <div className="flex-1 overflow-y-auto">
         {loading && (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-5 h-5 text-blue-400 animate-spin" />
+            <Loader2 className="w-5 h-5 text-indigo-400 animate-spin" />
           </div>
         )}
         {!loading && query.length < 2 && (
           <div className="px-4 py-6 text-center">
-            <Database className="w-8 h-8 text-earth-700 mx-auto mb-2" />
-            <p className="text-earth-600 text-xs">ICB · GUS · Sekocenbud</p>
-            <p className="text-earth-700 text-xs mt-1">Q1 2008 → Q2 2026</p>
+            <Database className="w-8 h-8 text-slate-700 mx-auto mb-2" />
+            <p className="text-slate-600 text-xs">ICB · GUS · Sekocenbud</p>
+            <p className="text-slate-700 text-xs mt-1">Q1 2008 → Q2 2026</p>
           </div>
         )}
         {!loading && notFound && (
           <div className="px-4 py-6 text-center">
-            <p className="text-earth-500 text-xs">Brak wyników dla &ldquo;{query}&rdquo;</p>
+            <p className="text-slate-500 text-xs">Brak wyników dla &ldquo;{query}&rdquo;</p>
           </div>
         )}
         {!loading && results.length > 0 && (
-          <ul className="divide-y divide-earth-800/40">
+          <ul className="divide-y divide-ink-800/40">
             {results.map(item => (
-              <li key={`${item.id}-${item.typ_rms}`} className="px-3 py-2.5 hover:bg-earth-800/30 transition-colors group">
+              <li key={`${item.id}-${item.typ_rms}`} className="px-3 py-2.5 hover:bg-ink-800/30 transition-colors group">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 mb-0.5">
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-token border ${RMS_COLORS[item.typ_rms]}`}>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border ${RMS_COLORS[item.typ_rms]}`}>
                         {item.typ_rms}
                       </span>
-                      <span className="text-earth-600 text-xs font-mono truncate max-w-[80px]">{item.symbol}</span>
+                      <span className="text-slate-600 text-xs font-mono truncate max-w-[80px]">{item.symbol}</span>
                     </div>
-                    <p className="text-earth-300 text-xs leading-tight line-clamp-2">{item.nazwa}</p>
+                    <p className="text-slate-300 text-xs leading-tight line-clamp-2">{item.nazwa}</p>
                     <div className="flex items-center gap-1.5 mt-1">
-                      <span className="text-earth-500 text-xs">{item.jednostka}</span>
-                      <span className="text-earth-700">·</span>
-                      <span className="text-blue-400 text-xs font-bold font-mono">
+                      <span className="text-slate-500 text-xs">{item.jednostka}</span>
+                      <span className="text-slate-700">·</span>
+                      <span className="text-indigo-400 text-xs font-bold font-mono">
                         {fmtNum(item.cena_netto)} zł
                       </span>
                     </div>
@@ -314,7 +314,7 @@ function IcbSidebar({
                       <button
                         key={f}
                         onClick={() => onSelect(item, f)}
-                        className={`px-1.5 py-0.5 rounded-token text-[10px] font-bold border transition-colors ${RMS_COLORS[f]}`}
+                        className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold border transition-colors ${RMS_COLORS[f]}`}
                       >
                         → {f}
                       </button>
@@ -347,7 +347,7 @@ function NarzutyEditor({
     return (
       <div>
         <label className="label-base">{label}</label>
-        <p className="text-earth-700 text-[10px] mb-1">{desc}</p>
+        <p className="text-slate-700 text-[10px] mb-1">{desc}</p>
         <div className="relative">
           <input
             type="number" min={0} max={200} step={0.1}
@@ -355,7 +355,7 @@ function NarzutyEditor({
             onChange={e => setLocal(prev => ({ ...prev, [key]: parseFloat(e.target.value) || 0 }))}
             className="input-base w-full pr-8 tabular-nums"
           />
-          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-earth-600 text-xs">%</span>
+          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-600 text-xs">%</span>
         </div>
       </div>
     );
@@ -369,11 +369,11 @@ function NarzutyEditor({
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-earth-950 border border-earth-800/60 rounded-token-xl shadow-token-lg w-full max-w-md p-6">
+      <div className="bg-ink-950 border border-ink-800/60 rounded-2xl shadow-xl w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
-            <SlidersHorizontal className="w-4 h-4 text-blue-400" />
-            <h3 className="text-earth-100 text-sm font-bold">Narzuty kosztorysu</h3>
+            <SlidersHorizontal className="w-4 h-4 text-indigo-400" />
+            <h3 className="text-slate-100 text-sm font-bold">Narzuty kosztorysu</h3>
           </div>
           <button onClick={onClose} className="btn-ghost !p-1">
             <X className="w-4 h-4" />
@@ -388,8 +388,8 @@ function NarzutyEditor({
           {field('vat_pct', 'VAT', 'Stawka podatku')}
         </div>
 
-        <div className="bg-earth-900/60 rounded-token px-3 py-2.5 mb-5 text-xs text-earth-500">
-          <span className="font-mono text-earth-400">CJ = R + M + S + Ko·(R·ko_r + S·ko_s) + Kz·M + Z·(R+M+S+Ko+Kz)</span>
+        <div className="bg-ink-900/60 rounded-md px-3 py-2.5 mb-5 text-xs text-slate-500">
+          <span className="font-mono text-slate-400">CJ = R + M + S + Ko·(R·ko_r + S·ko_s) + Kz·M + Z·(R+M+S+Ko+Kz)</span>
         </div>
 
         <div className="flex gap-3">
@@ -479,11 +479,11 @@ function IntelligencePanel({
     <GlassCard className="p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Zap className="w-4 h-4 text-accent-violet" />
-          <span className="text-earth-200 text-sm font-semibold">Intelligence</span>
+          <Zap className="w-4 h-4 text-violet" />
+          <span className="text-slate-200 text-sm font-semibold">Intelligence</span>
         </div>
         <div className="flex items-center gap-2">
-          {loading && <Loader2 className="w-3.5 h-3.5 text-accent-violet animate-spin" />}
+          {loading && <Loader2 className="w-3.5 h-3.5 text-violet animate-spin" />}
           <button onClick={() => setExpanded(e => !e)} className="btn-ghost !p-1">
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
@@ -510,14 +510,14 @@ function IntelligencePanel({
             {/* Benchmark bar */}
             {benchmark && sumaNet > 0 && (
               <div className="mb-3">
-                <div className="flex items-center justify-between text-xs text-earth-500 mb-1">
+                <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
                   <span>Pozycja na rynku (CPV {tender?.cpv?.[0]})</span>
-                  <span className="text-earth-400 tabular-nums">{fmtPLN(sumaNet)}</span>
+                  <span className="text-slate-400 tabular-nums">{fmtPLN(sumaNet)}</span>
                 </div>
-                <div className="relative h-5 bg-earth-800/60 rounded-full overflow-hidden">
+                <div className="relative h-5 bg-ink-800/60 rounded-full overflow-hidden">
                   {/* P25–P75 range */}
                   <div
-                    className="absolute top-0 h-full bg-accent-info/20"
+                    className="absolute top-0 h-full bg-indigo/20"
                     style={{
                       left: `${Math.min(100, (benchmark.p25_value / (benchmark.p75_value * 1.5)) * 100)}%`,
                       width: `${Math.min(100, ((benchmark.p75_value - benchmark.p25_value) / (benchmark.p75_value * 1.5)) * 100)}%`,
@@ -525,16 +525,16 @@ function IntelligencePanel({
                   />
                   {/* Median line */}
                   <div
-                    className="absolute top-0 bottom-0 w-0.5 bg-accent-info/60"
+                    className="absolute top-0 bottom-0 w-0.5 bg-indigo/60"
                     style={{ left: `${Math.min(100, (benchmark.median_value / (benchmark.p75_value * 1.5)) * 100)}%` }}
                   />
                   {/* Our price needle */}
                   <div
-                    className="absolute top-0 bottom-0 w-1 bg-accent-primary rounded-full"
+                    className="absolute top-0 bottom-0 w-1 bg-em rounded-full"
                     style={{ left: `${Math.min(98, (sumaNet / (benchmark.p75_value * 1.5)) * 100)}%` }}
                   />
                 </div>
-                <div className="flex justify-between text-[10px] text-earth-700 mt-0.5">
+                <div className="flex justify-between text-[10px] text-slate-700 mt-0.5">
                   <span>min {fmtPLN(benchmark.p25_value)}</span>
                   <span>med {fmtPLN(benchmark.median_value)}</span>
                   <span>max {fmtPLN(benchmark.p75_value)}</span>
@@ -545,7 +545,7 @@ function IntelligencePanel({
             {/* Price index chart */}
             {priceIndex.length > 0 && (
               <div>
-                <p className="text-earth-600 text-xs mb-1.5">Indeks cen ICB (R/M/S) — trend</p>
+                <p className="text-slate-600 text-xs mb-1.5">Indeks cen ICB (R/M/S) — trend</p>
                 <ResponsiveContainer width="100%" height={80}>
                   <LineChart data={priceIndex.slice(-8)}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
@@ -566,18 +566,18 @@ function IntelligencePanel({
             {/* Material risk */}
             {intel?.material_risk && intel.material_risk.length > 0 && (
               <div className="mt-3">
-                <p className="text-earth-600 text-xs mb-1.5">Ryzyko cen materiałów</p>
+                <p className="text-slate-600 text-xs mb-1.5">Ryzyko cen materiałów</p>
                 <div className="space-y-1">
                   {intel.material_risk.slice(0, 3).map(r => (
                     <div key={r.category} className="flex items-center justify-between">
-                      <span className="text-earth-500 text-xs truncate max-w-[140px]">{r.category}</span>
+                      <span className="text-slate-500 text-xs truncate max-w-[140px]">{r.category}</span>
                       <div className="flex items-center gap-2">
-                        <span className={`text-xs tabular-nums ${r.change_yoy_pct > 5 ? 'text-red-400' : r.change_yoy_pct < -2 ? 'text-accent-primary' : 'text-earth-400'}`}>
+                        <span className={`text-xs tabular-nums ${r.change_yoy_pct > 5 ? 'text-nogo' : r.change_yoy_pct < -2 ? 'text-em' : 'text-slate-400'}`}>
                           {r.change_yoy_pct > 0 ? '+' : ''}{(r.change_yoy_pct ?? 0).toFixed(1)}%
                         </span>
-                        <div className="w-12 h-1.5 bg-earth-800 rounded-full overflow-hidden">
+                        <div className="w-12 h-1.5 bg-ink-800 rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full ${r.risk_score > 0.6 ? 'bg-accent-danger' : r.risk_score > 0.3 ? 'bg-amber-400' : 'bg-accent-primary'}`}
+                            className={`h-full rounded-full ${r.risk_score > 0.6 ? 'bg-nogo' : r.risk_score > 0.3 ? 'bg-warn' : 'bg-em'}`}
                             style={{ width: `${r.risk_score * 100}%` }}
                           />
                         </div>
@@ -589,7 +589,7 @@ function IntelligencePanel({
             )}
 
             {!intel && !loading && !benchmark && (
-              <p className="text-earth-700 text-xs text-center py-2">
+              <p className="text-slate-700 text-xs text-center py-2">
                 Dodaj pozycje i wybierz przetarg aby aktywować intelligence
               </p>
             )}
@@ -639,7 +639,7 @@ function PozycjaRow({
             onChange={e => setEditValue(e.target.value)}
             onBlur={commitEdit}
             onKeyDown={e => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') setEditField(null); }}
-            className="w-full px-2 py-0.5 rounded-token bg-earth-800 border border-blue-500/40 text-earth-200 text-xs focus:outline-none tabular-nums"
+            className="w-full px-2 py-0.5 rounded-md bg-ink-800 border border-indigo/40 text-slate-200 text-xs focus:outline-none tabular-nums"
             style={{ minWidth: 60 }}
           />
         </td>
@@ -647,7 +647,7 @@ function PozycjaRow({
     }
     return (
       <td
-        className="px-2 py-1.5 text-right text-earth-400 text-xs tabular-nums cursor-pointer hover:text-earth-200 hover:bg-earth-800/30 rounded-token transition-colors"
+        className="px-2 py-1.5 text-right text-slate-400 text-xs tabular-nums cursor-pointer hover:text-slate-200 hover:bg-ink-800/30 rounded-md transition-colors"
         onClick={() => startEdit(field, poz[field] as number | string)}
       >
         {display}
@@ -656,11 +656,11 @@ function PozycjaRow({
   }
 
   return (
-    <tr className={`border-b border-earth-800/30 hover:bg-earth-900/40 transition-colors group ${poz.is_anomaly ? 'bg-accent-danger/5' : ''}`}>
-      <td className="px-2 py-1.5 text-earth-700 text-xs w-8">{poz.lp}</td>
-      <td className="px-2 py-1.5 text-earth-600 text-xs font-mono w-28 truncate">{poz.kst_code || '—'}</td>
+    <tr className={`border-b border-ink-800/30 hover:bg-ink-900/40 transition-colors group ${poz.is_anomaly ? 'bg-nogo/5' : ''}`}>
+      <td className="px-2 py-1.5 text-slate-700 text-xs w-8">{poz.lp}</td>
+      <td className="px-2 py-1.5 text-slate-600 text-xs font-mono w-28 truncate">{poz.kst_code || '—'}</td>
       <td
-        className="px-2 py-1.5 text-earth-300 text-xs cursor-pointer hover:text-earth-100 transition-colors"
+        className="px-2 py-1.5 text-slate-300 text-xs cursor-pointer hover:text-slate-100 transition-colors"
         onClick={() => startEdit('opis', poz.opis)}
       >
         {editField === 'opis' ? (
@@ -671,34 +671,34 @@ function PozycjaRow({
             onChange={e => setEditValue(e.target.value)}
             onBlur={commitEdit}
             onKeyDown={e => { if (e.key === 'Enter') commitEdit(); if (e.key === 'Escape') setEditField(null); }}
-            className="w-full px-2 py-0.5 rounded-token bg-earth-800 border border-blue-500/40 text-earth-200 text-xs focus:outline-none"
+            className="w-full px-2 py-0.5 rounded-md bg-ink-800 border border-indigo/40 text-slate-200 text-xs focus:outline-none"
           />
         ) : (
-          <span className={poz.is_anomaly ? 'text-red-300' : ''}>
+          <span className={poz.is_anomaly ? 'text-nogo' : ''}>
             {poz.is_anomaly && (
               <span className="inline-flex items-center mr-1.5" title="Anomalia cenowa - wartość odbiega od bazy rynkowej">
-                <span className="w-2 h-2 rounded-full bg-accent-danger animate-pulse-soft inline-block" />
+                <span className="w-2 h-2 rounded-full bg-nogo animate-pulse-soft inline-block" />
               </span>
             )}
             {poz.opis}
           </span>
         )}
       </td>
-      <td className="px-2 py-1.5 text-earth-600 text-xs w-12 text-center">{poz.jednostka}</td>
+      <td className="px-2 py-1.5 text-slate-600 text-xs w-12 text-center">{poz.jednostka}</td>
       {cell('ilosc', fmtNum(poz.ilosc, 2))}
       {cell('r_jcena', fmtNum(poz.r_jcena, 2))}
       {cell('m_jcena', fmtNum(poz.m_jcena, 2))}
       {cell('s_jcena', fmtNum(poz.s_jcena, 2))}
-      <td className="px-2 py-1.5 text-right text-earth-300 text-xs tabular-nums font-semibold w-24">
+      <td className="px-2 py-1.5 text-right text-slate-300 text-xs tabular-nums font-semibold w-24">
         {fmtNum(poz.jcena_netto, 4)}
       </td>
-      <td className={`px-2 py-1.5 text-right text-xs tabular-nums font-bold w-28 ${poz.is_anomaly ? 'text-red-400' : 'text-blue-300'}`}>
+      <td className={`px-2 py-1.5 text-right text-xs tabular-nums font-bold w-28 ${poz.is_anomaly ? 'text-nogo' : 'text-indigo-300'}`}>
         {fmtPLN(poz.wartosc_netto)}
       </td>
       <td className="px-2 py-1.5 w-8">
         <button
           onClick={onDelete}
-          className="opacity-0 group-hover:opacity-100 w-5 h-5 rounded-token flex items-center justify-center text-earth-700 hover:text-red-400 transition-all"
+          className="opacity-0 group-hover:opacity-100 w-5 h-5 rounded-md flex items-center justify-center text-slate-700 hover:text-nogo transition-all"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
@@ -1179,9 +1179,9 @@ export function KosztorysPage() {
     <>
       <button
         onClick={() => setShowIcb(v => !v)}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-token border text-xs font-medium transition-colors ${
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-medium transition-colors ${
           showIcb
-            ? 'bg-accent-info/15 border-accent-info/30 text-accent-info'
+            ? 'bg-indigo/15 border-indigo/30 text-indigo'
             : 'btn-secondary'
         }`}
       >
@@ -1212,7 +1212,7 @@ export function KosztorysPage() {
           {/* Tender selector */}
           <GlassCard className="p-4 shrink-0">
             <div className="flex items-center gap-3">
-              <Search className="w-4 h-4 text-earth-500 shrink-0" />
+              <Search className="w-4 h-4 text-slate-500 shrink-0" />
               <div className="relative flex-1" ref={dropdownRef}>
                 <input
                   ref={tenderInputRef}
@@ -1224,22 +1224,22 @@ export function KosztorysPage() {
                   className="input-base w-full"
                 />
                 {tendersLoading && (
-                  <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-earth-600 animate-spin" />
+                  <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 animate-spin" />
                 )}
                 {tenderDropdown && filteredTenders.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 z-40 mt-1 bg-earth-900 border border-earth-700/60 rounded-token-lg shadow-token-lg overflow-hidden max-h-60 overflow-y-auto">
+                  <div className="absolute top-full left-0 right-0 z-40 mt-1 bg-ink-900 border border-ink-700/60 rounded-xl shadow-xl overflow-hidden max-h-60 overflow-y-auto">
                     {filteredTenders.slice(0, 20).map(t => (
                       <button
                         key={t.id}
-                        className="w-full px-3 py-2.5 text-left hover:bg-earth-800/60 transition-colors border-b border-earth-800/30 last:border-0"
+                        className="w-full px-3 py-2.5 text-left hover:bg-ink-800/60 transition-colors border-b border-ink-800/30 last:border-0"
                         onClick={() => {
                           setTender(t);
                           setTenderSearch('');
                           setTenderDropdown(false);
                         }}
                       >
-                        <p className="text-earth-200 text-xs font-medium line-clamp-1">{t.title}</p>
-                        <p className="text-earth-600 text-xs mt-0.5">{t.buyer} · {fmtPLN(Number(t.value_pln))}</p>
+                        <p className="text-slate-200 text-xs font-medium line-clamp-1">{t.title}</p>
+                        <p className="text-slate-600 text-xs mt-0.5">{t.buyer} · {fmtPLN(Number(t.value_pln))}</p>
                       </button>
                     ))}
                   </div>
@@ -1256,10 +1256,10 @@ export function KosztorysPage() {
             </div>
             {tender && (
               <div className="flex items-center gap-4 mt-2 px-7">
-                <span className="text-earth-600 text-xs">{tender.buyer}</span>
-                {tender.cpv?.[0] && <span className="text-earth-700 text-xs font-mono">CPV {tender.cpv[0]}</span>}
-                {tender.value_pln && <span className="text-earth-500 text-xs tabular-nums">{fmtPLN(Number(tender.value_pln))}</span>}
-                {kosztorysId && <span className="text-accent-info/70 text-xs font-mono">v2:{kosztorysId.slice(0, 8)}</span>}
+                <span className="text-slate-600 text-xs">{tender.buyer}</span>
+                {tender.cpv?.[0] && <span className="text-slate-700 text-xs font-mono">CPV {tender.cpv[0]}</span>}
+                {tender.value_pln && <span className="text-slate-500 text-xs tabular-nums">{fmtPLN(Number(tender.value_pln))}</span>}
+                {kosztorysId && <span className="text-indigo/70 text-xs font-mono">v2:{kosztorysId.slice(0, 8)}</span>}
               </div>
             )}
           </GlassCard>
@@ -1267,24 +1267,24 @@ export function KosztorysPage() {
           {/* Add row form */}
           <GlassCard className="p-3 shrink-0">
             <div className="flex items-center gap-2 mb-2">
-              <Plus className="w-3.5 h-3.5 text-accent-primary" />
+              <Plus className="w-3.5 h-3.5 text-em" />
               <span className="section-label">Nowa pozycja</span>
             </div>
             <div className="grid grid-cols-12 gap-2">
               <input value={addKst} onChange={e => setAddKst(e.target.value)} placeholder="KNR/kod"
-                className="col-span-2 px-2 py-1.5 rounded-token bg-earth-800/60 border border-earth-700/50 text-earth-200 placeholder-earth-600 text-xs focus:outline-none focus:border-accent-primary/50 transition-colors" />
+                className="col-span-2 px-2 py-1.5 rounded-md bg-ink-800/60 border border-ink-700/50 text-slate-200 placeholder-ink-600 text-xs focus:outline-none focus:border-em/50 transition-colors" />
               <input value={addOpis} onChange={e => setAddOpis(e.target.value)} placeholder="Opis pozycji *"
-                className="col-span-4 px-2 py-1.5 rounded-token bg-earth-800/60 border border-earth-700/50 text-earth-200 placeholder-earth-600 text-xs focus:outline-none focus:border-accent-primary/50 transition-colors" />
+                className="col-span-4 px-2 py-1.5 rounded-md bg-ink-800/60 border border-ink-700/50 text-slate-200 placeholder-ink-600 text-xs focus:outline-none focus:border-em/50 transition-colors" />
               <input value={addJm} onChange={e => setAddJm(e.target.value)} placeholder="Jm"
-                className="col-span-1 px-2 py-1.5 rounded-token bg-earth-800/60 border border-earth-700/50 text-earth-200 placeholder-earth-600 text-xs focus:outline-none focus:border-accent-primary/50 transition-colors" />
+                className="col-span-1 px-2 py-1.5 rounded-md bg-ink-800/60 border border-ink-700/50 text-slate-200 placeholder-ink-600 text-xs focus:outline-none focus:border-em/50 transition-colors" />
               <input value={addIlosc} onChange={e => setAddIlosc(e.target.value)} type="number" placeholder="Ilość"
-                className="col-span-1 px-2 py-1.5 rounded-token bg-earth-800/60 border border-earth-700/50 text-earth-200 placeholder-earth-600 text-xs focus:outline-none focus:border-accent-primary/50 transition-colors" />
+                className="col-span-1 px-2 py-1.5 rounded-md bg-ink-800/60 border border-ink-700/50 text-slate-200 placeholder-ink-600 text-xs focus:outline-none focus:border-em/50 transition-colors" />
               <input value={addR} onChange={e => setAddR(e.target.value)} type="number" placeholder="R zł"
-                className="col-span-1 px-2 py-1.5 rounded-token bg-earth-800/60 border border-earth-700/50 text-earth-200 placeholder-earth-600 text-xs focus:outline-none focus:border-accent-primary/50 transition-colors" />
+                className="col-span-1 px-2 py-1.5 rounded-md bg-ink-800/60 border border-ink-700/50 text-slate-200 placeholder-ink-600 text-xs focus:outline-none focus:border-em/50 transition-colors" />
               <input value={addM} onChange={e => setAddM(e.target.value)} type="number" placeholder="M zł"
-                className="col-span-1 px-2 py-1.5 rounded-token bg-earth-800/60 border border-earth-700/50 text-earth-200 placeholder-earth-600 text-xs focus:outline-none focus:border-accent-primary/50 transition-colors" />
+                className="col-span-1 px-2 py-1.5 rounded-md bg-ink-800/60 border border-ink-700/50 text-slate-200 placeholder-ink-600 text-xs focus:outline-none focus:border-em/50 transition-colors" />
               <input value={addS} onChange={e => setAddS(e.target.value)} type="number" placeholder="S zł"
-                className="col-span-1 px-2 py-1.5 rounded-token bg-earth-800/60 border border-earth-700/50 text-earth-200 placeholder-earth-600 text-xs focus:outline-none focus:border-accent-primary/50 transition-colors" />
+                className="col-span-1 px-2 py-1.5 rounded-md bg-ink-800/60 border border-ink-700/50 text-slate-200 placeholder-ink-600 text-xs focus:outline-none focus:border-em/50 transition-colors" />
               <button
                 onClick={addPozycja}
                 disabled={addLoading || !addOpis.trim()}
@@ -1297,7 +1297,7 @@ export function KosztorysPage() {
 
           {/* Pozycje / Risk / Prognoza tabs */}
           <GlassCard className="flex-1 overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between px-4 py-2.5 border-b border-earth-800/40 shrink-0">
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-ink-800/40 shrink-0">
               <div className="flex items-center gap-1">
                 {([
                   { key: 'pozycje', label: 'Pozycje', icon: <Calculator className="w-3.5 h-3.5" /> },
@@ -1310,15 +1310,15 @@ export function KosztorysPage() {
                       setActiveKTab(t.key);
                       if (t.key === 'ryzyko' && alertsData.length === 0) loadAlerts();
                     }}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-token text-xs transition-colors ${
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-colors ${
                       activeKTab === t.key
-                        ? 'bg-earth-700/60 text-earth-200'
-                        : 'text-earth-500 hover:text-earth-300 hover:bg-earth-800/40'
+                        ? 'bg-ink-700/60 text-slate-200'
+                        : 'text-slate-500 hover:text-slate-300 hover:bg-ink-800/40'
                     }`}
                   >
                     {t.icon}{t.label}
-                    {t.key === 'pozycje' && <span className="px-1.5 py-0.5 rounded-full bg-earth-800 text-earth-500 text-xs">{pozycje.length}</span>}
-                    {t.key === 'ryzyko' && alertsData.length > 0 && <span className="px-1.5 py-0.5 rounded-full bg-accent-danger/30 text-accent-danger text-xs">{alertsData.length}</span>}
+                    {t.key === 'pozycje' && <span className="px-1.5 py-0.5 rounded-full bg-ink-800 text-slate-500 text-xs">{pozycje.length}</span>}
+                    {t.key === 'ryzyko' && alertsData.length > 0 && <span className="px-1.5 py-0.5 rounded-full bg-nogo/30 text-nogo text-xs">{alertsData.length}</span>}
                   </button>
                 ))}
               </div>
@@ -1326,7 +1326,7 @@ export function KosztorysPage() {
                 <button
                   onClick={recalc}
                   disabled={recalcLoading}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-token bg-accent-info/10 border border-accent-info/20 text-accent-info text-xs hover:bg-accent-info/20 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo/10 border border-indigo/20 text-indigo text-xs hover:bg-indigo/20 transition-colors disabled:opacity-50"
                 >
                   {recalcLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                   Przelicz
@@ -1334,7 +1334,7 @@ export function KosztorysPage() {
                 <button
                   onClick={() => exportFile('pdf')}
                   disabled={exportLoading === 'pdf'}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-token bg-accent-danger/10 border border-accent-danger/20 text-accent-danger text-xs hover:bg-accent-danger/20 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-nogo/10 border border-nogo/20 text-nogo text-xs hover:bg-nogo/20 transition-colors disabled:opacity-50"
                 >
                   {exportLoading === 'pdf' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileDown className="w-3.5 h-3.5" />}
                   PDF
@@ -1342,7 +1342,7 @@ export function KosztorysPage() {
                 <button
                   onClick={() => exportFile('ath')}
                   disabled={exportLoading === 'ath'}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-token bg-accent-violet/10 border border-accent-violet/20 text-accent-violet text-xs hover:bg-accent-violet/20 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-violet/10 border border-violet/20 text-violet text-xs hover:bg-violet/20 transition-colors disabled:opacity-50"
                 >
                   {exportLoading === 'ath' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                   ATH
@@ -1350,7 +1350,7 @@ export function KosztorysPage() {
                 <button
                   onClick={() => exportFile('xlsx')}
                   disabled={exportLoading === 'xlsx'}
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-token bg-accent-success/10 border border-accent-success/20 text-accent-success text-xs hover:bg-accent-success/20 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-go/10 border border-go/20 text-go text-xs hover:bg-go/20 transition-colors disabled:opacity-50"
                 >
                   {exportLoading === 'xlsx' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileSpreadsheet className="w-3.5 h-3.5" />}
                   CSV
@@ -1367,7 +1367,7 @@ export function KosztorysPage() {
                   onClick={() => athFileInputRef.current?.click()}
                   disabled={athImportLoading || !tender}
                   title="Importuj plik ATH"
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-token bg-orange-600/10 border border-orange-600/20 text-orange-400 text-xs hover:bg-orange-600/20 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-orange-600/10 border border-orange-600/20 text-orange-400 text-xs hover:bg-orange-600/20 transition-colors disabled:opacity-50"
                 >
                   {athImportLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
                   Import ATH
@@ -1376,7 +1376,7 @@ export function KosztorysPage() {
                   onClick={handleAiWycena}
                   disabled={aiWycenaLoading || !kosztorysId}
                   title="Automatyczna wycena AI na podstawie cen KNR"
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-token bg-accent-violet/10 border border-accent-violet/20 text-accent-violet text-xs hover:bg-accent-violet/20 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-violet/10 border border-violet/20 text-violet text-xs hover:bg-violet/20 transition-colors disabled:opacity-50"
                 >
                   {aiWycenaLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Bot className="w-3.5 h-3.5" />}
                   AI Wycena
@@ -1391,28 +1391,28 @@ export function KosztorysPage() {
             <div className="flex-1 overflow-auto">
               {kosztLoading ? (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-6 h-6 text-earth-600 animate-spin" />
+                  <Loader2 className="w-6 h-6 text-slate-600 animate-spin" />
                 </div>
               ) : pozycje.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 gap-3">
-                  <Calculator className="w-10 h-10 text-earth-800" />
-                  <p className="text-earth-600 text-sm">Brak pozycji kosztorysowych</p>
-                  <p className="text-earth-700 text-xs">Dodaj pozycje ręcznie lub zaimportuj z ICB/ATH</p>
+                  <Calculator className="w-10 h-10 text-ink-800" />
+                  <p className="text-slate-600 text-sm">Brak pozycji kosztorysowych</p>
+                  <p className="text-slate-700 text-xs">Dodaj pozycje ręcznie lub zaimportuj z ICB/ATH</p>
                 </div>
               ) : (
                 <table className="w-full text-xs border-collapse">
                   <thead className="sticky top-0 z-10">
-                    <tr className="bg-earth-900/90 backdrop-blur-sm border-b border-earth-800/60">
-                      <th className="px-2 py-2 text-left text-earth-600 font-medium w-8">Lp</th>
-                      <th className="px-2 py-2 text-left text-earth-600 font-medium w-28">Kod KNR</th>
-                      <th className="px-2 py-2 text-left text-earth-600 font-medium">Opis</th>
-                      <th className="px-2 py-2 text-center text-earth-600 font-medium w-12">Jm</th>
-                      <th className="px-2 py-2 text-right text-earth-600 font-medium w-16">Ilość</th>
-                      <th className="px-2 py-2 text-right text-blue-600 font-medium w-16">R jcena</th>
-                      <th className="px-2 py-2 text-right text-accent-primary font-medium w-16">M jcena</th>
-                      <th className="px-2 py-2 text-right text-amber-600 font-medium w-16">S jcena</th>
-                      <th className="px-2 py-2 text-right text-earth-600 font-medium w-24">CJ netto</th>
-                      <th className="px-2 py-2 text-right text-earth-400 font-medium w-28">Wartość</th>
+                    <tr className="bg-ink-900/90 backdrop-blur-sm border-b border-ink-800/60">
+                      <th className="px-2 py-2 text-left text-slate-600 font-medium w-8">Lp</th>
+                      <th className="px-2 py-2 text-left text-slate-600 font-medium w-28">Kod KNR</th>
+                      <th className="px-2 py-2 text-left text-slate-600 font-medium">Opis</th>
+                      <th className="px-2 py-2 text-center text-slate-600 font-medium w-12">Jm</th>
+                      <th className="px-2 py-2 text-right text-slate-600 font-medium w-16">Ilość</th>
+                      <th className="px-2 py-2 text-right text-indigo-400 font-medium w-16">R jcena</th>
+                      <th className="px-2 py-2 text-right text-em font-medium w-16">M jcena</th>
+                      <th className="px-2 py-2 text-right text-warn font-medium w-16">S jcena</th>
+                      <th className="px-2 py-2 text-right text-slate-600 font-medium w-24">CJ netto</th>
+                      <th className="px-2 py-2 text-right text-slate-400 font-medium w-28">Wartość</th>
                       <th className="w-8" />
                     </tr>
                   </thead>
@@ -1435,16 +1435,16 @@ export function KosztorysPage() {
             {activeKTab === 'ryzyko' && (
             <div className="flex-1 overflow-auto p-4 space-y-4">
               {/* Anomaly analysis */}
-              <div className="rounded-token-lg border border-earth-800/60 bg-earth-900/40 p-4">
+              <div className="rounded-xl border border-ink-800/60 bg-ink-900/40 p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-amber-500" />
-                    <span className="text-earth-300 text-sm font-semibold">Analiza anomalii cenowych</span>
+                    <AlertTriangle className="w-4 h-4 text-warn" />
+                    <span className="text-slate-300 text-sm font-semibold">Analiza anomalii cenowych</span>
                   </div>
                   <button
                     onClick={runAnomaly}
                     disabled={anomalyLoading || !kosztorysId}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-token bg-amber-600/10 border border-amber-600/20 text-amber-400 text-xs hover:bg-amber-600/20 transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-warn/10 border border-warn/20 text-warn text-xs hover:bg-warn/20 transition-colors disabled:opacity-50"
                   >
                     {anomalyLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                     Analizuj
@@ -1453,87 +1453,87 @@ export function KosztorysPage() {
                 {anomalyData ? (
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="rounded-token bg-earth-800/40 p-3 text-center">
-                        <p className="text-earth-500 text-xs mb-1">Pozycje z anomaliami</p>
-                        <p className={`text-lg font-bold tabular-nums ${anomalyData.count > 0 ? 'text-red-400' : 'text-accent-primary'}`}>
+                      <div className="rounded-md bg-ink-800/40 p-3 text-center">
+                        <p className="text-slate-500 text-xs mb-1">Pozycje z anomaliami</p>
+                        <p className={`text-lg font-bold tabular-nums ${anomalyData.count > 0 ? 'text-nogo' : 'text-em'}`}>
                           {anomalyData.count}
                         </p>
                       </div>
-                      <div className="rounded-token bg-earth-800/40 p-3 text-center">
-                        <p className="text-earth-500 text-xs mb-1">Łącznie pozycji</p>
-                        <p className="text-lg font-bold tabular-nums text-earth-300">{pozycje.length}</p>
+                      <div className="rounded-md bg-ink-800/40 p-3 text-center">
+                        <p className="text-slate-500 text-xs mb-1">Łącznie pozycji</p>
+                        <p className="text-lg font-bold tabular-nums text-slate-300">{pozycje.length}</p>
                       </div>
                     </div>
                     {anomalyData.anomalies.length > 0 && (
                       <div>
-                        <p className="text-earth-500 text-xs mb-2">Pozycje z anomaliami cenowymi:</p>
+                        <p className="text-slate-500 text-xs mb-2">Pozycje z anomaliami cenowymi:</p>
                         <div className="space-y-1">
                           {anomalyData.anomalies.map(a => (
-                            <div key={a.id} className="flex items-center gap-2 rounded-token bg-accent-danger/5 border border-accent-danger/20 px-3 py-2">
-                              <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />
-                              <span className="text-earth-300 text-xs flex-1 truncate">{a.opis}</span>
-                              {a.kst_code && <span className="text-earth-600 text-xs ml-auto shrink-0">{a.kst_code}</span>}
+                            <div key={a.id} className="flex items-center gap-2 rounded-md bg-nogo/5 border border-nogo/20 px-3 py-2">
+                              <AlertTriangle className="w-3.5 h-3.5 text-nogo shrink-0" />
+                              <span className="text-slate-300 text-xs flex-1 truncate">{a.opis}</span>
+                              {a.kst_code && <span className="text-slate-600 text-xs ml-auto shrink-0">{a.kst_code}</span>}
                             </div>
                           ))}
                         </div>
                       </div>
                     )}
                     {anomalyData.count === 0 && (
-                      <p className="text-accent-primary text-xs text-center py-2">Brak anomalii cenowych w tym kosztorysie</p>
+                      <p className="text-em text-xs text-center py-2">Brak anomalii cenowych w tym kosztorysie</p>
                     )}
                   </div>
                 ) : (
-                  <p className="text-earth-600 text-xs text-center py-4">
+                  <p className="text-slate-600 text-xs text-center py-4">
                     {!kosztorysId ? 'Wybierz kosztorys aby uruchomić analizę' : 'Kliknij „Analizuj" aby wykryć anomalie cenowe'}
                   </p>
                 )}
               </div>
 
               {/* Material alerts */}
-              <div className="rounded-token-lg border border-earth-800/60 bg-earth-900/40 p-4">
+              <div className="rounded-xl border border-ink-800/60 bg-ink-900/40 p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <Package className="w-4 h-4 text-blue-400" />
-                    <span className="text-earth-300 text-sm font-semibold">Alerty cen materiałów</span>
+                    <Package className="w-4 h-4 text-indigo-400" />
+                    <span className="text-slate-300 text-sm font-semibold">Alerty cen materiałów</span>
                     {alertsData.length > 0 && (
-                      <span className="px-1.5 py-0.5 rounded-full bg-accent-danger/30 text-accent-danger text-xs">{alertsData.length}</span>
+                      <span className="px-1.5 py-0.5 rounded-full bg-nogo/30 text-nogo text-xs">{alertsData.length}</span>
                     )}
                   </div>
                   <button
                     onClick={loadAlerts}
                     disabled={alertsLoading}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-token bg-accent-info/10 border border-accent-info/20 text-accent-info text-xs hover:bg-accent-info/20 transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo/10 border border-indigo/20 text-indigo text-xs hover:bg-indigo/20 transition-colors disabled:opacity-50"
                   >
                     {alertsLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
                     Odśwież
                   </button>
                 </div>
                 {alertsLoading ? (
-                  <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 text-earth-600 animate-spin" /></div>
+                  <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 text-slate-600 animate-spin" /></div>
                 ) : alertsData.length === 0 ? (
-                  <p className="text-earth-600 text-xs text-center py-4">Brak aktywnych alertów cenowych</p>
+                  <p className="text-slate-600 text-xs text-center py-4">Brak aktywnych alertów cenowych</p>
                 ) : (
                   <div className="space-y-1.5">
                     {alertsData.map(alert => (
-                      <div key={alert.id} className={`flex items-center gap-3 rounded-token px-3 py-2.5 border ${
-                        alert.severity === 'critical' ? 'bg-accent-danger/5 border-accent-danger/20' :
+                      <div key={alert.id} className={`flex items-center gap-3 rounded-md px-3 py-2.5 border ${
+                        alert.severity === 'critical' ? 'bg-nogo/5 border-nogo/20' :
                         alert.severity === 'high' ? 'bg-orange-900/10 border-orange-800/30' :
-                        'bg-amber-900/10 border-amber-800/30'
+                        'bg-warn/10 border-warn/30'
                       }`}>
                         <div className="flex-1 min-w-0">
-                          <p className="text-earth-300 text-xs font-medium truncate">{alert.symbol}</p>
-                          <p className="text-earth-500 text-xs">
+                          <p className="text-slate-300 text-xs font-medium truncate">{alert.symbol}</p>
+                          <p className="text-slate-500 text-xs">
                             {(alert.baseline_price ?? 0).toFixed(2)} → {(alert.current_price ?? 0).toFixed(2)} PLN
                           </p>
                         </div>
                         <div className="text-right shrink-0">
-                          <p className={`text-sm font-bold tabular-nums ${alert.change_pct > 0 ? 'text-red-400' : 'text-accent-primary'}`}>
+                          <p className={`text-sm font-bold tabular-nums ${alert.change_pct > 0 ? 'text-nogo' : 'text-em'}`}>
                             {alert.change_pct > 0 ? '+' : ''}{(alert.change_pct ?? 0).toFixed(1)}%
                           </p>
                           <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                            alert.severity === 'critical' ? 'bg-accent-danger/30 text-accent-danger' :
+                            alert.severity === 'critical' ? 'bg-nogo/30 text-nogo' :
                             alert.severity === 'high' ? 'bg-orange-900/60 text-orange-300' :
-                            'bg-amber-900/60 text-amber-300'
+                            'bg-warn/60 text-warn'
                           }`}>{alert.severity}</span>
                         </div>
                       </div>
@@ -1550,11 +1550,11 @@ export function KosztorysPage() {
               {/* Kontrolki */}
               <div className="flex flex-wrap items-center gap-3">
                 <div className="flex items-center gap-2">
-                  <label className="text-xs text-earth-500">Kategoria</label>
+                  <label className="text-xs text-slate-500">Kategoria</label>
                   <select
                     value={forecastCategory}
                     onChange={e => setForecastCategory(e.target.value)}
-                    className="text-xs bg-earth-800/60 border border-earth-700/60 rounded-token px-2 py-1.5 text-earth-200 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                    className="text-xs bg-ink-800/60 border border-ink-700/60 rounded-md px-2 py-1.5 text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo/50"
                   >
                     {['murarstwo','beton_cement','stal_konstrukcyjna','dach_pokrycia','drewno',
                       'kruszywa_ziemne','nawierzchnie','instalacje_wod_kan','ogrzewanie',
@@ -1565,11 +1565,11 @@ export function KosztorysPage() {
                   </select>
                 </div>
                 <div className="flex items-center gap-2">
-                  <label className="text-xs text-earth-500">Horyzont</label>
+                  <label className="text-xs text-slate-500">Horyzont</label>
                   <select
                     value={forecastHorizon}
                     onChange={e => setForecastHorizon(Number(e.target.value))}
-                    className="text-xs bg-earth-800/60 border border-earth-700/60 rounded-token px-2 py-1.5 text-earth-200 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                    className="text-xs bg-ink-800/60 border border-ink-700/60 rounded-md px-2 py-1.5 text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo/50"
                   >
                     {[2,4,6,8,12].map(h => <option key={h} value={h}>{h} kw.</option>)}
                   </select>
@@ -1589,7 +1589,7 @@ export function KosztorysPage() {
 
               {/* Error */}
               {forecastError && (
-                <div className="flex items-center gap-2 text-xs text-accent-danger bg-accent-danger/10 border border-accent-danger/30 rounded-token px-3 py-2">
+                <div className="flex items-center gap-2 text-xs text-nogo bg-nogo/10 border border-nogo/30 rounded-md px-3 py-2">
                   <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                   {forecastError}
                 </div>
@@ -1597,8 +1597,8 @@ export function KosztorysPage() {
 
               {/* Wykres */}
               {forecastData.length > 0 ? (
-                <div className="rounded-token-lg border border-earth-800/60 bg-earth-900/40 p-4">
-                  <p className="text-xs text-earth-500 mb-3 font-medium">
+                <div className="rounded-xl border border-ink-800/60 bg-ink-900/40 p-4">
+                  <p className="text-xs text-slate-500 mb-3 font-medium">
                     Cena średnia [PLN/jm] — {forecastCategory.replace(/_/g,' ')} · historia + prognoza {forecastHorizon} kw.
                   </p>
                   <ResponsiveContainer width="100%" height={260}>
@@ -1636,21 +1636,21 @@ export function KosztorysPage() {
                   </ResponsiveContainer>
                   {/* Legenda prognoza vs historia */}
                   <div className="flex gap-4 mt-2">
-                    <div className="flex items-center gap-1.5 text-xs text-earth-500">
-                      <span className="w-5 border-t-2 border-blue-500 inline-block" />
+                    <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                      <span className="w-5 border-t-2 border-indigo inline-block" />
                       Historia
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs text-earth-500">
-                      <span className="w-5 border-t-2 border-dashed border-blue-400 inline-block" />
+                    <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                      <span className="w-5 border-t-2 border-dashed border-indigo-400 inline-block" />
                       Prognoza
                     </div>
                   </div>
                 </div>
               ) : !forecastLoading && (
-                <div className="rounded-token-lg border border-earth-800/60 bg-earth-900/40 p-8 flex flex-col items-center gap-3">
-                  <TrendingUp className="w-10 h-10 text-earth-700" />
-                  <p className="text-earth-400 text-sm font-medium">Wybierz kategorię i kliknij „Generuj prognozę"</p>
-                  <p className="text-earth-600 text-xs text-center max-w-xs">
+                <div className="rounded-xl border border-ink-800/60 bg-ink-900/40 p-8 flex flex-col items-center gap-3">
+                  <TrendingUp className="w-10 h-10 text-slate-700" />
+                  <p className="text-slate-400 text-sm font-medium">Wybierz kategorię i kliknij „Generuj prognozę"</p>
+                  <p className="text-slate-600 text-xs text-center max-w-xs">
                     Regresja liniowa na ostatnich 12 kwartałach ICB (784k wierszy). Horyzont do 12 kwartałów.
                   </p>
                 </div>
@@ -1660,37 +1660,37 @@ export function KosztorysPage() {
 
             {/* Sumy */}
             {pozycje.length > 0 && (
-              <div className="shrink-0 border-t border-earth-800/60 px-4 py-3 bg-earth-900/40">
+              <div className="shrink-0 border-t border-ink-800/60 px-4 py-3 bg-ink-900/40">
                 <div className="grid grid-cols-6 gap-3 text-xs">
                   <div>
-                    <p className="text-blue-600 font-medium mb-0.5">Robocizna (R)</p>
-                    <p className="text-earth-300 tabular-nums font-semibold">{fmtPLN(sumaR)}</p>
-                    <p className="text-earth-700">{pct(sumaR, sumaNetto)}</p>
+                    <p className="text-indigo-400 font-medium mb-0.5">Robocizna (R)</p>
+                    <p className="text-slate-300 tabular-nums font-semibold">{fmtPLN(sumaR)}</p>
+                    <p className="text-slate-700">{pct(sumaR, sumaNetto)}</p>
                   </div>
                   <div>
-                    <p className="text-accent-primary font-medium mb-0.5">Materiały (M)</p>
-                    <p className="text-earth-300 tabular-nums font-semibold">{fmtPLN(sumaM)}</p>
-                    <p className="text-earth-700">{pct(sumaM, sumaNetto)}</p>
+                    <p className="text-em font-medium mb-0.5">Materiały (M)</p>
+                    <p className="text-slate-300 tabular-nums font-semibold">{fmtPLN(sumaM)}</p>
+                    <p className="text-slate-700">{pct(sumaM, sumaNetto)}</p>
                   </div>
                   <div>
-                    <p className="text-amber-600 font-medium mb-0.5">Sprzęt (S)</p>
-                    <p className="text-earth-300 tabular-nums font-semibold">{fmtPLN(sumaS)}</p>
-                    <p className="text-earth-700">{pct(sumaS, sumaNetto)}</p>
+                    <p className="text-warn font-medium mb-0.5">Sprzęt (S)</p>
+                    <p className="text-slate-300 tabular-nums font-semibold">{fmtPLN(sumaS)}</p>
+                    <p className="text-slate-700">{pct(sumaS, sumaNetto)}</p>
                   </div>
                   <div>
-                    <p className="text-earth-600 font-medium mb-0.5">Ko + Z + Kz</p>
-                    <p className="text-earth-300 tabular-nums font-semibold">{fmtPLN(sumaKo + sumaZ + sumaKz)}</p>
-                    <p className="text-earth-700">{pct(sumaKo + sumaZ + sumaKz, sumaNetto)}</p>
+                    <p className="text-slate-600 font-medium mb-0.5">Ko + Z + Kz</p>
+                    <p className="text-slate-300 tabular-nums font-semibold">{fmtPLN(sumaKo + sumaZ + sumaKz)}</p>
+                    <p className="text-slate-700">{pct(sumaKo + sumaZ + sumaKz, sumaNetto)}</p>
                   </div>
                   <div>
-                    <p className="text-earth-400 font-medium mb-0.5">NETTO</p>
-                    <p className="text-earth-200 tabular-nums font-bold text-sm">{fmtPLN(sumaNetto)}</p>
-                    <p className="text-earth-700">VAT {fmtPLN(sumaVat)}</p>
+                    <p className="text-slate-400 font-medium mb-0.5">NETTO</p>
+                    <p className="text-slate-200 tabular-nums font-bold text-sm">{fmtPLN(sumaNetto)}</p>
+                    <p className="text-slate-700">VAT {fmtPLN(sumaVat)}</p>
                   </div>
                   <div>
-                    <p className="text-blue-400 font-semibold mb-0.5">BRUTTO</p>
-                    <p className="text-blue-300 tabular-nums font-black text-base">{fmtPLN(sumaBrutto)}</p>
-                    <p className="text-earth-700">VAT {narzuty.vat_pct}%</p>
+                    <p className="text-indigo-400 font-semibold mb-0.5">BRUTTO</p>
+                    <p className="text-indigo-300 tabular-nums font-black text-base">{fmtPLN(sumaBrutto)}</p>
+                    <p className="text-slate-700">VAT {narzuty.vat_pct}%</p>
                   </div>
                 </div>
               </div>
@@ -1719,7 +1719,7 @@ export function KosztorysPage() {
           <GlassCard className="p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Wrench className="w-4 h-4 text-earth-500" />
+                <Wrench className="w-4 h-4 text-slate-500" />
                 <span className="section-label">Narzuty</span>
               </div>
               <button onClick={() => setShowNarzuty(true)} className="btn-ghost !p-1">
@@ -1734,9 +1734,9 @@ export function KosztorysPage() {
                 ['Kz', narzuty.kz_pct + '%'],
                 ['VAT', narzuty.vat_pct + '%'],
               ] as [string, string][]).map(([k, v]) => (
-                <div key={k} className="flex items-center justify-between bg-earth-800/30 rounded-token px-2.5 py-1.5">
-                  <span className="text-earth-600 text-xs">{k}</span>
-                  <span className="text-earth-300 text-xs font-bold tabular-nums">{v}</span>
+                <div key={k} className="flex items-center justify-between bg-ink-800/30 rounded-md px-2.5 py-1.5">
+                  <span className="text-slate-600 text-xs">{k}</span>
+                  <span className="text-slate-300 text-xs font-bold tabular-nums">{v}</span>
                 </div>
               ))}
             </div>

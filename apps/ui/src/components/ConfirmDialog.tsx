@@ -37,9 +37,9 @@ export function ConfirmDialog({
   }, [open, onCancel]);
 
   const variantStyles = {
-    danger:  { icon: 'text-accent-danger',   btn: 'bg-accent-danger hover:opacity-90 text-earth-50',   ring: 'ring-accent-danger/30' },
-    warning: { icon: 'text-accent-warning',  btn: 'bg-accent-warning hover:opacity-90 text-earth-950', ring: 'ring-accent-warning/30' },
-    info:    { icon: 'text-accent-info',     btn: 'bg-accent-info hover:opacity-90 text-earth-50',     ring: 'ring-accent-info/30' },
+    danger:  { icon: 'text-nogo',   btn: 'bg-nogo hover:opacity-90 text-ink-950/30',   ring: 'ring-nogo/30' },
+    warning: { icon: 'text-warn',  btn: 'bg-warn hover:opacity-90 text-ink-950', ring: 'ring-warn/30' },
+    info:    { icon: 'text-indigo',     btn: 'bg-indigo hover:opacity-90 text-ink-950/30',     ring: 'ring-indigo/30' },
   }[variant];
 
   return (
@@ -68,7 +68,7 @@ export function ConfirmDialog({
             aria-modal="true"
             aria-labelledby="confirm-title"
             className={`fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-              w-full max-w-md bg-earth-950 border border-earth-800 rounded-token-xl shadow-token-lg
+              w-full max-w-md bg-ink-950 border border-ink-800 rounded-2xl shadow-xl
               ring-1 ${variantStyles.ring} p-6`}
           >
             {/* Header */}
@@ -77,14 +77,14 @@ export function ConfirmDialog({
                 <AlertTriangle className="w-5 h-5" />
               </div>
               <div className="flex-1">
-                <h2 id="confirm-title" className="text-earth-100 font-semibold text-base">
+                <h2 id="confirm-title" className="text-slate-100 font-semibold text-base">
                   {title}
                 </h2>
-                <p className="text-earth-400 text-sm mt-1 leading-relaxed">{message}</p>
+                <p className="text-slate-400 text-sm mt-1 leading-relaxed">{message}</p>
               </div>
               <button
                 onClick={onCancel}
-                className="text-earth-500 hover:text-earth-300 transition-colors ml-2 shrink-0"
+                className="text-slate-500 hover:text-slate-300 transition-colors ml-2 shrink-0"
                 aria-label="Zamknij"
               >
                 <X className="w-4 h-4" />
@@ -95,15 +95,15 @@ export function ConfirmDialog({
             <div className="flex justify-end gap-2 mt-6">
               <button
                 onClick={onCancel}
-                className="px-4 py-2 text-sm font-medium text-earth-300 bg-earth-800/50
-                  hover:bg-earth-800 border border-earth-700/50 rounded-token transition-colors"
+                className="px-4 py-2 text-sm font-medium text-slate-300 bg-ink-800/50
+                  hover:bg-ink-800 border border-ink-700/50 rounded-md transition-colors"
               >
                 {cancelLabel}
               </button>
               <button
                 ref={confirmRef}
                 onClick={onConfirm}
-                className={`px-4 py-2 text-sm font-medium rounded-token transition-colors ${variantStyles.btn}`}
+                className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${variantStyles.btn}`}
               >
                 {confirmLabel}
               </button>

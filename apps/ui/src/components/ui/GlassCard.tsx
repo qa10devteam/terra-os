@@ -5,21 +5,26 @@ import type { ReactNode } from 'react';
 interface GlassCardProps {
   children:   ReactNode;
   className?: string;
-  /** Elevated — deeper shadow, slightly brighter surface */
-  variant?:  'default' | 'elevated' | 'flat';
+  /** default = standard card | elevated = stronger surface | flat = minimal */
+  variant?:   'default' | 'elevated' | 'flat';
+  /** Highlight = emerald border — active/selected state */
+  highlight?: boolean;
   /** Forward click handler — renders as <button> when provided */
-  onClick?:  () => void;
+  onClick?:   () => void;
 }
 
-// ── Style map ──────────────────────────────────────────────────────────────────
+// ── Style map — Brand Bible BudOS ─────────────────────────────────────────────
+// Ink backgrounds + subtle borders. NO gradients. NO blur in cards.
+// hover: border tightens, surface lifts one level.
 
 const VARIANT_CLS: Record<'default' | 'elevated' | 'flat', string> = {
-  default:  'bg-gradient-to-b from-earth-900/60 to-earth-900/80 border border-earth-700/50 shadow-token-sm',
-  elevated: 'bg-earth-800/80 border border-earth-600/60 shadow-token-md',
-  flat:     'bg-earth-900/40 border border-earth-800/50',
+  default:  'bg-ink-900 border border-ink-line shadow-sm',
+  elevated: 'bg-ink-800 border border-ink-line-strong shadow-md',
+  flat:     'bg-ink-900 border border-ink-line',
 };
 
-const INTERACTIVE = 'cursor-pointer hover:border-earth-600/60 hover:shadow-token-md transition-all duration-200 text-left w-full';
+const HIGHLIGHT  = 'border-em-brd bg-ink-800';
+const INTERACTIVE = 'cursor-pointer hover:border-ink-line-strong hover:bg-ink-800 transition-colors duration-150 text-left w-full';
 
 // ── Component ──────────────────────────────────────────────────────────────────
 
@@ -27,11 +32,12 @@ export function GlassCard({
   children,
   className = '',
   variant   = 'default',
+  highlight = false,
   onClick,
 }: GlassCardProps) {
   const base = [
-    'backdrop-blur-sm rounded-token-lg',
-    VARIANT_CLS[variant],
+    'rounded-xl',
+    highlight ? HIGHLIGHT : VARIANT_CLS[variant],
     onClick ? INTERACTIVE : '',
     className,
   ]

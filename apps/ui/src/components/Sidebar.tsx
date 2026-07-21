@@ -64,7 +64,7 @@ const moduleGroups: ModuleGroup[] = [
       { id: 'analytics',    icon: BarChart3,       name: 'Analityka',  desc: 'AHP, Friedman, Ryzyko' },
       { id: 'icb',          icon: PackageSearch,   name: 'Cennik ICB', desc: 'Baza cen InterCenBud' },
       { id: 'market-intel', icon: TrendingUp,      name: 'Rynek',      desc: 'Trendy i benchmarki CPV' },
-      { id: 'rynek',        icon: BarChart3,        name: 'Rynek S6',   desc: 'Dashboard BZP · TED · GUS' },
+      { id: 'rynek',        icon: BarChart3,       name: 'Rynek S6',   desc: 'Dashboard BZP · TED · GUS' },
     ],
   },
   {
@@ -94,28 +94,33 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
     <div
       className={[
         'relative flex flex-col h-full',
-        'bg-earth-900/50 border-r border-earth-700/60',
-        'backdrop-blur-xl',
+        'bg-ink-950 border-r border-ink-line',
         'transition-all duration-300 ease-in-out',
         isMenuOpen ? 'w-60' : 'w-[68px]',
       ].join(' ')}
     >
       {/* ── Logo / Header ──────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between px-3 h-16 border-b border-earth-700/50 flex-shrink-0">
+      <div className="flex items-center justify-between px-3 h-16 border-b border-ink-line flex-shrink-0">
         {isMenuOpen ? (
           /* Full logo */
           <div className="flex flex-col leading-none select-none">
-            <span className="text-base font-bold text-accent-primary tracking-tight leading-tight">
-              budos
-            </span>
-            <span className="text-[10px] text-earth-600 font-normal leading-tight mt-0.5">
-              Powered by YU‑NA Intelligence
+            <div className="flex items-center gap-1.5">
+              <span className="text-base font-bold text-slate-100 tracking-tight leading-tight">
+                YU-NA
+              </span>
+              <span className="text-em font-light text-base leading-tight">|</span>
+              <span className="text-base font-bold text-slate-100 tracking-tight leading-tight">
+                BudOS
+              </span>
+            </div>
+            <span className="text-[10px] text-slate-600 font-normal leading-tight mt-0.5 tracking-wide uppercase">
+              Przetargi budowlane
             </span>
           </div>
         ) : (
           /* Signet icon */
-          <div className="w-8 h-8 rounded-lg bg-accent-primary/10 border border-accent-primary/30 flex items-center justify-center mx-auto">
-            <span className="text-accent-primary text-xs font-bold leading-none select-none">b</span>
+          <div className="w-8 h-8 rounded-lg bg-em-bg border border-em-brd flex items-center justify-center mx-auto">
+            <span className="text-em text-xs font-bold leading-none select-none font-mono">B</span>
           </div>
         )}
 
@@ -124,7 +129,7 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
         <button
           onClick={toggleMenu}
           aria-label={isMenuOpen ? 'Zwiń menu' : 'Rozwiń menu'}
-          className="p-1.5 rounded-md hover:bg-earth-800 text-earth-500 hover:text-earth-200 transition-colors duration-200 ml-1 flex-shrink-0"
+          className="p-1.5 rounded-md hover:bg-ink-800 text-slate-600 hover:text-slate-200 transition-colors duration-150 ml-1 flex-shrink-0"
         >
           {isMenuOpen
             ? <ChevronLeft  className="w-4 h-4" />
@@ -139,12 +144,14 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
             {/* Group header */}
             {isMenuOpen ? (
               <div className="flex items-center gap-1.5 px-2 py-1 mb-0.5">
-                <GroupIcon className="w-3.5 h-3.5 text-earth-700 flex-shrink-0" />
-                <span className="section-label truncate">{label}</span>
+                <GroupIcon className="w-3.5 h-3.5 text-slate-700 flex-shrink-0" />
+                <span className="text-[10px] font-semibold text-slate-600 uppercase tracking-widest truncate">
+                  {label}
+                </span>
               </div>
             ) : (
               <div className="flex justify-center py-1 mb-0.5">
-                <GroupIcon className="w-3.5 h-3.5 text-earth-700" />
+                <GroupIcon className="w-3.5 h-3.5 text-slate-700" />
               </div>
             )}
 
@@ -165,21 +172,22 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
                         'rounded-lg px-3 py-1.5',
                         'transition-all duration-150',
                         isActive
-                          ? 'bg-accent-primary/[0.12] text-accent-primary border-l-2 border-accent-primary shadow-token-sm'
-                          : 'text-earth-400 hover:text-earth-200 hover:bg-earth-800/60 border-l-2 border-transparent',
+                          /* Brand Bible: active = emerald left bar + ink-800 bg */
+                          ? 'bg-ink-800 text-em border-l-2 border-em'
+                          : 'text-slate-500 hover:text-slate-200 hover:bg-ink-800 border-l-2 border-transparent',
                       ].join(' ')}
                     >
                       <Icon
                         className={[
                           'w-[18px] h-[18px] flex-shrink-0 transition-colors duration-150',
-                          isActive ? 'text-accent-primary' : 'text-earth-500 group-hover/item:text-earth-300',
+                          isActive ? 'text-em' : 'text-slate-600 group-hover/item:text-slate-300',
                         ].join(' ')}
                       />
                       {isMenuOpen && (
                         <span
                           className={[
                             'text-sm font-medium truncate transition-colors duration-150',
-                            isActive ? 'text-accent-primary' : 'text-earth-300 group-hover/item:text-earth-100',
+                            isActive ? 'text-slate-100' : 'text-slate-400 group-hover/item:text-slate-100',
                           ].join(' ')}
                         >
                           {name}
@@ -193,16 +201,16 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
                         aria-hidden="true"
                         className={[
                           'pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-50',
-                          'px-3 py-2 bg-earth-800 border border-earth-700/60 rounded-token-lg shadow-token-lg',
+                          'px-3 py-2 bg-ink-800 border border-ink-line rounded-xl shadow-lg',
                           'whitespace-nowrap',
                           'opacity-0 scale-95 group-hover/item:opacity-100 group-hover/item:scale-100',
                           'transition-all duration-150 ease-out',
                         ].join(' ')}
                       >
-                        <div className="text-sm font-semibold text-earth-100">{name}</div>
-                        <div className="text-xs text-earth-400 mt-0.5">{desc}</div>
+                        <div className="text-sm font-semibold text-slate-100">{name}</div>
+                        <div className="text-xs text-slate-500 mt-0.5">{desc}</div>
                         {/* Arrow */}
-                        <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-earth-700/60" />
+                        <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-ink-line" />
                       </div>
                     )}
                   </div>
@@ -216,34 +224,34 @@ function SidebarContent({ onItemClick }: { onItemClick?: () => void }) {
       </nav>
 
       {/* ── Footer ─────────────────────────────────────────────────────── */}
-      <div className="p-3 border-t border-earth-700/50 flex-shrink-0">
+      <div className="p-3 border-t border-ink-line flex-shrink-0">
         {isMenuOpen ? (
-          <div className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-earth-800/40 transition-colors cursor-default">
-            <div className="w-8 h-8 rounded-full bg-earth-800 border border-earth-600/50 flex items-center justify-center text-xs font-bold text-accent-primary flex-shrink-0">
+          <div className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-ink-800 transition-colors cursor-default">
+            <div className="w-8 h-8 rounded-full bg-ink-800 border border-ink-line flex items-center justify-center text-xs font-bold text-em flex-shrink-0">
               {initials}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-earth-200 truncate">{displayName}</div>
-              <div className="text-xs text-earth-500 capitalize">{user?.role || 'Użytkownik'}</div>
+              <div className="text-sm font-medium text-slate-200 truncate">{displayName}</div>
+              <div className="text-xs text-slate-600 capitalize">{user?.role || 'Użytkownik'}</div>
             </div>
             <button
               onClick={clearAuth}
               title="Wyloguj się"
               aria-label="Wyloguj się"
-              className="p-1.5 rounded-md hover:bg-earth-700 text-earth-500 hover:text-accent-danger transition-colors"
+              className="p-1.5 rounded-md hover:bg-ink-700 text-slate-600 hover:text-nogo transition-colors"
             >
               <LogOut className="w-3.5 h-3.5" />
             </button>
           </div>
         ) : (
           <div className="relative group/logout">
-            <div className="w-8 h-8 rounded-full bg-earth-800 border border-earth-600/50 flex items-center justify-center text-xs font-bold text-accent-primary mx-auto cursor-default">
+            <div className="w-8 h-8 rounded-full bg-ink-800 border border-ink-line flex items-center justify-center text-xs font-bold text-em mx-auto cursor-default">
               {initials}
             </div>
             <button
               onClick={clearAuth}
               title="Wyloguj się"
-              className="absolute -top-1 -right-1 opacity-0 group-hover/logout:opacity-100 w-4 h-4 bg-accent-danger/80 rounded-full flex items-center justify-center transition-opacity"
+              className="absolute -top-1 -right-1 opacity-0 group-hover/logout:opacity-100 w-4 h-4 bg-nogo/80 rounded-full flex items-center justify-center transition-opacity"
             >
               <LogOut className="w-2.5 h-2.5 text-white" />
             </button>
@@ -265,7 +273,7 @@ export function Sidebar() {
       <button
         onClick={() => setMobileOpen(true)}
         aria-label="Otwórz menu"
-        className="md:hidden fixed top-4 left-4 z-40 p-2 bg-earth-900/90 rounded-xl border border-earth-700/60 text-earth-400 hover:text-earth-200 transition-colors shadow-token-md"
+        className="md:hidden fixed top-4 left-4 z-40 p-2 bg-ink-900 rounded-xl border border-ink-line text-slate-500 hover:text-slate-200 transition-colors shadow-md"
       >
         <Menu className="w-5 h-5" />
       </button>
@@ -280,7 +288,7 @@ export function Sidebar() {
         <div className="md:hidden fixed inset-0 z-50 flex">
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-earth-950/80 backdrop-blur-sm"
+            className="absolute inset-0 bg-ink-950/80 backdrop-blur-sm"
             onClick={() => setMobileOpen(false)}
           />
           {/* Drawer */}
@@ -291,7 +299,7 @@ export function Sidebar() {
           <button
             onClick={() => setMobileOpen(false)}
             aria-label="Zamknij menu"
-            className="absolute top-4 right-4 p-2 text-earth-500 hover:text-earth-200 transition-colors"
+            className="absolute top-4 right-4 p-2 text-slate-500 hover:text-slate-200 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>

@@ -5,21 +5,22 @@ import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'motion/react';
 import { X } from 'lucide-react';
 
-type ModalSize = 'sm' | 'md' | 'lg' | 'xl';
+type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
 
 interface ModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  title?: string;
+  isOpen:   boolean;
+  onClose:  () => void;
+  title?:   string;
   children: ReactNode;
-  size?: ModalSize;
+  size?:    ModalSize;
 }
 
 const SIZE_CLS: Record<ModalSize, string> = {
-  sm: 'max-w-sm',
-  md: 'max-w-md',
-  lg: 'max-w-lg',
-  xl: 'max-w-xl',
+  sm:   'max-w-sm',
+  md:   'max-w-md',
+  lg:   'max-w-lg',
+  xl:   'max-w-xl',
+  full: 'max-w-4xl',
 };
 
 export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalProps) {
@@ -49,49 +50,42 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="absolute inset-0 bg-earth-950/80 backdrop-blur-sm"
+            transition={{ duration: 0.18 }}
+            className="absolute inset-0 bg-ink-950/85 backdrop-blur-sm"
             onClick={onClose}
           />
 
           {/* Panel */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
+            exit={{ opacity: 0, scale: 0.96 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
             className={[
               'relative w-full z-10',
-              'bg-earth-900 border border-earth-700 rounded-token-xl shadow-token-glow',
+              'bg-ink-900 border border-ink-line rounded-2xl shadow-2xl',
               'flex flex-col max-h-[90vh]',
               SIZE_CLS[size],
             ].join(' ')}
           >
             {/* Header */}
-            {(title !== undefined) && (
-              <div className="flex items-center justify-between px-5 py-4 border-b border-earth-700/50 shrink-0">
-                <span className="section-label">{title}</span>
+            {title !== undefined && (
+              <div className="flex items-center justify-between px-5 py-4 border-b border-ink-line shrink-0">
+                <span className="text-sm font-semibold text-slate-200 tracking-tight">
+                  {title}
+                </span>
                 <button
                   onClick={onClose}
-                  className="btn-ghost w-7 h-7 flex items-center justify-center p-0 rounded-token"
+                  className="p-1.5 rounded-md text-slate-500 hover:text-slate-200 hover:bg-ink-800 transition-colors"
                   aria-label="Zamknij"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
             )}
-            {title === undefined && (
-              <button
-                onClick={onClose}
-                className="btn-ghost absolute top-3 right-3 w-7 h-7 flex items-center justify-center p-0 rounded-token z-10"
-                aria-label="Zamknij"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
 
-            {/* Body — scrollable */}
-            <div className="overflow-y-auto px-5 py-4 flex-1">
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-5">
               {children}
             </div>
           </motion.div>
@@ -101,5 +95,3 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
     document.body,
   );
 }
-
-export default Modal;

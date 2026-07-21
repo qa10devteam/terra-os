@@ -9,9 +9,9 @@ type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type ButtonSize    = 'sm' | 'md' | 'lg';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?:  ButtonVariant;
-  size?:     ButtonSize;
-  loading?:  boolean;
+  variant?:   ButtonVariant;
+  size?:      ButtonSize;
+  loading?:   boolean;
   /** Renders a full-width block button */
   fullWidth?: boolean;
   /** Icon to render before label */
@@ -20,31 +20,35 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   iconRight?: React.ReactNode;
 }
 
-// ── Style maps ─────────────────────────────────────────────────────────────────
+// ── Style maps — Brand Bible BudOS ────────────────────────────────────────────
+// primary = emerald (GO signal) — highest CTAs only
+// secondary = ink surface — standard actions
+// ghost = no bg — nav, inline
+// danger = red signal — destructive
 
 const VARIANT: Record<ButtonVariant, string> = {
   primary:
-    'bg-accent-primary text-earth-950 font-semibold ' +
-    'hover:bg-accent-primary/90 hover:shadow-token-glow ' +
+    'bg-em text-ink-950 font-semibold ' +
+    'hover:bg-em-light ' +
     'border border-transparent',
   secondary:
-    'bg-earth-800/60 text-earth-200 font-medium ' +
-    'border border-earth-700/50 ' +
-    'hover:bg-earth-700/60 hover:border-earth-600/60 hover:text-earth-100',
+    'bg-ink-800 text-slate-200 font-medium ' +
+    'border border-ink-line ' +
+    'hover:bg-ink-700 hover:border-ink-line-strong hover:text-slate-100',
   ghost:
-    'text-earth-400 font-medium ' +
+    'text-slate-400 font-medium ' +
     'border border-transparent ' +
-    'hover:bg-earth-800/60 hover:text-earth-200',
+    'hover:bg-ink-800 hover:text-slate-200',
   danger:
-    'bg-accent-danger/10 text-accent-danger font-medium ' +
-    'border border-accent-danger/20 ' +
-    'hover:bg-accent-danger/20 hover:border-accent-danger/40',
+    'bg-nogo-bg text-nogo font-medium ' +
+    'border border-nogo-brd ' +
+    'hover:bg-nogo/15 hover:border-red-500/35',
 };
 
 const SIZE: Record<ButtonSize, string> = {
-  sm: 'px-3 py-1.5 text-xs rounded-token gap-1.5 h-7',
-  md: 'px-4 py-2 text-sm rounded-token gap-2 h-9',
-  lg: 'px-5 py-2.5 text-base rounded-token-lg gap-2.5 h-11',
+  sm: 'px-3 py-1.5 text-xs rounded-md gap-1.5 h-7',
+  md: 'px-4 py-2 text-sm rounded-md gap-2 h-9',
+  lg: 'px-5 py-2.5 text-base rounded-lg gap-2.5 h-11',
 };
 
 // ── Component ──────────────────────────────────────────────────────────────────
@@ -73,8 +77,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         'inline-flex items-center justify-center',
         'transition-all duration-150',
         'active:scale-[0.97]',
-        'disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary/60 focus-visible:ring-offset-1 focus-visible:ring-offset-earth-950',
+        'disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-em/60 focus-visible:ring-offset-1 focus-visible:ring-offset-ink-950',
         VARIANT[variant],
         SIZE[size],
         fullWidth ? 'w-full' : '',

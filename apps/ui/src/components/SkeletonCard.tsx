@@ -22,7 +22,7 @@ export function SkeletonCard({
 }: SkeletonCardProps) {
   return (
     <div
-      className={`rounded-xl border border-earth-800/60 bg-earth-900/60 p-4 space-y-3 ${className}`}
+      className={`rounded-xl border border-ink-800/60 bg-ink-900/60 p-4 space-y-3 ${className}`}
     >
       {/* Header placeholder */}
       {showHeader && (

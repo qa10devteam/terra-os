@@ -121,10 +121,10 @@ export default function DemoPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-earth-950 flex items-center justify-center text-earth-100">
+      <div className="min-h-screen bg-ink-950 flex items-center justify-center text-slate-100">
         <div className="text-center">
-          <p className="text-red-400 mb-4">Błąd demo: {error}</p>
-          <button onClick={() => window.location.reload()} className="px-4 py-2 bg-accent-primary text-earth-950 rounded-lg font-semibold">
+          <p className="text-nogo mb-4">Błąd demo: {error}</p>
+          <button onClick={() => window.location.reload()} className="px-4 py-2 bg-em text-ink-950 rounded-lg font-semibold">
             Spróbuj ponownie
           </button>
         </div>
@@ -134,10 +134,10 @@ export default function DemoPage() {
 
   if (!ready) {
     return (
-      <div className="min-h-screen bg-earth-950 flex items-center justify-center">
+      <div className="min-h-screen bg-ink-950 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-8 h-8 border-2 border-accent-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-earth-400 text-sm">Ładowanie demo...</p>
+          <div className="w-8 h-8 border-2 border-em border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-slate-400 text-sm">Ładowanie demo...</p>
         </div>
       </div>
     );
@@ -146,18 +146,18 @@ export default function DemoPage() {
   return (
     <>
       {/* Demo banner */}
-      <div className="fixed top-0 left-0 right-0 z-[100] bg-amber-500/90 text-earth-950 text-center py-1.5 text-xs font-bold tracking-wide backdrop-blur-sm">
+      <div className="fixed top-0 left-0 right-0 z-[100] bg-amber-500/90 text-ink-950 text-center py-1.5 text-xs font-bold tracking-wide backdrop-blur-sm">
         🚀 ŚRODOWISKO DEMO — eksploruj wszystkie funkcjonalności YU-NA
-        <a href="https://yu-na.pl" className="ml-3 underline font-semibold hover:text-earth-800">
+        <a href="https://yu-na.pl" className="ml-3 underline font-semibold hover:text-ink-800">
           Zamów dostęp →
         </a>
       </div>
 
-      <div className="flex min-h-[100dvh] bg-earth-950 pt-8">
+      <div className="flex min-h-[100dvh] bg-ink-950 pt-8">
         <Sidebar />
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <MarketBar />
-          <main className="flex-1 overflow-auto bg-earth-950">
+          <main className="flex-1 overflow-auto bg-ink-950">
             <ActivePage />
           </main>
         </div>

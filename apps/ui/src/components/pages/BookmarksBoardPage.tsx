@@ -26,12 +26,12 @@ import { showToast } from '@/components/Toast';
 
 // ── Stage config ──────────────────────────────────────────────────────────────
 const STAGES = [
-  { key: 'watching',    label: 'Obserwacja', color: '#60a5fa', border: 'border-blue-500/30',   bg: 'bg-blue-500/8',    head: 'bg-blue-500/15' },
+  { key: 'watching',    label: 'Obserwacja', color: '#60a5fa', border: 'border-indigo/30',   bg: 'bg-indigo/8',    head: 'bg-indigo/15' },
   { key: 'analyzing',  label: 'Analiza',    color: '#a78bfa', border: 'border-purple-500/30', bg: 'bg-purple-500/8',  head: 'bg-purple-500/15' },
-  { key: 'estimated',  label: 'Wyceniony',  color: '#fbbf24', border: 'border-yellow-500/30', bg: 'bg-yellow-500/8',  head: 'bg-yellow-500/15' },
-  { key: 'bid',        label: 'Złożono',    color: '#34d399', border: 'border-emerald-500/30', bg: 'bg-emerald-500/8', head: 'bg-emerald-500/15' },
-  { key: 'won',        label: 'Wygrano',    color: '#10b981', border: 'border-emerald-600/40', bg: 'bg-emerald-600/8', head: 'bg-emerald-600/20' },
-  { key: 'lost',       label: 'Przegrano',  color: '#f87171', border: 'border-red-500/30',    bg: 'bg-red-500/8',     head: 'bg-red-500/15' },
+  { key: 'estimated',  label: 'Wyceniony',  color: '#fbbf24', border: 'border-warn-brd', bg: 'bg-warn/8',  head: 'bg-warn-bg' },
+  { key: 'bid',        label: 'Złożono',    color: '#34d399', border: 'border-em-brd', bg: 'bg-em/8', head: 'bg-em/15' },
+  { key: 'won',        label: 'Wygrano',    color: '#10b981', border: 'border-em/40', bg: 'bg-em/8', head: 'bg-em/20' },
+  { key: 'lost',       label: 'Przegrano',  color: '#f87171', border: 'border-nogo-brd',    bg: 'bg-nogo/8',     head: 'bg-nogo/15' },
 ];
 
 function fmtDate(s: string | null) {
@@ -68,13 +68,13 @@ function BookmarkCard({
         style={{ borderLeftWidth: 3, borderLeftColor: color }}
       >
         <div className="flex items-start justify-between gap-2 mb-2">
-          <div className="text-sm text-earth-100 line-clamp-2 leading-snug flex-1">
+          <div className="text-sm text-slate-100 line-clamp-2 leading-snug flex-1">
             {item.title || item.ht_id || 'Przetarg'}
           </div>
           <button
             onPointerDown={e => { e.stopPropagation(); }}
             onClick={e => { e.stopPropagation(); onDelete(item.id); }}
-            className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-red-500/20 text-earth-600 hover:text-red-400 transition-all shrink-0"
+            className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-nogo/20 text-slate-600 hover:text-nogo transition-all shrink-0"
           >
             <Trash2 size={13} />
           </button>
@@ -82,15 +82,15 @@ function BookmarkCard({
 
         <div className="flex items-center gap-2 flex-wrap">
           {item.estimated_value && (
-            <span className="text-xs text-emerald-400 font-mono">{fmtPLN(item.estimated_value)}</span>
+            <span className="text-xs text-em font-mono">{fmtPLN(item.estimated_value)}</span>
           )}
           {item.buyer_name && (
-            <span className="text-xs text-earth-500 truncate max-w-[120px]">{item.buyer_name}</span>
+            <span className="text-xs text-slate-500 truncate max-w-[120px]">{item.buyer_name}</span>
           )}
         </div>
 
         {days !== null && (
-          <div className={`flex items-center gap-1 mt-2 text-xs ${overdue ? 'text-red-400' : urgent ? 'text-amber-400' : 'text-earth-500'}`}>
+          <div className={`flex items-center gap-1 mt-2 text-xs ${overdue ? 'text-nogo' : urgent ? 'text-warn' : 'text-slate-500'}`}>
             <Clock size={11} />
             {overdue ? `Przeterminowane ${Math.abs(days)} dni temu` : days === 0 ? 'Dziś!' : `Za ${days} dni`}
           </div>
@@ -99,7 +99,7 @@ function BookmarkCard({
         {item.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">
             {item.tags.slice(0, 3).map(tag => (
-              <span key={tag} className="text-xs bg-earth-800 text-earth-500 px-1.5 py-0.5 rounded">{tag}</span>
+              <span key={tag} className="text-xs bg-ink-800 text-slate-500 px-1.5 py-0.5 rounded">{tag}</span>
             ))}
           </div>
         )}
@@ -109,19 +109,19 @@ function BookmarkCard({
           <button
             onPointerDown={e => e.stopPropagation()}
             onClick={e => { e.stopPropagation(); setShowMenu(v => !v); }}
-            className="flex items-center gap-1 text-xs text-earth-600 hover:text-earth-400 transition-colors"
+            className="flex items-center gap-1 text-xs text-slate-600 hover:text-slate-400 transition-colors"
           >
             <ChevronDown size={11} />
             Przenieś
           </button>
           {showMenu && (
-            <div className="absolute bottom-6 left-0 z-20 bg-earth-900 border border-earth-700 rounded-lg shadow-xl min-w-[140px]">
+            <div className="absolute bottom-6 left-0 z-20 bg-ink-900 border border-ink-700 rounded-lg shadow-xl min-w-[140px]">
               {STAGES.filter(s => s.key !== item.stage).map(s => (
                 <button
                   key={s.key}
                   onPointerDown={e => e.stopPropagation()}
                   onClick={e => { e.stopPropagation(); onStageChange(item.id, s.key); setShowMenu(false); }}
-                  className="w-full text-left px-3 py-1.5 text-xs hover:bg-earth-800 text-earth-400 hover:text-earth-100 transition-colors first:rounded-t-lg last:rounded-b-lg"
+                  className="w-full text-left px-3 py-1.5 text-xs hover:bg-ink-800 text-slate-400 hover:text-slate-100 transition-colors first:rounded-t-lg last:rounded-b-lg"
                 >
                   {s.label}
                 </button>
@@ -152,10 +152,10 @@ function KanbanColumn({
           <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: stage.color }}>
             {stage.label}
           </span>
-          <span className="text-xs bg-earth-900/60 text-earth-400 px-1.5 py-0.5 rounded-full">{count}</span>
+          <span className="text-xs bg-ink-900/60 text-slate-400 px-1.5 py-0.5 rounded-full">{count}</span>
         </div>
         {overdue > 0 && (
-          <span className="flex items-center gap-1 text-xs text-red-400">
+          <span className="flex items-center gap-1 text-xs text-nogo">
             <AlertTriangle size={10} />
             {overdue}
           </span>
@@ -174,7 +174,7 @@ function KanbanColumn({
             />
           ))}
           {items.length === 0 && (
-            <div className="flex-1 flex items-center justify-center py-6 text-xs text-earth-700 select-none">
+            <div className="flex-1 flex items-center justify-center py-6 text-xs text-slate-700 select-none">
               Przeciągnij tutaj
             </div>
           )}
@@ -242,36 +242,36 @@ function AlertForm({ onClose, onCreate }: { onClose: () => void; onCreate: (body
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.95 }}
         onClick={e => e.stopPropagation()}
-        className="bg-earth-900 border border-earth-800/50 rounded-token-xl w-full max-w-lg p-6 shadow-token-lg max-h-[90vh] overflow-y-auto"
+        className="bg-ink-900 border border-ink-800/50 rounded-2xl w-full max-w-lg p-6 shadow-xl max-h-[90vh] overflow-y-auto"
       >
         <div className="flex items-center justify-between mb-5">
-          <h3 className="text-base font-bold text-earth-50 flex items-center gap-2">
-            <Bell size={16} className="text-emerald-400" />
+          <h3 className="text-base font-bold text-ink-950/30 flex items-center gap-2">
+            <Bell size={16} className="text-em" />
             Nowy Alert
           </h3>
           <button onClick={onClose} className="btn-ghost p-1.5">
-            <X size={16} className="text-earth-400" />
+            <X size={16} className="text-slate-400" />
           </button>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="text-xs text-earth-400 mb-1 block">Nazwa alertu *</label>
+            <label className="text-xs text-slate-400 mb-1 block">Nazwa alertu *</label>
             <input className={field} placeholder="np. Drogi w Mazowszu 2025" value={form.name}
               onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
           </div>
 
           <div>
-            <label className="text-xs text-earth-400 mb-1 block">Prefiksy CPV</label>
+            <label className="text-xs text-slate-400 mb-1 block">Prefiksy CPV</label>
             <div className="flex gap-2 mb-2">
               <input className={field + ' flex-1'} placeholder="np. 4523" value={cpvInput}
                 onChange={e => setCpvInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && addCpv()} />
-              <button onClick={addCpv} className="px-3 bg-earth-700 rounded-lg text-earth-300 hover:bg-earth-600 text-sm">+</button>
+              <button onClick={addCpv} className="px-3 bg-ink-700 rounded-lg text-slate-300 hover:bg-ink-600 text-sm">+</button>
             </div>
             <div className="flex flex-wrap gap-1">
               {form.cpv_prefixes?.map(c => (
-                <span key={c} className="flex items-center gap-1 text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full">
+                <span key={c} className="flex items-center gap-1 text-xs bg-indigo/20 text-indigo-300 px-2 py-0.5 rounded-full">
                   {c}
                   <button onClick={() => setForm(f => ({ ...f, cpv_prefixes: f.cpv_prefixes?.filter(x => x !== c) }))}>
                     <X size={10} />
@@ -282,16 +282,16 @@ function AlertForm({ onClose, onCreate }: { onClose: () => void; onCreate: (body
           </div>
 
           <div>
-            <label className="text-xs text-earth-400 mb-1 block">Słowa kluczowe</label>
+            <label className="text-xs text-slate-400 mb-1 block">Słowa kluczowe</label>
             <div className="flex gap-2 mb-2">
               <input className={field + ' flex-1'} placeholder="np. remont, kanalizacja" value={kwInput}
                 onChange={e => setKwInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && addKw()} />
-              <button onClick={addKw} className="px-3 bg-earth-700 rounded-lg text-earth-300 hover:bg-earth-600 text-sm">+</button>
+              <button onClick={addKw} className="px-3 bg-ink-700 rounded-lg text-slate-300 hover:bg-ink-600 text-sm">+</button>
             </div>
             <div className="flex flex-wrap gap-1">
               {form.keywords?.map(k => (
-                <span key={k} className="flex items-center gap-1 text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full">
+                <span key={k} className="flex items-center gap-1 text-xs bg-em/20 text-em px-2 py-0.5 rounded-full">
                   {k}
                   <button onClick={() => setForm(f => ({ ...f, keywords: f.keywords?.filter(x => x !== k) }))}>
                     <X size={10} />
@@ -303,7 +303,7 @@ function AlertForm({ onClose, onCreate }: { onClose: () => void; onCreate: (body
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-earth-400 mb-1 block">Częstość</label>
+              <label className="text-xs text-slate-400 mb-1 block">Częstość</label>
               <select className={field} value={form.frequency}
                 onChange={e => setForm(f => ({ ...f, frequency: e.target.value as AlertCreateBody['frequency'] }))}>
                 <option value="realtime">Natychmiast</option>
@@ -312,7 +312,7 @@ function AlertForm({ onClose, onCreate }: { onClose: () => void; onCreate: (body
               </select>
             </div>
             <div>
-              <label className="text-xs text-earth-400 mb-1 block">Kanał</label>
+              <label className="text-xs text-slate-400 mb-1 block">Kanał</label>
               <select className={field} value={form.channel}
                 onChange={e => setForm(f => ({ ...f, channel: e.target.value as AlertCreateBody['channel'] }))}>
                 <option value="push">W aplikacji (push)</option>
@@ -324,12 +324,12 @@ function AlertForm({ onClose, onCreate }: { onClose: () => void; onCreate: (body
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-earth-400 mb-1 block">Wartość min (PLN)</label>
+              <label className="text-xs text-slate-400 mb-1 block">Wartość min (PLN)</label>
               <input type="number" className={field} placeholder="0"
                 onChange={e => setForm(f => ({ ...f, value_min: e.target.value ? +e.target.value : undefined }))} />
             </div>
             <div>
-              <label className="text-xs text-earth-400 mb-1 block">Wartość max (PLN)</label>
+              <label className="text-xs text-slate-400 mb-1 block">Wartość max (PLN)</label>
               <input type="number" className={field} placeholder="∞"
                 onChange={e => setForm(f => ({ ...f, value_max: e.target.value ? +e.target.value : undefined }))} />
             </div>
@@ -337,7 +337,7 @@ function AlertForm({ onClose, onCreate }: { onClose: () => void; onCreate: (body
 
           {form.channel === 'webhook' && (
             <div>
-              <label className="text-xs text-earth-400 mb-1 block">Webhook URL</label>
+              <label className="text-xs text-slate-400 mb-1 block">Webhook URL</label>
               <input type="url" className={field} placeholder="https://…"
                 onChange={e => setForm(f => ({ ...f, webhook_url: e.target.value }))} />
             </div>
@@ -371,11 +371,11 @@ function AlertsList() {
     <div>
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-sm font-semibold text-earth-100 flex items-center gap-2">
-            <Bell size={14} className="text-emerald-400" />
+          <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
+            <Bell size={14} className="text-em" />
             Moje alerty
           </h3>
-          <p className="text-xs text-earth-500 mt-0.5">{data.length} aktywnych alertów</p>
+          <p className="text-xs text-slate-500 mt-0.5">{data.length} aktywnych alertów</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
@@ -386,10 +386,10 @@ function AlertsList() {
         </button>
       </div>
 
-      {loading && <div className="h-20 animate-pulse bg-earth-800 rounded-xl" />}
+      {loading && <div className="h-20 animate-pulse bg-ink-800 rounded-xl" />}
 
       {!loading && data.length === 0 && (
-        <div className="text-center py-8 text-earth-600 text-sm border border-dashed border-earth-800 rounded-xl">
+        <div className="text-center py-8 text-slate-600 text-sm border border-dashed border-ink-800 rounded-xl">
           Brak alertów — utwórz pierwszy
         </div>
       )}
@@ -401,32 +401,32 @@ function AlertsList() {
             layout
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex items-center gap-3 p-3 bg-earth-900 border border-earth-800/50 rounded-token hover:border-earth-700 transition-colors"
+            className="flex items-center gap-3 p-3 bg-ink-900 border border-ink-800/50 rounded-md hover:border-ink-700 transition-colors"
           >
             <button
               onClick={() => toggle(alert.id, !alert.is_active)}
-              className={`shrink-0 w-9 h-5 rounded-full transition-colors relative ${alert.is_active ? 'bg-emerald-500' : 'bg-earth-700'}`}
+              className={`shrink-0 w-9 h-5 rounded-full transition-colors relative ${alert.is_active ? 'bg-em' : 'bg-ink-700'}`}
             >
-              <span className={`absolute top-0.5 w-4 h-4 bg-earth-100 rounded-full shadow transition-transform ${alert.is_active ? 'translate-x-4' : 'translate-x-0.5'}`} />
+              <span className={`absolute top-0.5 w-4 h-4 bg-slate-100 rounded-full shadow transition-transform ${alert.is_active ? 'translate-x-4' : 'translate-x-0.5'}`} />
             </button>
             <div className="flex-1 min-w-0">
-              <div className="text-sm text-earth-100 font-medium truncate">{alert.name}</div>
+              <div className="text-sm text-slate-100 font-medium truncate">{alert.name}</div>
               <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                 {alert.cpv_prefixes.length > 0 && (
-                  <span className="text-xs text-blue-400">CPV: {alert.cpv_prefixes.join(', ')}</span>
+                  <span className="text-xs text-indigo-400">CPV: {alert.cpv_prefixes.join(', ')}</span>
                 )}
                 {alert.keywords.length > 0 && (
-                  <span className="text-xs text-emerald-400">&quot;{alert.keywords.slice(0, 2).join('&quot;, &quot;')}&quot;</span>
+                  <span className="text-xs text-em">&quot;{alert.keywords.slice(0, 2).join('&quot;, &quot;')}&quot;</span>
                 )}
-                <span className="text-xs text-earth-600">{alert.frequency}</span>
+                <span className="text-xs text-slate-600">{alert.frequency}</span>
                 {alert.match_count > 0 && (
-                  <span className="text-xs text-amber-400">{alert.match_count} dopasowań</span>
+                  <span className="text-xs text-warn">{alert.match_count} dopasowań</span>
                 )}
               </div>
             </div>
             <button
               onClick={() => remove(alert.id)}
-              className="p-1.5 hover:bg-red-500/20 rounded-lg text-earth-600 hover:text-red-400 transition-colors shrink-0"
+              className="p-1.5 hover:bg-nogo/20 rounded-lg text-slate-600 hover:text-nogo transition-colors shrink-0"
             >
               <Trash2 size={13} />
             </button>
@@ -496,11 +496,11 @@ export function BookmarksBoardPage() {
       title="Tablica Przetargów Ofertowych"
       subtitle="Zarządzaj etapami ofertowania i konfiguruj alerty branżowe"
       actions={
-        <div className="flex items-center gap-2 text-xs text-earth-500">
-          <Bookmark size={12} className="text-accent-info" />
+        <div className="flex items-center gap-2 text-xs text-slate-500">
+          <Bookmark size={12} className="text-indigo" />
           <span>{totalCount} zakładek</span>
           {overdueTotal > 0 && (
-            <span className="flex items-center gap-1 text-red-400">
+            <span className="flex items-center gap-1 text-nogo">
               <AlertTriangle size={11} />
               {overdueTotal} przeterminowanych
             </span>
@@ -518,9 +518,9 @@ export function BookmarksBoardPage() {
               return (
                 <div key={s.key} className="card p-2.5 text-center">
                   <div className="text-xs section-label" style={{ color: s.color }}>{s.label}</div>
-                  <div className="text-xl font-bold text-earth-100 mt-0.5">{st?.count ?? 0}</div>
+                  <div className="text-xl font-bold text-slate-100 mt-0.5">{st?.count ?? 0}</div>
                   {(st?.overdue ?? 0) > 0 && (
-                    <div className="text-xs text-red-400 flex items-center justify-center gap-0.5 mt-0.5">
+                    <div className="text-xs text-nogo flex items-center justify-center gap-0.5 mt-0.5">
                       <AlertTriangle size={9} />{st?.overdue}
                     </div>
                   )}
@@ -531,7 +531,7 @@ export function BookmarksBoardPage() {
         )}
 
         {/* ── Tabs ─────────────────────────────────────────────────────────── */}
-        <div className="flex gap-1 bg-earth-900/40 rounded-token-lg p-1 w-fit border border-earth-700/50">
+        <div className="flex gap-1 bg-ink-900/40 rounded-xl p-1 w-fit border border-ink-700/50">
           {[
             { key: 'kanban', label: 'Kanban', icon: Filter },
             { key: 'alerts', label: 'Alerty', icon: Bell },
@@ -539,10 +539,10 @@ export function BookmarksBoardPage() {
             <button
               key={key}
               onClick={() => setActiveTab(key as typeof activeTab)}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-token text-sm font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 activeTab === key
-                  ? 'bg-earth-700 text-earth-50'
-                  : 'text-earth-400 hover:text-earth-200'
+                  ? 'bg-ink-700 text-ink-950/30'
+                  : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               <Icon size={14} />
@@ -561,8 +561,8 @@ export function BookmarksBoardPage() {
             )}
 
             {!loading && totalCount === 0 && (
-              <div className="text-center py-16 border border-dashed border-earth-800 rounded-2xl text-earth-600">
-                <Bookmark size={32} className="mx-auto mb-3 text-earth-800" />
+              <div className="text-center py-16 border border-dashed border-ink-800 rounded-2xl text-slate-600">
+                <Bookmark size={32} className="mx-auto mb-3 text-ink-800" />
                 <p className="text-sm">Brak zakładek — dodaj przetargi z widoku Zwiad</p>
               </div>
             )}
@@ -594,8 +594,8 @@ export function BookmarksBoardPage() {
 
                 <DragOverlay>
                   {dragItem && (
-                    <div className="bg-earth-900 border border-emerald-500 rounded-xl p-3 shadow-2xl rotate-1 w-56">
-                      <div className="text-sm text-earth-100 line-clamp-2">{dragItem.title || dragItem.ht_id}</div>
+                    <div className="bg-ink-900 border border-em rounded-xl p-3 shadow-2xl rotate-1 w-56">
+                      <div className="text-sm text-slate-100 line-clamp-2">{dragItem.title || dragItem.ht_id}</div>
                     </div>
                   )}
                 </DragOverlay>

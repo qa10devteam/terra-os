@@ -54,11 +54,11 @@ function formatDate(iso?: string): string {
 
 function statusLabel(status: string): { text: string; cls: string } {
   switch (status) {
-    case 'completed': return { text: 'Zakończony', cls: 'text-accent-primary' };
-    case 'processing': return { text: 'W trakcie', cls: 'text-accent-warning' };
-    case 'pending':    return { text: 'Oczekuje', cls: 'text-earth-400' };
-    case 'failed':     return { text: 'Błąd', cls: 'text-accent-danger' };
-    default:           return { text: status, cls: 'text-earth-500' };
+    case 'completed': return { text: 'Zakończony', cls: 'text-em' };
+    case 'processing': return { text: 'W trakcie', cls: 'text-warn' };
+    case 'pending':    return { text: 'Oczekuje', cls: 'text-slate-400' };
+    case 'failed':     return { text: 'Błąd', cls: 'text-nogo' };
+    default:           return { text: status, cls: 'text-slate-500' };
   }
 }
 
@@ -256,16 +256,16 @@ export function ImportPage() {
             <div key={i} className="flex items-center gap-2">
               <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
                 i < step
-                  ? 'bg-accent-primary text-earth-950'
+                  ? 'bg-em text-ink-950'
                   : i === step
-                    ? 'bg-accent-primary/20 text-accent-primary border border-accent-primary/60'
-                    : 'bg-earth-800 text-earth-600'
+                    ? 'bg-em/20 text-em border border-em/60'
+                    : 'bg-ink-800 text-slate-600'
               }`}>
                 {i < step ? <Check className="w-3.5 h-3.5" /> : i + 1}
               </div>
-              <span className={`text-xs ${i === step ? 'text-earth-200' : 'text-earth-600'}`}>{s}</span>
+              <span className={`text-xs ${i === step ? 'text-slate-200' : 'text-slate-600'}`}>{s}</span>
               {i < STEPS.length - 1 && (
-                <div className={`h-px w-8 ${i < step ? 'bg-accent-primary' : 'bg-earth-800'}`} />
+                <div className={`h-px w-8 ${i < step ? 'bg-em' : 'bg-ink-800'}`} />
               )}
             </div>
           ))}
@@ -278,7 +278,7 @@ export function ImportPage() {
             onDrop={handleDrop}
             onDragOver={e => e.preventDefault()}
             onClick={() => inputRef.current?.click()}
-            className="border-2 border-dashed border-earth-700/60 rounded-token-xl p-12 text-center cursor-pointer hover:border-accent-primary/40 hover:bg-accent-primary/5 transition-all group"
+            className="border-2 border-dashed border-ink-700/60 rounded-2xl p-12 text-center cursor-pointer hover:border-em/40 hover:bg-em/5 transition-all group"
           >
             <input
               ref={inputRef}
@@ -287,36 +287,36 @@ export function ImportPage() {
               className="hidden"
               onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])}
             />
-            <FileSpreadsheet className="w-12 h-12 text-earth-700 group-hover:text-accent-primary/60 mx-auto mb-3 transition-colors" />
-            <p className="text-sm font-medium text-earth-300">Upuść plik CSV lub Excel tutaj</p>
-            <p className="text-xs text-earth-600 mt-1">lub kliknij aby wybrać</p>
-            <p className="text-xs text-earth-700 mt-3">Obsługiwane formaty: .csv, .xlsx, .xls</p>
+            <FileSpreadsheet className="w-12 h-12 text-slate-700 group-hover:text-em/60 mx-auto mb-3 transition-colors" />
+            <p className="text-sm font-medium text-slate-300">Upuść plik CSV lub Excel tutaj</p>
+            <p className="text-xs text-slate-600 mt-1">lub kliknij aby wybrać</p>
+            <p className="text-xs text-slate-700 mt-3">Obsługiwane formaty: .csv, .xlsx, .xls</p>
           </div>
         )}
 
         {/* ── Step 1: Mapping ── */}
         {step === 1 && csvData && (
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-earth-200">Mapowanie kolumn</h3>
-            <p className="text-xs text-earth-500">
-              Plik: <span className="text-earth-300">{file?.name}</span> • {csvData.rows.length} wierszy podglądu
+            <h3 className="text-sm font-semibold text-slate-200">Mapowanie kolumn</h3>
+            <p className="text-xs text-slate-500">
+              Plik: <span className="text-slate-300">{file?.name}</span> • {csvData.rows.length} wierszy podglądu
             </p>
 
             {/* Preview table */}
             <GlassCard className="overflow-x-auto p-0">
               <table className="text-xs w-full">
                 <thead>
-                  <tr className="border-b border-earth-800/60">
+                  <tr className="border-b border-ink-800/60">
                     {csvData.headers.map(h => (
-                      <th key={h} className="px-3 py-2 text-left text-earth-500">{h}</th>
+                      <th key={h} className="px-3 py-2 text-left text-slate-500">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {csvData.rows.slice(0, 3).map((row, i) => (
-                    <tr key={i} className="border-b border-earth-800/30">
+                    <tr key={i} className="border-b border-ink-800/30">
                       {csvData.headers.map(h => (
-                        <td key={h} className="px-3 py-2 text-earth-400">{row[h] ?? '—'}</td>
+                        <td key={h} className="px-3 py-2 text-slate-400">{row[h] ?? '—'}</td>
                       ))}
                     </tr>
                   ))}
@@ -328,9 +328,9 @@ export function ImportPage() {
             <GlassCard className="p-4 space-y-3">
               {TARGET_FIELDS.map(tf => (
                 <div key={tf.key} className="flex items-center gap-3">
-                  <span className="text-xs text-earth-400 w-44 shrink-0">
+                  <span className="text-xs text-slate-400 w-44 shrink-0">
                     {tf.label}
-                    {tf.required && <span className="text-accent-danger ml-0.5">*</span>}
+                    {tf.required && <span className="text-nogo ml-0.5">*</span>}
                   </span>
                   <select
                     value={mapping[tf.key] ?? ''}
@@ -364,25 +364,25 @@ export function ImportPage() {
         {/* ── Step 2: Validation + Import ── */}
         {step === 2 && (
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-earth-200">Wyniki walidacji</h3>
+            <h3 className="text-sm font-semibold text-slate-200">Wyniki walidacji</h3>
 
             {errors.length > 0 && (
-              <GlassCard className="p-4 space-y-2 border-accent-danger/20">
-                <p className="text-xs font-semibold text-accent-danger uppercase tracking-wide">Błędy ({errors.length})</p>
+              <GlassCard className="p-4 space-y-2 border-nogo/20">
+                <p className="text-xs font-semibold text-nogo uppercase tracking-wide">Błędy ({errors.length})</p>
                 {errors.map((e, i) => (
-                  <div key={i} className="flex items-start gap-2 text-xs text-accent-danger/80">
-                    <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-accent-danger" /> {e}
+                  <div key={i} className="flex items-start gap-2 text-xs text-nogo/80">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-nogo" /> {e}
                   </div>
                 ))}
               </GlassCard>
             )}
 
             {warnings.length > 0 && (
-              <GlassCard className="p-4 space-y-2 border-accent-warning/20">
-                <p className="text-xs font-semibold text-accent-warning uppercase tracking-wide">Ostrzeżenia ({warnings.length})</p>
+              <GlassCard className="p-4 space-y-2 border-warn/20">
+                <p className="text-xs font-semibold text-warn uppercase tracking-wide">Ostrzeżenia ({warnings.length})</p>
                 {warnings.map((w, i) => (
-                  <div key={i} className="flex items-start gap-2 text-xs text-accent-warning/80">
-                    <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-accent-warning" /> {w}
+                  <div key={i} className="flex items-start gap-2 text-xs text-warn/80">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-warn" /> {w}
                   </div>
                 ))}
               </GlassCard>
@@ -390,9 +390,9 @@ export function ImportPage() {
 
             {/* Import error */}
             {importError && (
-              <GlassCard className="p-4 border-accent-danger/20">
-                <div className="flex items-start gap-2 text-xs text-accent-danger/80">
-                  <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-accent-danger" />
+              <GlassCard className="p-4 border-nogo/20">
+                <div className="flex items-start gap-2 text-xs text-nogo/80">
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-nogo" />
                   <span>{importError}</span>
                 </div>
               </GlassCard>
@@ -400,11 +400,11 @@ export function ImportPage() {
 
             {errors.length === 0 && !importError && (
               <GlassCard className="p-4">
-                <div className="flex items-center gap-2 text-accent-primary mb-2">
+                <div className="flex items-center gap-2 text-em mb-2">
                   <Check className="w-4 h-4" />
                   <span className="text-sm font-semibold">Gotowe do importu</span>
                 </div>
-                <p className="text-xs text-earth-500">
+                <p className="text-xs text-slate-500">
                   {csvData?.rows.length ?? 0}+ wierszy danych historycznych zostanie zaimportowanych
                 </p>
               </GlassCard>
@@ -413,17 +413,17 @@ export function ImportPage() {
             {/* Live progress bar */}
             {loading && (
               <GlassCard className="p-4 space-y-3">
-                <div className="flex items-center gap-2 text-xs text-earth-300">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-accent-primary" />
+                <div className="flex items-center gap-2 text-xs text-slate-300">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-em" />
                   <span>
                     {activeJob
                       ? `Przetwarzanie… ${activeJob.processed} / ${activeJob.total > 0 ? activeJob.total : '?'} rekordów`
                       : 'Wysyłanie pliku…'}
                   </span>
                 </div>
-                <div className="w-full bg-earth-800 rounded-full h-2 overflow-hidden">
+                <div className="w-full bg-ink-800 rounded-full h-2 overflow-hidden">
                   <div
-                    className="bg-accent-primary h-2 rounded-full transition-all duration-500"
+                    className="bg-em h-2 rounded-full transition-all duration-500"
                     style={{
                       width: progressPct !== null ? `${progressPct}%` : '100%',
                       opacity: progressPct !== null ? 1 : 0.4,
@@ -431,7 +431,7 @@ export function ImportPage() {
                   />
                 </div>
                 {progressPct !== null && (
-                  <p className="text-xs text-earth-500 text-right">{progressPct}%</p>
+                  <p className="text-xs text-slate-500 text-right">{progressPct}%</p>
                 )}
               </GlassCard>
             )}
@@ -461,15 +461,15 @@ export function ImportPage() {
         {/* ── Step 3: Done ── */}
         {step === 3 && done && (
           <div className="text-center py-8">
-            <div className="w-16 h-16 rounded-full bg-accent-primary/15 border border-accent-primary/30 flex items-center justify-center mx-auto mb-4">
-              <Check className="w-8 h-8 text-accent-primary" />
+            <div className="w-16 h-16 rounded-full bg-em/15 border border-em/30 flex items-center justify-center mx-auto mb-4">
+              <Check className="w-8 h-8 text-em" />
             </div>
-            <h3 className="text-base font-bold text-earth-100 mb-2">Import zakończony!</h3>
-            <p className="text-sm text-earth-500">
+            <h3 className="text-base font-bold text-slate-100 mb-2">Import zakończony!</h3>
+            <p className="text-sm text-slate-500">
               Dane historyczne zostały zaimportowane. AI będzie mogło teraz uczyć się wzorców przetargów.
             </p>
             {activeJob && activeJob.total > 0 && (
-              <p className="text-xs text-earth-600 mt-1">
+              <p className="text-xs text-slate-600 mt-1">
                 Zaimportowano {activeJob.processed} z {activeJob.total} rekordów.
               </p>
             )}
@@ -492,35 +492,35 @@ export function ImportPage() {
           </h3>
 
           {historyLoading ? (
-            <p className="text-xs text-earth-600 flex items-center gap-2">
+            <p className="text-xs text-slate-600 flex items-center gap-2">
               <Loader2 className="w-3 h-3 animate-spin" /> Ładowanie historii…
             </p>
           ) : importHistory.length === 0 ? (
-            <p className="text-xs text-earth-700">Brak historii importów.</p>
+            <p className="text-xs text-slate-700">Brak historii importów.</p>
           ) : (
             <GlassCard className="p-0 overflow-hidden">
               <table className="text-xs w-full">
                 <thead>
-                  <tr className="border-b border-earth-800/60">
-                    <th className="px-3 py-2 text-left text-earth-600 font-normal">Plik</th>
-                    <th className="px-3 py-2 text-left text-earth-600 font-normal">Data</th>
-                    <th className="px-3 py-2 text-right text-earth-600 font-normal">Rekordy</th>
-                    <th className="px-3 py-2 text-left text-earth-600 font-normal">Status</th>
+                  <tr className="border-b border-ink-800/60">
+                    <th className="px-3 py-2 text-left text-slate-600 font-normal">Plik</th>
+                    <th className="px-3 py-2 text-left text-slate-600 font-normal">Data</th>
+                    <th className="px-3 py-2 text-right text-slate-600 font-normal">Rekordy</th>
+                    <th className="px-3 py-2 text-left text-slate-600 font-normal">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {importHistory.map((job, i) => {
                     const { text, cls } = statusLabel(job.status);
                     return (
-                      <tr key={job.id ?? i} className="border-b border-earth-800/20 last:border-0">
-                        <td className="px-3 py-2 text-earth-300">
+                      <tr key={job.id ?? i} className="border-b border-ink-800/20 last:border-0">
+                        <td className="px-3 py-2 text-slate-300">
                           <span className="flex items-center gap-1.5">
-                            <FileText className="w-3 h-3 text-earth-600 shrink-0" />
+                            <FileText className="w-3 h-3 text-slate-600 shrink-0" />
                             <span className="truncate max-w-[140px]">{job.filename ?? '—'}</span>
                           </span>
                         </td>
-                        <td className="px-3 py-2 text-earth-500 whitespace-nowrap">{formatDate(job.created_at)}</td>
-                        <td className="px-3 py-2 text-earth-400 text-right">
+                        <td className="px-3 py-2 text-slate-500 whitespace-nowrap">{formatDate(job.created_at)}</td>
+                        <td className="px-3 py-2 text-slate-400 text-right">
                           {job.total > 0 ? `${job.processed} / ${job.total}` : job.processed > 0 ? job.processed : '—'}
                         </td>
                         <td className={`px-3 py-2 font-medium ${cls}`}>{text}</td>

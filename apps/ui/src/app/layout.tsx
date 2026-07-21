@@ -3,14 +3,16 @@ import { Space_Grotesk, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 
 const space = Space_Grotesk({
-  subsets: ['latin'],
+  subsets: ['latin', 'latin-ext'],
+  weight: ['300', '400', '500', '600', '700'],
   variable: '--font-space',
   display: 'swap',
 });
 
-const mono = JetBrains_Mono({
+const jetbrains = JetBrains_Mono({
   subsets: ['latin'],
-  variable: '--font-mono',
+  weight: ['400', '500', '600'],
+  variable: '--font-jetbrains',
   display: 'swap',
 });
 
@@ -18,30 +20,30 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
-  themeColor: '#00ff88',
+  themeColor: '#07070d',
 };
 
 export const metadata: Metadata = {
-  title: 'budos — AI Platforma Przetargów Budowlanych',
-  description: 'Automatyczny monitoring BZP/TED, AI analiza ryzyka SWZ, silnik kalkulacji KNR. Dla firm budowlanych.',
+  title: 'YU-NA | BudOS — Przetargi budowlane. Opanowane.',
+  description: 'Monitoring BZP/TED w czasie rzeczywistym. Silnik GO/NO-GO. Kosztorys KNR/ICB. System ktory wie zanim zlozysz oferte.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'budos',
+    title: 'BudOS',
   },
   icons: {
     icon: '/icons/icon.svg',
     apple: '/icons/icon.svg',
   },
   openGraph: {
-    title: 'budos — AI Platforma Przetargów Budowlanych',
-    description: 'Automatyczny monitoring BZP/TED, AI analiza ryzyka SWZ, silnik kalkulacji KNR. Dla firm budowlanych.',
+    title: 'YU-NA | BudOS — Przetargi budowlane. Opanowane.',
+    description: 'Monitoring BZP/TED w czasie rzeczywistym. Silnik GO/NO-GO. Kosztorys KNR/ICB.',
     type: 'website',
     locale: 'pl_PL',
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
   },
   other: {
     'mobile-web-app-capable': 'yes',
@@ -71,7 +73,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${space.variable} ${mono.variable} font-display`}>
+      <body className={`${space.variable} ${jetbrains.variable} font-display antialiased`}>
         {children}
       </body>
     </html>

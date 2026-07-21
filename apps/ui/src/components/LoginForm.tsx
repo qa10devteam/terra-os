@@ -109,7 +109,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
 
   return (
     <div
-      className="min-h-screen bg-earth-950 flex items-center justify-center p-4 relative overflow-hidden"
+      className="min-h-screen bg-ink-950 flex items-center justify-center p-4 relative overflow-hidden"
       style={{
         backgroundImage: [
           'radial-gradient(ellipse at 50% -20%, rgba(16,185,129,0.12) 0%, transparent 60%)',
@@ -136,24 +136,24 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
               outline: '1px solid rgba(16,185,129,0.4)',
             }}
           >
-            <span className="text-3xl font-bold text-accent-primary" style={{ fontFamily: 'var(--font-space)' }}>b</span>
+            <span className="text-3xl font-bold text-em" style={{ fontFamily: 'var(--font-space)' }}>b</span>
           </div>
 
           {/* Brand name */}
-          <h1 className="text-xl font-bold text-earth-100 tracking-tight" style={{ fontFamily: 'var(--font-space)' }}>
+          <h1 className="text-xl font-bold text-slate-100 tracking-tight" style={{ fontFamily: 'var(--font-space)' }}>
             budos
           </h1>
-          <p className="text-earth-600 text-xs mt-0.5" style={{ fontFamily: 'var(--font-space)' }}>
+          <p className="text-slate-600 text-xs mt-0.5" style={{ fontFamily: 'var(--font-space)' }}>
             by YU-NA
           </p>
-          <p className="text-earth-500 text-sm mt-2" style={{ fontFamily: 'var(--font-space)' }}>
+          <p className="text-slate-500 text-sm mt-2" style={{ fontFamily: 'var(--font-space)' }}>
             AI dla przetargów budowlanych
           </p>
         </div>
 
         {/* ── Card ──────────────────────────────────────────────────── */}
         <div
-          className="relative rounded-token-xl p-6 backdrop-blur-xl shadow-token-lg border border-earth-700/40 border-t-earth-600/60"
+          className="relative rounded-2xl p-6 backdrop-blur-xl shadow-xl border border-ink-700/40 border-t-ink-600/60"
           style={{
             background: 'linear-gradient(135deg, rgba(15,13,10,0.8), rgba(28,26,22,0.6))',
             boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04), 0 25px 50px rgba(0,0,0,0.5)',
@@ -161,17 +161,17 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
         >
 
           {/* Tabs */}
-          <div className="flex rounded-token bg-earth-800/50 p-1 mb-6 gap-1">
+          <div className="flex rounded-md bg-ink-800/50 p-1 mb-6 gap-1">
             {(['login', 'register'] as const).map((t) => (
               <button
                 key={t}
                 type="button"
                 onClick={() => switchTab(t)}
                 className={[
-                  'flex-1 flex items-center justify-center gap-1.5 py-2 rounded-token text-sm font-medium transition-all duration-200',
+                  'flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-sm font-medium transition-all duration-200',
                   tab === t
-                    ? 'bg-accent-primary text-earth-950 shadow-sm'
-                    : 'text-earth-400 hover:text-earth-200',
+                    ? 'bg-em text-ink-950 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200',
                 ].join(' ')}
               >
                 {t === 'login'
@@ -224,7 +224,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
             <div>
               <label className="label-base">E-mail</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-earth-500 pointer-events-none" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
                 <input
                   type="email"
                   value={email}
@@ -241,7 +241,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
             <div>
               <label className="label-base">Hasło</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-earth-500 pointer-events-none" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
@@ -255,7 +255,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
                   type="button"
                   onClick={() => setShowPassword((p) => !p)}
                   aria-label={showPassword ? 'Ukryj hasło' : 'Pokaż hasło'}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-earth-500 hover:text-earth-300 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -273,7 +273,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
                 >
-                  <div className="flex items-start gap-2 px-3 py-2.5 bg-accent-danger/10 border border-accent-danger/20 rounded-token text-accent-danger text-sm">
+                  <div className="flex items-start gap-2 px-3 py-2.5 bg-nogo/10 border border-nogo/20 rounded-md text-nogo text-sm">
                     <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                     <span>{error}</span>
                   </div>
@@ -305,7 +305,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
               <button
                 type="button"
                 onClick={() => { setForgotMode(true); setForgotEmail(email); setForgotSuccess(false); setForgotError(''); }}
-                className="w-full text-center text-sm text-earth-500 hover:text-accent-primary transition-colors mt-2"
+                className="w-full text-center text-sm text-slate-500 hover:text-em transition-colors mt-2"
               >
                 Zapomniałeś hasła?
               </button>
@@ -320,16 +320,16 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute inset-0 z-20 flex items-center justify-center bg-earth-950/80 backdrop-blur-sm rounded-token-xl"
+                className="absolute inset-0 z-20 flex items-center justify-center bg-ink-950/80 backdrop-blur-sm rounded-2xl"
               >
                 <div className="w-full max-w-sm p-6">
                   {forgotSuccess ? (
                     <div className="text-center space-y-3">
-                      <div className="w-12 h-12 mx-auto rounded-full bg-accent-primary/20 flex items-center justify-center">
-                        <Mail className="w-6 h-6 text-accent-primary" />
+                      <div className="w-12 h-12 mx-auto rounded-full bg-em/20 flex items-center justify-center">
+                        <Mail className="w-6 h-6 text-em" />
                       </div>
-                      <h3 className="text-lg font-semibold text-earth-100">Sprawdź skrzynkę</h3>
-                      <p className="text-earth-400 text-sm">Jeśli konto istnieje, wysłaliśmy link do resetowania hasła.</p>
+                      <h3 className="text-lg font-semibold text-slate-100">Sprawdź skrzynkę</h3>
+                      <p className="text-slate-400 text-sm">Jeśli konto istnieje, wysłaliśmy link do resetowania hasła.</p>
                       <button
                         type="button"
                         onClick={() => setForgotMode(false)}
@@ -344,14 +344,14 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
                       <button
                         type="button"
                         onClick={() => setForgotMode(false)}
-                        className="flex items-center gap-1 text-earth-500 hover:text-earth-300 text-sm transition-colors"
+                        className="flex items-center gap-1 text-slate-500 hover:text-slate-300 text-sm transition-colors"
                       >
                         <ArrowLeft className="w-3.5 h-3.5" /> Wróć
                       </button>
-                      <h3 className="text-lg font-semibold text-earth-100">Odzyskaj dostęp</h3>
-                      <p className="text-earth-400 text-sm">Podaj adres e-mail powiązany z kontem.</p>
+                      <h3 className="text-lg font-semibold text-slate-100">Odzyskaj dostęp</h3>
+                      <p className="text-slate-400 text-sm">Podaj adres e-mail powiązany z kontem.</p>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-earth-500 pointer-events-none" />
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
                         <input
                           type="email"
                           value={forgotEmail}
@@ -363,7 +363,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
                         />
                       </div>
                       {forgotError && (
-                        <div className="flex items-start gap-2 px-3 py-2 bg-accent-danger/10 border border-accent-danger/20 rounded-token text-accent-danger text-sm">
+                        <div className="flex items-start gap-2 px-3 py-2 bg-nogo/10 border border-nogo/20 rounded-md text-nogo text-sm">
                           <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                           <span>{forgotError}</span>
                         </div>
@@ -386,7 +386,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-earth-700 text-xs mt-4">
+        <p className="text-center text-slate-700 text-xs mt-4">
           budos &copy; 2026
         </p>
       </motion.div>

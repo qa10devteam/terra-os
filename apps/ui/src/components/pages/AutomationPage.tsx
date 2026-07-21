@@ -49,10 +49,10 @@ const ICON_MAP: Record<string, React.ReactNode> = {
 };
 
 const PRIORITY_TOKEN: Record<string, string> = {
-  critical: 'bg-accent-danger/15 border border-accent-danger/30 text-accent-danger hover:bg-accent-danger/25',
-  high:     'bg-accent-warning/15 border border-accent-warning/30 text-accent-warning hover:bg-accent-warning/25',
-  medium:   'bg-accent-info/15 border border-accent-info/30 text-accent-info hover:bg-accent-info/25',
-  low:      'bg-earth-800/60 border border-earth-700/40 text-earth-400 hover:bg-earth-800',
+  critical: 'bg-nogo/15 border border-nogo/30 text-nogo hover:bg-nogo/25',
+  high:     'bg-warn/15 border border-warn/30 text-warn hover:bg-warn/25',
+  medium:   'bg-indigo/15 border border-indigo/30 text-indigo hover:bg-indigo/25',
+  low:      'bg-ink-800/60 border border-ink-700/40 text-slate-400 hover:bg-ink-800',
 };
 
 // ─── BPMN 2.0 Tender Workflow Diagram ─────────────────────────────────────────
@@ -296,19 +296,19 @@ export function BpmnTenderFlow() {
   return (
     <GlassCard className="p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-earth-200 flex items-center gap-2">
-          <GitBranch className="w-4 h-4 text-accent-primary" />
+        <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
+          <GitBranch className="w-4 h-4 text-em" />
           Przepływ przetargowy BPMN 2.0
         </h3>
-        <div className="flex items-center gap-2 text-xs text-earth-500">
-          <span className="w-2 h-2 rounded-full bg-accent-primary inline-block" /> Start
-          <span className="w-2 h-2 rounded-full bg-accent-warning inline-block ml-2" /> Bramka
-          <span className="w-2 h-2 rounded-full bg-accent-danger inline-block ml-2" /> Koniec ✗
+        <div className="flex items-center gap-2 text-xs text-slate-500">
+          <span className="w-2 h-2 rounded-full bg-em inline-block" /> Start
+          <span className="w-2 h-2 rounded-full bg-warn inline-block ml-2" /> Bramka
+          <span className="w-2 h-2 rounded-full bg-nogo inline-block ml-2" /> Koniec ✗
         </div>
       </div>
 
       {/* SVG Diagram */}
-      <div className="overflow-x-auto rounded-lg border border-earth-800/60 bg-earth-950/60">
+      <div className="overflow-x-auto rounded-lg border border-ink-800/60 bg-ink-950/60">
         <svg
           viewBox="0 0 1420 295"
           style={{ minWidth: 900, width: '100%', height: 'auto', minHeight: 200, maxHeight: 300 }}
@@ -387,24 +387,24 @@ export function BpmnTenderFlow() {
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
-            <div className="flex items-start gap-4 px-4 py-3 rounded-lg border border-accent-primary/20 bg-accent-primary/5">
+            <div className="flex items-start gap-4 px-4 py-3 rounded-lg border border-em/20 bg-em/5">
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-semibold text-earth-100 mb-1">{detail.title}</div>
-                <div className="text-xs text-earth-400">{detail.desc}</div>
+                <div className="text-sm font-semibold text-slate-100 mb-1">{detail.title}</div>
+                <div className="text-xs text-slate-400">{detail.desc}</div>
               </div>
               {detail.stats && (
                 <div className="flex gap-4 flex-shrink-0">
                   {detail.stats.map(s => (
                     <div key={s.label} className="text-center">
-                      <div className="text-base font-bold text-accent-primary">{s.value}</div>
-                      <div className="text-xs text-earth-500">{s.label}</div>
+                      <div className="text-base font-bold text-em">{s.value}</div>
+                      <div className="text-xs text-slate-500">{s.label}</div>
                     </div>
                   ))}
                 </div>
               )}
               <button
                 onClick={() => setSelectedId(null)}
-                className="text-earth-600 hover:text-earth-400 text-xs flex-shrink-0"
+                className="text-slate-600 hover:text-slate-400 text-xs flex-shrink-0"
               >✕</button>
             </div>
           </motion.div>
@@ -412,7 +412,7 @@ export function BpmnTenderFlow() {
       </AnimatePresence>
 
       {!selected && (
-        <p className="text-xs text-earth-600 text-center">Kliknij element diagramu, aby zobaczyć szczegóły</p>
+        <p className="text-xs text-slate-600 text-center">Kliknij element diagramu, aby zobaczyć szczegóły</p>
       )}
     </GlassCard>
   );
@@ -436,7 +436,7 @@ function ActionButton({
       onClick={onTrigger}
       disabled={loading}
       className={`
-        w-full flex items-center gap-3 px-4 py-3 rounded-token transition-all duration-200 text-left
+        w-full flex items-center gap-3 px-4 py-3 rounded-md transition-all duration-200 text-left
         ${PRIORITY_TOKEN[suggestion.priority]}
         ${loading ? 'opacity-50 cursor-wait' : 'cursor-pointer'}
       `}
@@ -514,7 +514,7 @@ export function AutomationSuggestions({
             exit={{ opacity: 0, x: -20 }}
           >
             {triggered.includes(s.event) ? (
-              <div className="flex items-center gap-2 px-4 py-3 rounded-token bg-accent-primary/10 border border-accent-primary/20 text-accent-primary text-sm">
+              <div className="flex items-center gap-2 px-4 py-3 rounded-md bg-em/10 border border-em/20 text-em text-sm">
                 <CheckCircle className="w-4 h-4" />
                 <span>{s.label} — wysłano!</span>
               </div>
@@ -585,8 +585,8 @@ export function WebhookManager({
   return (
     <GlassCard className="p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-earth-200 flex items-center gap-2">
-          <Settings className="w-4 h-4 text-earth-500" />
+        <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
+          <Settings className="w-4 h-4 text-slate-500" />
           Webhooki n8n
         </h3>
         <button
@@ -601,7 +601,7 @@ export function WebhookManager({
         <motion.div
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: 'auto', opacity: 1 }}
-          className="p-3 rounded-token-lg border border-earth-700/40 bg-earth-800/30 space-y-2"
+          className="p-3 rounded-xl border border-ink-700/40 bg-ink-800/30 space-y-2"
         >
           <input
             value={newName}
@@ -628,28 +628,28 @@ export function WebhookManager({
 
       <div className="space-y-2">
         {webhooks.map(wh => (
-          <div key={wh.id} className="flex items-center gap-3 px-3 py-2 rounded-token border border-earth-800/60 bg-earth-900/40">
+          <div key={wh.id} className="flex items-center gap-3 px-3 py-2 rounded-md border border-ink-800/60 bg-ink-900/40">
             <button onClick={() => toggleWebhook(wh.id, wh.active)}>
               {wh.active ? (
-                <ToggleRight className="w-5 h-5 text-accent-primary" />
+                <ToggleRight className="w-5 h-5 text-em" />
               ) : (
-                <ToggleLeft className="w-5 h-5 text-earth-600" />
+                <ToggleLeft className="w-5 h-5 text-slate-600" />
               )}
             </button>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-earth-200 truncate">{wh.name}</div>
-              <div className="text-xs text-earth-500 truncate">{wh.url}</div>
+              <div className="text-sm font-medium text-slate-200 truncate">{wh.name}</div>
+              <div className="text-xs text-slate-500 truncate">{wh.url}</div>
             </div>
-            <a href={wh.url} target="_blank" rel="noopener" className="text-earth-600 hover:text-earth-400 transition-colors">
+            <a href={wh.url} target="_blank" rel="noopener" className="text-slate-600 hover:text-slate-400 transition-colors">
               <ExternalLink className="w-3.5 h-3.5" />
             </a>
-            <button onClick={() => deleteWebhook(wh.id)} className="text-earth-600 hover:text-accent-danger transition-colors">
+            <button onClick={() => deleteWebhook(wh.id)} className="text-slate-600 hover:text-nogo transition-colors">
               <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
         ))}
         {!webhooks.length && (
-          <div className="text-center py-6 text-sm text-earth-500">
+          <div className="text-center py-6 text-sm text-slate-500">
             <Bell className="w-8 h-8 mx-auto mb-2 opacity-30" />
             Brak webhooków. Dodaj URL n8n aby aktywować automatyzacje.
           </div>
@@ -685,18 +685,18 @@ export function AutomationHistory({
       </div>
       <div className="space-y-1">
         {events.map(ev => (
-          <div key={ev.id} className="flex items-center gap-2 text-xs py-1.5 px-2 rounded-token hover:bg-earth-800/40 transition-colors">
+          <div key={ev.id} className="flex items-center gap-2 text-xs py-1.5 px-2 rounded-md hover:bg-ink-800/40 transition-colors">
             <div className={`w-1.5 h-1.5 rounded-full ${
-              ev.status === 'delivered' ? 'bg-accent-primary' :
-              ev.status === 'failed' ? 'bg-accent-danger' : 'bg-accent-warning'
+              ev.status === 'delivered' ? 'bg-em' :
+              ev.status === 'failed' ? 'bg-nogo' : 'bg-warn'
             }`} />
-            <span className="font-mono text-earth-400">{ev.event}</span>
-            <span className="text-earth-700">|</span>
-            <span className="text-earth-500 truncate">
+            <span className="font-mono text-slate-400">{ev.event}</span>
+            <span className="text-slate-700">|</span>
+            <span className="text-slate-500 truncate">
               {new Date(ev.triggered_at).toLocaleString('pl-PL', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })}
             </span>
             {ev.response_code > 0 && (
-              <span className={`ml-auto font-mono ${ev.response_code < 300 ? 'text-accent-primary' : 'text-accent-danger'}`}>
+              <span className={`ml-auto font-mono ${ev.response_code < 300 ? 'text-em' : 'text-nogo'}`}>
                 {ev.response_code}
               </span>
             )}
@@ -736,8 +736,8 @@ export function N8nStatusPanel({ authFetch }: { authFetch: (url: string, opts?: 
   return (
     <GlassCard className="p-4">
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2 font-semibold text-earth-100 text-sm">
-          <Activity className="w-4 h-4 text-accent-violet" />
+        <div className="flex items-center gap-2 font-semibold text-slate-100 text-sm">
+          <Activity className="w-4 h-4 text-violet" />
           <span>n8n Engine</span>
           {status && (
             <StatusBadge
@@ -747,13 +747,13 @@ export function N8nStatusPanel({ authFetch }: { authFetch: (url: string, opts?: 
           )}
         </div>
         {status && (
-          <div className={`w-2 h-2 rounded-full ${status.healthy ? 'bg-accent-primary shadow-glow' : 'bg-accent-danger'}`} />
+          <div className={`w-2 h-2 rounded-full ${status.healthy ? 'bg-em shadow-glow' : 'bg-nogo'}`} />
         )}
       </div>
 
-      <div className="flex items-center gap-4 text-xs text-earth-500 mb-3">
-        <span>Workflows: <strong className="text-earth-300">{status?.workflow_count ?? workflows.length}</strong></span>
-        <span>Aktywne: <strong className="text-earth-300">{workflows.filter(w => w.active).length}</strong></span>
+      <div className="flex items-center gap-4 text-xs text-slate-500 mb-3">
+        <span>Workflows: <strong className="text-slate-300">{status?.workflow_count ?? workflows.length}</strong></span>
+        <span>Aktywne: <strong className="text-slate-300">{workflows.filter(w => w.active).length}</strong></span>
         <button
           onClick={() => setExpanded(v => !v)}
           className="btn-ghost ml-auto flex items-center gap-1 text-xs px-2 py-1"
@@ -771,16 +771,16 @@ export function N8nStatusPanel({ authFetch }: { authFetch: (url: string, opts?: 
           className="space-y-2 mt-2"
         >
           {workflows.length === 0 ? (
-            <p className="text-xs text-earth-600 italic">Brak wdrożonych workflow.</p>
+            <p className="text-xs text-slate-600 italic">Brak wdrożonych workflow.</p>
           ) : (
             workflows.map(wf => (
-              <div key={wf.id} className="flex items-center gap-2 text-xs bg-earth-800/40 rounded-token px-3 py-2">
+              <div key={wf.id} className="flex items-center gap-2 text-xs bg-ink-800/40 rounded-md px-3 py-2">
                 {wf.active
-                  ? <ToggleRight className="w-4 h-4 text-accent-primary flex-shrink-0" />
-                  : <ToggleLeft className="w-4 h-4 text-earth-600 flex-shrink-0" />
+                  ? <ToggleRight className="w-4 h-4 text-em flex-shrink-0" />
+                  : <ToggleLeft className="w-4 h-4 text-slate-600 flex-shrink-0" />
                 }
-                <span className="flex-1 truncate text-earth-300">{wf.name}</span>
-                <span className="text-earth-600 font-mono">{wf.id.substring(0, 8)}</span>
+                <span className="flex-1 truncate text-slate-300">{wf.name}</span>
+                <span className="text-slate-600 font-mono">{wf.id.substring(0, 8)}</span>
               </div>
             ))
           )}
@@ -788,7 +788,7 @@ export function N8nStatusPanel({ authFetch }: { authFetch: (url: string, opts?: 
             href="http://localhost:5678"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 text-xs text-accent-violet hover:underline mt-1"
+            className="flex items-center gap-1 text-xs text-violet hover:underline mt-1"
           >
             <ExternalLink className="w-3 h-3" />
             Otwórz n8n UI
@@ -825,7 +825,7 @@ export default function AutomationPage() {
       title="Automatyzacja"
       subtitle="Reguły i workflow AI"
       actions={
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-token bg-accent-violet/10 border border-accent-violet/20 text-accent-violet text-xs font-medium">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-violet/10 border border-violet/20 text-violet text-xs font-medium">
           <Zap className="w-3.5 h-3.5" />
           n8n połączony
         </div>
@@ -833,7 +833,7 @@ export default function AutomationPage() {
     >
       <div className="space-y-6">
         {/* Tab navigation */}
-        <div className="flex gap-1 p-1 rounded-xl bg-earth-900/60 border border-earth-800/60 w-fit">
+        <div className="flex gap-1 p-1 rounded-xl bg-ink-900/60 border border-ink-800/60 w-fit">
           {TABS.map(tab => (
             <button
               key={tab.id}
@@ -841,8 +841,8 @@ export default function AutomationPage() {
               className={`
                 flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
                 ${activeTab === tab.id
-                  ? 'bg-accent-primary/15 text-accent-primary border border-accent-primary/25 shadow-sm'
-                  : 'text-earth-500 hover:text-earth-300 hover:bg-earth-800/40'
+                  ? 'bg-em/15 text-em border border-em/25 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-300 hover:bg-ink-800/40'
                 }
               `}
             >

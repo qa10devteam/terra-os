@@ -94,20 +94,20 @@ export function ReportsPage() {
 
         {/* Stats */}
         <motion.div variants={item} className="grid grid-cols-3 gap-3">
-          <div className="card rounded-token-lg p-4 shadow-token-sm">
-            <div className="flex items-center gap-2 text-earth-500 text-xs mb-2">
+          <div className="card rounded-xl p-4 shadow-md-sm">
+            <div className="flex items-center gap-2 text-slate-500 text-xs mb-2">
               <CheckCircle className="w-3.5 h-3.5" /> Gotowe
             </div>
             <p className="text-2xl font-bold text-success">{readyCount}</p>
           </div>
-          <div className="card rounded-token-lg p-4 shadow-token-sm">
-            <div className="flex items-center gap-2 text-earth-500 text-xs mb-2">
+          <div className="card rounded-xl p-4 shadow-md-sm">
+            <div className="flex items-center gap-2 text-slate-500 text-xs mb-2">
               <FileText className="w-3.5 h-3.5" /> Łącznie stron
             </div>
-            <p className="text-2xl font-bold text-earth-200">{totalPages}</p>
+            <p className="text-2xl font-bold text-slate-200">{totalPages}</p>
           </div>
-          <div className="card rounded-token-lg p-4 shadow-token-sm">
-            <div className="flex items-center gap-2 text-earth-500 text-xs mb-2">
+          <div className="card rounded-xl p-4 shadow-md-sm">
+            <div className="flex items-center gap-2 text-slate-500 text-xs mb-2">
               <Clock className="w-3.5 h-3.5" /> Zaplanowane
             </div>
             <p className="text-2xl font-bold text-info">{reports.filter(r => r.status === 'scheduled').length}</p>
@@ -115,20 +115,20 @@ export function ReportsPage() {
         </motion.div>
 
         {/* Monthly Bar Chart */}
-        <motion.div variants={item} className="card rounded-token-lg p-5 shadow-token-sm">
-          <h3 className="text-sm font-semibold text-earth-200 mb-4 flex items-center gap-2">
-            <BarChart2 className="w-4 h-4 text-accent-primary" />
+        <motion.div variants={item} className="card rounded-xl p-5 shadow-md-sm">
+          <h3 className="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2">
+            <BarChart2 className="w-4 h-4 text-em" />
             Przetargi miesięcznie
           </h3>
           {loading ? (
             <div className="flex items-center justify-center py-16">
-              <Loader2 className="w-6 h-6 text-earth-500 animate-spin" />
+              <Loader2 className="w-6 h-6 text-slate-500 animate-spin" />
             </div>
           ) : monthlyData.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <BarChart2 className="w-8 h-8 text-earth-700 mb-2" />
-              <p className="text-earth-500 text-sm">Brak danych miesięcznych</p>
-              <p className="text-earth-600 text-xs mt-1">Dane pojawią się po zaindeksowaniu przetargów</p>
+              <BarChart2 className="w-8 h-8 text-slate-700 mb-2" />
+              <p className="text-slate-500 text-sm">Brak danych miesięcznych</p>
+              <p className="text-slate-600 text-xs mt-1">Dane pojawią się po zaindeksowaniu przetargów</p>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={280}>
@@ -170,13 +170,13 @@ export function ReportsPage() {
           {reports.map(r => {
             const meta = TYPE_META[r.type];
             return (
-              <div key={r.id} className="card rounded-token-lg p-5 card-hover shadow-token-sm flex items-center gap-4">
-                <div className={`w-10 h-10 rounded-token-lg bg-earth-800 flex items-center justify-center border border-earth-700/40 ${meta.color}`}>
+              <div key={r.id} className="card rounded-xl p-5 card-hover shadow-md-sm flex items-center gap-4">
+                <div className={`w-10 h-10 rounded-xl bg-ink-800 flex items-center justify-center border border-ink-700/40 ${meta.color}`}>
                   {meta.icon}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-semibold text-earth-200 truncate">{r.title}</h3>
-                  <div className="flex items-center gap-3 mt-1 text-xs text-earth-500">
+                  <h3 className="text-sm font-semibold text-slate-200 truncate">{r.title}</h3>
+                  <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
                     <span className={`flex items-center gap-1 ${meta.color}`}>{meta.icon} {meta.label}</span>
                     {r.generated_at && <span>{r.generated_at}</span>}
                     {r.pages > 0 && <span>{r.pages} stron</span>}
@@ -188,12 +188,12 @@ export function ReportsPage() {
                   </button>
                 )}
                 {r.status === 'scheduled' && (
-                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-token bg-info/10 text-info text-xs font-medium border border-info/20">
+                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-info/10 text-info text-xs font-medium border border-info/20">
                     <Clock className="w-3.5 h-3.5" /> Zaplanowany
                   </span>
                 )}
                 {r.status === 'generating' && (
-                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-token bg-warning/10 text-warning text-xs font-medium border border-warning/20">
+                  <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-warning/10 text-warning text-xs font-medium border border-warning/20">
                     <div className="w-3 h-3 border-2 border-warning border-t-transparent rounded-full animate-spin" /> Generowanie…
                   </span>
                 )}
@@ -202,9 +202,9 @@ export function ReportsPage() {
           })}
           {reports.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <FileText className="w-10 h-10 text-earth-600 mb-3" />
-              <p className="text-earth-400 text-sm font-medium">Brak raportów</p>
-              <p className="text-earth-600 text-xs mt-1">Wygeneruj pierwszy raport</p>
+              <FileText className="w-10 h-10 text-slate-600 mb-3" />
+              <p className="text-slate-400 text-sm font-medium">Brak raportów</p>
+              <p className="text-slate-600 text-xs mt-1">Wygeneruj pierwszy raport</p>
             </div>
           )}
         </motion.div>
@@ -220,11 +220,11 @@ export function ReportsPage() {
             ].map(t => (
               <button
                 key={t.name}
-                className="card rounded-token-lg p-4 text-left card-hover group border border-earth-800/40"
+                className="card rounded-xl p-4 text-left card-hover group border border-ink-800/40"
               >
-                <t.icon className="w-5 h-5 text-earth-500 group-hover:text-accent-primary transition-colors mb-2" />
-                <p className="text-sm font-medium text-earth-200">{t.name}</p>
-                <p className="text-xs text-earth-500 mt-0.5">{t.desc}</p>
+                <t.icon className="w-5 h-5 text-slate-500 group-hover:text-em transition-colors mb-2" />
+                <p className="text-sm font-medium text-slate-200">{t.name}</p>
+                <p className="text-xs text-slate-500 mt-0.5">{t.desc}</p>
               </button>
             ))}
           </div>

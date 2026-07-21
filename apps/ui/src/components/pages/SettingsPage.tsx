@@ -102,16 +102,16 @@ const VOIVODESHIPS = [
 ];
 
 const PLAN_BADGE: Record<string, { label: string; className: string }> = {
-  free:       { label: 'Free',       className: 'bg-earth-700/50 text-earth-300 border border-earth-600/40' },
-  pro:        { label: 'Pro',        className: 'bg-accent-info/15 text-accent-info border border-accent-info/30' },
-  enterprise: { label: 'Enterprise', className: 'bg-accent-warning/15 text-accent-warning border border-accent-warning/30' },
+  free:       { label: 'Free',       className: 'bg-ink-700/50 text-slate-300 border border-ink-600/40' },
+  pro:        { label: 'Pro',        className: 'bg-indigo/15 text-indigo border border-indigo/30' },
+  enterprise: { label: 'Enterprise', className: 'bg-warn/15 text-warn border border-warn/30' },
 };
 
 const ROLE_META: Record<string, { label: string; Icon: typeof User; color: string }> = {
-  owner:     { label: 'Wlasciciel',   Icon: Crown,   color: 'text-accent-warning'  },
-  admin:     { label: 'Administrator', Icon: Shield,  color: 'text-accent-info'     },
-  estimator: { label: 'Kosztorysant', Icon: User,    color: 'text-accent-primary'  },
-  viewer:    { label: 'Przegladajacy', Icon: Eye,    color: 'text-earth-400'       },
+  owner:     { label: 'Wlasciciel',   Icon: Crown,   color: 'text-warn'  },
+  admin:     { label: 'Administrator', Icon: Shield,  color: 'text-indigo'     },
+  estimator: { label: 'Kosztorysant', Icon: User,    color: 'text-em'  },
+  viewer:    { label: 'Przegladajacy', Icon: Eye,    color: 'text-slate-400'       },
 };
 
 const DEFAULT_SCORING_CONFIG: ScoringConfig = {
@@ -137,12 +137,12 @@ const WEIGHT_FIELDS: { key: keyof Pick<ScoringConfig, 'cpv_weight' | 'value_weig
 
 // ─── Shared micro-components ───────────────────────────────────────────────────
 
-const INPUT = 'w-full bg-earth-800/60 border border-earth-700/60 rounded-token-lg px-4 py-2.5 text-sm text-earth-100 placeholder-earth-600 focus:outline-none focus:border-accent-primary/50 transition-colors';
+const INPUT = 'w-full bg-ink-800/60 border border-ink-700/60 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-ink-600 focus:outline-none focus:border-em/50 transition-colors';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs text-earth-500 mb-1.5 font-medium">{label}</label>
+      <label className="block text-xs text-slate-500 mb-1.5 font-medium">{label}</label>
       {children}
     </div>
   );
@@ -150,7 +150,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function Spinner({ label = 'Ladowanie...' }: { label?: string }) {
   return (
-    <div className="flex items-center gap-2 text-earth-600 text-sm py-6">
+    <div className="flex items-center gap-2 text-slate-600 text-sm py-6">
       <Loader2 className="w-4 h-4 animate-spin" /> {label}
     </div>
   );
@@ -167,10 +167,10 @@ function ActionBtn({
   variant?: 'primary' | 'secondary' | 'danger' | 'accent';
 }) {
   const styles = {
-    primary:   'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30',
-    secondary: 'bg-earth-800/60 text-earth-300 hover:bg-earth-700/60 border border-earth-700/60',
-    danger:    'bg-red-500/15 text-red-400 hover:bg-red-500/25 border border-red-500/25',
-    accent:    'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 border border-blue-500/30',
+    primary:   'bg-em/20 text-em hover:bg-em/30 border border-em-brd',
+    secondary: 'bg-ink-800/60 text-slate-300 hover:bg-ink-700/60 border border-ink-700/60',
+    danger:    'bg-nogo/15 text-nogo hover:bg-nogo/25 border border-nogo/25',
+    accent:    'bg-indigo/20 text-indigo-400 hover:bg-indigo/30 border border-indigo/30',
   }[variant];
   return (
     <button
@@ -186,9 +186,9 @@ function ActionBtn({
 
 function PillTag({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-earth-800 border border-earth-700/60 text-xs text-earth-300">
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-ink-800 border border-ink-700/60 text-xs text-slate-300">
       {label}
-      <button onClick={onRemove} className="text-earth-600 hover:text-red-400 transition-colors">
+      <button onClick={onRemove} className="text-slate-600 hover:text-nogo transition-colors">
         <XCircle className="w-3 h-3" />
       </button>
     </span>
@@ -249,12 +249,12 @@ function OrganizacjaSection() {
       <GlassCard className="p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-earth-800 border border-earth-700/60 flex items-center justify-center shrink-0">
-              <Building2 className="w-6 h-6 text-earth-400" />
+            <div className="w-12 h-12 rounded-xl bg-ink-800 border border-ink-700/60 flex items-center justify-center shrink-0">
+              <Building2 className="w-6 h-6 text-slate-400" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-earth-100">{org.name || 'Twoja organizacja'}</h3>
-              <p className="text-xs text-earth-500 mt-0.5 font-mono">NIP: {org.nip || 'nie podano'}</p>
+              <h3 className="text-base font-semibold text-slate-100">{org.name || 'Twoja organizacja'}</h3>
+              <p className="text-xs text-slate-500 mt-0.5 font-mono">NIP: {org.nip || 'nie podano'}</p>
             </div>
           </div>
           <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${planBadge.className}`}>
@@ -263,12 +263,12 @@ function OrganizacjaSection() {
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-3">
-          <div className="flex items-center gap-2 text-xs text-earth-500">
-            <Users className="w-3.5 h-3.5 text-earth-600" />
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <Users className="w-3.5 h-3.5 text-slate-600" />
             <span>{org.member_count} {org.member_count === 1 ? 'czlonek' : 'czlonkow'}</span>
           </div>
-          <div className="flex items-center gap-2 text-xs text-earth-500">
-            <Calendar className="w-3.5 h-3.5 text-earth-600" />
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <Calendar className="w-3.5 h-3.5 text-slate-600" />
             <span>od {new Date(org.created_at).toLocaleDateString('pl-PL', { year: 'numeric', month: 'long' })}</span>
           </div>
         </div>
@@ -277,9 +277,9 @@ function OrganizacjaSection() {
       {/* Edit form */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold text-earth-400 uppercase tracking-wide">Dane firmy</p>
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Dane firmy</p>
           {!editing && (
-            <button onClick={() => setEditing(true)} className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
+            <button onClick={() => setEditing(true)} className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
               Edytuj
             </button>
           )}
@@ -347,8 +347,8 @@ function OrganizacjaSection() {
 function InfoRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <span className="text-xs text-earth-500 shrink-0">{label}</span>
-      <span className={`text-sm text-earth-200 text-right truncate ${mono ? 'font-mono' : ''}`}>{value}</span>
+      <span className="text-xs text-slate-500 shrink-0">{label}</span>
+      <span className={`text-sm text-slate-200 text-right truncate ${mono ? 'font-mono' : ''}`}>{value}</span>
     </div>
   );
 }
@@ -407,18 +407,18 @@ function ZespolSection() {
   return (
     <div className="space-y-4 max-w-xl">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-earth-400 uppercase tracking-wide">
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
           Czlonkowie ({members.length})
         </p>
-        <button onClick={load} className="p-1.5 text-earth-600 hover:text-earth-400 transition-colors rounded-lg hover:bg-earth-800/60">
+        <button onClick={load} className="p-1.5 text-slate-600 hover:text-slate-400 transition-colors rounded-lg hover:bg-ink-800/60">
           <RefreshCw className="w-3.5 h-3.5" />
         </button>
       </div>
 
       {members.length === 0 ? (
         <GlassCard className="p-8 text-center">
-          <Users className="w-8 h-8 text-earth-700 mx-auto mb-2" />
-          <p className="text-sm text-earth-500">Brak czlonkow w organizacji</p>
+          <Users className="w-8 h-8 text-slate-700 mx-auto mb-2" />
+          <p className="text-sm text-slate-500">Brak czlonkow w organizacji</p>
         </GlassCard>
       ) : (
         <div className="space-y-2">
@@ -435,35 +435,35 @@ function ZespolSection() {
                 transition={{ duration: 0.2 }}
               >
                 <GlassCard className="p-3.5 flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-earth-800 border border-earth-700/60 flex items-center justify-center text-sm font-bold text-earth-300 shrink-0">
+                  <div className="w-9 h-9 rounded-full bg-ink-800 border border-ink-700/60 flex items-center justify-center text-sm font-bold text-slate-300 shrink-0">
                     {(member.name || member.email).slice(0, 1).toUpperCase()}
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
-                      <p className="text-sm text-earth-200 font-medium truncate">{member.name || member.email}</p>
+                      <p className="text-sm text-slate-200 font-medium truncate">{member.name || member.email}</p>
                       {member.is_me && (
-                        <span className="text-xs text-earth-600 bg-earth-800 px-1.5 py-0.5 rounded-md border border-earth-700/60 shrink-0">Ty</span>
+                        <span className="text-xs text-slate-600 bg-ink-800 px-1.5 py-0.5 rounded-md border border-ink-700/60 shrink-0">Ty</span>
                       )}
                       {!member.is_active && (
-                        <span className="text-xs text-earth-500 bg-earth-800/60 px-1.5 py-0.5 rounded-md border border-earth-700/50 shrink-0">Nieaktywny</span>
+                        <span className="text-xs text-slate-500 bg-ink-800/60 px-1.5 py-0.5 rounded-md border border-ink-700/50 shrink-0">Nieaktywny</span>
                       )}
                     </div>
-                    <p className="text-xs text-earth-600 truncate">{member.email}</p>
+                    <p className="text-xs text-slate-600 truncate">{member.email}</p>
                   </div>
 
                   {!member.is_me ? (
                     <select
                       value={member.role}
                       onChange={e => changeRole(member.id, e.target.value)}
-                      className="text-xs bg-earth-800 border border-earth-700/60 rounded-lg px-2 py-1.5 text-earth-300 focus:outline-none focus:border-blue-500/60 transition-colors cursor-pointer"
+                      className="text-xs bg-ink-800 border border-ink-700/60 rounded-lg px-2 py-1.5 text-slate-300 focus:outline-none focus:border-indigo/60 transition-colors cursor-pointer"
                     >
                       <option value="admin">Administrator</option>
                       <option value="estimator">Kosztorysant</option>
                       <option value="viewer">Przegladajacy</option>
                     </select>
                   ) : (
-                    <span className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-earth-800 border border-earth-700/60 ${meta.color} shrink-0`}>
+                    <span className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-ink-800 border border-ink-700/60 ${meta.color} shrink-0`}>
                       <RoleIcon className="w-3 h-3" />
                       {meta.label}
                     </span>
@@ -474,7 +474,7 @@ function ZespolSection() {
                       onClick={() => removeMember(member.id, member.email)}
                       disabled={removing === member.id}
                       title="Usun z organizacji"
-                      className="p-1.5 text-earth-700 hover:text-red-400 transition-colors rounded-lg hover:bg-red-500/10 disabled:opacity-40 shrink-0"
+                      className="p-1.5 text-slate-700 hover:text-nogo transition-colors rounded-lg hover:bg-nogo/10 disabled:opacity-40 shrink-0"
                     >
                       {removing === member.id
                         ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -495,9 +495,9 @@ function ZespolSection() {
 // ─── Section: Zaproszenia ──────────────────────────────────────────────────────
 
 const STATUS_BADGE: Record<string, string> = {
-  pending:  'bg-amber-500/15 text-amber-400 border-amber-500/25',
-  accepted: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
-  expired:  'bg-earth-800/50 text-earth-500 border-earth-700/30',
+  pending:  'bg-warn-bg text-warn border-warn/25',
+  accepted: 'bg-em/15 text-em border-em/25',
+  expired:  'bg-ink-800/50 text-slate-500 border-ink-700/30',
 };
 const STATUS_LABEL: Record<string, string> = {
   pending:  'Oczekuje',
@@ -564,8 +564,8 @@ function ZaproszeniaSSection() {
       {/* Send invite form */}
       <GlassCard className="p-5 space-y-4">
         <div className="flex items-center gap-2 mb-1">
-          <Send className="w-4 h-4 text-earth-500" />
-          <p className="text-sm font-semibold text-earth-200">Zaproś nowego czlonka</p>
+          <Send className="w-4 h-4 text-slate-500" />
+          <p className="text-sm font-semibold text-slate-200">Zaproś nowego czlonka</p>
         </div>
         <Field label="Adres email">
           <input
@@ -595,24 +595,24 @@ function ZaproszeniaSSection() {
         >
           Wyslij zaproszenie
         </ActionBtn>
-        <p className="text-xs text-earth-700">Zaproszony uzytkownik otrzyma link aktywacyjny wazny 7 dni.</p>
+        <p className="text-xs text-slate-700">Zaproszony uzytkownik otrzyma link aktywacyjny wazny 7 dni.</p>
       </GlassCard>
 
       {/* Pending invites list */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold text-earth-400 uppercase tracking-wide">
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
             Wyslane zaproszenia {invites.length > 0 ? `(${invites.length})` : ''}
           </p>
-          <button onClick={load} className="p-1.5 text-earth-600 hover:text-earth-400 transition-colors rounded-lg hover:bg-earth-800/60">
+          <button onClick={load} className="p-1.5 text-slate-600 hover:text-slate-400 transition-colors rounded-lg hover:bg-ink-800/60">
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {loading ? <Spinner label="Wczytywanie zaproszen..." /> : invites.length === 0 ? (
           <GlassCard className="p-6 text-center">
-            <Mail className="w-7 h-7 text-earth-700 mx-auto mb-2" />
-            <p className="text-sm text-earth-500">Brak wyslanych zaproszen</p>
+            <Mail className="w-7 h-7 text-slate-700 mx-auto mb-2" />
+            <p className="text-sm text-slate-500">Brak wyslanych zaproszen</p>
           </GlassCard>
         ) : (
           <AnimatePresence initial={false}>
@@ -627,12 +627,12 @@ function ZaproszeniaSSection() {
                   transition={{ duration: 0.2 }}
                 >
                   <GlassCard className="p-3.5 flex items-center gap-3 mb-2">
-                    <div className="w-8 h-8 rounded-full bg-earth-800 border border-earth-700/60 flex items-center justify-center shrink-0">
-                      <Mail className="w-3.5 h-3.5 text-earth-500" />
+                    <div className="w-8 h-8 rounded-full bg-ink-800 border border-ink-700/60 flex items-center justify-center shrink-0">
+                      <Mail className="w-3.5 h-3.5 text-slate-500" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-earth-200 truncate">{inv.email}</p>
-                      <p className="text-xs text-earth-600">
+                      <p className="text-sm text-slate-200 truncate">{inv.email}</p>
+                      <p className="text-xs text-slate-600">
                         {ROLE_META[inv.role]?.label ?? inv.role}
                         {' · '}wygasa {inv.expires_at ? new Date(inv.expires_at!).toLocaleDateString('pl-PL') : 'brak'}
                       </p>
@@ -645,7 +645,7 @@ function ZaproszeniaSSection() {
                         onClick={() => revokeInvite(inv.id, inv.email)}
                         disabled={revoking === inv.id}
                         title="Anuluj zaproszenie"
-                        className="p-1.5 text-earth-700 hover:text-red-400 transition-colors rounded-lg hover:bg-red-500/10 disabled:opacity-40 shrink-0"
+                        className="p-1.5 text-slate-700 hover:text-nogo transition-colors rounded-lg hover:bg-nogo/10 disabled:opacity-40 shrink-0"
                       >
                         {revoking === inv.id
                           ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -733,9 +733,9 @@ function UstawieniaSection() {
       {/* CPV selector */}
       <GlassCard className="p-4 space-y-3">
         <div className="flex items-center gap-2 mb-1">
-          <Tag className="w-4 h-4 text-earth-500" />
-          <p className="text-sm font-semibold text-earth-200">Domyslne kody CPV</p>
-          <span className="text-xs text-earth-600 ml-auto">{cpv.length} wybranych</span>
+          <Tag className="w-4 h-4 text-slate-500" />
+          <p className="text-sm font-semibold text-slate-200">Domyslne kody CPV</p>
+          <span className="text-xs text-slate-600 ml-auto">{cpv.length} wybranych</span>
         </div>
         <div className="space-y-2">
           {CPV_OPTIONS.map(opt => (
@@ -744,10 +744,10 @@ function UstawieniaSection() {
                 type="checkbox"
                 checked={cpv.includes(opt.code)}
                 onChange={() => toggleCpv(opt.code)}
-                className="accent-emerald-500 w-3.5 h-3.5"
+                className="em-500 w-3.5 h-3.5"
               />
-              <span className="font-mono text-xs text-earth-600 w-20 shrink-0">{opt.code}</span>
-              <span className="text-sm text-earth-400 group-hover:text-earth-300 transition-colors">{opt.label}</span>
+              <span className="font-mono text-xs text-slate-600 w-20 shrink-0">{opt.code}</span>
+              <span className="text-sm text-slate-400 group-hover:text-slate-300 transition-colors">{opt.label}</span>
             </label>
           ))}
         </div>
@@ -756,9 +756,9 @@ function UstawieniaSection() {
       {/* Regions selector */}
       <GlassCard className="p-4 space-y-3">
         <div className="flex items-center gap-2 mb-1">
-          <MapPin className="w-4 h-4 text-earth-500" />
-          <p className="text-sm font-semibold text-earth-200">Domyslne regiony</p>
-          <span className="text-xs text-earth-600 ml-auto">{regions.length} wybranych</span>
+          <MapPin className="w-4 h-4 text-slate-500" />
+          <p className="text-sm font-semibold text-slate-200">Domyslne regiony</p>
+          <span className="text-xs text-slate-600 ml-auto">{regions.length} wybranych</span>
         </div>
         <div className="grid grid-cols-2 gap-1.5">
           {VOIVODESHIPS.map(v => (
@@ -767,9 +767,9 @@ function UstawieniaSection() {
                 type="checkbox"
                 checked={regions.includes(v)}
                 onChange={() => toggleRegion(v)}
-                className="accent-emerald-500 w-3.5 h-3.5"
+                className="em-500 w-3.5 h-3.5"
               />
-              <span className="text-sm text-earth-400 group-hover:text-earth-300 transition-colors capitalize">{v}</span>
+              <span className="text-sm text-slate-400 group-hover:text-slate-300 transition-colors capitalize">{v}</span>
             </label>
           ))}
         </div>
@@ -800,16 +800,16 @@ function WeightSlider({
     <div className="space-y-1.5">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <p className="text-sm text-earth-200 font-medium">{label}</p>
-          <p className="text-xs text-earth-600">{description}</p>
+          <p className="text-sm text-slate-200 font-medium">{label}</p>
+          <p className="text-xs text-slate-600">{description}</p>
         </div>
-        <span className="text-sm font-mono font-semibold text-emerald-400 shrink-0 w-12 text-right">
+        <span className="text-sm font-mono font-semibold text-em shrink-0 w-12 text-right">
           {pct}%
         </span>
       </div>
-      <div className="relative h-2 bg-earth-800 rounded-full border border-earth-700/40">
+      <div className="relative h-2 bg-ink-800 rounded-full border border-ink-700/40">
         <div
-          className="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-600 to-emerald-400 rounded-full transition-all"
+          className="absolute inset-y-0 left-0 bg-gradient-to-r from-em to-em rounded-full transition-all"
           style={{ width: `${pct}%` }}
         />
         <input
@@ -935,15 +935,15 @@ function ScoringSection() {
       {/* Header info card */}
       <GlassCard className="p-5">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
-            <Target className="w-5 h-5 text-blue-400" />
+          <div className="w-10 h-10 rounded-xl bg-indigo/10 border border-indigo/20 flex items-center justify-center shrink-0">
+            <Target className="w-5 h-5 text-indigo-400" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-earth-100">Konfiguracja Scoring AI</h3>
-            <p className="text-xs text-earth-500 mt-0.5">
+            <h3 className="text-sm font-semibold text-slate-100">Konfiguracja Scoring AI</h3>
+            <p className="text-xs text-slate-500 mt-0.5">
               Dostosuj wagi i filtry uzywane przez algorytm do oceny przetargow
               {config.is_default && (
-                <span className="ml-2 text-amber-400/80">(konfiguracja domyslna)</span>
+                <span className="ml-2 text-warn/80">(konfiguracja domyslna)</span>
               )}
             </p>
           </div>
@@ -954,18 +954,18 @@ function ScoringSection() {
       <GlassCard className="p-5 space-y-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <SlidersHorizontal className="w-4 h-4 text-earth-500" />
-            <p className="text-sm font-semibold text-earth-200">Wagi algorytmu</p>
+            <SlidersHorizontal className="w-4 h-4 text-slate-500" />
+            <p className="text-sm font-semibold text-slate-200">Wagi algorytmu</p>
           </div>
           <span className={`text-xs font-mono px-2 py-0.5 rounded-lg border ${
             Math.abs(sumPct - 100) < 2
-              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-              : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+              ? 'bg-em/10 text-em border-em-brd'
+              : 'bg-warn-bg text-warn border-warn/20'
           }`}>
             Suma: {sumPct}%
           </span>
         </div>
-        <p className="text-xs text-earth-600 -mt-2">
+        <p className="text-xs text-slate-600 -mt-2">
           Wagi sa automatycznie normalizowane do sumy 100%. Przeciagnij suwaki aby dostosowac priorytety.
         </p>
 
@@ -985,8 +985,8 @@ function ScoringSection() {
       {/* Value range */}
       <GlassCard className="p-5 space-y-4">
         <div className="flex items-center gap-2">
-          <Hash className="w-4 h-4 text-earth-500" />
-          <p className="text-sm font-semibold text-earth-200">Zakres wartosci przetargow (PLN)</p>
+          <Hash className="w-4 h-4 text-slate-500" />
+          <p className="text-sm font-semibold text-slate-200">Zakres wartosci przetargow (PLN)</p>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <Field label="Minimalna wartość (PLN)">
@@ -1012,7 +1012,7 @@ function ScoringSection() {
             />
           </Field>
         </div>
-        <p className="text-xs text-earth-700">
+        <p className="text-xs text-slate-700">
           Przetargi poza tym zakresem otrzymaja nizszy score wartosci. Ustaw 0 aby wylaczych filtr.
         </p>
       </GlassCard>
@@ -1020,9 +1020,9 @@ function ScoringSection() {
       {/* Preferred CPVs */}
       <GlassCard className="p-5 space-y-3">
         <div className="flex items-center gap-2">
-          <Tag className="w-4 h-4 text-earth-500" />
-          <p className="text-sm font-semibold text-earth-200">Preferowane kody CPV</p>
-          <span className="text-xs text-earth-600 ml-auto">{config.preferred_cpvs.length} wybranych</span>
+          <Tag className="w-4 h-4 text-slate-500" />
+          <p className="text-sm font-semibold text-slate-200">Preferowane kody CPV</p>
+          <span className="text-xs text-slate-600 ml-auto">{config.preferred_cpvs.length} wybranych</span>
         </div>
 
         {config.preferred_cpvs.length > 0 && (
@@ -1047,10 +1047,10 @@ function ScoringSection() {
                 type="checkbox"
                 checked={config.preferred_cpvs.includes(opt.code)}
                 onChange={() => toggleCpv(opt.code)}
-                className="accent-emerald-500 w-3.5 h-3.5"
+                className="em-500 w-3.5 h-3.5"
               />
-              <span className="font-mono text-xs text-earth-600 w-20 shrink-0">{opt.code}</span>
-              <span className="text-sm text-earth-400 group-hover:text-earth-300 transition-colors">{opt.label}</span>
+              <span className="font-mono text-xs text-slate-600 w-20 shrink-0">{opt.code}</span>
+              <span className="text-sm text-slate-400 group-hover:text-slate-300 transition-colors">{opt.label}</span>
             </label>
           ))}
         </div>
@@ -1059,9 +1059,9 @@ function ScoringSection() {
       {/* Preferred Regions */}
       <GlassCard className="p-5 space-y-3">
         <div className="flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-earth-500" />
-          <p className="text-sm font-semibold text-earth-200">Preferowane regiony</p>
-          <span className="text-xs text-earth-600 ml-auto">{config.preferred_regions.length} wybranych</span>
+          <MapPin className="w-4 h-4 text-slate-500" />
+          <p className="text-sm font-semibold text-slate-200">Preferowane regiony</p>
+          <span className="text-xs text-slate-600 ml-auto">{config.preferred_regions.length} wybranych</span>
         </div>
 
         {config.preferred_regions.length > 0 && (
@@ -1079,9 +1079,9 @@ function ScoringSection() {
                 type="checkbox"
                 checked={config.preferred_regions.includes(v)}
                 onChange={() => toggleRegion(v)}
-                className="accent-emerald-500 w-3.5 h-3.5"
+                className="em-500 w-3.5 h-3.5"
               />
-              <span className="text-sm text-earth-400 group-hover:text-earth-300 transition-colors capitalize">{v}</span>
+              <span className="text-sm text-slate-400 group-hover:text-slate-300 transition-colors capitalize">{v}</span>
             </label>
           ))}
         </div>
@@ -1111,28 +1111,28 @@ function ScoringSection() {
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.2 }}
           >
-            <GlassCard className="p-5 space-y-3 border border-emerald-500/20">
+            <GlassCard className="p-5 space-y-3 border border-em-brd">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <p className="text-sm font-semibold text-emerald-400">Scoring przeliczony pomyslnie</p>
+                <CheckCircle2 className="w-4 h-4 text-em" />
+                <p className="text-sm font-semibold text-em">Scoring przeliczony pomyslnie</p>
               </div>
-              <p className="text-xs text-earth-500">{rescoreResult.message}</p>
+              <p className="text-xs text-slate-500">{rescoreResult.message}</p>
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-earth-800/60 rounded-xl p-3 border border-earth-700/40">
-                  <p className="text-xs text-earth-600 mb-1">Przetwarzone</p>
-                  <p className="text-lg font-bold text-earth-100 font-mono">
+                <div className="bg-ink-800/60 rounded-xl p-3 border border-ink-700/40">
+                  <p className="text-xs text-slate-600 mb-1">Przetwarzone</p>
+                  <p className="text-lg font-bold text-slate-100 font-mono">
                     {rescoreResult.processed}
-                    <span className="text-xs text-earth-600 font-normal ml-1">/ {rescoreResult.total}</span>
+                    <span className="text-xs text-slate-600 font-normal ml-1">/ {rescoreResult.total}</span>
                   </p>
                 </div>
-                <div className="bg-earth-800/60 rounded-xl p-3 border border-earth-700/40">
-                  <p className="text-xs text-earth-600 mb-1">Zmiana avg. score</p>
+                <div className="bg-ink-800/60 rounded-xl p-3 border border-ink-700/40">
+                  <p className="text-xs text-slate-600 mb-1">Zmiana avg. score</p>
                   <div className="flex items-baseline gap-2">
-                    <p className="text-base font-bold text-earth-500 font-mono">
+                    <p className="text-base font-bold text-slate-500 font-mono">
                       {(rescoreResult.avg_score_before ?? 0).toFixed(2)}
                     </p>
-                    <TrendingUp className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <p className="text-base font-bold text-emerald-400 font-mono">
+                    <TrendingUp className="w-3.5 h-3.5 text-em shrink-0" />
+                    <p className="text-base font-bold text-em font-mono">
                       {(rescoreResult.avg_score_after ?? 0).toFixed(2)}
                     </p>
                   </div>
@@ -1171,33 +1171,33 @@ function UsageSection() {
 
   if (loading) return (
     <div className="flex items-center justify-center h-32">
-      <Loader2 className="w-6 h-6 animate-spin text-accent-primary" />
+      <Loader2 className="w-6 h-6 animate-spin text-em" />
     </div>
   );
 
   if (error) return (
-    <GlassCard className="p-6 text-center text-accent-danger text-sm">{error}</GlassCard>
+    <GlassCard className="p-6 text-center text-nogo text-sm">{error}</GlassCard>
   );
 
   return (
     <div className="space-y-6">
       <GlassCard className="p-6">
-        <h3 className="text-sm font-semibold text-earth-300 uppercase tracking-wider mb-4 flex items-center gap-2">
-          <Zap className="w-4 h-4 text-accent-primary" />
+        <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 flex items-center gap-2">
+          <Zap className="w-4 h-4 text-em" />
           Użycie w bieżącym miesiącu
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="bg-earth-800/40 rounded-token-lg p-4 border border-earth-700/30">
-            <div className="text-2xl font-bold text-earth-100">
+          <div className="bg-ink-800/40 rounded-xl p-4 border border-ink-700/30">
+            <div className="text-2xl font-bold text-slate-100">
               {usage?.tenders_this_month ?? 0}
             </div>
-            <div className="text-xs text-earth-400 mt-1">Przetargi (ten miesiąc)</div>
+            <div className="text-xs text-slate-400 mt-1">Przetargi (ten miesiąc)</div>
           </div>
-          <div className="bg-earth-800/40 rounded-token-lg p-4 border border-earth-700/30">
-            <div className="text-2xl font-bold text-earth-100">
+          <div className="bg-ink-800/40 rounded-xl p-4 border border-ink-700/30">
+            <div className="text-2xl font-bold text-slate-100">
               {usage?.ai_analyses_this_month ?? 0}
             </div>
-            <div className="text-xs text-earth-400 mt-1">Analizy AI (ten miesiąc)</div>
+            <div className="text-xs text-slate-400 mt-1">Analizy AI (ten miesiąc)</div>
           </div>
         </div>
       </GlassCard>
@@ -1231,36 +1231,36 @@ function BillingSection() {
   }, [authFetch]);
 
   const STATUS_CFG: Record<string, { label: string; className: string }> = {
-    active:   { label: 'Aktywna',        className: 'bg-accent-primary/15 text-accent-primary' },
-    trialing: { label: 'Trial',          className: 'bg-accent-info/15 text-accent-info' },
-    past_due: { label: 'Nieopłacona',    className: 'bg-accent-danger/15 text-accent-danger' },
-    canceled: { label: 'Anulowana',      className: 'bg-earth-700/30 text-earth-500' },
+    active:   { label: 'Aktywna',        className: 'bg-em/15 text-em' },
+    trialing: { label: 'Trial',          className: 'bg-indigo/15 text-indigo' },
+    past_due: { label: 'Nieopłacona',    className: 'bg-nogo/15 text-nogo' },
+    canceled: { label: 'Anulowana',      className: 'bg-ink-700/30 text-slate-500' },
   };
 
-  if (loading) return <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-accent-primary" /></div>;
-  if (error) return <GlassCard className="p-6 text-center"><p className="text-accent-danger text-sm flex items-center justify-center gap-2"><AlertCircle className="w-4 h-4" />{error}</p></GlassCard>;
+  if (loading) return <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-em" /></div>;
+  if (error) return <GlassCard className="p-6 text-center"><p className="text-nogo text-sm flex items-center justify-center gap-2"><AlertCircle className="w-4 h-4" />{error}</p></GlassCard>;
 
   return (
     <div className="space-y-4">
       <GlassCard className="p-6">
-        <h3 className="text-sm font-semibold text-earth-300 uppercase tracking-wider mb-4 flex items-center gap-2">
-          <CreditCard className="w-4 h-4 text-accent-primary" /> Plan i subskrypcja
+        <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 flex items-center gap-2">
+          <CreditCard className="w-4 h-4 text-em" /> Plan i subskrypcja
         </h3>
         {sub ? (
           <div className="space-y-4">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-earth-100 font-bold text-lg">{sub.name}</span>
+                  <span className="text-slate-100 font-bold text-lg">{sub.name}</span>
                   {sub.status && STATUS_CFG[sub.status] && (
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_CFG[sub.status].className}`}>
                       {STATUS_CFG[sub.status].label}
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-earth-500 mt-1">
+                <p className="text-xs text-slate-500 mt-1">
                   {sub.seats} stanowisk · Odnowienie: {sub.current_period_end ? new Date(sub.current_period_end).toLocaleDateString('pl-PL') : '—'}
-                  {sub.cancel_at_period_end && <span className="text-accent-warning ml-2">· Anuluje się na koniec okresu</span>}
+                  {sub.cancel_at_period_end && <span className="text-warn ml-2">· Anuluje się na koniec okresu</span>}
                 </p>
               </div>
               <button
@@ -1270,18 +1270,18 @@ function BillingSection() {
                     if (data?.url) window.open(data.url, '_blank');
                   } catch { /* noop */ }
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-accent-primary/10 text-accent-primary hover:bg-accent-primary/20 rounded-token-lg transition-colors border border-accent-primary/20"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-em/10 text-em hover:bg-em/20 rounded-xl transition-colors border border-em/20"
               >
                 <ExternalLink className="w-3.5 h-3.5" /> Zarządzaj
               </button>
             </div>
             {sub.features && sub.features.length > 0 && (
               <div>
-                <p className="text-xs text-earth-600 mb-2 font-medium">Dostępne funkcje:</p>
+                <p className="text-xs text-slate-600 mb-2 font-medium">Dostępne funkcje:</p>
                 <div className="flex flex-wrap gap-1.5">
                   {sub.features.map(f => (
-                    <span key={f} className="text-xs bg-earth-800/50 text-earth-400 border border-earth-700/30 px-2 py-0.5 rounded-full flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3 text-accent-primary" /> {f}
+                    <span key={f} className="text-xs bg-ink-800/50 text-slate-400 border border-ink-700/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3 text-em" /> {f}
                     </span>
                   ))}
                 </div>
@@ -1289,7 +1289,7 @@ function BillingSection() {
             )}
           </div>
         ) : (
-          <p className="text-sm text-earth-500">Brak danych subskrypcji</p>
+          <p className="text-sm text-slate-500">Brak danych subskrypcji</p>
         )}
       </GlassCard>
     </div>
@@ -1361,38 +1361,38 @@ function APIKeysSection() {
     }
   };
 
-  if (loading) return <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-accent-primary" /></div>;
+  if (loading) return <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-em" /></div>;
 
   return (
     <div className="space-y-4">
       {/* New key created banner */}
       {createdKey?.plaintext_key && (
-        <GlassCard className="p-4 border border-accent-warning/30 bg-accent-warning/5">
-          <p className="text-xs text-accent-warning font-semibold mb-2 flex items-center gap-1.5">
+        <GlassCard className="p-4 border border-warn/30 bg-warn/5">
+          <p className="text-xs text-warn font-semibold mb-2 flex items-center gap-1.5">
             <AlertCircle className="w-3.5 h-3.5" /> Zapisz klucz — nie będzie widoczny ponownie!
           </p>
           <div className="flex items-center gap-2">
-            <code className="flex-1 bg-earth-950 rounded px-3 py-2 text-xs text-earth-200 font-mono truncate">
+            <code className="flex-1 bg-ink-950 rounded px-3 py-2 text-xs text-slate-200 font-mono truncate">
               {createdKey.plaintext_key}
             </code>
             <button
               onClick={() => { navigator.clipboard.writeText(createdKey.plaintext_key!); }}
-              className="p-2 text-earth-400 hover:text-accent-primary transition-colors"
+              className="p-2 text-slate-400 hover:text-em transition-colors"
               title="Kopiuj klucz"
             >
               <Copy className="w-4 h-4" />
             </button>
           </div>
-          <button onClick={() => setCreatedKey(null)} className="text-xs text-earth-600 hover:text-earth-400 mt-2 transition-colors">Zamknij</button>
+          <button onClick={() => setCreatedKey(null)} className="text-xs text-slate-600 hover:text-slate-400 mt-2 transition-colors">Zamknij</button>
         </GlassCard>
       )}
 
-      {error && <p className="text-xs text-accent-danger">{error}</p>}
+      {error && <p className="text-xs text-nogo">{error}</p>}
 
       {/* Create new key */}
       <GlassCard className="p-6">
-        <h3 className="text-sm font-semibold text-earth-300 uppercase tracking-wider mb-4 flex items-center gap-2">
-          <Key className="w-4 h-4 text-accent-primary" /> Klucze API
+        <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 flex items-center gap-2">
+          <Key className="w-4 h-4 text-em" /> Klucze API
         </h3>
         <div className="flex gap-2 mb-4">
           <input
@@ -1405,7 +1405,7 @@ function APIKeysSection() {
           <button
             onClick={create}
             disabled={creating || !newKeyName.trim()}
-            className="flex items-center gap-1.5 px-4 py-2 text-sm bg-accent-primary text-earth-950 font-semibold rounded-token-lg hover:bg-emerald-400 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 text-sm bg-em text-ink-950 font-semibold rounded-xl hover:bg-em disabled:opacity-50 transition-colors"
           >
             {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
             Utwórz
@@ -1413,15 +1413,15 @@ function APIKeysSection() {
         </div>
 
         {keys.length === 0 ? (
-          <p className="text-sm text-earth-600 py-4 text-center">Brak kluczy API</p>
+          <p className="text-sm text-slate-600 py-4 text-center">Brak kluczy API</p>
         ) : (
           <div className="space-y-2">
             {keys.map(k => (
-              <div key={k.id} className="flex items-center gap-3 p-3 bg-earth-800/40 rounded-token border border-earth-700/30">
-                <Key className="w-3.5 h-3.5 text-earth-500 shrink-0" />
+              <div key={k.id} className="flex items-center gap-3 p-3 bg-ink-800/40 rounded-md border border-ink-700/30">
+                <Key className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm text-earth-200 font-medium">{k.name}</div>
-                  <div className="text-xs text-earth-600 flex items-center gap-2">
+                  <div className="text-sm text-slate-200 font-medium">{k.name}</div>
+                  <div className="text-xs text-slate-600 flex items-center gap-2">
                     <code className="font-mono">{k.prefix}****</code>
                     <span>·</span>
                     <span>{new Date(k.created_at).toLocaleDateString('pl-PL')}</span>
@@ -1430,12 +1430,12 @@ function APIKeysSection() {
                 </div>
                 <div className="flex gap-1">
                   {k.scopes.map(s => (
-                    <span key={s} className="text-[10px] px-1.5 py-0.5 bg-earth-700/50 text-earth-400 rounded">{s}</span>
+                    <span key={s} className="text-[10px] px-1.5 py-0.5 bg-ink-700/50 text-slate-400 rounded">{s}</span>
                   ))}
                 </div>
                 <button
                   onClick={() => deleteKey(k.id)}
-                  className="p-1.5 text-earth-600 hover:text-accent-danger transition-colors"
+                  className="p-1.5 text-slate-600 hover:text-nogo transition-colors"
                   title="Usuń klucz"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -1509,18 +1509,18 @@ function WebhooksSection() {
     }
   };
 
-  if (loading) return <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-accent-primary" /></div>;
+  if (loading) return <div className="flex items-center justify-center h-32"><Loader2 className="w-5 h-5 animate-spin text-em" /></div>;
 
   return (
     <div className="space-y-4">
-      {error && <p className="text-xs text-accent-danger">{error}</p>}
+      {error && <p className="text-xs text-nogo">{error}</p>}
       <GlassCard className="p-6">
-        <h3 className="text-sm font-semibold text-earth-300 uppercase tracking-wider mb-4 flex items-center gap-2">
-          <Webhook className="w-4 h-4 text-accent-primary" /> Webhooki
+        <h3 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4 flex items-center gap-2">
+          <Webhook className="w-4 h-4 text-em" /> Webhooki
         </h3>
         <div className="space-y-3 mb-4">
           <div>
-            <label className="block text-xs text-earth-500 mb-1.5">URL endpointu *</label>
+            <label className="block text-xs text-slate-500 mb-1.5">URL endpointu *</label>
             <input
               className="input-base w-full"
               type="url"
@@ -1530,7 +1530,7 @@ function WebhooksSection() {
             />
           </div>
           <div>
-            <label className="block text-xs text-earth-500 mb-1.5">Zdarzenia (przecinkami)</label>
+            <label className="block text-xs text-slate-500 mb-1.5">Zdarzenia (przecinkami)</label>
             <input
               className="input-base w-full"
               placeholder="tender.new, alert.match"
@@ -1541,7 +1541,7 @@ function WebhooksSection() {
           <button
             onClick={create}
             disabled={creating || !form.url.trim()}
-            className="flex items-center gap-1.5 px-4 py-2 text-sm bg-accent-primary text-earth-950 font-semibold rounded-token-lg hover:bg-emerald-400 disabled:opacity-50 transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 text-sm bg-em text-ink-950 font-semibold rounded-xl hover:bg-em disabled:opacity-50 transition-colors"
           >
             {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
             Dodaj webhook
@@ -1549,29 +1549,29 @@ function WebhooksSection() {
         </div>
 
         {webhooks.length === 0 ? (
-          <p className="text-sm text-earth-600 py-4 text-center">Brak webhooków</p>
+          <p className="text-sm text-slate-600 py-4 text-center">Brak webhooków</p>
         ) : (
           <div className="space-y-2">
             {webhooks.map(w => (
-              <div key={w.id} className="flex items-start gap-3 p-3 bg-earth-800/40 rounded-token border border-earth-700/30">
-                <Webhook className="w-3.5 h-3.5 text-earth-500 shrink-0 mt-0.5" />
+              <div key={w.id} className="flex items-start gap-3 p-3 bg-ink-800/40 rounded-md border border-ink-700/30">
+                <Webhook className="w-3.5 h-3.5 text-slate-500 shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs font-mono text-earth-300 truncate">{w.url}</div>
+                  <div className="text-xs font-mono text-slate-300 truncate">{w.url}</div>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {w.events.map(ev => (
-                      <span key={ev} className="text-[10px] px-1.5 py-0.5 bg-accent-info/10 text-accent-info rounded border border-accent-info/20">{ev}</span>
+                      <span key={ev} className="text-[10px] px-1.5 py-0.5 bg-indigo/10 text-indigo rounded border border-indigo/20">{ev}</span>
                     ))}
                   </div>
                   {w.last_triggered_at && (
-                    <div className="text-[10px] text-earth-600 mt-0.5">Ostatnio: {new Date(w.last_triggered_at).toLocaleString('pl-PL')}</div>
+                    <div className="text-[10px] text-slate-600 mt-0.5">Ostatnio: {new Date(w.last_triggered_at).toLocaleString('pl-PL')}</div>
                   )}
                 </div>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${w.is_active ? 'bg-accent-primary/15 text-accent-primary' : 'bg-earth-700/30 text-earth-500'}`}>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${w.is_active ? 'bg-em/15 text-em' : 'bg-ink-700/30 text-slate-500'}`}>
                   {w.is_active ? 'Aktywny' : 'Wstrzymany'}
                 </span>
                 <button
                   onClick={() => deleteWebhook(w.id)}
-                  className="p-1.5 text-earth-600 hover:text-accent-danger transition-colors"
+                  className="p-1.5 text-slate-600 hover:text-nogo transition-colors"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -1593,7 +1593,7 @@ export function SettingsPage() {
     <PageShell title="Ustawienia" subtitle="Konfiguracja konta i platformy" noPadding>
       <div className="flex flex-1 overflow-hidden h-full">
         {/* Left sidebar */}
-        <div className="w-52 border-r border-earth-800/60 py-3 px-2 space-y-0.5 shrink-0 overflow-y-auto">
+        <div className="w-52 border-r border-ink-800/60 py-3 px-2 space-y-0.5 shrink-0 overflow-y-auto">
           {SECTIONS.map(s => {
             const Icon = s.icon;
             const active = section === s.id;
@@ -1601,10 +1601,10 @@ export function SettingsPage() {
               <button
                 key={s.id}
                 onClick={() => setSection(s.id)}
-                className={`w-full flex items-center justify-between gap-2.5 px-3 py-2.5 rounded-token-lg text-sm transition-colors ${
+                className={`w-full flex items-center justify-between gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-colors ${
                   active
-                    ? 'bg-accent-primary/10 text-accent-primary border border-accent-primary/20'
-                    : 'text-earth-400 hover:text-earth-200 hover:bg-earth-800/60'
+                    ? 'bg-em/10 text-em border border-em/20'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-ink-800/60'
                 }`}
               >
                 <span className="flex items-center gap-2.5">

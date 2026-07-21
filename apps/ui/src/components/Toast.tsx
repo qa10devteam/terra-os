@@ -52,35 +52,35 @@ const TOAST_CONFIG: Record<ToastType, {
 }> = {
   success: {
     Icon: CheckCircle,
-    iconClass: 'text-emerald-400',
-    borderClass: 'border-emerald-500/30',
-    bgClass: 'bg-emerald-500/10',
-    textClass: 'text-emerald-100',
-    barClass: 'bg-emerald-500',
+    iconClass: 'text-em',
+    borderClass: 'border-em-brd',
+    bgClass: 'bg-em/10',
+    textClass: 'text-slate-100',
+    barClass: 'bg-em',
   },
   error: {
     Icon: XCircle,
-    iconClass: 'text-red-400',
-    borderClass: 'border-red-500/30',
-    bgClass: 'bg-red-500/10',
-    textClass: 'text-red-100',
-    barClass: 'bg-red-500',
+    iconClass: 'text-nogo',
+    borderClass: 'border-nogo-brd',
+    bgClass: 'bg-nogo/10',
+    textClass: 'text-slate-100',
+    barClass: 'bg-nogo',
   },
   warning: {
     Icon: AlertTriangle,
-    iconClass: 'text-yellow-400',
-    borderClass: 'border-yellow-500/30',
-    bgClass: 'bg-yellow-500/10',
-    textClass: 'text-yellow-100',
-    barClass: 'bg-yellow-500',
+    iconClass: 'text-warn',
+    borderClass: 'border-warn-brd',
+    bgClass: 'bg-warn/10',
+    textClass: 'text-slate-100',
+    barClass: 'bg-warn',
   },
   info: {
     Icon: Info,
-    iconClass: 'text-blue-400',
-    borderClass: 'border-blue-500/30',
-    bgClass: 'bg-blue-500/10',
-    textClass: 'text-blue-100',
-    barClass: 'bg-blue-500',
+    iconClass: 'text-indigo-400',
+    borderClass: 'border-indigo/30',
+    bgClass: 'bg-indigo/10',
+    textClass: 'text-slate-100',
+    barClass: 'bg-indigo',
   },
 };
 
@@ -104,7 +104,7 @@ function ToastProgress({ duration, barClass }: { duration: number; barClass: str
   }, [duration]);
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-earth-800/60">
+    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-ink-800/60">
       <div
         className={`h-full ${barClass} transition-none rounded-full`}
         style={{ width: `${width}%` }}
@@ -131,7 +131,7 @@ function SingleToast({ toast, onDismiss }: { toast: ToastItem; onDismiss: (id: s
       <button
         onClick={() => onDismiss(toast.id)}
         aria-label="Zamknij"
-        className="w-5 h-5 rounded flex items-center justify-center text-earth-500 hover:text-earth-300 transition-colors shrink-0"
+        className="w-5 h-5 rounded flex items-center justify-center text-slate-500 hover:text-slate-300 transition-colors shrink-0"
       >
         <X className="w-3.5 h-3.5" />
       </button>

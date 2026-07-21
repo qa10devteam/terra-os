@@ -59,9 +59,9 @@ async function downloadBlob(
 
 function FormatBadge({ format }: { format: 'CSV' | 'XLSX' | 'JSON' }) {
   const colors: Record<typeof format, string> = {
-    CSV:  'bg-accent-primary/15 text-accent-primary border-accent-primary/30',
-    XLSX: 'bg-accent-info/15 text-accent-info border-accent-info/30',
-    JSON: 'bg-accent-warning/15 text-accent-warning border-accent-warning/30',
+    CSV:  'bg-em/15 text-em border-em/30',
+    XLSX: 'bg-indigo/15 text-indigo border-indigo/30',
+    JSON: 'bg-warn/15 text-warn border-warn/30',
   };
   return (
     <span
@@ -88,19 +88,19 @@ function ExportCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="card card-hover rounded-token-xl p-6 flex flex-col gap-4">
+    <div className="card card-hover rounded-2xl p-6 flex flex-col gap-4">
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
-        <div className="w-10 h-10 rounded-token-lg bg-earth-800/80 border border-earth-700/50 flex items-center justify-center flex-shrink-0">
-          <Icon className="w-5 h-5 text-earth-300" />
+        <div className="w-10 h-10 rounded-xl bg-ink-800/80 border border-ink-700/50 flex items-center justify-center flex-shrink-0">
+          <Icon className="w-5 h-5 text-slate-300" />
         </div>
         <FormatBadge format={format} />
       </div>
 
       {/* Title + description */}
       <div className="space-y-1">
-        <h3 className="text-sm font-semibold text-earth-100">{title}</h3>
-        <p className="text-xs text-earth-400 leading-relaxed">{description}</p>
+        <h3 className="text-sm font-semibold text-slate-100">{title}</h3>
+        <p className="text-xs text-slate-400 leading-relaxed">{description}</p>
       </div>
 
       {/* Slot for filters + button */}
@@ -280,8 +280,8 @@ function GdprJsonCard() {
       description="Pobierz wszystkie dane powiązane z Twoim kontem zgodnie z wymogami RODO"
       format="JSON"
     >
-      <div className="mb-4 p-3 rounded-token bg-earth-800/40 border border-earth-700/30">
-        <p className="text-[11px] text-earth-500 leading-relaxed">
+      <div className="mb-4 p-3 rounded-md bg-ink-800/40 border border-ink-700/30">
+        <p className="text-[11px] text-slate-500 leading-relaxed">
           Eksport obejmuje profil, zakładki, alerty, historię aktywności oraz wszystkie dane
           powiązane z kontem.
         </p>
@@ -305,11 +305,11 @@ export default function ExportPage() {
         </div>
 
         {/* Info footer */}
-        <div className="flex items-start gap-3 p-4 rounded-token-lg bg-earth-900/40 border border-earth-800/50">
-          <div className="w-5 h-5 rounded-full bg-earth-700/60 border border-earth-600/40 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <span className="text-[10px] font-bold text-earth-400">i</span>
+        <div className="flex items-start gap-3 p-4 rounded-xl bg-ink-900/40 border border-ink-800/50">
+          <div className="w-5 h-5 rounded-full bg-ink-700/60 border border-ink-600/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <span className="text-[10px] font-bold text-slate-400">i</span>
           </div>
-          <p className="text-xs text-earth-500 leading-relaxed">
+          <p className="text-xs text-slate-500 leading-relaxed">
             Pliki są generowane na podstawie aktualnych danych Twojego konta. Eksport RODO
             zawiera pełne dane zgodnie z art. 20 RODO (prawo do przenoszenia danych).
             W razie pytań skontaktuj się z administratorem systemu.

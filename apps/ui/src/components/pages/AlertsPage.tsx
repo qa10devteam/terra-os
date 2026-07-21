@@ -122,14 +122,14 @@ function CreateAlertModal({
         initial={{ scale: 0.95, y: 12 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.95, y: 8 }}
-        className="bg-earth-900 border border-earth-700/60 rounded-2xl w-full max-w-md p-6 shadow-xl max-h-[90vh] overflow-y-auto"
+        className="bg-ink-900 border border-ink-700/60 rounded-2xl w-full max-w-md p-6 shadow-xl max-h-[90vh] overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-5">
-          <h3 className="text-base font-bold text-earth-100 flex items-center gap-2">
-            <Bell className="w-4 h-4 text-accent-primary" /> Nowy Alert
+          <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+            <Bell className="w-4 h-4 text-em" /> Nowy Alert
           </h3>
-          <button onClick={onClose} className="text-earth-600 hover:text-earth-300 transition-colors">
+          <button onClick={onClose} className="text-slate-600 hover:text-slate-300 transition-colors">
             <XCircle className="w-4 h-4" />
           </button>
         </div>
@@ -137,7 +137,7 @@ function CreateAlertModal({
         <div className="space-y-4">
           {/* Name */}
           <div>
-            <label className="block text-xs text-earth-500 mb-1.5 font-medium">Nazwa alertu *</label>
+            <label className="block text-xs text-slate-500 mb-1.5 font-medium">Nazwa alertu *</label>
             <input
               className="input-base w-full"
               placeholder="np. Drogi Mazowsze 2025"
@@ -148,7 +148,7 @@ function CreateAlertModal({
 
           {/* CPV */}
           <div>
-            <label className="block text-xs text-earth-500 mb-1.5 font-medium">Prefiksy CPV</label>
+            <label className="block text-xs text-slate-500 mb-1.5 font-medium">Prefiksy CPV</label>
             <div className="flex gap-2">
               <input
                 className="input-base flex-1"
@@ -157,14 +157,14 @@ function CreateAlertModal({
                 onChange={e => setForm(f => ({ ...f, cpv: e.target.value }))}
                 onKeyDown={e => e.key === 'Enter' && addCpv()}
               />
-              <button onClick={addCpv} className="px-3 bg-earth-700 rounded-lg text-earth-300 hover:bg-earth-600 text-sm transition-colors">+</button>
+              <button onClick={addCpv} className="px-3 bg-ink-700 rounded-lg text-slate-300 hover:bg-ink-600 text-sm transition-colors">+</button>
             </div>
             {form.cpv_prefixes.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-1.5">
                 {form.cpv_prefixes.map(c => (
-                  <span key={c} className="flex items-center gap-1 text-xs bg-accent-info/15 text-accent-info border border-accent-info/20 px-2 py-0.5 rounded-full">
+                  <span key={c} className="flex items-center gap-1 text-xs bg-indigo/15 text-indigo border border-indigo/20 px-2 py-0.5 rounded-full">
                     {c}
-                    <button onClick={() => setForm(f => ({ ...f, cpv_prefixes: f.cpv_prefixes.filter(x => x !== c) }))} className="hover:text-red-400"><XCircle className="w-2.5 h-2.5" /></button>
+                    <button onClick={() => setForm(f => ({ ...f, cpv_prefixes: f.cpv_prefixes.filter(x => x !== c) }))} className="hover:text-nogo"><XCircle className="w-2.5 h-2.5" /></button>
                   </span>
                 ))}
               </div>
@@ -173,7 +173,7 @@ function CreateAlertModal({
 
           {/* Keywords */}
           <div>
-            <label className="block text-xs text-earth-500 mb-1.5 font-medium">Słowa kluczowe</label>
+            <label className="block text-xs text-slate-500 mb-1.5 font-medium">Słowa kluczowe</label>
             <div className="flex gap-2">
               <input
                 className="input-base flex-1"
@@ -182,14 +182,14 @@ function CreateAlertModal({
                 onChange={e => setForm(f => ({ ...f, keyword: e.target.value }))}
                 onKeyDown={e => e.key === 'Enter' && addKeyword()}
               />
-              <button onClick={addKeyword} className="px-3 bg-earth-700 rounded-lg text-earth-300 hover:bg-earth-600 text-sm transition-colors">+</button>
+              <button onClick={addKeyword} className="px-3 bg-ink-700 rounded-lg text-slate-300 hover:bg-ink-600 text-sm transition-colors">+</button>
             </div>
             {form.keywords.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-1.5">
                 {form.keywords.map(k => (
-                  <span key={k} className="flex items-center gap-1 text-xs bg-accent-primary/15 text-accent-primary border border-accent-primary/20 px-2 py-0.5 rounded-full">
+                  <span key={k} className="flex items-center gap-1 text-xs bg-em/15 text-em border border-em/20 px-2 py-0.5 rounded-full">
                     {k}
-                    <button onClick={() => setForm(f => ({ ...f, keywords: f.keywords.filter(x => x !== k) }))} className="hover:text-red-400"><XCircle className="w-2.5 h-2.5" /></button>
+                    <button onClick={() => setForm(f => ({ ...f, keywords: f.keywords.filter(x => x !== k) }))} className="hover:text-nogo"><XCircle className="w-2.5 h-2.5" /></button>
                   </span>
                 ))}
               </div>
@@ -199,7 +199,7 @@ function CreateAlertModal({
           {/* Frequency + channel */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-earth-500 mb-1.5 font-medium">Częstość</label>
+              <label className="block text-xs text-slate-500 mb-1.5 font-medium">Częstość</label>
               <select className="input-base w-full" value={form.frequency} onChange={e => setForm(f => ({ ...f, frequency: e.target.value as CreateFormState['frequency'] }))}>
                 <option value="realtime">Natychmiast</option>
                 <option value="daily">Codziennie</option>
@@ -207,7 +207,7 @@ function CreateAlertModal({
               </select>
             </div>
             <div>
-              <label className="block text-xs text-earth-500 mb-1.5 font-medium">Kanał</label>
+              <label className="block text-xs text-slate-500 mb-1.5 font-medium">Kanał</label>
               <select className="input-base w-full" value={form.channel} onChange={e => setForm(f => ({ ...f, channel: e.target.value as CreateFormState['channel'] }))}>
                 <option value="push">W aplikacji</option>
                 <option value="email">Email</option>
@@ -219,11 +219,11 @@ function CreateAlertModal({
           {/* Value range */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs text-earth-500 mb-1.5 font-medium">Wartość min (PLN)</label>
+              <label className="block text-xs text-slate-500 mb-1.5 font-medium">Wartość min (PLN)</label>
               <input type="number" className="input-base w-full" placeholder="0" value={form.value_min} onChange={e => setForm(f => ({ ...f, value_min: e.target.value }))} />
             </div>
             <div>
-              <label className="block text-xs text-earth-500 mb-1.5 font-medium">Wartość max (PLN)</label>
+              <label className="block text-xs text-slate-500 mb-1.5 font-medium">Wartość max (PLN)</label>
               <input type="number" className="input-base w-full" placeholder="∞" value={form.value_max} onChange={e => setForm(f => ({ ...f, value_max: e.target.value }))} />
             </div>
           </div>
@@ -231,7 +231,7 @@ function CreateAlertModal({
           {/* Webhook URL */}
           {form.channel === 'webhook' && (
             <div>
-              <label className="block text-xs text-earth-500 mb-1.5 font-medium">Webhook URL</label>
+              <label className="block text-xs text-slate-500 mb-1.5 font-medium">Webhook URL</label>
               <input type="url" className="input-base w-full" placeholder="https://…" value={form.webhook_url} onChange={e => setForm(f => ({ ...f, webhook_url: e.target.value }))} />
             </div>
           )}
@@ -276,19 +276,19 @@ function AlertCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.97 }}
-      className={`p-5 rounded-token-lg border transition-all ${
+      className={`p-5 rounded-xl border transition-all ${
         alert.is_active
-          ? 'bg-earth-900/50 border-earth-700/50 hover:border-earth-600/60'
-          : 'bg-earth-900/30 border-earth-800/40 opacity-70'
+          ? 'bg-ink-900/50 border-ink-700/50 hover:border-ink-600/60'
+          : 'bg-ink-900/30 border-ink-800/40 opacity-70'
       }`}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0">
           {/* Name + status */}
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="text-sm font-semibold text-earth-100">{alert.name}</h3>
+            <h3 className="text-sm font-semibold text-slate-100">{alert.name}</h3>
             {!alert.is_active && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-earth-800 text-earth-500 border border-earth-700">Wstrzymany</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-ink-800 text-slate-500 border border-ink-700">Wstrzymany</span>
             )}
           </div>
 
@@ -296,12 +296,12 @@ function AlertCard({
           {(alert.cpv_prefixes.length > 0 || alert.keywords.length > 0) && (
             <div className="flex flex-wrap gap-1 mt-2">
               {alert.cpv_prefixes.map(c => (
-                <span key={c} className="flex items-center gap-1 text-[10px] bg-accent-info/10 text-accent-info border border-accent-info/20 px-1.5 py-0.5 rounded">
+                <span key={c} className="flex items-center gap-1 text-[10px] bg-indigo/10 text-indigo border border-indigo/20 px-1.5 py-0.5 rounded">
                   <Tag className="w-2.5 h-2.5" /> CPV: {c}
                 </span>
               ))}
               {alert.keywords.map(k => (
-                <span key={k} className="text-[10px] bg-accent-primary/10 text-accent-primary border border-accent-primary/20 px-1.5 py-0.5 rounded">
+                <span key={k} className="text-[10px] bg-em/10 text-em border border-em/20 px-1.5 py-0.5 rounded">
                   &ldquo;{k}&rdquo;
                 </span>
               ))}
@@ -309,7 +309,7 @@ function AlertCard({
           )}
 
           {/* Meta row */}
-          <div className="flex items-center gap-3 mt-2 flex-wrap text-xs text-earth-500">
+          <div className="flex items-center gap-3 mt-2 flex-wrap text-xs text-slate-500">
             <span className="flex items-center gap-1">
               {CHANNEL_ICONS[alert.channel] ?? <Bell className="w-3.5 h-3.5" />}
               {alert.channel}
@@ -319,22 +319,22 @@ function AlertCard({
               {FREQ_LABELS[alert.frequency] ?? alert.frequency}
             </span>
             {alert.match_count > 0 && (
-              <span className="flex items-center gap-1 text-accent-warning">
+              <span className="flex items-center gap-1 text-warn">
                 <CheckCircle2 className="w-3 h-3" />
                 {alert.match_count} dopasowań
               </span>
             )}
             {alert.last_matched_at && (
-              <span className="text-earth-600">Ostatnio: {fmtDate(alert.last_matched_at)}</span>
+              <span className="text-slate-600">Ostatnio: {fmtDate(alert.last_matched_at)}</span>
             )}
           </div>
 
           {/* Test result */}
           {testResult && (
-            <div className="mt-2 p-2 rounded-token bg-accent-primary/10 border border-accent-primary/20 text-xs text-accent-primary">
+            <div className="mt-2 p-2 rounded-md bg-em/10 border border-em/20 text-xs text-em">
               Znaleziono {testResult.matched} dopasowań
               {testResult.sample.length > 0 && (
-                <ul className="mt-1 text-earth-300 space-y-0.5">
+                <ul className="mt-1 text-slate-300 space-y-0.5">
                   {testResult.sample.slice(0, 3).map(s => (
                     <li key={s.id} className="truncate">• {s.title}</li>
                   ))}
@@ -349,10 +349,10 @@ function AlertCard({
           {/* Toggle */}
           <button
             onClick={() => onToggle(alert.id, alert.is_active)}
-            className={`relative h-6 w-11 rounded-full transition-colors ${alert.is_active ? 'bg-accent-primary' : 'bg-earth-700'}`}
+            className={`relative h-6 w-11 rounded-full transition-colors ${alert.is_active ? 'bg-em' : 'bg-ink-700'}`}
             aria-label={alert.is_active ? 'Wyłącz alert' : 'Włącz alert'}
           >
-            <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-earth-100 transition-transform ${alert.is_active ? 'translate-x-5' : 'translate-x-0.5'}`} />
+            <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-slate-100 transition-transform ${alert.is_active ? 'translate-x-5' : 'translate-x-0.5'}`} />
           </button>
 
           {/* Test */}
@@ -360,7 +360,7 @@ function AlertCard({
             onClick={handleTest}
             disabled={testing}
             title="Testuj alert"
-            className="p-1.5 rounded-token hover:bg-accent-primary/10 text-earth-500 hover:text-accent-primary transition-colors disabled:opacity-40"
+            className="p-1.5 rounded-md hover:bg-em/10 text-slate-500 hover:text-em transition-colors disabled:opacity-40"
           >
             {testing ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
           </button>
@@ -369,7 +369,7 @@ function AlertCard({
           <button
             onClick={() => onDelete(alert.id)}
             title="Usuń alert"
-            className="p-1.5 rounded-token hover:bg-accent-danger/10 text-earth-500 hover:text-accent-danger transition-colors"
+            className="p-1.5 rounded-md hover:bg-nogo/10 text-slate-500 hover:text-nogo transition-colors"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>

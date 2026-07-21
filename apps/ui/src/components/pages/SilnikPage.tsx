@@ -140,8 +140,8 @@ const DEADLINE_BONUS_DATA = [
 // ─── Utility Functions ───────────────────────────────────────────────────────
 
 function interpolateColor(value: number): string {
-  const cold = { r: 30, g: 41, b: 59  };  // #1E293B (earth-800)
-  const hot  = { r: 16, g: 185,b: 129 };  // #10b981 (accent-primary)
+  const cold = { r: 30, g: 41, b: 59  };  // #1E293B (ink-800)
+  const hot  = { r: 16, g: 185,b: 129 };  // #10b981 (em)
   const t = Math.max(0, Math.min(1, value));
   const r = Math.round(cold.r + (hot.r - cold.r) * t);
   const g = Math.round(cold.g + (hot.g - cold.g) * t);
@@ -329,7 +329,7 @@ export function SilnikPage() {
   // ─── Tab Bar ─────────────────────────────────────────────────────────────
 
   const renderTabBar = () => (
-    <div className="flex gap-1 p-1 bg-earth-900/60 rounded-token-xl border border-earth-800 mb-6">
+    <div className="flex gap-1 p-1 bg-ink-900/60 rounded-2xl border border-ink-800 mb-6">
       {TABS.map((tab) => {
         const Icon     = tab.icon;
         const isActive = activeTab === tab.id;
@@ -357,20 +357,20 @@ export function SilnikPage() {
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-token-lg bg-accent-primary/20 flex items-center justify-center">
-                <Target size={20} className="text-accent-primary" />
+              <div className="w-10 h-10 rounded-xl bg-em/20 flex items-center justify-center">
+                <Target size={20} className="text-em" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-earth-100">Wagi Scoringowe</h2>
-                <p className="text-sm text-earth-500">Dostosuj priorytety algorytmu oceny</p>
+                <h2 className="text-lg font-semibold text-slate-100">Wagi Scoringowe</h2>
+                <p className="text-sm text-slate-500">Dostosuj priorytety algorytmu oceny</p>
               </div>
             </div>
             {/* Sum badge */}
             <div className={[
-              'px-4 py-2 rounded-token text-sm font-bold border',
+              'px-4 py-2 rounded-md text-sm font-bold border',
               isValidSum
-                ? 'bg-accent-success/15 text-accent-success border-accent-success/30'
-                : 'bg-accent-danger/15 text-accent-danger border-accent-danger/30',
+                ? 'bg-go/15 text-go border-go/30'
+                : 'bg-nogo/15 text-nogo border-nogo/30',
             ].join(' ')}>
               Suma: {weightSum}/100
               {!isValidSum && <span className="ml-2">⚠️</span>}
@@ -383,11 +383,11 @@ export function SilnikPage() {
               <div key={key} className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="label-base text-sm">{WEIGHT_LABELS[key]}</label>
-                  <span className="px-2.5 py-0.5 rounded-token bg-accent-primary/20 text-accent-primary text-sm font-bold min-w-[3rem] text-center">
+                  <span className="px-2.5 py-0.5 rounded-md bg-em/20 text-em text-sm font-bold min-w-[3rem] text-center">
                     {weights[key]}
                   </span>
                 </div>
-                {/* Range slider — accent-primary thumb via Tailwind arbitrary + CSS var */}
+                {/* Range slider — em thumb via Tailwind arbitrary + CSS var */}
                 <div className="relative">
                   <input
                     type="range"
@@ -396,17 +396,17 @@ export function SilnikPage() {
                     value={weights[key]}
                     onChange={(e) => handleWeightChange(key, parseInt(e.target.value))}
                     className="w-full h-2 rounded-full appearance-none cursor-pointer
-                      [&::-webkit-slider-track]:rounded-full [&::-webkit-slider-track]:bg-earth-800
+                      [&::-webkit-slider-track]:rounded-full [&::-webkit-slider-track]:bg-ink-800
                       [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
-                      [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent-primary
-                      [&::-webkit-slider-thumb]:shadow-token-glow
-                      [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-earth-800
+                      [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-em
+                      [&::-webkit-slider-thumb]:shadow-md-glow
+                      [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-ink-800
                       [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4
-                      [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-accent-primary [&::-moz-range-thumb]:border-0"
+                      [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-em [&::-moz-range-thumb]:border-0"
                   />
                   {/* Progress fill */}
                   <div
-                    className="absolute top-0 left-0 h-2 rounded-full bg-accent-primary/40 pointer-events-none"
+                    className="absolute top-0 left-0 h-2 rounded-full bg-em/40 pointer-events-none"
                     style={{ width: `${weights[key]}%` }}
                   />
                 </div>
@@ -415,7 +415,7 @@ export function SilnikPage() {
           </div>
 
           {/* Action buttons */}
-          <div className="flex gap-3 mt-6 pt-6 border-t border-earth-800">
+          <div className="flex gap-3 mt-6 pt-6 border-t border-ink-800">
             <Button
               variant="primary"
               size="md"
@@ -442,9 +442,9 @@ export function SilnikPage() {
       <GlassCard>
         <div className="p-6">
           <div className="flex items-center gap-3 mb-4">
-            <TrendingUp size={18} className="text-accent-primary" />
-            <h3 className="text-base font-semibold text-earth-100">Podgląd Top 10</h3>
-            <span className="text-xs text-earth-600">(live preview)</span>
+            <TrendingUp size={18} className="text-em" />
+            <h3 className="text-base font-semibold text-slate-100">Podgląd Top 10</h3>
+            <span className="text-xs text-slate-600">(live preview)</span>
           </div>
 
           {topTenders.length > 0 ? (
@@ -458,26 +458,26 @@ export function SilnikPage() {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: idx * 0.05 }}
-                    className="flex items-center gap-3 px-3 py-2 rounded-token-lg bg-earth-900/40 hover:bg-earth-900/60 transition-colors"
+                    className="flex items-center gap-3 px-3 py-2 rounded-xl bg-ink-900/40 hover:bg-ink-900/60 transition-colors"
                   >
-                    <span className="text-xs font-bold text-accent-primary w-6 text-center">
+                    <span className="text-xs font-bold text-em w-6 text-center">
                       #{idx + 1}
                     </span>
-                    <span className="text-sm text-earth-200 flex-1 truncate">
+                    <span className="text-sm text-slate-200 flex-1 truncate">
                       {tender.title || `Przetarg ${tender.id}`}
                     </span>
                     <div className="flex items-center gap-2 min-w-[140px]">
-                      <div className="flex-1 h-2 bg-earth-800 rounded-full overflow-hidden">
+                      <div className="flex-1 h-2 bg-ink-800 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-accent-primary/60 to-accent-primary rounded-full transition-all duration-500"
+                          className="h-full bg-gradient-to-r from-em/60 to-em rounded-full transition-all duration-500"
                           style={{ width: `${Math.min(100, score)}%` }}
                         />
                       </div>
-                      <span className="text-xs font-mono text-earth-500 w-8 text-right">
+                      <span className="text-xs font-mono text-slate-500 w-8 text-right">
                          {(score ?? 0).toFixed(0)}
                       </span>
                       {delta !== 0 && (
-                        <span className={`text-xs font-bold ${delta > 0 ? 'text-accent-success' : 'text-accent-danger'}`}>
+                        <span className={`text-xs font-bold ${delta > 0 ? 'text-go' : 'text-nogo'}`}>
                            {delta > 0 ? '↑' : '↓'}{Math.abs(delta ?? 0).toFixed(1)}
                         </span>
                       )}
@@ -487,7 +487,7 @@ export function SilnikPage() {
               })}
             </div>
           ) : (
-            <div className="text-center py-8 text-earth-600 text-sm">
+            <div className="text-center py-8 text-slate-600 text-sm">
               Brak danych przetargów do wyświetlenia
             </div>
           )}
@@ -507,11 +507,11 @@ export function SilnikPage() {
       <div className="space-y-6">
         <GlassCard>
           <div className="p-6">
-            <h3 className="text-base font-semibold text-earth-100 mb-4">Wybierz przetarg do analizy</h3>
+            <h3 className="text-base font-semibold text-slate-100 mb-4">Wybierz przetarg do analizy</h3>
             <select
               value={selectedTenderId}
               onChange={(e) => handleSelectTender(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-token-lg bg-earth-900/60 border border-earth-800 text-earth-100 text-sm focus:outline-none focus:border-accent-primary/50 transition-colors"
+              className="w-full px-4 py-2.5 rounded-xl bg-ink-900/60 border border-ink-800 text-slate-100 text-sm focus:outline-none focus:border-em/50 transition-colors"
             >
               <option value="">— Wybierz przetarg —</option>
               {tenderList.map((t) => (
@@ -523,7 +523,7 @@ export function SilnikPage() {
 
         {loading && (
           <div className="flex items-center justify-center py-12">
-            <div className="w-8 h-8 border-2 border-accent-primary border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-em border-t-transparent rounded-full animate-spin" />
           </div>
         )}
 
@@ -535,8 +535,8 @@ export function SilnikPage() {
               animate={{ opacity: 1, scale: 1 }}
               className="flex items-center justify-center"
             >
-              <div className="px-6 py-3 rounded-full bg-accent-primary/15 border border-accent-primary/30">
-                <span className="text-accent-primary font-bold text-lg">
+              <div className="px-6 py-3 rounded-full bg-em/15 border border-em/30">
+                <span className="text-em font-bold text-lg">
                   Top {percentile}% w kategorii CPV
                 </span>
               </div>
@@ -545,7 +545,7 @@ export function SilnikPage() {
             {/* Waterfall Chart */}
             <GlassCard>
               <div className="p-6">
-                <h3 className="text-base font-semibold text-earth-100 mb-4">Rozkład Score — Waterfall</h3>
+                <h3 className="text-base font-semibold text-slate-100 mb-4">Rozkład Score — Waterfall</h3>
                 <svg viewBox="0 0 600 260" className="w-full" role="img" aria-label="Score waterfall chart">
                   {breakdown.length > 0 ? breakdown.map((item, idx) => {
                     const barWidth = Math.max(10, (item.contribution / 100) * 450);
@@ -588,7 +588,7 @@ export function SilnikPage() {
             {/* Deadline Bonus Chart */}
             <GlassCard>
               <div className="p-6">
-                <h3 className="text-base font-semibold text-earth-100 mb-4">Deadline Bonus — Krzywa czasowa</h3>
+                <h3 className="text-base font-semibold text-slate-100 mb-4">Deadline Bonus — Krzywa czasowa</h3>
                 <svg viewBox="0 0 600 220" className="w-full" role="img" aria-label="Deadline bonus curve">
                   {/* Grid lines */}
                   {[0, 25, 50].map((v) => {
@@ -666,7 +666,7 @@ export function SilnikPage() {
         )}
 
         {!loading && !analysis && selectedTenderId && (
-          <div className="text-center py-12 text-earth-600 text-sm">
+          <div className="text-center py-12 text-slate-600 text-sm">
             Brak danych analizy dla wybranego przetargu
           </div>
         )}
@@ -704,12 +704,12 @@ export function SilnikPage() {
         <GlassCard>
           <div className="p-6">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-token-lg bg-accent-primary/20 flex items-center justify-center">
-                <Grid3X3 size={20} className="text-accent-primary" />
+              <div className="w-10 h-10 rounded-xl bg-em/20 flex items-center justify-center">
+                <Grid3X3 size={20} className="text-em" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-earth-100">CPV Win Rate Heatmap</h2>
-                <p className="text-sm text-earth-500">Analiza skuteczności w kategoriach CPV</p>
+                <h2 className="text-lg font-semibold text-slate-100">CPV Win Rate Heatmap</h2>
+                <p className="text-sm text-slate-500">Analiza skuteczności w kategoriach CPV</p>
               </div>
             </div>
 
@@ -777,18 +777,18 @@ export function SilnikPage() {
               {/* Tooltip */}
               {heatmapTooltip && (
                 <div
-                  className="fixed z-50 px-3 py-2 rounded-token-lg bg-earth-950 border border-earth-800 shadow-token-lg pointer-events-none"
+                  className="fixed z-50 px-3 py-2 rounded-xl bg-ink-950 border border-ink-800 shadow-xl pointer-events-none"
                   style={{
                     left: heatmapTooltip.x,
                     top:  heatmapTooltip.y,
                     transform: 'translate(-50%, -100%)',
                   }}
                 >
-                  <div className="text-xs font-semibold text-earth-100">{heatmapTooltip.cell.cpv_name}</div>
-                  <div className="text-xs text-accent-primary font-bold">
+                  <div className="text-xs font-semibold text-slate-100">{heatmapTooltip.cell.cpv_name}</div>
+                  <div className="text-xs text-em font-bold">
                      Win rate: {((heatmapTooltip.cell.win_rate ?? 0) * 100).toFixed(0)}%
                   </div>
-                  <div className="text-xs text-earth-500">
+                  <div className="text-xs text-slate-500">
                     Przetargów: {heatmapTooltip.cell.count}
                   </div>
                 </div>
@@ -797,14 +797,14 @@ export function SilnikPage() {
 
             {/* Color Legend */}
             <div className="mt-6 flex items-center gap-3">
-              <span className="text-xs text-earth-600">Niska</span>
+              <span className="text-xs text-slate-600">Niska</span>
               <div className="flex-1 h-3 rounded-full overflow-hidden flex">
                 {Array.from({ length: 20 }).map((_, i) => (
                   <div key={i} className="flex-1 h-full" style={{ backgroundColor: interpolateColor(i / 19) }} />
                 ))}
               </div>
-              <span className="text-xs text-earth-600">Wysoka</span>
-              <span className="text-xs text-earth-700 ml-2">Win Rate</span>
+              <span className="text-xs text-slate-600">Wysoka</span>
+              <span className="text-xs text-slate-700 ml-2">Win Rate</span>
             </div>
           </div>
         </GlassCard>
@@ -819,20 +819,20 @@ export function SilnikPage() {
       <GlassCard>
         <div className="p-6">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 rounded-token-lg bg-accent-primary/20 flex items-center justify-center">
-              <History size={20} className="text-accent-primary" />
+            <div className="w-10 h-10 rounded-xl bg-em/20 flex items-center justify-center">
+              <History size={20} className="text-em" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-earth-100">Historia Kalibracji</h2>
-              <p className="text-sm text-earth-500">Zmiany konfiguracji wag scoringowych</p>
+              <h2 className="text-lg font-semibold text-slate-100">Historia Kalibracji</h2>
+              <p className="text-sm text-slate-500">Zmiany konfiguracji wag scoringowych</p>
             </div>
           </div>
 
           {auditHistory.length === 0 ? (
             <div className="text-center py-16">
-              <History size={48} className="mx-auto mb-4 text-earth-800" />
-              <p className="text-earth-600 text-sm">Brak historii kalibracji</p>
-              <p className="text-earth-700 text-xs mt-1">Zmiany wag będą rejestrowane tutaj</p>
+              <History size={48} className="mx-auto mb-4 text-ink-800" />
+              <p className="text-slate-600 text-sm">Brak historii kalibracji</p>
+              <p className="text-slate-700 text-xs mt-1">Zmiany wag będą rejestrowane tutaj</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -842,18 +842,18 @@ export function SilnikPage() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.05 }}
-                  className="relative pl-8 pb-4 border-l-2 border-earth-800 last:border-l-transparent"
+                  className="relative pl-8 pb-4 border-l-2 border-ink-800 last:border-l-transparent"
                 >
                   {/* Timeline dot */}
-                  <div className="absolute left-[-5px] top-1 w-2.5 h-2.5 rounded-full bg-accent-primary border-2 border-earth-950" />
+                  <div className="absolute left-[-5px] top-1 w-2.5 h-2.5 rounded-full bg-em border-2 border-ink-950" />
 
-                  <div className="bg-earth-900/40 rounded-token-lg p-4 border border-earth-800/50">
+                  <div className="bg-ink-900/40 rounded-xl p-4 border border-ink-800/50">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-earth-500">
+                        <span className="text-xs font-mono text-slate-500">
                           {formatTimestamp(entry.timestamp)}
                         </span>
-                        <span className="section-label px-2 py-0.5 rounded-token">
+                        <span className="section-label px-2 py-0.5 rounded-md">
                           {entry.user || 'system'}
                         </span>
                       </div>
@@ -876,10 +876,10 @@ export function SilnikPage() {
                           if (oldVal === undefined || newVal === undefined || oldVal === newVal) return null;
                           return (
                             <div key={key} className="flex items-center gap-1 text-xs">
-                              <span className="text-earth-500">{WEIGHT_LABELS[key]}:</span>
-                              <span className="text-accent-danger/70">{oldVal}</span>
-                              <span className="text-earth-700">→</span>
-                              <span className="text-accent-success">{newVal}</span>
+                              <span className="text-slate-500">{WEIGHT_LABELS[key]}:</span>
+                              <span className="text-nogo/70">{oldVal}</span>
+                              <span className="text-slate-700">→</span>
+                              <span className="text-go">{newVal}</span>
                             </div>
                           );
                         })}
@@ -900,10 +900,10 @@ export function SilnikPage() {
   // KPI metrics for header (sum indicator)
   const kpiActions = (
     <div className={[
-      'px-4 py-2 rounded-token text-sm font-bold border',
+      'px-4 py-2 rounded-md text-sm font-bold border',
       isValidSum
-        ? 'bg-accent-success/15 text-accent-success border-accent-success/30'
-        : 'bg-accent-danger/15 text-accent-danger border-accent-danger/30',
+        ? 'bg-go/15 text-go border-go/30'
+        : 'bg-nogo/15 text-nogo border-nogo/30',
     ].join(' ')}>
       Suma wag: {weightSum}/100
       {!isValidSum && <span className="ml-2">⚠️</span>}

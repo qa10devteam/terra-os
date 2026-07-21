@@ -63,38 +63,38 @@ export function DemoTour() {
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-earth-950/60 backdrop-blur-sm" onClick={dismiss} />
-      <div className="relative z-10 w-full max-w-md bg-earth-900 border border-earth-700/60 rounded-token-xl shadow-token-lg p-6">
-        <button onClick={dismiss} className="absolute top-4 right-4 text-earth-500 hover:text-earth-200">
+      <div className="absolute inset-0 bg-ink-950/60 backdrop-blur-sm" onClick={dismiss} />
+      <div className="relative z-10 w-full max-w-md bg-ink-900 border border-ink-700/60 rounded-2xl shadow-xl p-6">
+        <button onClick={dismiss} className="absolute top-4 right-4 text-slate-500 hover:text-slate-200">
           <X className="w-5 h-5" />
         </button>
 
         <div className="flex items-center gap-2 mb-4">
-          <Sparkles className="w-5 h-5 text-accent-primary" />
-          <span className="text-xs text-earth-500 font-medium">TOUR {step + 1}/{TOUR_STEPS.length}</span>
+          <Sparkles className="w-5 h-5 text-em" />
+          <span className="text-xs text-slate-500 font-medium">TOUR {step + 1}/{TOUR_STEPS.length}</span>
         </div>
 
-        <h3 className="text-lg font-bold text-earth-100 mb-2">{current.title}</h3>
-        <p className="text-sm text-earth-400 leading-relaxed mb-6">{current.description}</p>
+        <h3 className="text-lg font-bold text-slate-100 mb-2">{current.title}</h3>
+        <p className="text-sm text-slate-400 leading-relaxed mb-6">{current.description}</p>
 
         <div className="flex items-center justify-between">
           <div className="flex gap-1.5">
             {TOUR_STEPS.map((_, i) => (
               <div
                 key={i}
-                className={`w-2 h-2 rounded-full transition-colors ${i === step ? 'bg-accent-primary' : 'bg-earth-700'}`}
+                className={`w-2 h-2 rounded-full transition-colors ${i === step ? 'bg-em' : 'bg-ink-700'}`}
               />
             ))}
           </div>
           <div className="flex gap-2">
             {step > 0 && (
-              <button onClick={prev} className="flex items-center gap-1 px-3 py-1.5 text-sm text-earth-400 hover:text-earth-200">
+              <button onClick={prev} className="flex items-center gap-1 px-3 py-1.5 text-sm text-slate-400 hover:text-slate-200">
                 <ChevronLeft className="w-4 h-4" /> Wstecz
               </button>
             )}
             <button
               onClick={next}
-              className="flex items-center gap-1 px-4 py-1.5 bg-accent-primary text-earth-950 text-sm font-semibold rounded-token-lg hover:bg-accent-primary/90"
+              className="flex items-center gap-1 px-4 py-1.5 bg-em text-ink-950 text-sm font-semibold rounded-xl hover:bg-em/90"
             >
               {step === TOUR_STEPS.length - 1 ? 'Rozpocznij' : 'Dalej'} <ChevronRight className="w-4 h-4" />
             </button>

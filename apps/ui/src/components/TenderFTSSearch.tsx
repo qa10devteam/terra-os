@@ -54,15 +54,15 @@ export default function TenderFTSSearch() {
       className="card"
     >
       <div className="flex items-center gap-2 mb-4">
-        <FileText className="w-4 h-4 text-accent-primary" />
+        <FileText className="w-4 h-4 text-em" />
         <h3 className="section-label">Wyszukiwarka przetargów</h3>
-        <span className="text-xs text-earth-500 ml-auto">1.4M rekordów · full-text + GIN</span>
+        <span className="text-xs text-slate-500 ml-auto">1.4M rekordów · full-text + GIN</span>
       </div>
 
       {/* Search */}
       <div className="flex gap-2 mb-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-earth-500 pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
           <input
             type="text"
             placeholder="Szukaj w 1.4M przetargów: 'budowa drogi', 'remont szkoły'..."
@@ -84,16 +84,16 @@ export default function TenderFTSSearch() {
       {/* Results */}
       {results.length > 0 && (
         <div>
-          <p className="text-xs text-earth-500 mb-2">{total.toLocaleString()} wyników</p>
+          <p className="text-xs text-slate-500 mb-2">{total.toLocaleString()} wyników</p>
           <div className="space-y-2 max-h-[500px] overflow-y-auto">
             {results.map((r, i) => (
-              <div key={r.id || i} className="p-3 rounded-token bg-earth-800/50 hover:bg-earth-800 transition-colors">
-                <p className="text-sm text-earth-100 font-medium line-clamp-2">
+              <div key={r.id || i} className="p-3 rounded-md bg-ink-800/50 hover:bg-ink-800 transition-colors">
+                <p className="text-sm text-slate-100 font-medium line-clamp-2">
                   {r.headline ? (
                     <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(r.headline) }} />
                   ) : r.title}
                 </p>
-                <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-earth-500">
+                <div className="flex flex-wrap items-center gap-3 mt-1.5 text-xs text-slate-500">
                   {r.buyer_name && (
                     <span className="flex items-center gap-0.5">
                       <MapPin className="w-3 h-3" />{r.buyer_name}
@@ -101,7 +101,7 @@ export default function TenderFTSSearch() {
                   )}
                   {r.province && <span>{r.province}</span>}
                   {r.value_pln && (
-                    <span className="text-accent-primary flex items-center gap-0.5">
+                    <span className="text-em flex items-center gap-0.5">
                       <DollarSign className="w-3 h-3" />{fmtPLN(r.value_pln)}
                     </span>
                   )}
@@ -119,7 +119,7 @@ export default function TenderFTSSearch() {
       )}
 
       {searched && results.length === 0 && !loading && (
-        <p className="text-xs text-earth-500 text-center py-4">Brak wyników</p>
+        <p className="text-xs text-slate-500 text-center py-4">Brak wyników</p>
       )}
     </motion.div>
   );

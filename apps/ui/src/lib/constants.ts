@@ -14,11 +14,11 @@ export const STATUS_LABELS: Record<string, string> = {
 
 export const STATUS_COLORS: Record<string, string> = {
   new:          'bg-zinc-500/20 text-zinc-300',
-  matched:      'bg-blue-500/20 text-blue-300',
-  analyzing:    'bg-yellow-500/20 text-yellow-300',
+  matched:      'bg-indigo/20 text-indigo-300',
+  analyzing:    'bg-warn/20 text-warn',
   estimated:    'bg-purple-500/20 text-purple-300',
-  decided_go:   'bg-green-500/20 text-green-300',
-  decided_nogo: 'bg-red-500/20 text-red-300',
+  decided_go:   'bg-go/20 text-go',
+  decided_nogo: 'bg-nogo/20 text-nogo',
   archived:     'bg-zinc-700/20 text-zinc-500',
   watching:     'bg-cyan-500/20 text-cyan-300',
 };

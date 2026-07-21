@@ -8,7 +8,6 @@ interface EmptyStateProps {
   title?:       string;
   description?: string;
   cta?:         ReactNode;
-  /** Smaller padding for use inside tables/panels */
   compact?:     boolean;
   className?:   string;
 }
@@ -33,10 +32,10 @@ export function EmptyState({
         .filter(Boolean)
         .join(' ')}
     >
-      {/* Icon */}
+      {/* Icon ring */}
       <div
         className={[
-          'flex items-center justify-center rounded-full bg-earth-800/60 border border-earth-700/40 text-earth-600',
+          'flex items-center justify-center rounded-full bg-ink-800 border border-ink-line text-slate-600',
           compact ? 'w-10 h-10' : 'w-14 h-14',
         ].join(' ')}
       >
@@ -45,11 +44,11 @@ export function EmptyState({
 
       {/* Text */}
       <div>
-        <p className={['font-semibold text-earth-400', compact ? 'text-sm' : 'text-base'].join(' ')}>
+        <p className={['font-semibold text-slate-400', compact ? 'text-sm' : 'text-base'].join(' ')}>
           {title}
         </p>
         {description && (
-          <p className={['text-earth-600 mt-1 max-w-sm mx-auto', compact ? 'text-xs' : 'text-sm'].join(' ')}>
+          <p className={['text-slate-600 mt-1 max-w-sm mx-auto', compact ? 'text-xs' : 'text-sm'].join(' ')}>
             {description}
           </p>
         )}

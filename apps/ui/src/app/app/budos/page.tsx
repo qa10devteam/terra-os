@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { LoginForm } from '@/components/LoginForm';
+import { AnimatePresence, motion } from 'motion/react';
+import { useRouter } from 'next/navigation';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { AnalyticsPage } from '@/components/pages/AnalyticsPage';
 import { DashboardPage } from '@/components/pages/DashboardPage';
@@ -46,38 +46,38 @@ import { ToastContainer } from '@/components/Toast';
 import { OnboardingWizard } from '@/components/OnboardingWizard';
 import { useStore } from '@/store/useStore';
 
-
+// ── Module router ──────────────────────────────────────────────────────────────
 
 function ActivePage() {
   const { currentModule } = useStore();
   switch (currentModule) {
-    case 'dashboard':     return <DashboardPage />;
-    case 'zwiad':         return <ZwiadPage />;
-    case 'kosztorys':     return <KosztorysPage />;
-    case 'silnik':        return <SilnikPage />;
-    case 'decyzja':       return <DecyzjaPage />;
-    case 'analytics':     return <AnalyticsPage />;
-    case 'logistyka':     return <LogistykaPage />;
-    case 'rfq':           return <RfqPage />;
-    case 'pipeline':      return <PipelinePage />;
-    case 'system':        return <SystemPage />;
-    case 'settings':      return <SettingsPage />;
-    case 'pogoda':        return <PogodaPage />;
-    case 'market-intel':  return <MarketIntelPage />;
-    case 'rynek':         return <MarketDashboardPage />;
-    case 'proactive':     return <ProactivePage />;
-    case 'documents':     return <DocumentsPage />;
-    case 'competitors':   return <CompetitorPage />;
-    case 'bookmarks':     return <BookmarksBoardPage />;
-    case 'buyer-crm':     return <BuyerCRMPage />;
-    case 'notifications': return <NotificationsPage />;
-    case 'export':        return <ExportPage />;
-    case 'oferta':        return <OfertaPage />;
-    case 'automations':   return <AutomationPage />;
-    case 'resources':     return <ResourcesPage />;
-    case 'contracts':     return <ContractsPage />;
-    case 'team':          return <TeamPage />;
-    case 'reports':       return <ReportsPage />;
+    case 'dashboard':       return <DashboardPage />;
+    case 'zwiad':           return <ZwiadPage />;
+    case 'kosztorys':       return <KosztorysPage />;
+    case 'silnik':          return <SilnikPage />;
+    case 'decyzja':         return <DecyzjaPage />;
+    case 'analytics':       return <AnalyticsPage />;
+    case 'logistyka':       return <LogistykaPage />;
+    case 'rfq':             return <RfqPage />;
+    case 'pipeline':        return <PipelinePage />;
+    case 'system':          return <SystemPage />;
+    case 'settings':        return <SettingsPage />;
+    case 'pogoda':          return <PogodaPage />;
+    case 'market-intel':    return <MarketIntelPage />;
+    case 'rynek':           return <MarketDashboardPage />;
+    case 'proactive':       return <ProactivePage />;
+    case 'documents':       return <DocumentsPage />;
+    case 'competitors':     return <CompetitorPage />;
+    case 'bookmarks':       return <BookmarksBoardPage />;
+    case 'buyer-crm':       return <BuyerCRMPage />;
+    case 'notifications':   return <NotificationsPage />;
+    case 'export':          return <ExportPage />;
+    case 'oferta':          return <OfertaPage />;
+    case 'automations':     return <AutomationPage />;
+    case 'resources':       return <ResourcesPage />;
+    case 'contracts':       return <ContractsPage />;
+    case 'team':            return <TeamPage />;
+    case 'reports':         return <ReportsPage />;
     case 'icb':             return <ICBPage />;
     case 'import':          return <ImportPage />;
     case 'alerts':          return <AlertsPage />;
@@ -85,17 +85,25 @@ function ActivePage() {
     case 'bid-intelligence':return <BidIntelligencePage />;
     case 'webhooks':        return <WebhooksPage />;
     case 'pricing':         return <PricingPage />;
-    default:              return <DashboardPage />;
+    default:                return <DashboardPage />;
   }
 }
 
-export default function Home() {
+// ── Page ───────────────────────────────────────────────────────────────────────
+
+export default function BudOSApp() {
   const { user, accessToken, currentModule } = useStore();
   const isAuthenticated = !!(user && accessToken);
+  const router = useRouter();
   const [commandOpen, setCommandOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
-  // Show onboarding if user has no org_id
+  // Auth guard → redirect to platform login
+  useEffect(() => {
+    if (!isAuthenticated) router.replace('/login');
+  }, [isAuthenticated, router]);
+
+  // Onboarding
   useEffect(() => {
     if (isAuthenticated && user && !user.org_id) {
       const dismissed = localStorage.getItem('terra-onboarding-dismissed');
@@ -103,7 +111,7 @@ export default function Home() {
     }
   }, [isAuthenticated, user]);
 
-  // Global keyboard shortcuts
+  // ⌘K command palette
   useEffect(() => {
     if (!isAuthenticated) return;
     const handler = (e: KeyboardEvent) => {
@@ -117,22 +125,15 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handler);
   }, [isAuthenticated]);
 
-  if (!isAuthenticated) {
-    return (
-      <ErrorBoundary resetKey={currentModule}>
-        <LoginForm onSuccess={() => {}} />
-        <ToastContainer />
-      </ErrorBoundary>
-    );
-  }
+  if (!isAuthenticated) return null;
 
   return (
     <ErrorBoundary resetKey={currentModule}>
-      <div className="flex min-h-[100dvh] bg-earth-950">
+      <div className="flex min-h-[100dvh] bg-ink-950">
         <Sidebar />
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <MarketBar />
-          <main className="flex-1 overflow-auto bg-earth-950">
+          <main className="flex-1 overflow-auto bg-ink-950">
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentModule}

@@ -145,36 +145,36 @@ function PlanCard({ id, name, price, period, popular, highlight, features }: Pla
 
   return (
     <div
-      className={`relative rounded-token-xl border flex flex-col p-6 transition-all ${
+      className={`relative rounded-2xl border flex flex-col p-6 transition-all ${
         highlight
-          ? 'border-accent-primary bg-earth-900/80 shadow-glow'
-          : 'border-earth-800/60 bg-earth-900/40 card-hover'
+          ? 'border-em bg-ink-900/80 shadow-glow'
+          : 'border-ink-800/60 bg-ink-900/40 card-hover'
       }`}
     >
       {/* Popularne badge */}
       {popular && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-          <span className="bg-accent-primary text-earth-950 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+          <span className="bg-em text-ink-950 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">
             Popularne
           </span>
         </div>
       )}
 
       {/* Nazwa planu */}
-      <h2 className={`text-xl font-bold mb-1 ${highlight ? 'text-accent-primary' : 'text-earth-100'}`}>
+      <h2 className={`text-xl font-bold mb-1 ${highlight ? 'text-em' : 'text-slate-100'}`}>
         {name}
       </h2>
 
       {/* Cena */}
       <div className="mb-6">
-        <span className="text-3xl font-extrabold text-earth-100">{price}</span>
-        <span className="text-earth-500 text-sm ml-1">{period}</span>
+        <span className="text-3xl font-extrabold text-slate-100">{price}</span>
+        <span className="text-slate-500 text-sm ml-1">{period}</span>
       </div>
 
       {/* Lista features */}
       <ul className="space-y-2 flex-1 mb-8">
         {features.map((feature) => (
-          <li key={feature} className="flex items-start gap-2 text-sm text-earth-300">
+          <li key={feature} className="flex items-start gap-2 text-sm text-slate-300">
             <Check size={14} className="text-success mt-0.5 shrink-0" />
             {feature}
           </li>
@@ -183,14 +183,14 @@ function PlanCard({ id, name, price, period, popular, highlight, features }: Pla
 
       {/* Błąd */}
       {error && (
-        <p className="text-xs text-red-400 mb-3 text-center">{error}</p>
+        <p className="text-xs text-nogo mb-3 text-center">{error}</p>
       )}
 
       {/* CTA */}
       <button
         onClick={handleSelectPlan}
         disabled={loading}
-        className={`flex items-center justify-center gap-2 rounded-token-lg py-3 px-4 font-semibold text-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed ${
+        className={`flex items-center justify-center gap-2 rounded-xl py-3 px-4 font-semibold text-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed ${
           highlight ? 'btn-primary' : 'btn-secondary'
         }`}
       >
@@ -208,7 +208,7 @@ export function PricingPage() {
     <PageShell title="Cennik" subtitle="Wybierz plan dla swojego zespołu">
       {/* Intro */}
       <div className="text-center mb-10">
-        <p className="text-earth-400 text-base max-w-2xl mx-auto">
+        <p className="text-slate-400 text-base max-w-2xl mx-auto">
           Zacznij bezpłatnie, skaluj w miarę wzrostu. Bez ukrytych kosztów. Rezygnacja w dowolnym momencie.
         </p>
       </div>
@@ -221,22 +221,22 @@ export function PricingPage() {
       </div>
 
       {/* Enterprise link */}
-      <div className="mt-12 text-center rounded-token-xl border border-earth-800/60 bg-earth-900/40 p-8">
-        <h3 className="text-lg font-bold text-earth-100 mb-2">Enterprise</h3>
-        <p className="text-earth-400 text-sm mb-4 max-w-lg mx-auto">
+      <div className="mt-12 text-center rounded-2xl border border-ink-800/60 bg-ink-900/40 p-8">
+        <h3 className="text-lg font-bold text-slate-100 mb-2">Enterprise</h3>
+        <p className="text-slate-400 text-sm mb-4 max-w-lg mx-auto">
           On-premise, SSO/SAML, SLA 99.9%, dedykowany opiekun, własne integracje i audyt bezpieczeństwa.
           Wycena indywidualna.
         </p>
         <Link
           href="mailto:sales@terra.os"
-          className="inline-flex items-center gap-2 btn-secondary rounded-token-lg py-2.5 px-6 font-semibold text-sm"
+          className="inline-flex items-center gap-2 btn-secondary rounded-xl py-2.5 px-6 font-semibold text-sm"
         >
           Skontaktuj się z nami
         </Link>
       </div>
 
       {/* Przypis */}
-      <p className="text-center text-earth-500 text-sm mt-8">
+      <p className="text-center text-slate-500 text-sm mt-8">
         Wszystkie plany zawierają 14-dniowy bezpłatny okres próbny. Rezygnacja w dowolnym momencie.
       </p>
     </PageShell>

@@ -60,7 +60,7 @@ function inDays(n: number) {
 
 function SkillChip({ label }: { label: string }) {
   return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-accent-primary/10 text-accent-primary border border-accent-primary/20">
+    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-em/10 text-em border border-em/20">
       {label}
     </span>
   );
@@ -70,11 +70,11 @@ function SkillChip({ label }: { label: string }) {
 
 function ActiveBadge({ active }: { active: boolean }) {
   return active ? (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-accent-success/15 text-accent-success border border-accent-success/20">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-go/15 text-go border border-go/20">
       <CheckCircle className="w-3 h-3" /> Aktywny
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-accent-danger/15 text-accent-danger border border-accent-danger/20">
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-nogo/15 text-nogo border border-nogo/20">
       <XCircle className="w-3 h-3" /> Nieaktywny
     </span>
   );
@@ -84,7 +84,7 @@ function ActiveBadge({ active }: { active: boolean }) {
 
 function EmptyState({ icon: Icon, message }: { icon: React.ElementType; message: string }) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 gap-3 text-earth-500">
+    <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-500">
       <Icon className="w-10 h-10 opacity-30" />
       <p className="text-sm">{message}</p>
     </div>
@@ -103,8 +103,8 @@ function TabBtn({
       onClick={onClick}
       className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
         active
-          ? 'bg-accent-primary/15 text-accent-primary border border-accent-primary/30'
-          : 'text-earth-400 hover:text-earth-200 hover:bg-earth-800/60'
+          ? 'bg-em/15 text-em border border-em/30'
+          : 'text-slate-400 hover:text-slate-200 hover:bg-ink-800/60'
       }`}
     >
       <Icon className="w-4 h-4" />
@@ -170,20 +170,20 @@ function PracownicyTab() {
     <div className="space-y-4">
       {/* Header row */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-earth-300 text-sm">
-          <UserCheck className="w-4 h-4 text-accent-primary" />
+        <div className="flex items-center gap-2 text-slate-300 text-sm">
+          <UserCheck className="w-4 h-4 text-em" />
           <span>{employees.length} pracowników</span>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={load}
-            className="p-2 rounded-lg text-earth-400 hover:text-earth-200 hover:bg-earth-800/60 transition-colors"
+            className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-ink-800/60 transition-colors"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
           <button
             onClick={() => setShowForm(v => !v)}
-            className="flex items-center gap-2 px-3 py-2 bg-accent-primary/15 hover:bg-accent-primary/25 text-accent-primary border border-accent-primary/30 rounded-lg text-sm font-medium transition-colors"
+            className="flex items-center gap-2 px-3 py-2 bg-em/15 hover:bg-em/25 text-em border border-em/30 rounded-lg text-sm font-medium transition-colors"
           >
             <Plus className="w-4 h-4" /> Dodaj pracownika
           </button>
@@ -200,56 +200,56 @@ function PracownicyTab() {
             transition={{ duration: 0.2 }}
           >
             <GlassCard className="p-4">
-              <h3 className="text-sm font-semibold text-earth-200 mb-3">Nowy pracownik</h3>
+              <h3 className="text-sm font-semibold text-slate-200 mb-3">Nowy pracownik</h3>
               <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-earth-400 mb-1">Imię i nazwisko *</label>
+                  <label className="block text-xs text-slate-400 mb-1">Imię i nazwisko *</label>
                   <input
                     value={form.name}
                     onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                     placeholder="Jan Kowalski"
-                    className="w-full px-3 py-2 bg-earth-800/60 border border-earth-700/50 rounded-lg text-earth-100 text-sm placeholder-earth-600 focus:outline-none focus:border-accent-primary/50"
+                    className="w-full px-3 py-2 bg-ink-800/60 border border-ink-700/50 rounded-lg text-slate-100 text-sm placeholder-ink-600 focus:outline-none focus:border-em/50"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-earth-400 mb-1">Telefon</label>
+                  <label className="block text-xs text-slate-400 mb-1">Telefon</label>
                   <input
                     value={form.phone}
                     onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
                     placeholder="+48 600 000 000"
-                    className="w-full px-3 py-2 bg-earth-800/60 border border-earth-700/50 rounded-lg text-earth-100 text-sm placeholder-earth-600 focus:outline-none focus:border-accent-primary/50"
+                    className="w-full px-3 py-2 bg-ink-800/60 border border-ink-700/50 rounded-lg text-slate-100 text-sm placeholder-ink-600 focus:outline-none focus:border-em/50"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-earth-400 mb-1">Rola / stanowisko</label>
+                  <label className="block text-xs text-slate-400 mb-1">Rola / stanowisko</label>
                   <input
                     value={form.role}
                     onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
                     placeholder="Operator maszyn"
-                    className="w-full px-3 py-2 bg-earth-800/60 border border-earth-700/50 rounded-lg text-earth-100 text-sm placeholder-earth-600 focus:outline-none focus:border-accent-primary/50"
+                    className="w-full px-3 py-2 bg-ink-800/60 border border-ink-700/50 rounded-lg text-slate-100 text-sm placeholder-ink-600 focus:outline-none focus:border-em/50"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-earth-400 mb-1">Umiejętności (przecinek)</label>
+                  <label className="block text-xs text-slate-400 mb-1">Umiejętności (przecinek)</label>
                   <input
                     value={form.skills}
                     onChange={e => setForm(f => ({ ...f, skills: e.target.value }))}
                     placeholder="Koparka, Spawanie, Prawo jazdy C"
-                    className="w-full px-3 py-2 bg-earth-800/60 border border-earth-700/50 rounded-lg text-earth-100 text-sm placeholder-earth-600 focus:outline-none focus:border-accent-primary/50"
+                    className="w-full px-3 py-2 bg-ink-800/60 border border-ink-700/50 rounded-lg text-slate-100 text-sm placeholder-ink-600 focus:outline-none focus:border-em/50"
                   />
                 </div>
                 <div className="sm:col-span-2 flex gap-2 justify-end">
                   <button
                     type="button"
                     onClick={() => setShowForm(false)}
-                    className="px-4 py-2 text-sm text-earth-400 hover:text-earth-200 transition-colors"
+                    className="px-4 py-2 text-sm text-slate-400 hover:text-slate-200 transition-colors"
                   >
                     Anuluj
                   </button>
                   <button
                     type="submit"
                     disabled={saving}
-                    className="flex items-center gap-2 px-4 py-2 bg-accent-primary text-earth-950 rounded-lg text-sm font-semibold hover:bg-accent-primary/90 disabled:opacity-50 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-em text-ink-950 rounded-lg text-sm font-semibold hover:bg-em/90 disabled:opacity-50 transition-colors"
                   >
                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                     Zapisz
@@ -265,7 +265,7 @@ function PracownicyTab() {
       <GlassCard className="overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin text-accent-primary" />
+            <Loader2 className="w-6 h-6 animate-spin text-em" />
           </div>
         ) : employees.length === 0 ? (
           <EmptyState icon={UserCheck} message="Brak pracowników. Dodaj pierwszego." />
@@ -273,12 +273,12 @@ function PracownicyTab() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-earth-800/60">
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-earth-500 uppercase tracking-wide">Imię i nazwisko</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-earth-500 uppercase tracking-wide">Telefon</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-earth-500 uppercase tracking-wide">Rola</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-earth-500 uppercase tracking-wide">Umiejętności</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-earth-500 uppercase tracking-wide">Status</th>
+                <tr className="border-b border-ink-800/60">
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Imię i nazwisko</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Telefon</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Rola</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Umiejętności</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -288,22 +288,22 @@ function PracownicyTab() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.04 }}
-                    className="border-b border-earth-800/30 hover:bg-earth-800/20 transition-colors"
+                    className="border-b border-ink-800/30 hover:bg-ink-800/20 transition-colors"
                   >
-                    <td className="px-4 py-3 font-medium text-earth-100">{emp.name}</td>
-                    <td className="px-4 py-3 text-earth-400">
+                    <td className="px-4 py-3 font-medium text-slate-100">{emp.name}</td>
+                    <td className="px-4 py-3 text-slate-400">
                       {emp.phone ? (
                         <span className="flex items-center gap-1.5">
                           <Phone className="w-3.5 h-3.5" /> {emp.phone}
                         </span>
                       ) : '—'}
                     </td>
-                    <td className="px-4 py-3 text-earth-300">{emp.role || '—'}</td>
+                    <td className="px-4 py-3 text-slate-300">{emp.role || '—'}</td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
                         {(emp.skills ?? []).length > 0
                           ? (emp.skills ?? []).map((s, j) => <SkillChip key={j} label={s} />)
-                          : <span className="text-earth-600 text-xs">—</span>}
+                          : <span className="text-slate-600 text-xs">—</span>}
                       </div>
                     </td>
                     <td className="px-4 py-3">
@@ -374,20 +374,20 @@ function SprzętTab() {
     <div className="space-y-4">
       {/* Header row */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-earth-300 text-sm">
-          <Wrench className="w-4 h-4 text-accent-primary" />
+        <div className="flex items-center gap-2 text-slate-300 text-sm">
+          <Wrench className="w-4 h-4 text-em" />
           <span>{equipment.length} maszyn / pojazdów</span>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={load}
-            className="p-2 rounded-lg text-earth-400 hover:text-earth-200 hover:bg-earth-800/60 transition-colors"
+            className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-ink-800/60 transition-colors"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
           <button
             onClick={() => setShowForm(v => !v)}
-            className="flex items-center gap-2 px-3 py-2 bg-accent-primary/15 hover:bg-accent-primary/25 text-accent-primary border border-accent-primary/30 rounded-lg text-sm font-medium transition-colors"
+            className="flex items-center gap-2 px-3 py-2 bg-em/15 hover:bg-em/25 text-em border border-em/30 rounded-lg text-sm font-medium transition-colors"
           >
             <Plus className="w-4 h-4" /> Dodaj sprzęt
           </button>
@@ -404,33 +404,33 @@ function SprzętTab() {
             transition={{ duration: 0.2 }}
           >
             <GlassCard className="p-4">
-              <h3 className="text-sm font-semibold text-earth-200 mb-3">Nowy sprzęt / pojazd</h3>
+              <h3 className="text-sm font-semibold text-slate-200 mb-3">Nowy sprzęt / pojazd</h3>
               <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-earth-400 mb-1">Typ *</label>
+                  <label className="block text-xs text-slate-400 mb-1">Typ *</label>
                   <input
                     value={form.type}
                     onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
                     placeholder="Koparka, Wywrotka, Walec..."
-                    className="w-full px-3 py-2 bg-earth-800/60 border border-earth-700/50 rounded-lg text-earth-100 text-sm placeholder-earth-600 focus:outline-none focus:border-accent-primary/50"
+                    className="w-full px-3 py-2 bg-ink-800/60 border border-ink-700/50 rounded-lg text-slate-100 text-sm placeholder-ink-600 focus:outline-none focus:border-em/50"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-earth-400 mb-1">Model *</label>
+                  <label className="block text-xs text-slate-400 mb-1">Model *</label>
                   <input
                     value={form.model}
                     onChange={e => setForm(f => ({ ...f, model: e.target.value }))}
                     placeholder="Komatsu PC210"
-                    className="w-full px-3 py-2 bg-earth-800/60 border border-earth-700/50 rounded-lg text-earth-100 text-sm placeholder-earth-600 focus:outline-none focus:border-accent-primary/50"
+                    className="w-full px-3 py-2 bg-ink-800/60 border border-ink-700/50 rounded-lg text-slate-100 text-sm placeholder-ink-600 focus:outline-none focus:border-em/50"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-earth-400 mb-1">Nr rejestracyjny</label>
+                  <label className="block text-xs text-slate-400 mb-1">Nr rejestracyjny</label>
                   <input
                     value={form.reg_no}
                     onChange={e => setForm(f => ({ ...f, reg_no: e.target.value }))}
                     placeholder="WR 12345"
-                    className="w-full px-3 py-2 bg-earth-800/60 border border-earth-700/50 rounded-lg text-earth-100 text-sm placeholder-earth-600 focus:outline-none focus:border-accent-primary/50"
+                    className="w-full px-3 py-2 bg-ink-800/60 border border-ink-700/50 rounded-lg text-slate-100 text-sm placeholder-ink-600 focus:outline-none focus:border-em/50"
                   />
                 </div>
                 <div className="flex items-center gap-3 pt-5">
@@ -441,22 +441,22 @@ function SprzętTab() {
                       onChange={e => setForm(f => ({ ...f, active: e.target.checked }))}
                       className="sr-only peer"
                     />
-                    <div className="w-9 h-5 bg-earth-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-earth-100 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-accent-primary" />
-                    <span className="ml-2 text-sm text-earth-300">Aktywny</span>
+                    <div className="w-9 h-5 bg-ink-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-slate-100 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-em" />
+                    <span className="ml-2 text-sm text-slate-300">Aktywny</span>
                   </label>
                 </div>
                 <div className="sm:col-span-2 flex gap-2 justify-end">
                   <button
                     type="button"
                     onClick={() => setShowForm(false)}
-                    className="px-4 py-2 text-sm text-earth-400 hover:text-earth-200 transition-colors"
+                    className="px-4 py-2 text-sm text-slate-400 hover:text-slate-200 transition-colors"
                   >
                     Anuluj
                   </button>
                   <button
                     type="submit"
                     disabled={saving}
-                    className="flex items-center gap-2 px-4 py-2 bg-accent-primary text-earth-950 rounded-lg text-sm font-semibold hover:bg-accent-primary/90 disabled:opacity-50 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-em text-ink-950 rounded-lg text-sm font-semibold hover:bg-em/90 disabled:opacity-50 transition-colors"
                   >
                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                     Zapisz
@@ -472,7 +472,7 @@ function SprzętTab() {
       <GlassCard className="overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin text-accent-primary" />
+            <Loader2 className="w-6 h-6 animate-spin text-em" />
           </div>
         ) : equipment.length === 0 ? (
           <EmptyState icon={Truck} message="Brak sprzętu. Dodaj pierwszą maszynę." />
@@ -480,11 +480,11 @@ function SprzętTab() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-earth-800/60">
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-earth-500 uppercase tracking-wide">Typ</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-earth-500 uppercase tracking-wide">Model</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-earth-500 uppercase tracking-wide">Nr rejestracyjny</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-earth-500 uppercase tracking-wide">Status</th>
+                <tr className="border-b border-ink-800/60">
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Typ</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Model</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Nr rejestracyjny</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -494,16 +494,16 @@ function SprzętTab() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.04 }}
-                    className="border-b border-earth-800/30 hover:bg-earth-800/20 transition-colors"
+                    className="border-b border-ink-800/30 hover:bg-ink-800/20 transition-colors"
                   >
-                    <td className="px-4 py-3 text-earth-300">
+                    <td className="px-4 py-3 text-slate-300">
                       <span className="flex items-center gap-2">
-                        <Truck className="w-3.5 h-3.5 text-earth-500" />
+                        <Truck className="w-3.5 h-3.5 text-slate-500" />
                         {eq.type}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-medium text-earth-100">{eq.model}</td>
-                    <td className="px-4 py-3 text-earth-400 font-mono text-xs">{eq.reg_no || '—'}</td>
+                    <td className="px-4 py-3 font-medium text-slate-100">{eq.model}</td>
+                    <td className="px-4 py-3 text-slate-400 font-mono text-xs">{eq.reg_no || '—'}</td>
                     <td className="px-4 py-3">
                       <ActiveBadge active={eq.active} />
                     </td>
@@ -558,33 +558,33 @@ function OptymalizacjaTab() {
     <div className="space-y-4">
       {/* Controls */}
       <GlassCard className="p-5">
-        <h3 className="text-sm font-semibold text-earth-200 mb-4 flex items-center gap-2">
-          <Zap className="w-4 h-4 text-accent-primary" />
+        <h3 className="text-sm font-semibold text-slate-200 mb-4 flex items-center gap-2">
+          <Zap className="w-4 h-4 text-em" />
           Parametry optymalizacji
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
           <div>
-            <label className="block text-xs text-earth-400 mb-1">Data od</label>
+            <label className="block text-xs text-slate-400 mb-1">Data od</label>
             <input
               type="date"
               value={from}
               onChange={e => setFrom(e.target.value)}
-              className="w-full px-3 py-2 bg-earth-800/60 border border-earth-700/50 rounded-lg text-earth-100 text-sm focus:outline-none focus:border-accent-primary/50"
+              className="w-full px-3 py-2 bg-ink-800/60 border border-ink-700/50 rounded-lg text-slate-100 text-sm focus:outline-none focus:border-em/50"
             />
           </div>
           <div>
-            <label className="block text-xs text-earth-400 mb-1">Data do</label>
+            <label className="block text-xs text-slate-400 mb-1">Data do</label>
             <input
               type="date"
               value={to}
               onChange={e => setTo(e.target.value)}
-              className="w-full px-3 py-2 bg-earth-800/60 border border-earth-700/50 rounded-lg text-earth-100 text-sm focus:outline-none focus:border-accent-primary/50"
+              className="w-full px-3 py-2 bg-ink-800/60 border border-ink-700/50 rounded-lg text-slate-100 text-sm focus:outline-none focus:border-em/50"
             />
           </div>
           <button
             onClick={handleOptimize}
             disabled={loading}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-accent-primary text-earth-950 rounded-lg font-semibold text-sm hover:bg-accent-primary/90 disabled:opacity-50 transition-colors"
+            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-em text-ink-950 rounded-lg font-semibold text-sm hover:bg-em/90 disabled:opacity-50 transition-colors"
           >
             {loading ? (
               <>
@@ -599,15 +599,15 @@ function OptymalizacjaTab() {
             )}
           </button>
         </div>
-        <p className="mt-3 text-xs text-earth-500">
+        <p className="mt-3 text-xs text-slate-500">
           Silnik AI przydzieli dostępnych pracowników i sprzęt do zaplanowanych kontraktów w wybranym zakresie dat.
         </p>
       </GlassCard>
 
       {/* Error */}
       {error && (
-        <GlassCard className="p-4 border-accent-danger/20 bg-accent-danger/5">
-          <div className="flex items-center gap-2 text-accent-danger text-sm">
+        <GlassCard className="p-4 border-nogo/20 bg-nogo/5">
+          <div className="flex items-center gap-2 text-nogo text-sm">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             {error}
           </div>
@@ -618,13 +618,13 @@ function OptymalizacjaTab() {
       {result && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <GlassCard className="overflow-hidden">
-            <div className="px-4 py-3 border-b border-earth-800/60 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-earth-200 flex items-center gap-2">
-                <ClipboardList className="w-4 h-4 text-accent-primary" />
+            <div className="px-4 py-3 border-b border-ink-800/60 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                <ClipboardList className="w-4 h-4 text-em" />
                 Wynik optymalizacji
               </h3>
               {hasAssignments && (
-                <span className="text-xs text-earth-400 bg-earth-800/60 px-2 py-1 rounded-full">
+                <span className="text-xs text-slate-400 bg-ink-800/60 px-2 py-1 rounded-full">
                   {result.assignments!.length} przypisań
                 </span>
               )}
@@ -634,9 +634,9 @@ function OptymalizacjaTab() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-earth-800/60">
+                    <tr className="border-b border-ink-800/60">
                       {(['day', 'employee', 'equipment', 'location', 'task'] as const).map(col => (
-                        <th key={col} className="text-left px-4 py-3 text-xs font-semibold text-earth-500 uppercase tracking-wide capitalize">
+                        <th key={col} className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide capitalize">
                           {col === 'day' ? 'Dzień' : col === 'employee' ? 'Pracownik' : col === 'equipment' ? 'Sprzęt' : col === 'location' ? 'Lokalizacja' : 'Zadanie'}
                         </th>
                       ))}
@@ -644,12 +644,12 @@ function OptymalizacjaTab() {
                   </thead>
                   <tbody>
                     {result.assignments!.map((row, i) => (
-                      <tr key={i} className="border-b border-earth-800/30 hover:bg-earth-800/20 transition-colors">
-                        <td className="px-4 py-2.5 text-earth-400 font-mono text-xs">{row.day ?? '—'}</td>
-                        <td className="px-4 py-2.5 text-earth-200">{row.employee ?? '—'}</td>
-                        <td className="px-4 py-2.5 text-earth-300">{row.equipment ?? '—'}</td>
-                        <td className="px-4 py-2.5 text-earth-400 text-xs">{row.location ?? '—'}</td>
-                        <td className="px-4 py-2.5 text-earth-300">{row.task ?? '—'}</td>
+                      <tr key={i} className="border-b border-ink-800/30 hover:bg-ink-800/20 transition-colors">
+                        <td className="px-4 py-2.5 text-slate-400 font-mono text-xs">{row.day ?? '—'}</td>
+                        <td className="px-4 py-2.5 text-slate-200">{row.employee ?? '—'}</td>
+                        <td className="px-4 py-2.5 text-slate-300">{row.equipment ?? '—'}</td>
+                        <td className="px-4 py-2.5 text-slate-400 text-xs">{row.location ?? '—'}</td>
+                        <td className="px-4 py-2.5 text-slate-300">{row.task ?? '—'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -657,20 +657,20 @@ function OptymalizacjaTab() {
               </div>
             ) : (
               /* Empty assignments — optimizer ran but found no feasible assignments */
-              <div className="flex flex-col items-center justify-center py-16 gap-4 text-earth-500">
-                <div className="w-16 h-16 rounded-2xl bg-earth-800/40 flex items-center justify-center">
+              <div className="flex flex-col items-center justify-center py-16 gap-4 text-slate-500">
+                <div className="w-16 h-16 rounded-2xl bg-ink-800/40 flex items-center justify-center">
                   <Zap className="w-8 h-8 opacity-30" />
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-medium text-earth-400 mb-1">
+                  <p className="text-sm font-medium text-slate-400 mb-1">
                     {result.feasible === false ? 'Brak rozwiązania' : 'Brak przypisań w tym zakresie'}
                   </p>
-                  <p className="text-xs text-earth-600 max-w-sm">
+                  <p className="text-xs text-slate-600 max-w-sm">
                     {result.infeasible_reason ?? 'Optymalizator nie znalazł przypisań dla wybranego zakresu dat. Sprawdź dostępność pracowników i sprzętu.'}
                   </p>
                 </div>
                 {Array.isArray(result.routes) && result.routes.length > 0 && (
-                  <div className="mt-2 text-xs text-earth-500">
+                  <div className="mt-2 text-xs text-slate-500">
                     Trasy: {result.routes.length} zidentyfikowanych tras
                   </div>
                 )}
@@ -681,7 +681,7 @@ function OptymalizacjaTab() {
       )}
 
       {!result && !loading && !error && (
-        <div className="flex flex-col items-center justify-center py-16 gap-3 text-earth-600">
+        <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-600">
           <Zap className="w-10 h-10 opacity-20" />
           <p className="text-sm">Ustaw zakres dat i kliknij „Optymalizuj"</p>
         </div>
@@ -747,14 +747,14 @@ function PodwykonawcyTab() {
   };
 
   function ratingStars(r: number | null) {
-    if (r == null) return <span className="text-earth-600 text-xs">—</span>;
+    if (r == null) return <span className="text-slate-600 text-xs">—</span>;
     const full = Math.round(r);
     return (
       <div className="flex items-center gap-0.5">
         {[1,2,3,4,5].map(i => (
-          <Star key={i} className={`w-3 h-3 ${i <= full ? 'text-yellow-400 fill-yellow-400' : 'text-earth-700'}`} />
+          <Star key={i} className={`w-3 h-3 ${i <= full ? 'text-warn fill-warn' : 'text-slate-700'}`} />
         ))}
-        <span className="ml-1 text-xs text-earth-400">{(r ?? 0).toFixed(1)}</span>
+        <span className="ml-1 text-xs text-slate-400">{(r ?? 0).toFixed(1)}</span>
       </div>
     );
   }
@@ -763,20 +763,20 @@ function PodwykonawcyTab() {
     <div className="space-y-4">
       {/* Header row */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-earth-300 text-sm">
-          <Building2 className="w-4 h-4 text-accent-primary" />
+        <div className="flex items-center gap-2 text-slate-300 text-sm">
+          <Building2 className="w-4 h-4 text-em" />
           <span>{subs.length} podwykonawców</span>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={load}
-            className="p-2 rounded-lg text-earth-400 hover:text-earth-200 hover:bg-earth-800/60 transition-colors"
+            className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-ink-800/60 transition-colors"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
           <button
             onClick={() => setShowForm(v => !v)}
-            className="flex items-center gap-2 px-3 py-2 bg-accent-primary/15 hover:bg-accent-primary/25 text-accent-primary border border-accent-primary/30 rounded-lg text-sm font-medium transition-colors"
+            className="flex items-center gap-2 px-3 py-2 bg-em/15 hover:bg-em/25 text-em border border-em/30 rounded-lg text-sm font-medium transition-colors"
           >
             <Plus className="w-4 h-4" /> Dodaj podwykonawcę
           </button>
@@ -793,56 +793,56 @@ function PodwykonawcyTab() {
             transition={{ duration: 0.2 }}
           >
             <GlassCard className="p-4">
-              <h3 className="text-sm font-semibold text-earth-200 mb-3">Nowy podwykonawca</h3>
+              <h3 className="text-sm font-semibold text-slate-200 mb-3">Nowy podwykonawca</h3>
               <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-earth-400 mb-1">Nazwa firmy *</label>
+                  <label className="block text-xs text-slate-400 mb-1">Nazwa firmy *</label>
                   <input
                     value={form.name}
                     onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                     placeholder="Firma Budowlana XYZ"
-                    className="w-full px-3 py-2 bg-earth-800/60 border border-earth-700/50 rounded-lg text-earth-100 text-sm placeholder-earth-600 focus:outline-none focus:border-accent-primary/50"
+                    className="w-full px-3 py-2 bg-ink-800/60 border border-ink-700/50 rounded-lg text-slate-100 text-sm placeholder-ink-600 focus:outline-none focus:border-em/50"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-earth-400 mb-1">NIP</label>
+                  <label className="block text-xs text-slate-400 mb-1">NIP</label>
                   <input
                     value={form.nip}
                     onChange={e => setForm(f => ({ ...f, nip: e.target.value }))}
                     placeholder="1234567890"
-                    className="w-full px-3 py-2 bg-earth-800/60 border border-earth-700/50 rounded-lg text-earth-100 text-sm placeholder-earth-600 focus:outline-none focus:border-accent-primary/50"
+                    className="w-full px-3 py-2 bg-ink-800/60 border border-ink-700/50 rounded-lg text-slate-100 text-sm placeholder-ink-600 focus:outline-none focus:border-em/50"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-earth-400 mb-1">Specjalizacja</label>
+                  <label className="block text-xs text-slate-400 mb-1">Specjalizacja</label>
                   <input
                     value={form.specialization}
                     onChange={e => setForm(f => ({ ...f, specialization: e.target.value }))}
                     placeholder="Instalacje elektryczne, Fundamenty…"
-                    className="w-full px-3 py-2 bg-earth-800/60 border border-earth-700/50 rounded-lg text-earth-100 text-sm placeholder-earth-600 focus:outline-none focus:border-accent-primary/50"
+                    className="w-full px-3 py-2 bg-ink-800/60 border border-ink-700/50 rounded-lg text-slate-100 text-sm placeholder-ink-600 focus:outline-none focus:border-em/50"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-earth-400 mb-1">Email kontaktowy</label>
+                  <label className="block text-xs text-slate-400 mb-1">Email kontaktowy</label>
                   <input
                     type="email"
                     value={form.contact_email}
                     onChange={e => setForm(f => ({ ...f, contact_email: e.target.value }))}
                     placeholder="kontakt@firma.pl"
-                    className="w-full px-3 py-2 bg-earth-800/60 border border-earth-700/50 rounded-lg text-earth-100 text-sm placeholder-earth-600 focus:outline-none focus:border-accent-primary/50"
+                    className="w-full px-3 py-2 bg-ink-800/60 border border-ink-700/50 rounded-lg text-slate-100 text-sm placeholder-ink-600 focus:outline-none focus:border-em/50"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-earth-400 mb-1">Telefon kontaktowy</label>
+                  <label className="block text-xs text-slate-400 mb-1">Telefon kontaktowy</label>
                   <input
                     value={form.contact_phone}
                     onChange={e => setForm(f => ({ ...f, contact_phone: e.target.value }))}
                     placeholder="+48 600 000 000"
-                    className="w-full px-3 py-2 bg-earth-800/60 border border-earth-700/50 rounded-lg text-earth-100 text-sm placeholder-earth-600 focus:outline-none focus:border-accent-primary/50"
+                    className="w-full px-3 py-2 bg-ink-800/60 border border-ink-700/50 rounded-lg text-slate-100 text-sm placeholder-ink-600 focus:outline-none focus:border-em/50"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-earth-400 mb-1">Ocena (1–5)</label>
+                  <label className="block text-xs text-slate-400 mb-1">Ocena (1–5)</label>
                   <input
                     type="number"
                     min="1"
@@ -851,31 +851,31 @@ function PodwykonawcyTab() {
                     value={form.rating}
                     onChange={e => setForm(f => ({ ...f, rating: e.target.value }))}
                     placeholder="4.5"
-                    className="w-full px-3 py-2 bg-earth-800/60 border border-earth-700/50 rounded-lg text-earth-100 text-sm placeholder-earth-600 focus:outline-none focus:border-accent-primary/50"
+                    className="w-full px-3 py-2 bg-ink-800/60 border border-ink-700/50 rounded-lg text-slate-100 text-sm placeholder-ink-600 focus:outline-none focus:border-em/50"
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-xs text-earth-400 mb-1">Notatki</label>
+                  <label className="block text-xs text-slate-400 mb-1">Notatki</label>
                   <textarea
                     value={form.notes}
                     onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
                     rows={2}
                     placeholder="Uwagi, warunki współpracy…"
-                    className="w-full px-3 py-2 bg-earth-800/60 border border-earth-700/50 rounded-lg text-earth-100 text-sm placeholder-earth-600 focus:outline-none focus:border-accent-primary/50 resize-none"
+                    className="w-full px-3 py-2 bg-ink-800/60 border border-ink-700/50 rounded-lg text-slate-100 text-sm placeholder-ink-600 focus:outline-none focus:border-em/50 resize-none"
                   />
                 </div>
                 <div className="sm:col-span-2 flex gap-2 justify-end">
                   <button
                     type="button"
                     onClick={() => setShowForm(false)}
-                    className="px-4 py-2 text-sm text-earth-400 hover:text-earth-200 transition-colors"
+                    className="px-4 py-2 text-sm text-slate-400 hover:text-slate-200 transition-colors"
                   >
                     Anuluj
                   </button>
                   <button
                     type="submit"
                     disabled={saving}
-                    className="flex items-center gap-2 px-4 py-2 bg-accent-primary text-earth-950 rounded-lg text-sm font-semibold hover:bg-accent-primary/90 disabled:opacity-50 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-em text-ink-950 rounded-lg text-sm font-semibold hover:bg-em/90 disabled:opacity-50 transition-colors"
                   >
                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                     Zapisz
@@ -891,7 +891,7 @@ function PodwykonawcyTab() {
       <GlassCard className="overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin text-accent-primary" />
+            <Loader2 className="w-6 h-6 animate-spin text-em" />
           </div>
         ) : subs.length === 0 ? (
           <EmptyState icon={Building2} message="Brak podwykonawców. Dodaj pierwszego." />
@@ -899,13 +899,13 @@ function PodwykonawcyTab() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-earth-800/60">
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-earth-500 uppercase tracking-wide">Nazwa</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-earth-500 uppercase tracking-wide">NIP</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-earth-500 uppercase tracking-wide">Specjalizacja</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-earth-500 uppercase tracking-wide">Ocena</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-earth-500 uppercase tracking-wide">Kontakt</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-earth-500 uppercase tracking-wide">Status</th>
+                <tr className="border-b border-ink-800/60">
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Nazwa</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">NIP</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Specjalizacja</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Ocena</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Kontakt</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -915,14 +915,14 @@ function PodwykonawcyTab() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.04 }}
-                    className="border-b border-earth-800/30 hover:bg-earth-800/20 transition-colors"
+                    className="border-b border-ink-800/30 hover:bg-ink-800/20 transition-colors"
                   >
-                    <td className="px-4 py-3 font-medium text-earth-100">{sub.name}</td>
-                    <td className="px-4 py-3 text-earth-400 font-mono text-xs">{sub.nip || '—'}</td>
-                    <td className="px-4 py-3 text-earth-300">
+                    <td className="px-4 py-3 font-medium text-slate-100">{sub.name}</td>
+                    <td className="px-4 py-3 text-slate-400 font-mono text-xs">{sub.nip || '—'}</td>
+                    <td className="px-4 py-3 text-slate-300">
                       {sub.specialization ? (
                         <span className="flex items-center gap-1.5">
-                          <Tag className="w-3 h-3 text-earth-500" />
+                          <Tag className="w-3 h-3 text-slate-500" />
                           {sub.specialization}
                         </span>
                       ) : '—'}
@@ -931,16 +931,16 @@ function PodwykonawcyTab() {
                     <td className="px-4 py-3">
                       <div className="space-y-0.5">
                         {sub.contact_email && (
-                          <a href={`mailto:${sub.contact_email}`} className="flex items-center gap-1 text-xs text-earth-400 hover:text-accent-primary transition-colors">
+                          <a href={`mailto:${sub.contact_email}`} className="flex items-center gap-1 text-xs text-slate-400 hover:text-em transition-colors">
                             <Mail className="w-3 h-3" /> {sub.contact_email}
                           </a>
                         )}
                         {sub.contact_phone && (
-                          <span className="flex items-center gap-1 text-xs text-earth-400">
+                          <span className="flex items-center gap-1 text-xs text-slate-400">
                             <Phone className="w-3 h-3" /> {sub.contact_phone}
                           </span>
                         )}
-                        {!sub.contact_email && !sub.contact_phone && <span className="text-earth-600 text-xs">—</span>}
+                        {!sub.contact_email && !sub.contact_phone && <span className="text-slate-600 text-xs">—</span>}
                       </div>
                     </td>
                     <td className="px-4 py-3">
@@ -1101,16 +1101,16 @@ function HarmonogramTab() {
       {/* Header */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
-          <Calendar className="w-5 h-5 text-accent-primary" />
-          <h2 className="text-base font-semibold text-earth-100">Harmonogram kontraktów</h2>
-          <span className="text-xs text-earth-500 ml-1">
+          <Calendar className="w-5 h-5 text-em" />
+          <h2 className="text-base font-semibold text-slate-100">Harmonogram kontraktów</h2>
+          <span className="text-xs text-slate-500 ml-1">
             {GANTT_ORIGIN} → {endDate}
           </span>
         </div>
         <button
           onClick={() => { void load(); }}
           disabled={loading}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-earth-800/60 hover:bg-earth-700/60 border border-earth-700/40 text-earth-300 transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-ink-800/60 hover:bg-ink-700/60 border border-ink-700/40 text-slate-300 transition-colors disabled:opacity-50"
         >
           <RefreshCw className={loading ? 'w-3.5 h-3.5 animate-spin' : 'w-3.5 h-3.5'} />
           Odśwież
@@ -1119,14 +1119,14 @@ function HarmonogramTab() {
 
       {/* States */}
       {loading && (
-        <div className="flex items-center justify-center py-16 gap-2 text-earth-500">
+        <div className="flex items-center justify-center py-16 gap-2 text-slate-500">
           <Loader2 className="w-5 h-5 animate-spin" />
           <span className="text-sm">Ładowanie harmonogramu…</span>
         </div>
       )}
 
       {!loading && error && (
-        <div className="flex items-center gap-2 p-4 rounded-token bg-accent-danger/10 border border-accent-danger/20 text-accent-danger text-sm">
+        <div className="flex items-center gap-2 p-4 rounded-md bg-nogo/10 border border-nogo/20 text-nogo text-sm">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
           {error}
         </div>
@@ -1158,7 +1158,7 @@ function HarmonogramTab() {
                       className="absolute top-0 flex flex-col items-center"
                       style={{ left: String(pct) + '%', transform: 'translateX(-50%)' }}
                     >
-                      <span className="text-[10px] text-earth-500 whitespace-nowrap">
+                      <span className="text-[10px] text-slate-500 whitespace-nowrap">
                         {tick.slice(5)} {/* MM-DD */}
                       </span>
                     </div>
@@ -1181,7 +1181,7 @@ function HarmonogramTab() {
                   return (
                     <div
                       key={tick}
-                      className="absolute top-0 bottom-0 border-l border-earth-800/40"
+                      className="absolute top-0 bottom-0 border-l border-ink-800/40"
                       style={{ left: String(pct) + '%' }}
                     />
                   );
@@ -1192,7 +1192,7 @@ function HarmonogramTab() {
               {rows.map(row => (
                 <div
                   key={row.contract.id}
-                  className="flex items-center border-b border-earth-800/30 group"
+                  className="flex items-center border-b border-ink-800/30 group"
                   style={{ height: '44px' }}
                 >
                   {/* Row label */}
@@ -1200,13 +1200,13 @@ function HarmonogramTab() {
                     style={{ width: '200px', flexShrink: 0 }}
                     className="pr-3 flex flex-col justify-center"
                   >
-                    <span className="text-xs font-medium text-earth-200 truncate leading-tight">
+                    <span className="text-xs font-medium text-slate-200 truncate leading-tight">
                       {row.contract.title}
                     </span>
-                    <span className="text-[10px] text-earth-500 truncate leading-tight">
+                    <span className="text-[10px] text-slate-500 truncate leading-tight">
                       {stateLabel(row.contract.state)}
                       {row.synthetic && (
-                        <span className="ml-1 text-earth-600">(est.)</span>
+                        <span className="ml-1 text-slate-600">(est.)</span>
                       )}
                     </span>
                   </div>
@@ -1247,16 +1247,16 @@ function HarmonogramTab() {
           </div>
 
           {/* Legend */}
-          <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] text-earth-500">
+          <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] text-slate-500">
             <span className="flex items-center gap-1.5">
-              <span className="inline-block w-3 h-3 rounded-sm border border-earth-600/60" style={{ background: GANTT_COLORS[0] + '33' }} />
+              <span className="inline-block w-3 h-3 rounded-sm border border-ink-600/60" style={{ background: GANTT_COLORS[0] + '33' }} />
               Kontrakt z datami
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="inline-block w-3 h-3 rounded-sm border border-earth-600/60" style={{ background: GANTT_COLORS[1] + '33' }} />
+              <span className="inline-block w-3 h-3 rounded-sm border border-ink-600/60" style={{ background: GANTT_COLORS[1] + '33' }} />
               Kontrakt estymowany (brak dat)
             </span>
-            <span className="text-earth-600">
+            <span className="text-slate-600">
               Oś czasu: {GANTT_ORIGIN} + {String(GANTT_DAYS)} dni
             </span>
           </div>
@@ -1269,26 +1269,26 @@ function HarmonogramTab() {
           className="fixed z-50 pointer-events-none"
           style={{ left: String(tooltip.x) + 'px', top: String(tooltip.y - 56) + 'px', transform: 'translateX(-50%)' }}
         >
-          <div className="bg-earth-900 border border-earth-700/60 rounded-lg px-3 py-2 shadow-xl text-xs space-y-0.5 min-w-max">
-            <p className="font-semibold text-earth-100">{tooltip.contract.title}</p>
-            <p className="text-earth-400">
-              Stan: <span className="text-earth-200">{stateLabel(tooltip.contract.state)}</span>
+          <div className="bg-ink-900 border border-ink-700/60 rounded-lg px-3 py-2 shadow-xl text-xs space-y-0.5 min-w-max">
+            <p className="font-semibold text-slate-100">{tooltip.contract.title}</p>
+            <p className="text-slate-400">
+              Stan: <span className="text-slate-200">{stateLabel(tooltip.contract.state)}</span>
             </p>
             {tooltip.contract.start_date && (
-              <p className="text-earth-400">
-                Od: <span className="text-earth-200">{tooltip.contract.start_date}</span>
+              <p className="text-slate-400">
+                Od: <span className="text-slate-200">{tooltip.contract.start_date}</span>
               </p>
             )}
             {tooltip.contract.end_date && (
-              <p className="text-earth-400">
-                Do: <span className="text-earth-200">{tooltip.contract.end_date}</span>
+              <p className="text-slate-400">
+                Do: <span className="text-slate-200">{tooltip.contract.end_date}</span>
               </p>
             )}
             {!tooltip.contract.start_date && (
-              <p className="text-earth-600 italic">Brak dat – pozycja estymowana</p>
+              <p className="text-slate-600 italic">Brak dat – pozycja estymowana</p>
             )}
             {tooltip.contract.location_address && (
-              <p className="text-earth-400 truncate max-w-[200px]">
+              <p className="text-slate-400 truncate max-w-[200px]">
                 {tooltip.contract.location_address}
               </p>
             )}

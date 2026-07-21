@@ -70,7 +70,7 @@ export function SystemPage() {
     { label: 'Users',          value: metrics.database.users,                       icon: Users,     color: 'text-info' },
     { label: 'Notifications',  value: metrics.database.unread_notifications,        icon: Bell,      color: 'text-warning' },
     { label: 'Audit Log',      value: metrics.database.audit_entries,               icon: Shield,    color: 'text-danger' },
-    { label: 'DB Size',        value: metrics.database.size,                        icon: Activity,  color: 'text-earth-300' },
+    { label: 'DB Size',        value: metrics.database.size,                        icon: Activity,  color: 'text-slate-300' },
   ] : [];
 
   const actions = (
@@ -86,13 +86,13 @@ export function SystemPage() {
       actions={actions}
     >
       {/* Tabs */}
-      <div className="flex gap-1 bg-earth-900/60 rounded-token-lg p-1 w-fit mb-6">
+      <div className="flex gap-1 bg-ink-900/60 rounded-xl p-1 w-fit mb-6">
         {(['overview', 'database', 'routes'] as const).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-4 py-1.5 rounded-token text-sm font-medium transition-colors ${
-              tab === t ? 'bg-accent-primary text-earth-950' : 'text-earth-400 hover:text-earth-200'
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              tab === t ? 'bg-em text-ink-950' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             {t === 'overview' ? 'Przegląd' : t === 'database' ? 'Baza danych' : 'API Routes'}
@@ -113,12 +113,12 @@ export function SystemPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
                 >
-                  <GlassCard className="p-4 shadow-token-sm">
+                  <GlassCard className="p-4 shadow-md-sm">
                     <div className="flex items-center gap-3">
                       <Icon size={18} className={stat.color} />
                       <div>
-                        <div className="text-earth-100 font-bold text-lg">{stat.value}</div>
-                        <div className="text-earth-500 text-xs">{stat.label}</div>
+                        <div className="text-slate-100 font-bold text-lg">{stat.value}</div>
+                        <div className="text-slate-500 text-xs">{stat.label}</div>
                       </div>
                     </div>
                   </GlassCard>
@@ -130,12 +130,12 @@ export function SystemPage() {
           {/* Pipeline */}
           {metrics?.pipeline && Object.keys(metrics.pipeline).length > 0 && (
             <GlassCard className="p-4">
-              <h3 className="text-earth-100 font-semibold mb-3">Pipeline Status</h3>
+              <h3 className="text-slate-100 font-semibold mb-3">Pipeline Status</h3>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                 {Object.entries(metrics.pipeline).map(([status, count]) => (
-                  <div key={status} className="bg-earth-900/60 rounded-token-lg p-3 text-center border border-earth-800/40">
-                    <div className="text-earth-100 font-bold">{count}</div>
-                    <div className="text-earth-500 text-xs capitalize">{status}</div>
+                  <div key={status} className="bg-ink-900/60 rounded-xl p-3 text-center border border-ink-800/40">
+                    <div className="text-slate-100 font-bold">{count}</div>
+                    <div className="text-slate-500 text-xs capitalize">{status}</div>
                   </div>
                 ))}
               </div>
@@ -145,23 +145,23 @@ export function SystemPage() {
           {/* AI info */}
           {metrics?.ai && (
             <GlassCard className="p-4">
-              <h3 className="text-earth-100 font-semibold mb-3">AI Engine</h3>
+              <h3 className="text-slate-100 font-semibold mb-3">AI Engine</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
-                  <span className="text-earth-500">Model:</span>
-                  <div className="text-earth-200 font-mono text-xs mt-1">{metrics.ai.model}</div>
+                  <span className="text-slate-500">Model:</span>
+                  <div className="text-slate-200 font-mono text-xs mt-1">{metrics.ai.model}</div>
                 </div>
                 <div>
-                  <span className="text-earth-500">Vector Dim:</span>
-                  <div className="text-earth-200">{metrics.ai.vector_dim}</div>
+                  <span className="text-slate-500">Vector Dim:</span>
+                  <div className="text-slate-200">{metrics.ai.vector_dim}</div>
                 </div>
                 <div>
-                  <span className="text-earth-500">Coverage:</span>
+                  <span className="text-slate-500">Coverage:</span>
                   <div className="text-success font-bold">{metrics.ai.embedding_coverage}%</div>
                 </div>
                 <div>
-                  <span className="text-earth-500">RAG Chunks:</span>
-                  <div className="text-earth-200">{metrics.ai.rag_chunks}</div>
+                  <span className="text-slate-500">RAG Chunks:</span>
+                  <div className="text-slate-200">{metrics.ai.rag_chunks}</div>
                 </div>
               </div>
             </GlassCard>
@@ -171,11 +171,11 @@ export function SystemPage() {
 
       {tab === 'database' && (
         <GlassCard className="p-4">
-          <h3 className="text-earth-100 font-semibold mb-3">Tabele ({tables.length})</h3>
+          <h3 className="text-slate-100 font-semibold mb-3">Tabele ({tables.length})</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-earth-500 border-b border-earth-800">
+                <tr className="text-slate-500 border-b border-ink-800">
                   <th className="text-left py-2 px-2">Tabela</th>
                   <th className="text-right py-2 px-2">Wiersze</th>
                   <th className="text-right py-2 px-2">Rozmiar</th>
@@ -183,10 +183,10 @@ export function SystemPage() {
               </thead>
               <tbody>
                 {tables.map(t => (
-                  <tr key={t.table} className="border-b border-earth-900 hover:bg-earth-900/40">
-                    <td className="py-2 px-2 text-earth-200 font-mono text-xs">{t.table}</td>
-                    <td className="py-2 px-2 text-right text-earth-300">{(t.rows ?? 0).toLocaleString()}</td>
-                    <td className="py-2 px-2 text-right text-earth-400">{t.size}</td>
+                  <tr key={t.table} className="border-b border-ink-900 hover:bg-ink-900/40">
+                    <td className="py-2 px-2 text-slate-200 font-mono text-xs">{t.table}</td>
+                    <td className="py-2 px-2 text-right text-slate-300">{(t.rows ?? 0).toLocaleString()}</td>
+                    <td className="py-2 px-2 text-right text-slate-400">{t.size}</td>
                   </tr>
                 ))}
               </tbody>
@@ -197,8 +197,8 @@ export function SystemPage() {
 
       {tab === 'routes' && (
         <GlassCard className="p-4">
-          <h3 className="text-earth-100 font-semibold mb-3">{routeCount} zarejestrowanych endpointów</h3>
-          <p className="text-earth-400 text-sm">Pełna lista API dostępna pod <code className="bg-earth-800 px-1 rounded-token">/api/v2/system/routes</code></p>
+          <h3 className="text-slate-100 font-semibold mb-3">{routeCount} zarejestrowanych endpointów</h3>
+          <p className="text-slate-400 text-sm">Pełna lista API dostępna pod <code className="bg-ink-800 px-1 rounded-md">/api/v2/system/routes</code></p>
         </GlassCard>
       )}
     </PageShell>

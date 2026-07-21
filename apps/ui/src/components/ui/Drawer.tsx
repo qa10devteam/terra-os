@@ -8,12 +8,12 @@ import { X } from 'lucide-react';
 type DrawerSide = 'right' | 'left';
 
 interface DrawerProps {
-  isOpen: boolean;
-  onClose: () => void;
-  title?: string;
+  isOpen:   boolean;
+  onClose:  () => void;
+  title?:   string;
   children: ReactNode;
-  side?: DrawerSide;
-  width?: string;
+  side?:    DrawerSide;
+  width?:   string;
 }
 
 export function Drawer({
@@ -21,8 +21,8 @@ export function Drawer({
   onClose,
   title,
   children,
-  side = 'right',
-  width = '420px',
+  side  = 'right',
+  width = '440px',
 }: DrawerProps) {
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') onClose();
@@ -41,7 +41,7 @@ export function Drawer({
 
   if (typeof document === 'undefined') return null;
 
-  const initialX = side === 'right' ? '100%' : '-100%';
+  const initialX   = side === 'right' ? '100%' : '-100%';
   const borderSide = side === 'right' ? 'border-l' : 'border-r';
   const positionCls = side === 'right' ? 'right-0' : 'left-0';
 
@@ -55,7 +55,7 @@ export function Drawer({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="absolute inset-0 bg-earth-950/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-ink-950/70 backdrop-blur-sm"
             onClick={onClose}
           />
 
@@ -64,36 +64,38 @@ export function Drawer({
             initial={{ x: initialX }}
             animate={{ x: 0 }}
             exit={{ x: initialX }}
-            transition={{ duration: 0.25, ease: 'easeOut' }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
             style={{ width }}
             className={[
               'absolute top-0 bottom-0',
               positionCls,
               'z-10 flex flex-col',
-              'bg-earth-900',
+              'bg-ink-900',
               borderSide,
-              'border-earth-700',
-              'shadow-token-lg',
+              'border-ink-line',
+              'shadow-2xl',
             ].join(' ')}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-earth-700/50 shrink-0">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-ink-line shrink-0">
               {title ? (
-                <span className="section-label">{title}</span>
+                <span className="text-sm font-semibold text-slate-200 tracking-tight">
+                  {title}
+                </span>
               ) : (
                 <span />
               )}
               <button
                 onClick={onClose}
-                className="btn-ghost w-7 h-7 flex items-center justify-center p-0 rounded-token"
+                className="p-1.5 rounded-md text-slate-500 hover:text-slate-200 hover:bg-ink-800 transition-colors"
                 aria-label="Zamknij"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Body — scrollable */}
-            <div className="overflow-y-auto flex-1 px-5 py-4">
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-5">
               {children}
             </div>
           </motion.div>
@@ -103,5 +105,3 @@ export function Drawer({
     document.body,
   );
 }
-
-export default Drawer;

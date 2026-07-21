@@ -159,7 +159,7 @@ export function CommandMenu({ open, onClose }: CommandMenuProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-earth-950/70 backdrop-blur-sm"
+            className="absolute inset-0 bg-ink-950/70 backdrop-blur-sm"
             onClick={onClose}
           />
 
@@ -169,27 +169,27 @@ export function CommandMenu({ open, onClose }: CommandMenuProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: -8 }}
             transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
-            className="relative w-full max-w-lg bg-earth-900 border border-earth-700/60 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden"
+            className="relative w-full max-w-lg bg-ink-900 border border-ink-700/60 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden"
           >
             {/* Search input */}
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-earth-800/60">
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-ink-800/60">
               {searching
-                ? <Loader2 className="w-4 h-4 text-accent-primary shrink-0 animate-spin" />
-                : <Search className="w-4 h-4 text-earth-500 shrink-0" />
+                ? <Loader2 className="w-4 h-4 text-em shrink-0 animate-spin" />
+                : <Search className="w-4 h-4 text-slate-500 shrink-0" />
               }
               <input
                 ref={inputRef}
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 placeholder="Szukaj modułu, przetargu lub akcji… (⌘K)"
-                className="flex-1 bg-transparent text-earth-100 placeholder-earth-600 text-sm outline-none"
+                className="flex-1 bg-transparent text-slate-100 placeholder-ink-600 text-sm outline-none"
               />
               {query && (
-                <button onClick={() => setQuery('')} className="text-earth-600 hover:text-earth-300 transition-colors">
+                <button onClick={() => setQuery('')} className="text-slate-600 hover:text-slate-300 transition-colors">
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
-              <button onClick={onClose} className="text-earth-600 hover:text-earth-300 transition-colors">
+              <button onClick={onClose} className="text-slate-600 hover:text-slate-300 transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -199,20 +199,20 @@ export function CommandMenu({ open, onClose }: CommandMenuProps) {
               {/* Tender results section */}
               {tenderItems.length > 0 && (
                 <>
-                  <div className="px-4 py-1.5 text-[10px] font-semibold text-earth-600 uppercase tracking-wider">Przetargi</div>
+                  <div className="px-4 py-1.5 text-[10px] font-semibold text-slate-600 uppercase tracking-wider">Przetargi</div>
                   {tenderItems.map((item, idx) => (
                     <button
                       key={item.id}
                       onClick={item.action}
                       onMouseEnter={() => setSelected(idx)}
-                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${idx === selected ? 'bg-accent-primary/10 text-accent-primary' : 'text-earth-300 hover:bg-earth-800/60'}`}
+                      className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${idx === selected ? 'bg-em/10 text-em' : 'text-slate-300 hover:bg-ink-800/60'}`}
                     >
-                      <span className={idx === selected ? 'text-accent-primary' : 'text-earth-500'}>{item.icon}</span>
+                      <span className={idx === selected ? 'text-em' : 'text-slate-500'}>{item.icon}</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{item.label}</p>
-                        {item.description && <p className="text-xs text-earth-600 truncate">{item.description}</p>}
+                        {item.description && <p className="text-xs text-slate-600 truncate">{item.description}</p>}
                       </div>
-                      <ExternalLink className="w-3 h-3 text-earth-700 shrink-0" />
+                      <ExternalLink className="w-3 h-3 text-slate-700 shrink-0" />
                     </button>
                   ))}
                 </>
@@ -222,7 +222,7 @@ export function CommandMenu({ open, onClose }: CommandMenuProps) {
               {filteredPages.length > 0 && (
                 <>
                   {(tenderItems.length > 0 || query) && (
-                    <div className="px-4 py-1.5 text-[10px] font-semibold text-earth-600 uppercase tracking-wider mt-1">
+                    <div className="px-4 py-1.5 text-[10px] font-semibold text-slate-600 uppercase tracking-wider mt-1">
                       {query ? 'Strony' : 'Nawigacja'}
                     </div>
                   )}
@@ -233,12 +233,12 @@ export function CommandMenu({ open, onClose }: CommandMenuProps) {
                         key={item.id}
                         onClick={item.action}
                         onMouseEnter={() => setSelected(idx)}
-                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${idx === selected ? 'bg-accent-primary/10 text-accent-primary' : 'text-earth-300 hover:bg-earth-800/60'}`}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${idx === selected ? 'bg-em/10 text-em' : 'text-slate-300 hover:bg-ink-800/60'}`}
                       >
-                        <span className={idx === selected ? 'text-accent-primary' : 'text-earth-500'}>{item.icon}</span>
+                        <span className={idx === selected ? 'text-em' : 'text-slate-500'}>{item.icon}</span>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium">{item.label}</p>
-                          {item.description && <p className="text-xs text-earth-600">{item.description}</p>}
+                          {item.description && <p className="text-xs text-slate-600">{item.description}</p>}
                         </div>
                       </button>
                     );
@@ -248,23 +248,23 @@ export function CommandMenu({ open, onClose }: CommandMenuProps) {
 
               {/* Empty */}
               {allItems.length === 0 && !searching && (
-                <p className="px-4 py-6 text-center text-earth-600 text-sm">
+                <p className="px-4 py-6 text-center text-slate-600 text-sm">
                   Brak wyników dla &ldquo;{query}&rdquo;
                 </p>
               )}
               {searching && apiResults.length === 0 && (
-                <p className="px-4 py-4 text-center text-earth-600 text-sm flex items-center justify-center gap-2">
+                <p className="px-4 py-4 text-center text-slate-600 text-sm flex items-center justify-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin" /> Szukam…
                 </p>
               )}
             </div>
 
             {/* Footer hint */}
-            <div className="px-4 py-2 border-t border-earth-800/60 flex items-center gap-3 text-xs text-earth-700">
+            <div className="px-4 py-2 border-t border-ink-800/60 flex items-center gap-3 text-xs text-slate-700">
               <span>↑↓ nawigacja</span>
               <span>↵ wybierz</span>
               <span>Esc zamknij</span>
-              {query.length >= 2 && <span className="ml-auto text-earth-800">szukam w API…</span>}
+              {query.length >= 2 && <span className="ml-auto text-ink-800">szukam w API…</span>}
             </div>
           </motion.div>
         </div>

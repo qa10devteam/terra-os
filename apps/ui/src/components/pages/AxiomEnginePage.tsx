@@ -88,7 +88,7 @@ export default function AxiomEnginePage() {
       {loading && (
         <div className="space-y-3">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-24 rounded-token-lg bg-earth-900/50 animate-shimmer" />
+            <div key={i} className="h-24 rounded-xl bg-ink-900/50 animate-shimmer" />
           ))}
         </div>
       )}
@@ -96,8 +96,8 @@ export default function AxiomEnginePage() {
       {/* Create Modal */}
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-md card p-6 shadow-token-lg">
-            <h3 className="mb-4 text-lg font-semibold text-earth-100">Utwórz aksjomat</h3>
+          <div className="w-full max-w-md card p-6 shadow-xl">
+            <h3 className="mb-4 text-lg font-semibold text-slate-100">Utwórz aksjomat</h3>
             <div className="space-y-3">
               <input
                 placeholder="Nazwa"
@@ -144,9 +144,9 @@ export default function AxiomEnginePage() {
       {/* Axioms List */}
       {!loading && axioms.length === 0 && (
         <GlassCard className="flex flex-col items-center justify-center py-16">
-          <Settings size={48} className="text-earth-600 mb-3" />
-          <p className="text-sm text-earth-400">Brak zdefiniowanych aksjomatów</p>
-          <p className="text-xs text-earth-500">Utwórz reguły, aby automatyzować workflow</p>
+          <Settings size={48} className="text-slate-600 mb-3" />
+          <p className="text-sm text-slate-400">Brak zdefiniowanych aksjomatów</p>
+          <p className="text-xs text-slate-500">Utwórz reguły, aby automatyzować workflow</p>
         </GlassCard>
       )}
 
@@ -157,17 +157,17 @@ export default function AxiomEnginePage() {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
-                    <h3 className="text-sm font-semibold text-earth-100">{axiom.name}</h3>
-                    <span className="rounded-token bg-earth-800/60 border border-earth-700/40 px-1.5 py-0.5 text-xs text-earth-400">
+                    <h3 className="text-sm font-semibold text-slate-100">{axiom.name}</h3>
+                    <span className="rounded-md bg-ink-800/60 border border-ink-700/40 px-1.5 py-0.5 text-xs text-slate-400">
                       P: {axiom.priority}
                     </span>
                   </div>
-                  <p className="mt-1 text-xs text-earth-400">{axiom.description}</p>
+                  <p className="mt-1 text-xs text-slate-400">{axiom.description}</p>
                   <div className="mt-3 space-y-1">
-                    <p className="text-xs text-earth-500 font-mono">
+                    <p className="text-xs text-slate-500 font-mono">
                       <span className="text-info font-semibold">IF</span>{' '}{axiom.condition}
                     </p>
-                    <p className="text-xs text-earth-500 font-mono">
+                    <p className="text-xs text-slate-500 font-mono">
                       <span className="text-success font-semibold">THEN</span>{' '}{axiom.action}
                     </p>
                   </div>
@@ -175,14 +175,14 @@ export default function AxiomEnginePage() {
                 <div className="flex items-center gap-2 ml-4">
                   <button
                     onClick={() => toggleAxiom(axiom.id, axiom.enabled)}
-                    className={`relative h-6 w-11 rounded-full transition-colors ${axiom.enabled ? "bg-accent-primary" : "bg-earth-700"}`}
+                    className={`relative h-6 w-11 rounded-full transition-colors ${axiom.enabled ? "bg-em" : "bg-ink-700"}`}
                     aria-label={axiom.enabled ? 'Wyłącz' : 'Włącz'}
                   >
-                    <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-earth-100 transition-transform ${axiom.enabled ? "left-[22px]" : "left-0.5"}`} />
+                    <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-slate-100 transition-transform ${axiom.enabled ? "left-[22px]" : "left-0.5"}`} />
                   </button>
                   <button
                     onClick={() => deleteAxiom(axiom.id)}
-                    className="rounded-token p-1 text-earth-500 hover:bg-danger/10 hover:text-danger transition-colors"
+                    className="rounded-md p-1 text-slate-500 hover:bg-danger/10 hover:text-danger transition-colors"
                     aria-label="Usuń aksjomat"
                   >
                     <Trash2 size={16} />

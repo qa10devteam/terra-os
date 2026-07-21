@@ -110,21 +110,21 @@ function KanbanCard({
       onDragEnd={onDragEnd}
       onClick={() => onClick(tender)}
       className={[
-        'p-3 rounded-token-xl bg-earth-900/70 border cursor-grab active:cursor-grabbing',
-        'hover:bg-earth-900 transition-all duration-150 group select-none',
-        isUrgent ? 'border-l-2 border-red-500/50 border-earth-800/50' : 'border-earth-800/50 hover:border-earth-700/70',
+        'p-3 rounded-2xl bg-ink-900/70 border cursor-grab active:cursor-grabbing',
+        'hover:bg-ink-900 transition-all duration-150 group select-none',
+        isUrgent ? 'border-l-2 border-red-500/50 border-ink-800/50' : 'border-ink-800/50 hover:border-ink-700/70',
       ].join(' ')}
     >
       {/* Title */}
-      <p className="text-earth-100 text-xs font-medium leading-snug line-clamp-2 group-hover:text-earth-100">
+      <p className="text-slate-100 text-xs font-medium leading-snug line-clamp-2 group-hover:text-slate-100">
         {tender.title}
       </p>
       {/* Buyer */}
-      <p className="text-earth-500 text-[11px] mt-1 truncate">{tender.buyer ?? '—'}</p>
+      <p className="text-slate-500 text-[11px] mt-1 truncate">{tender.buyer ?? '—'}</p>
 
       {/* CPV tag */}
       {cpvPrefix && (
-        <span className="inline-block mt-1.5 text-[10px] px-1.5 py-0.5 rounded bg-earth-800/80 text-earth-500 font-mono">
+        <span className="inline-block mt-1.5 text-[10px] px-1.5 py-0.5 rounded bg-ink-800/80 text-slate-500 font-mono">
           CPV {cpvPrefix}
         </span>
       )}
@@ -132,11 +132,11 @@ function KanbanCard({
       {/* Bottom row */}
       <div className="flex items-end justify-between mt-2 gap-1">
         <div className="flex-1 min-w-0">
-          <p className="text-earth-400 text-[11px] font-mono tabular-nums">{fmtPLN(tender.value_pln)}</p>
+          <p className="text-slate-400 text-[11px] font-mono tabular-nums">{fmtPLN(tender.value_pln)}</p>
           {days !== null && (
             <p className={[
               'text-[10px] mt-0.5 font-mono',
-              days < 0 ? 'text-red-500' : days <= 3 ? 'text-red-400' : days <= 7 ? 'text-yellow-400' : 'text-earth-600',
+              days < 0 ? 'text-nogo' : days <= 3 ? 'text-nogo' : days <= 7 ? 'text-warn' : 'text-slate-600',
             ].join(' ')}>
               {days < 0 ? `${Math.abs(days)}d po terminie` : days === 0 ? 'Dziś' : `${days}d`}
             </p>
@@ -181,8 +181,8 @@ function KanbanColumn({
       onDragLeave={onDragLeave}
       style={colStyle}
       className={[
-        'flex flex-col w-[220px] shrink-0 rounded-token-xl border transition-all duration-150',
-        'bg-earth-900/20',
+        'flex flex-col w-[220px] shrink-0 rounded-2xl border transition-all duration-150',
+        'bg-ink-900/20',
         isDragOver ? 'scale-[1.01]' : '',
       ].join(' ')}
     >
@@ -201,7 +201,7 @@ function KanbanColumn({
           </span>
         </div>
         {totalVal > 0 && (
-          <p className="text-[11px] text-earth-600 mt-0.5 font-mono">{fmtPLN(totalVal)}</p>
+          <p className="text-[11px] text-slate-600 mt-0.5 font-mono">{fmtPLN(totalVal)}</p>
         )}
       </div>
 
@@ -209,16 +209,16 @@ function KanbanColumn({
       <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-[120px]" style={{ maxHeight: 'calc(100vh - 280px)' }}>
         {loading ? (
           [0, 1].map(i => (
-            <div key={i} className="p-3 rounded-token-xl bg-earth-900/60 border border-earth-800/50 animate-pulse-soft">
-              <div className="h-3 bg-earth-800 rounded w-full mb-1.5" />
-              <div className="h-3 bg-earth-800 rounded w-3/4 mb-3" />
-              <div className="h-2 bg-earth-800 rounded w-1/2" />
+            <div key={i} className="p-3 rounded-2xl bg-ink-900/60 border border-ink-800/50 animate-pulse-soft">
+              <div className="h-3 bg-ink-800 rounded w-full mb-1.5" />
+              <div className="h-3 bg-ink-800 rounded w-3/4 mb-3" />
+              <div className="h-2 bg-ink-800 rounded w-1/2" />
             </div>
           ))
         ) : tenders.length === 0 ? (
           <div className="py-8 text-center">
-            <TrendingUp className="w-5 h-5 text-earth-800 mx-auto mb-1.5" />
-            <p className="text-earth-700 text-xs">Brak przetargów</p>
+            <TrendingUp className="w-5 h-5 text-ink-800 mx-auto mb-1.5" />
+            <p className="text-slate-700 text-xs">Brak przetargów</p>
           </div>
         ) : (
           tenders.map(t => (
@@ -268,7 +268,7 @@ function TimelineView({ tenders }: { tenders: TenderItem[] }) {
   }
 
   return (
-    <div className="overflow-x-auto rounded-token-xl border border-earth-800/60 bg-earth-950">
+    <div className="overflow-x-auto rounded-2xl border border-ink-800/60 bg-ink-950">
       <svg width={TOTAL_W} height={HEIGHT} viewBox={`0 0 ${TOTAL_W} ${HEIGHT}`}>
         {/* Background */}
         <rect width={TOTAL_W} height={HEIGHT} fill="#0A0906" />
@@ -386,18 +386,18 @@ function AddModal({
       >
         <GlassCard className="p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-semibold text-earth-100">Dodaj przetarg do pipeline</h3>
+            <h3 className="text-base font-semibold text-slate-100">Dodaj przetarg do pipeline</h3>
             <button
               onClick={onClose}
-              className="w-7 h-7 flex items-center justify-center rounded-token-lg hover:bg-earth-800 transition-colors"
+              className="w-7 h-7 flex items-center justify-center rounded-xl hover:bg-ink-800 transition-colors"
             >
-              <X className="w-4 h-4 text-earth-400" />
+              <X className="w-4 h-4 text-slate-400" />
             </button>
           </div>
 
           {/* Search */}
           <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-earth-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
             <input
               autoFocus
               value={query}
@@ -405,30 +405,30 @@ function AddModal({
               placeholder="Szukaj przetargu po tytule lub zamawiającym…"
               className="input-base w-full pl-9 pr-4 py-2.5"
             />
-            {searching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-earth-500 animate-spin" />}
+            {searching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 animate-spin" />}
           </div>
 
           {/* Results */}
           <div className="space-y-2 max-h-72 overflow-y-auto">
             {results.length === 0 && query.length >= 2 && !searching && (
               <div className="py-8 text-center">
-                <Search className="w-8 h-8 text-earth-700 mx-auto mb-2" />
-                <p className="text-earth-500 text-sm">Brak wyników dla &ldquo;{query}&rdquo;</p>
+                <Search className="w-8 h-8 text-slate-700 mx-auto mb-2" />
+                <p className="text-slate-500 text-sm">Brak wyników dla &ldquo;{query}&rdquo;</p>
               </div>
             )}
             {query.length < 2 && (
-              <p className="text-center text-earth-600 text-sm py-6">Wpisz co najmniej 2 znaki aby wyszukać</p>
+              <p className="text-center text-slate-600 text-sm py-6">Wpisz co najmniej 2 znaki aby wyszukać</p>
             )}
             {results.map(t => (
               <button
                 key={t.id}
                 onClick={() => onAdd(t)}
-                className="w-full text-left p-3 rounded-token-xl bg-earth-800/40 hover:bg-earth-800/80 border border-earth-700/40 hover:border-accent-primary/40 transition-all duration-150 group"
+                className="w-full text-left p-3 rounded-2xl bg-ink-800/40 hover:bg-ink-800/80 border border-ink-700/40 hover:border-em/40 transition-all duration-150 group"
               >
-                <p className="text-earth-100 text-sm font-medium line-clamp-1 group-hover:text-earth-100">{t.title}</p>
+                <p className="text-slate-100 text-sm font-medium line-clamp-1 group-hover:text-slate-100">{t.title}</p>
                 <div className="flex items-center gap-2 mt-1">
-                  <p className="text-earth-500 text-xs truncate flex-1">{t.buyer ?? '—'}</p>
-                  <span className="text-earth-400 text-xs font-mono shrink-0">{fmtPLN(t.value_pln)}</span>
+                  <p className="text-slate-500 text-xs truncate flex-1">{t.buyer ?? '—'}</p>
+                  <span className="text-slate-400 text-xs font-mono shrink-0">{fmtPLN(t.value_pln)}</span>
                 </div>
               </button>
             ))}
@@ -569,7 +569,7 @@ export function PipelinePage() {
   const actions = (
     <div className="flex items-center gap-2 flex-wrap">
       {/* View toggle */}
-      <div className="flex items-center rounded-token bg-earth-900 border border-earth-800/60 p-0.5">
+      <div className="flex items-center rounded-md bg-ink-900 border border-ink-800/60 p-0.5">
         <Button
           variant={view === 'kanban' ? 'primary' : 'secondary'}
           size="sm"
@@ -614,7 +614,7 @@ export function PipelinePage() {
               icon={Activity}
               label="Aktywne przetargi"
               value={String(kpi.active)}
-              iconColor="text-accent-info"
+              iconColor="text-indigo"
               loading={loading}
             />
             <MetricCard
@@ -628,7 +628,7 @@ export function PipelinePage() {
               icon={Target}
               label="Win Rate MTD"
               value={`${Math.round(kpi.win_rate_mtd * 100)}%`}
-              iconColor="text-accent-success"
+              iconColor="text-go"
               loading={loading}
             />
           </>
@@ -638,7 +638,7 @@ export function PipelinePage() {
               icon={Activity}
               label="Aktywne przetargi"
               value={String(totalCount)}
-              iconColor="text-accent-info"
+              iconColor="text-indigo"
               loading={loading}
             />
             <MetricCard
@@ -652,7 +652,7 @@ export function PipelinePage() {
               icon={Target}
               label="Win Rate"
               value={winRate !== null ? `${winRate}%` : '—'}
-              iconColor="text-accent-success"
+              iconColor="text-go"
               loading={loading}
             />
           </>
@@ -684,13 +684,13 @@ export function PipelinePage() {
       ) : (
         <div>
           <div className="mb-3">
-            <h3 className="text-sm font-semibold text-earth-300">Harmonogram terminów — następne 60 dni</h3>
-            <p className="text-xs text-earth-500 mt-0.5">Poziome paski = czas do deadline, kolor = status pipeline</p>
+            <h3 className="text-sm font-semibold text-slate-300">Harmonogram terminów — następne 60 dni</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Poziome paski = czas do deadline, kolor = status pipeline</p>
           </div>
           {/* Legend */}
           <div className="flex items-center gap-4 mb-4 flex-wrap">
             {COLUMNS.map(c => (
-              <div key={c.key} className="flex items-center gap-1.5 text-xs text-earth-500">
+              <div key={c.key} className="flex items-center gap-1.5 text-xs text-slate-500">
                 <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: c.color }} />
                 {c.label}
               </div>

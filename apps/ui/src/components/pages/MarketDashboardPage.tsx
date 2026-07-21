@@ -39,19 +39,19 @@ import { useAuthFetch }      from '@/lib/api-v2';
 // ─── Design tokens (dopasowane do earth palette) ─────────────────────────────
 
 const T = {
-  emerald:  '#10b981',   // accent-primary
-  blue:     '#3b82f6',   // accent-info
-  violet:   '#8b5cf6',   // accent-violet
-  amber:    '#f59e0b',   // accent-warning
-  red:      '#ef4444',   // accent-danger
+  emerald:  '#10b981',   // em
+  blue:     '#3b82f6',   // indigo
+  violet:   '#8b5cf6',   // violet
+  amber:    '#f59e0b',   // warn
+  red:      '#ef4444',   // nogo
   cyan:     '#06b6d4',
-  surface:  '#1c1a16',   // earth-800
-  border:   'rgba(74,66,55,0.5)',   // earth-700/50
-  muted:    '#6b5e50',   // earth-500
-  text2:    '#c4b5a0',   // earth-300
+  surface:  '#1c1a16',   // ink-800
+  border:   'rgba(74,66,55,0.5)',   // ink-700/50
+  muted:    '#6b5e50',   // slate-500
+  text2:    '#c4b5a0',   // slate-300
 } as const;
 
-// Tooltip style — pasuje do earth-900 tła
+// Tooltip style — pasuje do ink-900 tła
 const TOOLTIP_STYLE = {
   backgroundColor: '#0f0d0a',
   border: `1px solid ${T.border}`,
@@ -164,7 +164,7 @@ interface MarketData {
 function ChartSkeleton({ height = 260 }: { height?: number }) {
   return (
     <div
-      className="rounded-token-lg bg-earth-800/40 animate-pulse"
+      className="rounded-xl bg-ink-800/40 animate-pulse"
       style={{ height }}
     />
   );
@@ -188,13 +188,13 @@ function ChartCard({
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-earth-700/60 to-earth-800/80 flex items-center justify-center">
-            <Icon className="w-4 h-4 text-accent-primary" />
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-ink-700/60 to-ink-800/80 flex items-center justify-center">
+            <Icon className="w-4 h-4 text-em" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-earth-100 leading-tight">{title}</h3>
+            <h3 className="text-sm font-semibold text-slate-100 leading-tight">{title}</h3>
             {subtitle && (
-              <p className="text-[11px] text-earth-500 mt-0.5">{subtitle}</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">{subtitle}</p>
             )}
           </div>
         </div>
@@ -209,14 +209,14 @@ function ChartCard({
 // Badge "live" z pulsującą kropką
 function LiveBadge() {
   return (
-    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-accent-primary/10 border border-accent-primary/20">
-      <span className="w-1.5 h-1.5 rounded-full bg-accent-primary animate-pulse" />
-      <span className="text-[10px] font-medium text-accent-primary">LIVE</span>
+    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-em/10 border border-em/20">
+      <span className="w-1.5 h-1.5 rounded-full bg-em animate-pulse" />
+      <span className="text-[10px] font-medium text-em">LIVE</span>
     </span>
   );
 }
 
-// Custom Tooltip z earth-900 tłem
+// Custom Tooltip z ink-900 tłem
 function ChartTooltipContent({
   active, payload, label, formatter,
 }: {
@@ -228,17 +228,17 @@ function ChartTooltipContent({
   if (!active || !payload?.length) return null;
   return (
     <div
-      className="rounded-token-lg border border-earth-700/50 shadow-token-lg"
+      className="rounded-xl border border-ink-700/50 shadow-xl"
       style={TOOLTIP_STYLE}
     >
-      {label && <p className="text-earth-400 text-[11px] mb-1">{label}</p>}
+      {label && <p className="text-slate-400 text-[11px] mb-1">{label}</p>}
       {payload.map((p, i) => {
         const [val, name] = formatter ? formatter(p.value, p.name) : [p.value.toString(), p.name];
         return (
           <div key={i} className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: p.color }} />
-            <span className="text-earth-300 text-xs">{name}:</span>
-            <span className="text-earth-100 text-xs font-semibold tabular-nums">{val}</span>
+            <span className="text-slate-300 text-xs">{name}:</span>
+            <span className="text-slate-100 text-xs font-semibold tabular-nums">{val}</span>
           </div>
         );
       })}
@@ -291,25 +291,25 @@ function KPIRow({ kpi, loading }: { kpi?: KPI; loading: boolean }) {
       icon: Activity,
       label: 'BZP wyniki (30 dni)',
       value: kpi ? kpi.bzp_30d.toLocaleString('pl') : '—',
-      iconColor: 'text-accent-primary',
+      iconColor: 'text-em',
     },
     {
       icon: Building2,
       label: 'Unikalnych wykonawców',
       value: kpi ? kpi.unique_contractors.toLocaleString('pl') : '—',
-      iconColor: 'text-accent-info',
+      iconColor: 'text-indigo',
     },
     {
       icon: TrendingUp,
       label: 'Śr. wartość (tys. PLN)',
       value: kpi ? `${kpi.avg_value_k.toFixed(0)} k` : '—',
-      iconColor: 'text-accent-warning',
+      iconColor: 'text-warn',
     },
     {
       icon: BarChart3,
       label: 'Łączna wartość BZP (mld)',
       value: kpi ? `${kpi.total_value_bln} mld` : '—',
-      iconColor: 'text-accent-violet',
+      iconColor: 'text-violet',
     },
     {
       icon: Globe2,
@@ -321,7 +321,7 @@ function KPIRow({ kpi, loading }: { kpi?: KPI; loading: boolean }) {
       icon: Zap,
       label: 'Pre-tender sygnały (30 dni)',
       value: kpi ? kpi.pretender_30d.toLocaleString('pl') : '—',
-      iconColor: 'text-accent-danger',
+      iconColor: 'text-nogo',
     },
   ];
 
@@ -427,14 +427,14 @@ export function MarketDashboardPage() {
 
   const actions = (
     <div className="flex items-center gap-2">
-      <span className="text-[11px] text-earth-600 flex items-center gap-1">
+      <span className="text-[11px] text-slate-600 flex items-center gap-1">
         <Clock className="w-3 h-3" />
         {refreshedAt ? refreshedAt.toLocaleTimeString('pl', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
       </span>
       <button
         onClick={fetchData}
         disabled={loading}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-token bg-earth-800 border border-earth-700/50 text-earth-300 hover:text-earth-100 hover:bg-earth-700 transition-colors text-xs disabled:opacity-50"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-ink-800 border border-ink-700/50 text-slate-300 hover:text-slate-100 hover:bg-ink-700 transition-colors text-xs disabled:opacity-50"
       >
         <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
         Odśwież
@@ -455,7 +455,7 @@ export function MarketDashboardPage() {
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="flex items-center gap-3 px-4 py-3 rounded-token-lg bg-accent-danger/10 border border-accent-danger/30 text-accent-danger text-sm mb-2"
+            className="flex items-center gap-3 px-4 py-3 rounded-xl bg-nogo/10 border border-nogo/30 text-nogo text-sm mb-2"
           >
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>Błąd ładowania danych: {error}</span>
@@ -785,7 +785,7 @@ export function MarketDashboardPage() {
           ) : heatmapData.length > 0 ? (
             <PolandHeatmap data={heatmapData} />
           ) : (
-            <div className="flex items-center justify-center h-[280px] text-earth-600 text-sm">
+            <div className="flex items-center justify-center h-[280px] text-slate-600 text-sm">
               Brak danych geograficznych
             </div>
           )}
@@ -805,7 +805,7 @@ export function MarketDashboardPage() {
           loading={loading}
           height={200}
           badge={
-            <span className="px-2 py-0.5 rounded-full bg-accent-warning/10 border border-accent-warning/20 text-[10px] font-medium text-accent-warning">
+            <span className="px-2 py-0.5 rounded-full bg-warn/10 border border-warn/20 text-[10px] font-medium text-warn">
               PRO
             </span>
           }
@@ -851,7 +851,7 @@ export function MarketDashboardPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.9 }}
-        className="text-[11px] text-earth-700 flex items-center gap-1.5 pt-1"
+        className="text-[11px] text-slate-700 flex items-center gap-1.5 pt-1"
       >
         <ChevronRight className="w-3 h-3" />
         Dane: BZP (ezamówienia.gov.pl) · TED (ted.europa.eu) · GUS BDL — aktualizacja co 15 min / 6h / 24h

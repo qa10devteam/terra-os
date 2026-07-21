@@ -57,22 +57,22 @@ const STAGES: Array<{ id: CRMStage; label: string }> = [
 ];
 
 const STAGE_COLORS: Record<CRMStage, string> = {
-  prospect:  'bg-earth-800 text-earth-300 border-earth-700',
-  contacted: 'bg-accent-info/20 text-accent-info border-accent-info/40',
-  demo:      'bg-accent-violet/20 text-accent-violet border-accent-violet/40',
-  active:    'bg-accent-primary/20 text-accent-primary border-accent-primary/40',
-  churned:   'bg-accent-danger/20 text-accent-danger border-accent-danger/40',
+  prospect:  'bg-ink-800 text-slate-300 border-ink-700',
+  contacted: 'bg-indigo/20 text-indigo border-indigo/40',
+  demo:      'bg-violet/20 text-violet border-violet/40',
+  active:    'bg-em/20 text-em border-em/40',
+  churned:   'bg-nogo/20 text-nogo border-nogo/40',
 };
 
 const STAGE_DOT: Record<CRMStage, string> = {
-  prospect:  'bg-earth-500',
-  contacted: 'bg-accent-info',
-  demo:      'bg-accent-violet',
-  active:    'bg-accent-primary',
-  churned:   'bg-accent-danger',
+  prospect:  'bg-slate-500',
+  contacted: 'bg-indigo',
+  demo:      'bg-violet',
+  active:    'bg-em',
+  churned:   'bg-nogo',
 };
 
-const PRIORITY_COLORS = ['', 'bg-earth-600', 'bg-accent-warning/70', 'bg-accent-warning', 'bg-accent-warning/90', 'bg-accent-danger'];
+const PRIORITY_COLORS = ['', 'bg-ink-600', 'bg-warn/70', 'bg-warn', 'bg-warn/90', 'bg-nogo'];
 const CPV_BAR_COLORS  = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4'];
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -103,10 +103,10 @@ function cityLabel(item: BuyerCRMItem): string {
 function StageBadge({ stage }: { stage: string }) {
   const s = stage as CRMStage;
   const found = STAGES.find(x => x.id === s);
-  const cls = STAGE_COLORS[s] ?? 'bg-earth-800 text-earth-300 border-earth-700';
+  const cls = STAGE_COLORS[s] ?? 'bg-ink-800 text-slate-300 border-ink-700';
   return (
     <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-0.5 rounded-full border ${cls}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${STAGE_DOT[s] ?? 'bg-earth-500'}`} />
+      <span className={`w-1.5 h-1.5 rounded-full ${STAGE_DOT[s] ?? 'bg-slate-500'}`} />
       {found?.label ?? stage}
     </span>
   );
@@ -120,7 +120,7 @@ function PriorityDots({ priority }: { priority: number }) {
       {Array.from({ length: 5 }).map((_, i) => (
         <span
           key={i}
-          className={`w-2 h-2 rounded-full ${i < priority ? PRIORITY_COLORS[priority] : 'bg-earth-700'}`}
+          className={`w-2 h-2 rounded-full ${i < priority ? PRIORITY_COLORS[priority] : 'bg-ink-700'}`}
         />
       ))}
     </div>
@@ -139,27 +139,27 @@ function FollowupBanner({ followups, onDismiss }: { followups: Followup[]; onDis
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
-      className="flex items-center gap-3 px-4 py-2.5 bg-amber-500/10 border border-amber-500/30 rounded-xl text-sm mb-4"
+      className="flex items-center gap-3 px-4 py-2.5 bg-warn-bg border border-warn-brd rounded-xl text-sm mb-4"
     >
-      <AlertTriangle size={15} className="text-amber-400 shrink-0" />
+      <AlertTriangle size={15} className="text-warn shrink-0" />
       <div className="flex-1 flex flex-wrap items-center gap-x-4 gap-y-0.5">
         {overdue.length > 0 && (
-          <span className="text-amber-300 font-medium">
+          <span className="text-warn font-medium">
             {overdue.length} przeterminowanych follow-up
           </span>
         )}
         {upcoming.length > 0 && (
-          <span className="text-earth-400">
+          <span className="text-slate-400">
             {upcoming.length} zaplanowanych w tym tygodniu
           </span>
         )}
-        <span className="text-earth-500 text-xs">
+        <span className="text-slate-500 text-xs">
           {followups.slice(0, 3).map(f => f.buyer_name ?? f.buyer_nip).join(', ')}
           {followups.length > 3 ? ` +${followups.length - 3}` : ''}
         </span>
       </div>
-      <button onClick={onDismiss} className="p-1 hover:bg-earth-800 rounded transition-colors">
-        <X size={13} className="text-earth-500" />
+      <button onClick={onDismiss} className="p-1 hover:bg-ink-800 rounded transition-colors">
+        <X size={13} className="text-slate-500" />
       </button>
     </motion.div>
   );
@@ -182,15 +182,15 @@ function BuyerCard({
       onClick={onClick}
       className={`w-full text-left p-4 rounded-xl border transition-all group
         ${selected
-          ? 'bg-earth-800 border-accent-primary/50 shadow-token-sm'
-          : 'bg-earth-900 border-earth-700 hover:border-earth-600 hover:bg-earth-850'}`}
+          ? 'bg-ink-800 border-em/50 shadow-md-sm'
+          : 'bg-ink-900 border-ink-700 hover:border-ink-600 hover:bg-ink-800'}`}
     >
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-earth-100 truncate text-sm leading-tight">
+          <div className="font-semibold text-slate-100 truncate text-sm leading-tight">
             {item.buyer_name ?? item.buyer_nip}
           </div>
-          <div className="text-xs text-earth-500 font-mono mt-0.5">{item.buyer_nip}</div>
+          <div className="text-xs text-slate-500 font-mono mt-0.5">{item.buyer_nip}</div>
         </div>
         <div className="flex flex-col items-end gap-1.5 shrink-0">
           <StageBadge stage={item.crm_stage} />
@@ -198,7 +198,7 @@ function BuyerCard({
         </div>
       </div>
 
-      <div className="flex items-center gap-3 text-xs text-earth-500 flex-wrap">
+      <div className="flex items-center gap-3 text-xs text-slate-500 flex-wrap">
         {(item.city ?? item.buyer_city) && (
           <span className="flex items-center gap-1">
             <MapPin size={11} className="shrink-0" />
@@ -214,7 +214,7 @@ function BuyerCard({
       </div>
 
       {item.next_followup && (
-        <div className={`mt-2 flex items-center gap-1 text-xs ${overdue ? 'text-red-400' : 'text-amber-400'}`}>
+        <div className={`mt-2 flex items-center gap-1 text-xs ${overdue ? 'text-nogo' : 'text-warn'}`}>
           {overdue ? <AlertTriangle size={11} /> : <Clock size={11} />}
           Follow-up: {fmtDate(item.next_followup)}
         </div>
@@ -223,15 +223,15 @@ function BuyerCard({
       <div className="flex items-center justify-between mt-2">
         <div className="flex gap-3 text-xs">
           {item.total_tenders != null && (
-            <span className="text-earth-400">{item.total_tenders} przetargów</span>
+            <span className="text-slate-400">{item.total_tenders} przetargów</span>
           )}
           {(item.total_value != null || item.annual_budget_est != null) && (
-            <span className="text-accent-success font-mono">
+            <span className="text-go font-mono">
               {fmtPLN(item.annual_budget_est ?? item.total_value ?? 0)}
             </span>
           )}
         </div>
-        <ChevronRight size={14} className={`text-earth-600 group-hover:text-earth-400 transition-colors ${selected ? 'text-accent-primary' : ''}`} />
+        <ChevronRight size={14} className={`text-slate-600 group-hover:text-slate-400 transition-colors ${selected ? 'text-em' : ''}`} />
       </div>
     </motion.button>
   );
@@ -263,21 +263,21 @@ function TendersTab({ itemId }: { itemId: string }) {
   if (loading) return (
     <div className="space-y-2 pt-2">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="h-14 animate-pulse bg-earth-800 rounded-lg" />
+        <div key={i} className="h-14 animate-pulse bg-ink-800 rounded-lg" />
       ))}
     </div>
   );
 
   if (tenders.length === 0) return (
-    <div className="text-center py-10 text-earth-500 text-sm">
-      <FileText size={28} className="mx-auto mb-2 text-earth-700" />
+    <div className="text-center py-10 text-slate-500 text-sm">
+      <FileText size={28} className="mx-auto mb-2 text-slate-700" />
       Brak przetargów w historii
     </div>
   );
 
   return (
     <div className="space-y-2 pt-1">
-      <div className="text-xs text-earth-500 mb-2">
+      <div className="text-xs text-slate-500 mb-2">
         Łącznie: {total} przetargów
       </div>
       {tenders.map((t, i) => (
@@ -286,30 +286,30 @@ function TendersTab({ itemId }: { itemId: string }) {
           initial={{ opacity: 0, x: 6 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: i * 0.03 }}
-          className="bg-earth-900 border border-earth-800/50 rounded-token-xl p-3 hover:border-earth-700 transition-colors"
+          className="bg-ink-900 border border-ink-800/50 rounded-2xl p-3 hover:border-ink-700 transition-colors"
         >
-          <div className="text-sm text-earth-100 line-clamp-2 mb-1.5">{t.title}</div>
+          <div className="text-sm text-slate-100 line-clamp-2 mb-1.5">{t.title}</div>
           <div className="flex items-center gap-3 flex-wrap">
             {t.submission_deadline && (
-              <span className="text-xs text-earth-500 flex items-center gap-1">
+              <span className="text-xs text-slate-500 flex items-center gap-1">
                 <CalendarClock size={11} />
                 {fmtDate(t.submission_deadline)}
               </span>
             )}
             {t.cpv5 && (
-              <span className="text-xs font-mono bg-earth-700 text-earth-400 px-1.5 py-0.5 rounded">
+              <span className="text-xs font-mono bg-ink-700 text-slate-400 px-1.5 py-0.5 rounded">
                 CPV {t.cpv5.slice(0, 8)}
               </span>
             )}
             {t.status && (
               <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                t.status === 'completed' ? 'bg-accent-primary/15 text-accent-primary' :
-                t.status === 'cancelled' ? 'bg-accent-danger/15 text-accent-danger' :
-                'bg-earth-700 text-earth-400'
+                t.status === 'completed' ? 'bg-em/15 text-em' :
+                t.status === 'cancelled' ? 'bg-nogo/15 text-nogo' :
+                'bg-ink-700 text-slate-400'
               }`}>{t.status}</span>
             )}
             {t.value != null && (
-              <span className="text-xs text-accent-success font-mono ml-auto">
+              <span className="text-xs text-go font-mono ml-auto">
                 {fmtMln(t.value / 1_000_000)}
               </span>
             )}
@@ -439,27 +439,27 @@ function BuyerProfilePanel({
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: '100%', opacity: 0 }}
       transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-      className="fixed right-0 top-0 h-full w-full max-w-lg bg-earth-950 border-l border-earth-700 z-50 overflow-y-auto shadow-2xl flex flex-col"
+      className="fixed right-0 top-0 h-full w-full max-w-lg bg-ink-950 border-l border-ink-700 z-50 overflow-y-auto shadow-2xl flex flex-col"
     >
       {/* Header */}
-      <div className="sticky top-0 bg-earth-950/95 backdrop-blur border-b border-earth-800 px-5 py-4 shrink-0">
+      <div className="sticky top-0 bg-ink-950/95 backdrop-blur border-b border-ink-800 px-5 py-4 shrink-0">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex-1 min-w-0">
-            <div className="text-xs text-earth-500 uppercase tracking-widest mb-0.5 font-mono">
+            <div className="text-xs text-slate-500 uppercase tracking-widest mb-0.5 font-mono">
               NIP: {item.buyer_nip}
             </div>
-            <h2 className="font-bold text-earth-50 text-base leading-tight truncate">
+            <h2 className="font-bold text-ink-950/30 text-base leading-tight truncate">
               {item.buyer_name ?? item.buyer_nip}
             </h2>
             {(item.city ?? item.buyer_city) && (
-              <div className="flex items-center gap-1 mt-1 text-xs text-earth-500">
+              <div className="flex items-center gap-1 mt-1 text-xs text-slate-500">
                 <MapPin size={11} />
                 {cityLabel(item)}
               </div>
             )}
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-earth-800 rounded-lg transition-colors shrink-0">
-            <X size={17} className="text-earth-400" />
+          <button onClick={onClose} className="p-2 hover:bg-ink-800 rounded-lg transition-colors shrink-0">
+            <X size={17} className="text-slate-400" />
           </button>
         </div>
 
@@ -473,7 +473,7 @@ function BuyerProfilePanel({
             {!editing && (
               <button
                 onClick={() => setEditing(true)}
-                className="flex items-center gap-1 px-3 py-1.5 bg-earth-800 hover:bg-earth-700 border border-earth-700 rounded-lg text-xs text-earth-300 transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 bg-ink-800 hover:bg-ink-700 border border-ink-700 rounded-lg text-xs text-slate-300 transition-colors"
               >
                 <Edit3 size={12} /> Edytuj
               </button>
@@ -482,8 +482,8 @@ function BuyerProfilePanel({
               onClick={handleDelete}
               className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs transition-colors border
                 ${deleting
-                  ? 'bg-accent-danger/20 border-accent-danger/50 text-accent-danger'
-                  : 'bg-earth-800 hover:bg-accent-danger/10 border-earth-700 text-earth-500 hover:text-accent-danger hover:border-accent-danger/30'}`}
+                  ? 'bg-nogo/20 border-nogo/50 text-nogo'
+                  : 'bg-ink-800 hover:bg-nogo/10 border-ink-700 text-slate-500 hover:text-nogo hover:border-nogo/30'}`}
             >
               <Trash2 size={12} />
               {deleting ? 'Potwierdź' : 'Usuń'}
@@ -494,22 +494,22 @@ function BuyerProfilePanel({
 
       <div className="flex-1 overflow-y-auto">
         {/* KPI strip */}
-        <div className="grid grid-cols-3 gap-3 px-5 pt-4 pb-3 border-b border-earth-800">
+        <div className="grid grid-cols-3 gap-3 px-5 pt-4 pb-3 border-b border-ink-800">
           {[
             { label: 'Przetargi',  value: item.total_tenders != null ? String(item.total_tenders) : '—', color: '#3b82f6' },
             { label: 'Wartość',    value: fmtMln((item.total_value ?? 0) / 1_000_000), color: '#10b981' },
             { label: 'Budżet est.', value: item.annual_budget_est != null ? fmtPLN(item.annual_budget_est) : '—', color: '#f59e0b' },
           ].map(({ label, value, color }) => (
-            <div key={label} className="bg-earth-900 rounded-xl p-3 border border-earth-800 text-center">
-              <div className="text-xs text-earth-500 mb-0.5">{label}</div>
+            <div key={label} className="bg-ink-900 rounded-xl p-3 border border-ink-800 text-center">
+              <div className="text-xs text-slate-500 mb-0.5">{label}</div>
               <div className="font-bold text-sm leading-tight" style={{ color }}>{value}</div>
             </div>
           ))}
         </div>
 
         {/* Quick stage change */}
-        <div className="px-5 pt-3 pb-2 border-b border-earth-800">
-          <div className="text-xs text-earth-500 mb-2 uppercase tracking-widest">Zmień etap</div>
+        <div className="px-5 pt-3 pb-2 border-b border-ink-800">
+          <div className="text-xs text-slate-500 mb-2 uppercase tracking-widest">Zmień etap</div>
           <div className="flex flex-wrap gap-1.5">
             {STAGES.map(s => (
               <button
@@ -518,7 +518,7 @@ function BuyerProfilePanel({
                 className={`px-2.5 py-1 rounded-full text-xs border transition-colors
                   ${item.crm_stage === s.id
                     ? STAGE_COLORS[s.id]
-                    : 'border-earth-700 text-earth-500 hover:border-earth-600 hover:text-earth-300'}`}
+                    : 'border-ink-700 text-slate-500 hover:border-ink-600 hover:text-slate-300'}`}
               >
                 {s.label}
               </button>
@@ -527,15 +527,15 @@ function BuyerProfilePanel({
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-earth-800 px-5 overflow-x-auto">
+        <div className="flex border-b border-ink-800 px-5 overflow-x-auto">
           {tabs.map(t => (
             <button
               key={t.id}
               onClick={() => { setTab(t.id); setEditing(false); }}
               className={`flex items-center gap-1.5 px-3 py-3 text-xs font-medium border-b-2 shrink-0 transition-colors
                 ${tab === t.id
-                  ? 'border-accent-primary text-accent-primary'
-                  : 'border-transparent text-earth-500 hover:text-earth-300'}`}
+                  ? 'border-em text-em'
+                  : 'border-transparent text-slate-500 hover:text-slate-300'}`}
             >
               {t.icon} {t.label}
             </button>
@@ -553,20 +553,20 @@ function BuyerProfilePanel({
                 { icon: <Building2 size={14} />, label: 'Terytorium', value: item.territory },
                 { icon: <CalendarClock size={14} />, label: 'Ostatni kontakt', value: fmtDate(item.last_contact) },
               ].map(({ icon, label, value }) => (
-                <div key={label} className="flex items-start gap-3 p-3 bg-earth-900 rounded-lg border border-earth-800">
-                  <span className="text-earth-500 mt-0.5">{icon}</span>
+                <div key={label} className="flex items-start gap-3 p-3 bg-ink-900 rounded-lg border border-ink-800">
+                  <span className="text-slate-500 mt-0.5">{icon}</span>
                   <div>
-                    <div className="text-xs text-earth-500">{label}</div>
-                    <div className="text-sm text-earth-200 mt-0.5">{value ?? '—'}</div>
+                    <div className="text-xs text-slate-500">{label}</div>
+                    <div className="text-sm text-slate-200 mt-0.5">{value ?? '—'}</div>
                   </div>
                 </div>
               ))}
               {item.preferred_cpv && item.preferred_cpv.length > 0 && (
-                <div className="p-3 bg-earth-900 rounded-lg border border-earth-800">
-                  <div className="text-xs text-earth-500 mb-2">Preferowane CPV</div>
+                <div className="p-3 bg-ink-900 rounded-lg border border-ink-800">
+                  <div className="text-xs text-slate-500 mb-2">Preferowane CPV</div>
                   <div className="flex flex-wrap gap-1.5">
                     {item.preferred_cpv.map(cpv => (
-                      <span key={cpv} className="text-xs font-mono bg-earth-800 text-earth-400 px-2 py-0.5 rounded">
+                      <span key={cpv} className="text-xs font-mono bg-ink-800 text-slate-400 px-2 py-0.5 rounded">
                         {cpv}
                       </span>
                     ))}
@@ -631,7 +631,7 @@ function BuyerProfilePanel({
               <div className="flex gap-2 pt-1">
                 <button
                   onClick={() => setEditing(false)}
-                  className="flex-1 py-2.5 border border-earth-700 text-earth-400 text-sm rounded-lg hover:border-earth-600 transition-colors"
+                  className="flex-1 py-2.5 border border-ink-700 text-slate-400 text-sm rounded-lg hover:border-ink-600 transition-colors"
                 >
                   Anuluj
                 </button>
@@ -680,25 +680,25 @@ function BuyerProfilePanel({
             <motion.div key="followup" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
               <div className={`p-4 rounded-xl border ${
                 isOverdue(item.next_followup)
-                  ? 'bg-accent-danger/10 border-accent-danger/30'
+                  ? 'bg-nogo/10 border-nogo/30'
                   : item.next_followup
-                    ? 'bg-amber-500/10 border-amber-500/30'
-                    : 'bg-earth-900 border-earth-700'
+                    ? 'bg-warn-bg border-warn-brd'
+                    : 'bg-ink-900 border-ink-700'
               }`}>
                 <div className="flex items-center gap-2 mb-1">
                   {isOverdue(item.next_followup)
-                    ? <AlertTriangle size={15} className="text-red-400" />
-                    : <CalendarClock size={15} className="text-amber-400" />
+                    ? <AlertTriangle size={15} className="text-nogo" />
+                    : <CalendarClock size={15} className="text-warn" />
                   }
-                  <span className="text-xs font-medium text-earth-300 uppercase tracking-wide">
+                  <span className="text-xs font-medium text-slate-300 uppercase tracking-wide">
                     Następny follow-up
                   </span>
                 </div>
-                <div className={`text-xl font-bold ${isOverdue(item.next_followup) ? 'text-red-300' : 'text-earth-100'}`}>
+                <div className={`text-xl font-bold ${isOverdue(item.next_followup) ? 'text-nogo' : 'text-slate-100'}`}>
                   {fmtDate(item.next_followup)}
                 </div>
                 {isOverdue(item.next_followup) && (
-                  <div className="text-xs text-red-400 mt-0.5">Termin przekroczony</div>
+                  <div className="text-xs text-nogo mt-0.5">Termin przekroczony</div>
                 )}
               </div>
 
@@ -712,15 +712,15 @@ function BuyerProfilePanel({
                 />
               </div>
 
-              <div className="p-3 bg-earth-900 border border-earth-800 rounded-lg">
-                <div className="text-xs text-earth-500 mb-1">Ostatni kontakt</div>
-                <div className="text-sm text-earth-200">{fmtDate(item.last_contact)}</div>
+              <div className="p-3 bg-ink-900 border border-ink-800 rounded-lg">
+                <div className="text-xs text-slate-500 mb-1">Ostatni kontakt</div>
+                <div className="text-sm text-slate-200">{fmtDate(item.last_contact)}</div>
               </div>
 
               {item.notes && (
-                <div className="p-3 bg-earth-900 border border-earth-800 rounded-lg">
-                  <div className="text-xs text-earth-500 mb-1">Notatka</div>
-                  <div className="text-sm text-earth-300 whitespace-pre-wrap">{item.notes}</div>
+                <div className="p-3 bg-ink-900 border border-ink-800 rounded-lg">
+                  <div className="text-xs text-slate-500 mb-1">Notatka</div>
+                  <div className="text-sm text-slate-300 whitespace-pre-wrap">{item.notes}</div>
                 </div>
               )}
 
@@ -824,21 +824,21 @@ function AddBuyerModal({
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.95, y: 16 }}
         onClick={e => e.stopPropagation()}
-        className="bg-earth-900 border border-earth-700 rounded-2xl w-full max-w-md shadow-2xl overflow-y-auto max-h-[90vh]"
+        className="bg-ink-900 border border-ink-700 rounded-2xl w-full max-w-md shadow-2xl overflow-y-auto max-h-[90vh]"
       >
-        <div className="sticky top-0 bg-earth-900 border-b border-earth-800 px-6 py-4 flex items-center justify-between">
-          <h3 className="text-base font-bold text-earth-50">Dodaj zamawiającego do CRM</h3>
-          <button onClick={onClose} className="p-1.5 hover:bg-earth-800 rounded-lg transition-colors">
-            <X size={15} className="text-earth-400" />
+        <div className="sticky top-0 bg-ink-900 border-b border-ink-800 px-6 py-4 flex items-center justify-between">
+          <h3 className="text-base font-bold text-ink-950/30">Dodaj zamawiającego do CRM</h3>
+          <button onClick={onClose} className="p-1.5 hover:bg-ink-800 rounded-lg transition-colors">
+            <X size={15} className="text-slate-400" />
           </button>
         </div>
 
         <div className="p-6 space-y-4">
           {/* Search */}
           <div>
-            <label className="block text-xs text-earth-500 mb-1.5">Wyszukaj zamawiającego</label>
+            <label className="block text-xs text-slate-500 mb-1.5">Wyszukaj zamawiającego</label>
             <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-earth-400" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 ref={inputRef}
                 value={q}
@@ -847,27 +847,27 @@ function AddBuyerModal({
                 className="input-base pl-9 pr-4 py-2.5"
               />
               {searching && (
-                <RefreshCw size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-earth-400 animate-spin" />
+                <RefreshCw size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 animate-spin" />
               )}
             </div>
           </div>
 
           {/* Search results */}
           {results.length > 0 && !selected && (
-            <div className="border border-earth-700 rounded-xl overflow-hidden">
+            <div className="border border-ink-700 rounded-xl overflow-hidden">
               {results.map(r => (
                 <button
                   key={r.nip}
                   onClick={() => { setSelected(r); setQ(r.name); }}
-                  className="w-full flex items-start justify-between px-4 py-3 hover:bg-earth-800 text-left transition-colors border-b border-earth-800 last:border-0"
+                  className="w-full flex items-start justify-between px-4 py-3 hover:bg-ink-800 text-left transition-colors border-b border-ink-800 last:border-0"
                 >
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm text-earth-100 truncate">{r.name}</div>
-                    <div className="text-xs text-earth-500 font-mono mt-0.5">
+                    <div className="text-sm text-slate-100 truncate">{r.name}</div>
+                    <div className="text-xs text-slate-500 font-mono mt-0.5">
                       {r.nip} {r.city ? `· ${r.city}` : ''}
                     </div>
                   </div>
-                  <div className="text-xs text-earth-400 ml-3 shrink-0">
+                  <div className="text-xs text-slate-400 ml-3 shrink-0">
                     {r.total_tenders} przetargów
                   </div>
                 </button>
@@ -877,18 +877,18 @@ function AddBuyerModal({
 
           {/* Selected buyer info */}
           {selected && (
-            <div className="p-3 bg-accent-success/10 border border-accent-success/30 rounded-xl">
+            <div className="p-3 bg-go/10 border border-go/30 rounded-xl">
               <div className="flex items-start justify-between gap-2">
                 <div>
-                  <div className="text-sm text-accent-success font-medium">{selected.name}</div>
-                  <div className="text-xs text-accent-success/60 font-mono mt-0.5">
+                  <div className="text-sm text-go font-medium">{selected.name}</div>
+                  <div className="text-xs text-go/60 font-mono mt-0.5">
                     {selected.nip} {selected.city ? `· ${selected.city}` : ''}
                   </div>
-                  <div className="text-xs text-earth-400 mt-1">
+                  <div className="text-xs text-slate-400 mt-1">
                     {selected.total_tenders} przetargów - łącznie {fmtMln(selected.total_value / 1_000_000)}
                   </div>
                 </div>
-                <button onClick={() => setSelected(null)} className="text-earth-500 hover:text-earth-300 p-1">
+                <button onClick={() => setSelected(null)} className="text-slate-500 hover:text-slate-300 p-1">
                   <X size={13} />
                 </button>
               </div>
@@ -915,50 +915,50 @@ function AddBuyerModal({
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs text-earth-500 mb-1">Etap CRM</label>
+                <label className="block text-xs text-slate-500 mb-1">Etap CRM</label>
                 <select value={form.crm_stage} onChange={e => setForm(f => ({ ...f, crm_stage: e.target.value as CRMStage }))} className={inputCls}>
                   {STAGES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-earth-500 mb-1">Priorytet</label>
+                <label className="block text-xs text-slate-500 mb-1">Priorytet</label>
                 <select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: Number(e.target.value) }))} className={inputCls}>
                   {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n}</option>)}
                 </select>
               </div>
             </div>
             <div>
-              <label className="block text-xs text-earth-500 mb-1">Osoba kontaktowa</label>
+              <label className="block text-xs text-slate-500 mb-1">Osoba kontaktowa</label>
               <input value={form.contact_name} onChange={e => setForm(f => ({ ...f, contact_name: e.target.value }))} className={inputCls} placeholder="Jan Kowalski" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs text-earth-500 mb-1">E-mail</label>
+                <label className="block text-xs text-slate-500 mb-1">E-mail</label>
                 <input type="email" value={form.contact_email} onChange={e => setForm(f => ({ ...f, contact_email: e.target.value }))} className={inputCls} placeholder="jan@urzad.gov.pl" />
               </div>
               <div>
-                <label className="block text-xs text-earth-500 mb-1">Telefon</label>
+                <label className="block text-xs text-slate-500 mb-1">Telefon</label>
                 <input value={form.contact_phone} onChange={e => setForm(f => ({ ...f, contact_phone: e.target.value }))} className={inputCls} placeholder="+48 ..." />
               </div>
             </div>
             <div>
-              <label className="block text-xs text-earth-500 mb-1">Następny follow-up</label>
+              <label className="block text-xs text-slate-500 mb-1">Następny follow-up</label>
               <input type="date" value={form.next_followup} onChange={e => setForm(f => ({ ...f, next_followup: e.target.value }))} className={inputCls} />
             </div>
             <div>
-              <label className="block text-xs text-earth-500 mb-1">Notatka</label>
+              <label className="block text-xs text-slate-500 mb-1">Notatka</label>
               <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={3} className={`${inputCls} resize-none`} placeholder="Ważne informacje o zamawiającym..." />
             </div>
           </div>
 
           <div className="flex gap-3 pt-1">
-            <button onClick={onClose} className="flex-1 py-2.5 border border-earth-700 text-earth-400 text-sm rounded-lg hover:border-earth-600 transition-colors">
+            <button onClick={onClose} className="flex-1 py-2.5 border border-ink-700 text-slate-400 text-sm rounded-lg hover:border-ink-600 transition-colors">
               Anuluj
             </button>
             <button
               onClick={handleCreate}
               disabled={saving || (!selected && !q.match(/^\d{10}$/))}
-              className="flex-1 py-2.5 bg-accent-success text-earth-950 text-sm font-medium rounded-lg hover:bg-accent-success/80 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
+              className="flex-1 py-2.5 bg-go text-ink-950 text-sm font-medium rounded-lg hover:bg-go/80 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
             >
               {saving ? <RefreshCw size={13} className="animate-spin" /> : <Plus size={13} />}
               Dodaj do CRM
@@ -1068,8 +1068,8 @@ export function BuyerCRMPage() {
                     <Icon size={16} style={{ color }} />
                   </div>
                   <div>
-                    <div className="text-xs text-earth-500 leading-none">{label}</div>
-                    <div className="text-xl font-bold text-earth-50 leading-tight">{value}</div>
+                    <div className="text-xs text-slate-500 leading-none">{label}</div>
+                    <div className="text-xl font-bold text-ink-950/30 leading-tight">{value}</div>
                   </div>
                 </div>
               ))}
@@ -1083,8 +1083,8 @@ export function BuyerCRMPage() {
                 onClick={() => setStageFilter('all')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium shrink-0 transition-colors border
                   ${stageFilter === 'all'
-                    ? 'bg-earth-700 border-earth-600 text-earth-100'
-                    : 'border-earth-800 text-earth-500 hover:text-earth-300 hover:border-earth-700'}`}
+                    ? 'bg-ink-700 border-ink-600 text-slate-100'
+                    : 'border-ink-800 text-slate-500 hover:text-slate-300 hover:border-ink-700'}`}
               >
                 Wszystkie ({stageCounts.all})
               </button>
@@ -1095,7 +1095,7 @@ export function BuyerCRMPage() {
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium shrink-0 transition-colors border
                     ${stageFilter === s.id
                       ? STAGE_COLORS[s.id]
-                      : 'border-earth-800 text-earth-500 hover:text-earth-300 hover:border-earth-700'}`}
+                      : 'border-ink-800 text-slate-500 hover:text-slate-300 hover:border-ink-700'}`}
                 >
                   {s.label} ({stageCounts[s.id] ?? 0})
                 </button>
@@ -1103,7 +1103,7 @@ export function BuyerCRMPage() {
             </div>
 
             <div className="relative flex-1">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-earth-400" />
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 value={searchQ}
                 onChange={e => setSearchQ(e.target.value)}
@@ -1113,7 +1113,7 @@ export function BuyerCRMPage() {
               {searchQ && (
                 <button
                   onClick={() => setSearchQ('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-earth-500 hover:text-earth-300"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
                 >
                   <X size={13} />
                 </button>
@@ -1132,11 +1132,11 @@ export function BuyerCRMPage() {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-20 border border-dashed border-earth-700 rounded-2xl"
+              className="text-center py-20 border border-dashed border-ink-700 rounded-2xl"
             >
-              <Building2 size={40} className="mx-auto mb-4 text-earth-700" />
-              <h3 className="text-base font-semibold text-earth-400 mb-2">Brak zamawiających w CRM</h3>
-              <p className="text-sm text-earth-600 mb-6">Dodaj zamawiających, żeby zarządzać relacjami i planować follow-upy</p>
+              <Building2 size={40} className="mx-auto mb-4 text-slate-700" />
+              <h3 className="text-base font-semibold text-slate-400 mb-2">Brak zamawiających w CRM</h3>
+              <p className="text-sm text-slate-600 mb-6">Dodaj zamawiających, żeby zarządzać relacjami i planować follow-upy</p>
               <button
                 onClick={() => setShowAdd(true)}
                 className="inline-flex items-center gap-2 px-5 py-2.5 btn-primary"
@@ -1148,7 +1148,7 @@ export function BuyerCRMPage() {
           )}
 
           {!loading && filtered.length === 0 && data.length > 0 && (
-            <div className="text-center py-8 text-earth-500 text-sm">
+            <div className="text-center py-8 text-slate-500 text-sm">
               Brak wyników{searchQ ? ` dla "${searchQ}"` : ` w etapie "${STAGES.find(s => s.id === stageFilter)?.label}"`}
             </div>
           )}

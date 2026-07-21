@@ -35,10 +35,10 @@ const EVENT_ICONS: Record<string, string> = {
 };
 
 const EVENT_COLORS: Record<string, string> = {
-  'alert.deadline': 'border-l-accent-warning',
-  'tender.new':     'border-l-accent-info',
-  'agent.done':     'border-l-accent-primary',
-  'alert.match':    'border-l-accent-primary',
+  'alert.deadline': 'border-l-warn',
+  'tender.new':     'border-l-indigo',
+  'agent.done':     'border-l-em',
+  'alert.match':    'border-l-em',
 };
 
 // ── Notification item ─────────────────────────────────────────────────────────
@@ -52,7 +52,7 @@ function NotificationItem({
   onMarkRead: (id: string) => void;
   index: number;
 }) {
-  const colorClass = EVENT_COLORS[notification.event_type] || 'border-l-earth-600';
+  const colorClass = EVENT_COLORS[notification.event_type] || 'border-l-ink-600';
   const icon = EVENT_ICONS[notification.event_type] || '📌';
 
   return (
@@ -64,21 +64,21 @@ function NotificationItem({
       transition={{ delay: index * 0.03 }}
       className={`border-l-4 rounded-r-token-lg ${colorClass} ${notification.read ? 'opacity-60' : ''}`}
     >
-      <div className="flex items-start gap-3 p-4 bg-earth-900/40 hover:bg-earth-800/50 transition-colors rounded-r-token-lg">
+      <div className="flex items-start gap-3 p-4 bg-ink-900/40 hover:bg-ink-800/50 transition-colors rounded-r-token-lg">
         <span className="text-lg mt-0.5 shrink-0">{icon}</span>
         <div className="flex-1 min-w-0">
-          <div className="text-earth-200 text-sm font-medium leading-snug">{notification.title}</div>
+          <div className="text-slate-200 text-sm font-medium leading-snug">{notification.title}</div>
           {notification.body && (
-            <div className="text-earth-400 text-xs mt-0.5 line-clamp-2">{notification.body}</div>
+            <div className="text-slate-400 text-xs mt-0.5 line-clamp-2">{notification.body}</div>
           )}
-          <div className="text-earth-600 text-xs mt-1.5">
+          <div className="text-slate-600 text-xs mt-1.5">
             {new Date(notification.created_at).toLocaleString('pl-PL')}
           </div>
         </div>
         {!notification.read && (
           <button
             onClick={() => onMarkRead(notification.id)}
-            className="text-earth-500 hover:text-accent-primary p-1 transition-colors shrink-0"
+            className="text-slate-500 hover:text-em p-1 transition-colors shrink-0"
             aria-label="Oznacz jako przeczytane"
             title="Oznacz jako przeczytane"
           >
@@ -173,20 +173,20 @@ export function NotificationsPage() {
   const actions = (
     <div className="flex items-center gap-2 flex-wrap">
       {/* Filter tabs */}
-      <div className="flex gap-1 bg-earth-900/60 rounded-token-lg p-1 border border-earth-800/50">
+      <div className="flex gap-1 bg-ink-900/60 rounded-xl p-1 border border-ink-800/50">
         <button
           onClick={() => setFilter('all')}
-          className={`px-3 py-1 rounded-token text-xs font-medium transition-colors ${filter === 'all' ? 'bg-accent-primary text-earth-950' : 'text-earth-400 hover:text-earth-200'}`}
+          className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${filter === 'all' ? 'bg-em text-ink-950' : 'text-slate-400 hover:text-slate-200'}`}
         >
           Wszystkie
         </button>
         <button
           onClick={() => setFilter('unread')}
-          className={`flex items-center gap-1.5 px-3 py-1 rounded-token text-xs font-medium transition-colors ${filter === 'unread' ? 'bg-accent-primary text-earth-950' : 'text-earth-400 hover:text-earth-200'}`}
+          className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors ${filter === 'unread' ? 'bg-em text-ink-950' : 'text-slate-400 hover:text-slate-200'}`}
         >
           Nieprzeczytane
           {unreadCount > 0 && (
-            <span className={`text-[10px] font-bold px-1 py-0.5 rounded-full ${filter === 'unread' ? 'bg-earth-900 text-accent-primary' : 'bg-accent-danger text-earth-50'}`}>
+            <span className={`text-[10px] font-bold px-1 py-0.5 rounded-full ${filter === 'unread' ? 'bg-ink-900 text-em' : 'bg-nogo text-ink-950/30'}`}>
               {unreadCount > 99 ? '99+' : unreadCount}
             </span>
           )}

@@ -103,14 +103,14 @@ function renderSimpleMarkdown(content: string): React.ReactNode[] {
   return content.split('\n').map((line, i) => {
     if (line.startsWith('## ')) {
       return (
-        <h2 key={i} className="text-lg font-semibold text-earth-100 mt-4 mb-2">
+        <h2 key={i} className="text-lg font-semibold text-slate-100 mt-4 mb-2">
           {line.slice(3)}
         </h2>
       );
     }
     if (line.startsWith('# ')) {
       return (
-        <h1 key={i} className="text-xl font-bold text-earth-100 mt-4 mb-2">
+        <h1 key={i} className="text-xl font-bold text-slate-100 mt-4 mb-2">
           {line.slice(2)}
         </h1>
       );
@@ -118,7 +118,7 @@ function renderSimpleMarkdown(content: string): React.ReactNode[] {
     const parts = line.split(/\*\*(.*?)\*\*/g);
     const rendered = parts.map((part, j) =>
       j % 2 === 1 ? (
-        <strong key={j} className="font-semibold text-earth-100">
+        <strong key={j} className="font-semibold text-slate-100">
           {part}
         </strong>
       ) : (
@@ -126,7 +126,7 @@ function renderSimpleMarkdown(content: string): React.ReactNode[] {
       ),
     );
     return (
-      <p key={i} className="text-earth-300 text-sm leading-relaxed">
+      <p key={i} className="text-slate-300 text-sm leading-relaxed">
         {rendered}
       </p>
     );
@@ -179,10 +179,10 @@ function TenderCard({ tender, index, onClick }: TenderCardProps) {
   // Match-score gradient — kolor końcowy zależy od poziomu dopasowania
   const scoreEndColor =
     tender.match_score > 80
-      ? 'var(--color-accent-success)'
+      ? 'var(--color-go)'
       : tender.match_score > 60
-        ? 'var(--color-accent-warning)'
-        : 'var(--color-accent-danger)';
+        ? 'var(--color-warn)'
+        : 'var(--color-nogo)';
 
   return (
     <motion.div
@@ -191,19 +191,19 @@ function TenderCard({ tender, index, onClick }: TenderCardProps) {
       transition={{ duration: 0.4, delay: index * 0.08 }}
       onClick={onClick}
       className={[
-        'group p-4 rounded-token-lg',
-        'bg-earth-900/40 border border-earth-800/50',
-        'hover:border-accent-primary/40 hover:bg-earth-900/60',
+        'group p-4 rounded-xl',
+        'bg-ink-900/40 border border-ink-800/50',
+        'hover:border-em/40 hover:bg-ink-900/60',
         'cursor-pointer transition-all duration-300',
       ].join(' ')}
     >
       {/* Wiersz: tytuł + badge terminu */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-medium text-earth-100 group-hover:text-accent-primary transition-colors truncate">
+          <h4 className="text-sm font-medium text-slate-100 group-hover:text-em transition-colors truncate">
             {truncate(tender.title, 60)}
           </h4>
-          <p className="text-xs text-earth-400 mt-1">{tender.buyer}</p>
+          <p className="text-xs text-slate-400 mt-1">{tender.buyer}</p>
         </div>
         <StatusBadge
           status={variant}
@@ -216,17 +216,17 @@ function TenderCard({ tender, index, onClick }: TenderCardProps) {
       {/* Pasek dopasowania */}
       <div className="mt-3">
         <div className="flex items-center justify-between text-xs mb-1.5">
-          <span className="text-earth-400">Dopasowanie</span>
-          <span className="text-earth-200 font-medium">{tender.match_score}%</span>
+          <span className="text-slate-400">Dopasowanie</span>
+          <span className="text-slate-200 font-medium">{tender.match_score}%</span>
         </div>
-        <div className="h-1.5 bg-earth-800 rounded-full overflow-hidden">
+        <div className="h-1.5 bg-ink-800 rounded-full overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${tender.match_score}%` }}
             transition={{ duration: 0.8, delay: index * 0.1 + 0.3 }}
             className="h-full rounded-full"
             style={{
-              background: `linear-gradient(90deg, var(--color-accent-info), ${scoreEndColor})`,
+              background: `linear-gradient(90deg, var(--color-indigo), ${scoreEndColor})`,
             }}
           />
         </div>
@@ -234,8 +234,8 @@ function TenderCard({ tender, index, onClick }: TenderCardProps) {
 
       {/* Wartość + strzałka */}
       <div className="mt-2 flex items-center justify-between">
-        <span className="text-xs text-earth-300">{formatPLN(tender.value)}</span>
-        <ArrowRight className="w-3.5 h-3.5 text-earth-500 group-hover:text-accent-primary transition-colors" />
+        <span className="text-xs text-slate-300">{formatPLN(tender.value)}</span>
+        <ArrowRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-em transition-colors" />
       </div>
     </motion.div>
   );
@@ -250,7 +250,7 @@ function ActivityIcon({ type }: { type: string }) {
   switch (type) {
     case 'create':
       return (
-        <svg className={`${cls} text-accent-primary`} viewBox="0 0 16 16" fill="none">
+        <svg className={`${cls} text-em`} viewBox="0 0 16 16" fill="none">
           <path
             d="M8 3v10M3 8h10"
             stroke="currentColor"
@@ -261,7 +261,7 @@ function ActivityIcon({ type }: { type: string }) {
       );
     case 'update':
       return (
-        <svg className={`${cls} text-accent-warning`} viewBox="0 0 16 16" fill="none">
+        <svg className={`${cls} text-warn`} viewBox="0 0 16 16" fill="none">
           <path
             d="M11.5 1.5l3 3-9 9H2.5v-3l9-9z"
             stroke="currentColor"
@@ -273,7 +273,7 @@ function ActivityIcon({ type }: { type: string }) {
       );
     case 'delete':
       return (
-        <svg className={`${cls} text-accent-danger`} viewBox="0 0 16 16" fill="none">
+        <svg className={`${cls} text-nogo`} viewBox="0 0 16 16" fill="none">
           <path
             d="M2 4h12M5.33 4V2.67a1.33 1.33 0 011.34-1.34h2.66a1.33 1.33 0 011.34 1.34V4m2 0v9.33a1.33 1.33 0 01-1.34 1.34H4.67a1.33 1.33 0 01-1.34-1.34V4"
             stroke="currentColor"
@@ -285,7 +285,7 @@ function ActivityIcon({ type }: { type: string }) {
       );
     case 'login':
       return (
-        <svg className={`${cls} text-accent-info`} viewBox="0 0 16 16" fill="none">
+        <svg className={`${cls} text-indigo`} viewBox="0 0 16 16" fill="none">
           <path
             d="M10 2h2.67A1.33 1.33 0 0114 3.33v9.34A1.33 1.33 0 0112.67 14H10M6.67 11.33L10 8 6.67 4.67M10 8H2"
             stroke="currentColor"
@@ -296,7 +296,7 @@ function ActivityIcon({ type }: { type: string }) {
         </svg>
       );
     default:
-      return <Activity className={`${cls} text-earth-400`} />;
+      return <Activity className={`${cls} text-slate-400`} />;
   }
 }
 
@@ -320,21 +320,21 @@ function ActivityItem({ entry, index, isLast }: ActivityItemProps) {
     >
       {/* Oś czasu */}
       <div className="flex flex-col items-center">
-        <div className="w-7 h-7 rounded-full bg-earth-800/80 border border-earth-700 flex items-center justify-center shrink-0">
+        <div className="w-7 h-7 rounded-full bg-ink-800/80 border border-ink-700 flex items-center justify-center shrink-0">
           <ActivityIcon type={entry.action_type} />
         </div>
-        {!isLast && <div className="w-px flex-1 bg-earth-800 mt-1" />}
+        {!isLast && <div className="w-px flex-1 bg-ink-800 mt-1" />}
       </div>
 
       {/* Treść wpisu */}
       <div className="pb-4 flex-1 min-w-0">
-        <p className="text-xs text-earth-200 leading-relaxed">
-          <span className="font-medium text-earth-100">
+        <p className="text-xs text-slate-200 leading-relaxed">
+          <span className="font-medium text-slate-100">
             {(entry.user_email ?? 'system').split('@')[0]}
           </span>{' '}
-          <span className="text-earth-400">{entry.action}</span>
+          <span className="text-slate-400">{entry.action}</span>
         </p>
-        <p className="text-[11px] text-earth-500 mt-0.5">
+        <p className="text-[11px] text-slate-500 mt-0.5">
           {relativeTime(entry.created_at)}
         </p>
       </div>
@@ -556,7 +556,7 @@ export function DashboardPage() {
                 value={animActiveTenders.toLocaleString('pl-PL')}
                 trend={12}
                 trendLabel="vs. poprzedni tydzień"
-                iconColor="text-accent-info"
+                iconColor="text-indigo"
               />
             </motion.div>
 
@@ -571,7 +571,7 @@ export function DashboardPage() {
                 value={pipelineLabel}
                 trend={8}
                 trendLabel="wzrost wartości"
-                iconColor="text-accent-primary"
+                iconColor="text-em"
               />
             </motion.div>
 
@@ -586,7 +586,7 @@ export function DashboardPage() {
                 value={`${animWinRate}%`}
                 trend={winRateTrend}
                 trendLabel="wobec celu"
-                iconColor="text-accent-violet"
+                iconColor="text-violet"
               />
             </motion.div>
 
@@ -599,7 +599,7 @@ export function DashboardPage() {
                 icon={Bell}
                 label="Nowe dziś"
                 value={animNewToday.toLocaleString('pl-PL')}
-                iconColor="text-accent-danger"
+                iconColor="text-nogo"
               />
             </motion.div>
           </>
@@ -617,14 +617,14 @@ export function DashboardPage() {
             {/* Nagłówek sekcji */}
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-accent-primary animate-pulse-soft" />
-                <h2 className="text-base font-semibold text-earth-100">
+                <div className="w-2 h-2 rounded-full bg-em animate-pulse-soft" />
+                <h2 className="text-base font-semibold text-slate-100">
                   Najgorętsze dziś
                 </h2>
               </div>
               <button
                 onClick={() => setCurrentModule('zwiad')}
-                className="flex items-center gap-1 text-xs text-earth-400 hover:text-accent-primary transition-colors"
+                className="flex items-center gap-1 text-xs text-slate-400 hover:text-em transition-colors"
               >
                 Wszystkie <ArrowRight className="w-3 h-3" />
               </button>
@@ -664,12 +664,12 @@ export function DashboardPage() {
             {/* Nagłówek digestu */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-gradient-to-br from-accent-primary/20 to-accent-violet/20">
-                  <Zap className="w-4 h-4 text-accent-primary" />
+                <div className="p-1.5 rounded-lg bg-gradient-to-br from-em/20 to-violet/20">
+                  <Zap className="w-4 h-4 text-em" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-semibold text-earth-100">AI Digest</h2>
-                  <p className="text-[11px] text-earth-500 leading-tight">
+                  <h2 className="text-sm font-semibold text-slate-100">AI Digest</h2>
+                  <p className="text-[11px] text-slate-500 leading-tight">
                     Inteligencja rynkowa YU-NA
                   </p>
                 </div>
@@ -722,18 +722,18 @@ export function DashboardPage() {
         >
           <GlassCard className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-earth-100">Ostatnia aktywność</h2>
+              <h2 className="text-sm font-semibold text-slate-100">Ostatnia aktywność</h2>
               <div className="flex items-center gap-2">
                 {refreshingAudit && (
-                  <RefreshCw className="w-3.5 h-3.5 text-earth-500 animate-spin" />
+                  <RefreshCw className="w-3.5 h-3.5 text-slate-500 animate-spin" />
                 )}
-                <span className="text-[11px] text-earth-500 tabular-nums">
+                <span className="text-[11px] text-slate-500 tabular-nums">
                   auto 60 s
                 </span>
               </div>
             </div>
 
-            <div className="max-h-48 overflow-y-auto pr-2 scrollbar-thin scrollbar-track-earth-900 scrollbar-thumb-earth-700">
+            <div className="max-h-48 overflow-y-auto pr-2 scrollbar-thin scrollbar-track-ink-900 scrollbar-thumb-ink-700">
               <AnimatePresence mode="popLayout">
                 {auditLog.slice(0, 8).map((entry, i) => (
                   <ActivityItem

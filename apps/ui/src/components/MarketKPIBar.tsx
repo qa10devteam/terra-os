@@ -45,7 +45,7 @@ export default function MarketKPIBar() {
     return (
       <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-3 animate-pulse">
         {[...Array(6)].map((_, i) => (
-          <div key={i} className="h-20 bg-earth-900/50 rounded-token-lg border border-earth-800" />
+          <div key={i} className="h-20 bg-ink-900/50 rounded-xl border border-ink-800" />
         ))}
       </div>
     );
@@ -59,42 +59,42 @@ export default function MarketKPIBar() {
       label: 'Przetargów w bazie',
       value: kpi.total_tenders?.toLocaleString() || '—',
       sub: `${kpi.tenders_this_month || 0} w tym miesiącu`,
-      colorCls: 'text-accent-primary',
+      colorCls: 'text-em',
     },
     {
       icon: DollarSign,
       label: 'Łączna wartość',
       value: fmtPLN(kpi.total_value_pln || 0),
       sub: `Śr. ${fmtPLN(kpi.avg_value_pln || 0)}`,
-      colorCls: 'text-accent-primary',
+      colorCls: 'text-em',
     },
     {
       icon: kpi.month_change_pct >= 0 ? TrendingUp : TrendingDown,
       label: 'Zmiana m/m',
       value: `${kpi.month_change_pct >= 0 ? '+' : ''}${kpi.month_change_pct?.toFixed(1) || 0}%`,
       sub: `vs poprzedni miesiąc`,
-      colorCls: kpi.month_change_pct >= 0 ? 'text-accent-primary' : 'text-accent-danger',
+      colorCls: kpi.month_change_pct >= 0 ? 'text-em' : 'text-nogo',
     },
     {
       icon: Users,
       label: 'Zamawiający',
       value: kpi.active_buyers?.toLocaleString() || '—',
       sub: 'aktywnych',
-      colorCls: 'text-accent-info',
+      colorCls: 'text-indigo',
     },
     {
       icon: Activity,
       label: 'Wykonawcy',
       value: kpi.active_contractors?.toLocaleString() || '—',
       sub: 'aktywnych',
-      colorCls: 'text-accent-violet',
+      colorCls: 'text-violet',
     },
     {
       icon: Zap,
       label: 'Top CPV',
       value: kpi.top_cpv_code || '—',
       sub: `${kpi.top_cpv_count || 0} przetargów`,
-      colorCls: 'text-accent-warning',
+      colorCls: 'text-warn',
     },
   ];
 
@@ -106,14 +106,14 @@ export default function MarketKPIBar() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: i * 0.05 }}
-          className="bg-earth-900/80 border border-earth-700/50 rounded-token-lg p-3"
+          className="bg-ink-900/80 border border-ink-700/50 rounded-xl p-3"
         >
           <div className="flex items-center gap-1.5 mb-1">
             <card.icon className={`w-3.5 h-3.5 ${card.colorCls}`} />
-            <span className="text-xs text-earth-500 truncate">{card.label}</span>
+            <span className="text-xs text-slate-500 truncate">{card.label}</span>
           </div>
           <p className={`text-lg font-bold ${card.colorCls}`}>{card.value}</p>
-          <p className="text-xs text-earth-600 mt-0.5">{card.sub}</p>
+          <p className="text-xs text-slate-600 mt-0.5">{card.sub}</p>
         </motion.div>
       ))}
     </div>

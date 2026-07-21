@@ -228,7 +228,7 @@ type TabId = typeof TABS[number]['id'];
 function Spinner({ size = 24 }: { size?: number }) {
   return (
     <Loader2
-      className="animate-spin text-accent-info"
+      className="animate-spin text-indigo"
       style={{ width: size, height: size }}
     />
   );
@@ -238,13 +238,13 @@ function Spinner({ size = 24 }: { size?: number }) {
 
 function ErrorBox({ message, onRetry }: { message: string; onRetry?: () => void }) {
   return (
-    <div className="flex flex-col items-center gap-3 py-12 text-earth-400">
-      <AlertCircle className="text-accent-danger" size={32} />
+    <div className="flex flex-col items-center gap-3 py-12 text-slate-400">
+      <AlertCircle className="text-nogo" size={32} />
       <p className="text-sm">{message}</p>
       {onRetry && (
         <button
           onClick={onRetry}
-          className="flex items-center gap-1 text-xs text-accent-info hover:text-accent-info/80 transition-colors"
+          className="flex items-center gap-1 text-xs text-indigo hover:text-indigo/80 transition-colors"
         >
           <RefreshCw size={12} /> Spróbuj ponownie
         </button>
@@ -485,33 +485,33 @@ function DashboardTab() {
   if (error || !data) return <ErrorBox message={error || 'Brak danych'} onRetry={load} />;
 
   const inflation = data.yoy_inflation_pct;
-  const inflColor = inflation < 0 ? 'text-accent-success' : 'text-accent-danger';
+  const inflColor = inflation < 0 ? 'text-go' : 'text-nogo';
 
   const kpis = [
     {
       label: 'Rekordów ICB',
       value: fmtM(data.total_records),
-      icon: <Database size={20} className="text-accent-info" />,
+      icon: <Database size={20} className="text-indigo" />,
       sub: 'InterCenBud',
     },
     {
       label: 'Unikalnych symboli',
       value: data.unique_symbols?.toLocaleString('pl-PL'),
-      icon: <Package size={20} className="text-accent-violet" />,
+      icon: <Package size={20} className="text-violet" />,
       sub: 'materiałów',
     },
     {
       label: 'Kategorii',
       value: data.categories_count?.toLocaleString('pl-PL'),
-      icon: <Grid3X3 size={20} className="text-accent-warning" />,
+      icon: <Grid3X3 size={20} className="text-warn" />,
       sub: 'grup materiałowych',
     },
     {
       label: 'Inflacja YoY',
       value: <span className={inflColor}>{fmtPct(inflation)}</span>,
       icon: inflation < 0
-        ? <ArrowDownRight size={20} className="text-accent-success" />
-        : <ArrowUpRight size={20} className="text-accent-danger" />,
+        ? <ArrowDownRight size={20} className="text-go" />
+        : <ArrowUpRight size={20} className="text-nogo" />,
       sub: 'rok do roku',
     },
   ];
@@ -529,11 +529,11 @@ function DashboardTab() {
           >
             <GlassCard className="p-5 flex flex-col gap-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-earth-400 uppercase tracking-wider">{k.label}</span>
+                <span className="text-xs text-slate-400 uppercase tracking-wider">{k.label}</span>
                 {k.icon}
               </div>
-              <div className="text-2xl font-bold text-earth-100">{k.value}</div>
-              <div className="text-xs text-earth-500">{k.sub}</div>
+              <div className="text-2xl font-bold text-slate-100">{k.value}</div>
+              <div className="text-xs text-slate-500">{k.sub}</div>
             </GlassCard>
           </motion.div>
         ))}
@@ -542,15 +542,15 @@ function DashboardTab() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Narzuty table */}
         <GlassCard className="p-5">
-          <h3 className="text-sm font-semibold text-earth-100 mb-4 flex items-center gap-2">
-            <Percent size={16} className="text-accent-info" /> Narzuty branżowe
+          <h3 className="text-sm font-semibold text-slate-100 mb-4 flex items-center gap-2">
+            <Percent size={16} className="text-indigo" /> Narzuty branżowe
           </h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-earth-800">
+                <tr className="border-b border-ink-800">
                   {['Branża', 'KO %', 'Z %', 'KZ %'].map(h => (
-                    <th key={h} className="pb-2 text-left text-xs text-earth-400 font-medium pr-4">{h}</th>
+                    <th key={h} className="pb-2 text-left text-xs text-slate-400 font-medium pr-4">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -558,12 +558,12 @@ function DashboardTab() {
                 {(data.narzuty || []).map((n, i) => (
                   <tr
                     key={i}
-                    className="border-b border-earth-800/50 hover:bg-earth-900/40 transition-colors"
+                    className="border-b border-ink-800/50 hover:bg-ink-900/40 transition-colors"
                   >
-                    <td className="py-2 pr-4 text-earth-100 font-medium">{n.branza}</td>
-                    <td className="py-2 pr-4 text-earth-300">{n.ko_pct?.toFixed(1)}%</td>
-                    <td className="py-2 pr-4 text-earth-300">{n.z_pct?.toFixed(1)}%</td>
-                    <td className="py-2 text-earth-300">{n.kz_pct?.toFixed(1)}%</td>
+                    <td className="py-2 pr-4 text-slate-100 font-medium">{n.branza}</td>
+                    <td className="py-2 pr-4 text-slate-300">{n.ko_pct?.toFixed(1)}%</td>
+                    <td className="py-2 pr-4 text-slate-300">{n.z_pct?.toFixed(1)}%</td>
+                    <td className="py-2 text-slate-300">{n.kz_pct?.toFixed(1)}%</td>
                   </tr>
                 ))}
               </tbody>
@@ -573,8 +573,8 @@ function DashboardTab() {
 
         {/* Regional coefficients bar chart */}
         <GlassCard className="p-5">
-          <h3 className="text-sm font-semibold text-earth-100 mb-4 flex items-center gap-2">
-            <MapPin size={16} className="text-accent-info" /> Współczynniki regionalne
+          <h3 className="text-sm font-semibold text-slate-100 mb-4 flex items-center gap-2">
+            <MapPin size={16} className="text-indigo" /> Współczynniki regionalne
           </h3>
           <HBarChart
             data={data.regional_coefficients || []}
@@ -588,17 +588,17 @@ function DashboardTab() {
       {/* Latest quarter by type */}
       {data.latest_quarter_by_type && (
         <GlassCard className="p-5">
-          <h3 className="text-sm font-semibold text-earth-100 mb-4 flex items-center gap-2">
-            <BarChart2 size={16} className="text-accent-info" /> Ostatnie kwartały wg typu
+          <h3 className="text-sm font-semibold text-slate-100 mb-4 flex items-center gap-2">
+            <BarChart2 size={16} className="text-indigo" /> Ostatnie kwartały wg typu
           </h3>
           <div className="grid grid-cols-3 gap-4">
             {(['R', 'M', 'S'] as const).map(t => (
-              <div key={t} className="bg-earth-900/60 rounded-token p-4 border border-earth-800 text-center">
-                <div className="text-2xl font-bold text-accent-info mb-1">{t}</div>
-                <div className="text-xs text-earth-400 uppercase mb-2">
+              <div key={t} className="bg-ink-900/60 rounded-md p-4 border border-ink-800 text-center">
+                <div className="text-2xl font-bold text-indigo mb-1">{t}</div>
+                <div className="text-xs text-slate-400 uppercase mb-2">
                   {t === 'R' ? 'Robocizna' : t === 'M' ? 'Materiały' : 'Sprzęt'}
                 </div>
-                <div className="text-sm font-semibold text-earth-100">
+                <div className="text-sm font-semibold text-slate-100">
                   {data.latest_quarter_by_type[t] || '—'}
                 </div>
               </div>
@@ -751,9 +751,9 @@ function SzukajTab() {
   };
 
   const RMS_BADGE: Record<string, string> = {
-    R: 'text-accent-info bg-accent-info/10',
-    M: 'text-accent-primary bg-accent-primary/10',
-    S: 'text-amber-400 bg-amber-500/10',
+    R: 'text-indigo bg-indigo/10',
+    M: 'text-em bg-em/10',
+    S: 'text-warn bg-warn-bg',
   };
 
   const sortedResults = result?.results ? [...result.results].sort((a, b) => {
@@ -770,10 +770,10 @@ function SzukajTab() {
   };
 
   const SortIcon = ({ field }: { field: typeof sortField }) => {
-    if (sortField !== field) return <Minus size={10} className="text-earth-600 ml-1 inline" />;
+    if (sortField !== field) return <Minus size={10} className="text-slate-600 ml-1 inline" />;
     return sortDir === 'desc'
-      ? <ChevronDown size={10} className="text-accent-info ml-1 inline" />
-      : <ChevronUp size={10} className="text-accent-info ml-1 inline" />;
+      ? <ChevronDown size={10} className="text-indigo ml-1 inline" />
+      : <ChevronUp size={10} className="text-indigo ml-1 inline" />;
   };
 
   return (
@@ -782,7 +782,7 @@ function SzukajTab() {
       <GlassCard className="p-5 space-y-3">
         <div className="flex gap-3">
           <div className="flex-1 relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-earth-400 pointer-events-none" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             <input
               ref={inputRef}
               type="text"
@@ -791,13 +791,13 @@ function SzukajTab() {
               onKeyDown={handleKeyDown}
               onFocus={() => suggestions.length > 0 && setShowSuggest(true)}
               placeholder="Szukaj materiału, symbolu, indeksu ETO… (min. 2 znaki)"
-              className="w-full bg-earth-900/60 border border-earth-800 rounded-token pl-9 pr-10 py-2.5 text-sm text-earth-100 placeholder-earth-500 focus:outline-none focus:border-accent-info/60 focus:ring-1 focus:ring-accent-info/30 transition-all"
+              className="w-full bg-ink-900/60 border border-ink-800 rounded-md pl-9 pr-10 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo/60 focus:ring-1 focus:ring-indigo/30 transition-all"
               autoComplete="off"
             />
             {inputVal && (
               <button
                 onClick={() => { setInputVal(''); setResult(null); setError(null); setSuggestions([]); setShowSuggest(false); }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-earth-500 hover:text-earth-300 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
               >
                 <X size={14} />
               </button>
@@ -806,7 +806,7 @@ function SzukajTab() {
             {showSuggest && suggestions.length > 0 && (
               <div
                 ref={suggestRef}
-                className="absolute left-0 right-0 top-full mt-1 z-50 bg-earth-900 border border-earth-700 rounded-token shadow-xl overflow-hidden"
+                className="absolute left-0 right-0 top-full mt-1 z-50 bg-ink-900 border border-ink-700 rounded-md shadow-xl overflow-hidden"
               >
                 {suggestions.map((s, i) => (
                   <button
@@ -818,15 +818,15 @@ function SzukajTab() {
                       doSearch(s.nazwa, typRms);
                     }}
                     className={`w-full flex items-center gap-3 px-3 py-2 text-left transition-colors ${
-                      i === suggestIdx ? 'bg-earth-700' : 'hover:bg-earth-800'
+                      i === suggestIdx ? 'bg-ink-700' : 'hover:bg-ink-800'
                     }`}
                   >
-                    <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded ${RMS_BADGE[s.typ_rms] ?? 'text-earth-400 bg-earth-800'}`}>
+                    <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded ${RMS_BADGE[s.typ_rms] ?? 'text-slate-400 bg-ink-800'}`}>
                       {s.typ_rms}
                     </span>
-                    <span className="flex-1 text-sm text-earth-100 truncate">{s.nazwa}</span>
-                    <span className="shrink-0 text-xs text-earth-500 font-mono">{s.symbol}</span>
-                    <span className="shrink-0 text-xs text-accent-primary font-semibold">
+                    <span className="flex-1 text-sm text-slate-100 truncate">{s.nazwa}</span>
+                    <span className="shrink-0 text-xs text-slate-500 font-mono">{s.symbol}</span>
+                    <span className="shrink-0 text-xs text-em font-semibold">
                       {s.cena_netto ? `${s.cena_netto.toFixed(2)} zł/${s.jednostka}` : '—'}
                     </span>
                   </button>
@@ -837,7 +837,7 @@ function SzukajTab() {
           <button
             onClick={() => doSearch(inputVal, typRms)}
             disabled={loading || inputVal.trim().length < 2}
-            className="flex items-center gap-2 px-5 py-2.5 btn-primary disabled:opacity-40 disabled:cursor-not-allowed rounded-token text-sm font-medium transition-colors"
+            className="flex items-center gap-2 px-5 py-2.5 btn-primary disabled:opacity-40 disabled:cursor-not-allowed rounded-md text-sm font-medium transition-colors"
           >
             {loading ? <Spinner size={14} /> : <Search size={14} />}
             Szukaj
@@ -845,23 +845,23 @@ function SzukajTab() {
         </div>
         {/* Filters row */}
         <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-xs text-earth-500 mr-1">Filtr:</span>
+          <span className="text-xs text-slate-500 mr-1">Filtr:</span>
           {TYP_OPTIONS.map(opt => (
             <button
               key={opt.value}
               onClick={() => handleTypChange(opt.value)}
               className={`text-xs px-3 py-1 rounded-full border transition-colors ${
                 typRms === opt.value
-                  ? 'border-accent-info bg-accent-info/10 text-accent-info'
-                  : 'border-earth-700 text-earth-400 hover:border-earth-500 hover:text-earth-300'
+                  ? 'border-indigo bg-indigo/10 text-indigo'
+                  : 'border-ink-700 text-slate-400 hover:border-slate-500 hover:text-slate-300'
               }`}
             >
               {opt.label}
             </button>
           ))}
           {result && (
-            <span className="ml-auto text-xs text-earth-500">
-              {result.count} wyników · <span className="text-earth-400">{result.quarter}</span>
+            <span className="ml-auto text-xs text-slate-500">
+              {result.count} wyników · <span className="text-slate-400">{result.quarter}</span>
             </span>
           )}
         </div>
@@ -874,7 +874,7 @@ function SzukajTab() {
             className="flex justify-center py-16">
             <div className="flex flex-col items-center gap-3">
               <Spinner size={32} />
-              <span className="text-xs text-earth-500">Przeszukuję 784 000 pozycji…</span>
+              <span className="text-xs text-slate-500">Przeszukuję 784 000 pozycji…</span>
             </div>
           </motion.div>
         )}
@@ -887,73 +887,73 @@ function SzukajTab() {
           <motion.div key="result" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
             {sortedResults.length === 0 ? (
               <GlassCard className="p-10 text-center">
-                <Database size={32} className="mx-auto mb-3 text-earth-600" />
-                <p className="text-sm text-earth-400">
-                  Brak wyników dla: <span className="text-earth-200 font-medium">„{inputVal}"</span>
+                <Database size={32} className="mx-auto mb-3 text-slate-600" />
+                <p className="text-sm text-slate-400">
+                  Brak wyników dla: <span className="text-slate-200 font-medium">„{inputVal}"</span>
                 </p>
-                <p className="text-xs text-earth-600 mt-1">Spróbuj innej frazy lub zmień filtr R/M/S</p>
+                <p className="text-xs text-slate-600 mt-1">Spróbuj innej frazy lub zmień filtr R/M/S</p>
               </GlassCard>
             ) : (
               <GlassCard className="p-0 overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-earth-800 bg-earth-900/40">
-                        <th className="pl-5 pr-4 py-3 text-left text-xs text-earth-400 font-medium w-[38%]">
-                          <button onClick={() => toggleSort('nazwa')} className="flex items-center hover:text-earth-200 transition-colors">
+                      <tr className="border-b border-ink-800 bg-ink-900/40">
+                        <th className="pl-5 pr-4 py-3 text-left text-xs text-slate-400 font-medium w-[38%]">
+                          <button onClick={() => toggleSort('nazwa')} className="flex items-center hover:text-slate-200 transition-colors">
                             Nazwa <SortIcon field="nazwa" />
                           </button>
                         </th>
-                        <th className="pr-4 py-3 text-left text-xs text-earth-400 font-medium">Typ</th>
-                        <th className="pr-4 py-3 text-left text-xs text-earth-400 font-medium">Symbol / ETO</th>
-                        <th className="pr-4 py-3 text-left text-xs text-earth-400 font-medium">
-                          <button onClick={() => toggleSort('cena_netto')} className="flex items-center hover:text-earth-200 transition-colors">
+                        <th className="pr-4 py-3 text-left text-xs text-slate-400 font-medium">Typ</th>
+                        <th className="pr-4 py-3 text-left text-xs text-slate-400 font-medium">Symbol / ETO</th>
+                        <th className="pr-4 py-3 text-left text-xs text-slate-400 font-medium">
+                          <button onClick={() => toggleSort('cena_netto')} className="flex items-center hover:text-slate-200 transition-colors">
                             Cena netto <SortIcon field="cena_netto" />
                           </button>
                         </th>
-                        <th className="pr-4 py-3 text-left text-xs text-earth-400 font-medium">Z narzutem</th>
-                        <th className="pr-4 py-3 text-left text-xs text-earth-400 font-medium">
-                          <button onClick={() => toggleSort('qoq_change_pct')} className="flex items-center hover:text-earth-200 transition-colors">
+                        <th className="pr-4 py-3 text-left text-xs text-slate-400 font-medium">Z narzutem</th>
+                        <th className="pr-4 py-3 text-left text-xs text-slate-400 font-medium">
+                          <button onClick={() => toggleSort('qoq_change_pct')} className="flex items-center hover:text-slate-200 transition-colors">
                             QoQ <SortIcon field="qoq_change_pct" />
                           </button>
                         </th>
-                        <th className="pr-4 py-3 text-left text-xs text-earth-400 font-medium">Kategoria</th>
-                        <th className="pr-5 py-3 text-left text-xs text-earth-400 font-medium">Jedn.</th>
+                        <th className="pr-4 py-3 text-left text-xs text-slate-400 font-medium">Kategoria</th>
+                        <th className="pr-5 py-3 text-left text-xs text-slate-400 font-medium">Jedn.</th>
                       </tr>
                     </thead>
                     <tbody>
                       {sortedResults.map((r, i) => (
                         <tr
                           key={r.id ?? i}
-                          className="border-b border-earth-800/40 hover:bg-accent-info/5 transition-colors"
+                          className="border-b border-ink-800/40 hover:bg-indigo/5 transition-colors"
                         >
-                          <td className="pl-5 pr-4 py-2.5 text-earth-100 max-w-[260px]" title={r.nazwa}>
+                          <td className="pl-5 pr-4 py-2.5 text-slate-100 max-w-[260px]" title={r.nazwa}>
                             <span className="line-clamp-2 leading-tight">{r.nazwa}</span>
                           </td>
                           <td className="pr-4 py-2.5">
                             <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${
-                              r.typ_rms === 'R' ? 'bg-blue-500/15 text-blue-400' :
-                              r.typ_rms === 'M' ? 'bg-green-500/15 text-green-400' :
+                              r.typ_rms === 'R' ? 'bg-indigo/15 text-indigo-400' :
+                              r.typ_rms === 'M' ? 'bg-go-bg text-go' :
                               'bg-orange-500/15 text-orange-400'
                             }`}>{r.typ_rms}</span>
                           </td>
                           <td className="pr-4 py-2.5">
                             <div className="flex flex-col gap-0.5">
-                              {r.symbol && <span className="font-mono text-xs text-accent-info">{r.symbol}</span>}
-                              {r.indeks_eto && <span className="font-mono text-xs text-earth-500">{r.indeks_eto}</span>}
-                              {!r.symbol && !r.indeks_eto && <span className="text-earth-600 text-xs">—</span>}
+                              {r.symbol && <span className="font-mono text-xs text-indigo">{r.symbol}</span>}
+                              {r.indeks_eto && <span className="font-mono text-xs text-slate-500">{r.indeks_eto}</span>}
+                              {!r.symbol && !r.indeks_eto && <span className="text-slate-600 text-xs">—</span>}
                             </div>
                           </td>
-                          <td className="pr-4 py-2.5 text-earth-100 whitespace-nowrap font-medium tabular-nums">
+                          <td className="pr-4 py-2.5 text-slate-100 whitespace-nowrap font-medium tabular-nums">
                             {fmtPLN(r.cena_netto)}
                           </td>
-                          <td className="pr-4 py-2.5 text-earth-300 whitespace-nowrap tabular-nums text-xs">
+                          <td className="pr-4 py-2.5 text-slate-300 whitespace-nowrap tabular-nums text-xs">
                             {fmtPLN(r.cena_narzut)}
                           </td>
                           <td className={`pr-4 py-2.5 whitespace-nowrap font-medium tabular-nums text-xs ${
-                            r.qoq_change_pct == null ? 'text-earth-600' :
-                            r.qoq_change_pct > 0 ? 'text-red-400' :
-                            r.qoq_change_pct < 0 ? 'text-green-400' : 'text-earth-400'
+                            r.qoq_change_pct == null ? 'text-slate-600' :
+                            r.qoq_change_pct > 0 ? 'text-nogo' :
+                            r.qoq_change_pct < 0 ? 'text-go' : 'text-slate-400'
                           }`}>
                             {r.qoq_change_pct == null ? '—' : (
                               <span className="flex items-center gap-0.5">
@@ -962,17 +962,17 @@ function SzukajTab() {
                               </span>
                             )}
                           </td>
-                          <td className="pr-4 py-2.5 text-earth-400 text-xs whitespace-nowrap">
+                          <td className="pr-4 py-2.5 text-slate-400 text-xs whitespace-nowrap">
                             {CATEGORY_LABELS[r.category] ?? r.category}
                           </td>
-                          <td className="pr-5 py-2.5 text-earth-500 text-xs">{r.jednostka}</td>
+                          <td className="pr-5 py-2.5 text-slate-500 text-xs">{r.jednostka}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
                 {result.count > 50 && (
-                  <div className="px-5 py-3 border-t border-earth-800 text-xs text-earth-500 text-center">
+                  <div className="px-5 py-3 border-t border-ink-800 text-xs text-slate-500 text-center">
                     Pokazuję top 50 z {result.count} wyników — zawęź zapytanie, aby zobaczyć więcej
                   </div>
                 )}
@@ -1047,23 +1047,23 @@ function KategorieTab() {
               onClick={() => selected === cat.nazwa ? (setSelected(null), setDetail(null)) : loadDetail(cat.nazwa)}
             >
             <GlassCard
-              className={`p-4 transition-all hover:border-accent-info/40 ${
-                selected === cat.nazwa ? 'border-accent-info/60 bg-accent-info/10' : ''
+              className={`p-4 transition-all hover:border-indigo/40 ${
+                selected === cat.nazwa ? 'border-indigo/60 bg-indigo/10' : ''
               }`}
             >
-              <div className="font-semibold text-earth-100 text-sm mb-2 line-clamp-2">{cat.nazwa}</div>
+              <div className="font-semibold text-slate-100 text-sm mb-2 line-clamp-2">{cat.nazwa}</div>
               <div className="grid grid-cols-3 gap-2 text-xs">
                 <div>
-                  <div className="text-earth-500">Rekordy</div>
-                  <div className="text-earth-200 font-medium">{cat.count?.toLocaleString('pl-PL')}</div>
+                  <div className="text-slate-500">Rekordy</div>
+                  <div className="text-slate-200 font-medium">{cat.count?.toLocaleString('pl-PL')}</div>
                 </div>
                 <div>
-                  <div className="text-earth-500">Śr. cena</div>
-                  <div className="text-earth-200 font-medium">{cat.avg_price?.toFixed(2)}</div>
+                  <div className="text-slate-500">Śr. cena</div>
+                  <div className="text-slate-200 font-medium">{cat.avg_price?.toFixed(2)}</div>
                 </div>
                 <div>
-                  <div className="text-earth-500">Symbole</div>
-                  <div className="text-earth-200 font-medium">{cat.unique_symbols}</div>
+                  <div className="text-slate-500">Symbole</div>
+                  <div className="text-slate-200 font-medium">{cat.unique_symbols}</div>
                 </div>
               </div>
             </GlassCard>
@@ -1085,10 +1085,10 @@ function KategorieTab() {
           >
             <GlassCard className="p-5 h-full">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-earth-100 line-clamp-1">{selected}</h3>
+                <h3 className="text-sm font-semibold text-slate-100 line-clamp-1">{selected}</h3>
                 <button
                   onClick={() => { setSelected(null); setDetail(null); }}
-                  className="text-earth-400 hover:text-earth-200 transition-colors"
+                  className="text-slate-400 hover:text-slate-200 transition-colors"
                 >
                   <X size={16} />
                 </button>
@@ -1101,7 +1101,7 @@ function KategorieTab() {
                   {/* Trend chart */}
                   {detail.trend?.length > 0 && (
                     <div>
-                      <div className="text-xs text-earth-400 uppercase tracking-wider mb-2">Trend cen</div>
+                      <div className="text-xs text-slate-400 uppercase tracking-wider mb-2">Trend cen</div>
                       <LineChartSVG
                         data={detail.trend}
                         xKey="period"
@@ -1114,19 +1114,19 @@ function KategorieTab() {
                   {/* Top expensive */}
                   {detail.top_expensive?.length > 0 && (
                     <div>
-                      <div className="text-xs text-earth-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-                        <ArrowUpRight size={12} className="text-accent-warning" /> Najdroższe
+                      <div className="text-xs text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                        <ArrowUpRight size={12} className="text-warn" /> Najdroższe
                       </div>
                       <div className="space-y-1">
                         {detail.top_expensive.slice(0, 5).map((item, i) => (
-                          <div key={i} className="flex justify-between items-center text-xs p-2 bg-earth-900/40 rounded border border-earth-800/50">
+                          <div key={i} className="flex justify-between items-center text-xs p-2 bg-ink-900/40 rounded border border-ink-800/50">
                             <div>
-                              <div className="text-earth-100 font-medium">{item.nazwa}</div>
-                              <div className="text-earth-500 font-mono">{item.symbol}</div>
+                              <div className="text-slate-100 font-medium">{item.nazwa}</div>
+                              <div className="text-slate-500 font-mono">{item.symbol}</div>
                             </div>
                             <div className="text-right">
-                              <div className="text-accent-warning font-semibold">{fmtPLN(item.cena_netto)}</div>
-                              <div className="text-earth-500">{item.jednostka}</div>
+                              <div className="text-warn font-semibold">{fmtPLN(item.cena_netto)}</div>
+                              <div className="text-slate-500">{item.jednostka}</div>
                             </div>
                           </div>
                         ))}
@@ -1137,19 +1137,19 @@ function KategorieTab() {
                   {/* Most volatile */}
                   {detail.most_volatile?.length > 0 && (
                     <div>
-                      <div className="text-xs text-earth-400 uppercase tracking-wider mb-2 flex items-center gap-1">
-                        <Activity size={12} className="text-accent-danger" /> Najbardziej zmienne
+                      <div className="text-xs text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                        <Activity size={12} className="text-nogo" /> Najbardziej zmienne
                       </div>
                       <div className="space-y-1">
                         {detail.most_volatile.slice(0, 5).map((item, i) => (
-                          <div key={i} className="flex justify-between items-center text-xs p-2 bg-earth-900/40 rounded border border-earth-800/50">
+                          <div key={i} className="flex justify-between items-center text-xs p-2 bg-ink-900/40 rounded border border-ink-800/50">
                             <div>
-                              <div className="text-earth-100 font-medium">{item.nazwa}</div>
-                              <div className="text-earth-500 font-mono">{item.symbol}</div>
+                              <div className="text-slate-100 font-medium">{item.nazwa}</div>
+                              <div className="text-slate-500 font-mono">{item.symbol}</div>
                             </div>
                             <div className="text-right">
-                              <div className="text-earth-200 font-semibold">{fmtPLN(item.cena_netto)}</div>
-                              <div className="text-earth-500">{item.jednostka}</div>
+                              <div className="text-slate-200 font-semibold">{fmtPLN(item.cena_netto)}</div>
+                              <div className="text-slate-500">{item.jednostka}</div>
                             </div>
                           </div>
                         ))}
@@ -1219,11 +1219,11 @@ function ProgNozaTab({ categories }: { categories: CategoryItem[] }) {
       <GlassCard className="p-5">
         <div className="flex flex-wrap gap-4 items-end">
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-xs text-earth-400 mb-1.5">Kategoria</label>
+            <label className="block text-xs text-slate-400 mb-1.5">Kategoria</label>
             <select
               value={selCat}
               onChange={e => setSelCat(e.target.value)}
-              className="w-full bg-earth-900/60 border border-earth-800 rounded-token px-3 py-2.5 text-sm text-earth-100 focus:outline-none focus:border-accent-info/60"
+              className="w-full bg-ink-900/60 border border-ink-800 rounded-md px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo/60"
             >
               <option value="">— wybierz kategorię —</option>
               {categories.map(c => (
@@ -1232,11 +1232,11 @@ function ProgNozaTab({ categories }: { categories: CategoryItem[] }) {
             </select>
           </div>
           <div>
-            <label className="block text-xs text-earth-400 mb-1.5">Typ R/M/S</label>
+            <label className="block text-xs text-slate-400 mb-1.5">Typ R/M/S</label>
             <select
               value={selTyp}
               onChange={e => setSelTyp(e.target.value as 'M' | 'R' | 'S')}
-              className="bg-earth-900/60 border border-earth-800 rounded-token px-3 py-2.5 text-sm text-earth-100 focus:outline-none focus:border-accent-info/60"
+              className="bg-ink-900/60 border border-ink-800 rounded-md px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo/60"
             >
               <option value="M">M — Materiały</option>
               <option value="R">R — Robocizna</option>
@@ -1246,7 +1246,7 @@ function ProgNozaTab({ categories }: { categories: CategoryItem[] }) {
           <button
             onClick={() => loadForecast(selCat, selTyp)}
             disabled={!selCat || loading}
-            className="flex items-center gap-2 px-5 py-2.5 btn-primary disabled:opacity-50 disabled:cursor-not-allowed rounded-token text-sm font-medium transition-colors"
+            className="flex items-center gap-2 px-5 py-2.5 btn-primary disabled:opacity-50 disabled:cursor-not-allowed rounded-md text-sm font-medium transition-colors"
           >
             {loading ? <Spinner size={14} /> : <TrendingUp size={14} />}
             Pobierz prognozy
@@ -1265,14 +1265,14 @@ function ProgNozaTab({ categories }: { categories: CategoryItem[] }) {
         {!loading && data && !hasForecast && (
           <motion.div key="no-forecast" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <GlassCard className="p-10 text-center">
-              <ZapOff size={40} className="text-earth-500 mx-auto mb-3" />
-              <p className="text-earth-400 text-sm mb-5">
-                Brak prognoz dla <strong className="text-earth-200">{selCat}</strong> / typ <strong className="text-earth-200">{selTyp}</strong>
+              <ZapOff size={40} className="text-slate-500 mx-auto mb-3" />
+              <p className="text-slate-400 text-sm mb-5">
+                Brak prognoz dla <strong className="text-slate-200">{selCat}</strong> / typ <strong className="text-slate-200">{selTyp}</strong>
               </p>
               <button
                 onClick={computeForecast}
                 disabled={computing}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-accent-info hover:bg-accent-info/80 disabled:opacity-60 rounded-token text-sm font-semibold text-earth-950 transition-colors"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-indigo hover:bg-indigo/80 disabled:opacity-60 rounded-md text-sm font-semibold text-ink-950 transition-colors"
               >
                 {computing ? <Spinner size={16} /> : <Zap size={16} />}
                 {computing ? 'Obliczanie…' : 'Oblicz prognozy'}
@@ -1285,8 +1285,8 @@ function ProgNozaTab({ categories }: { categories: CategoryItem[] }) {
           <motion.div key="forecast" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
             {/* Band chart */}
             <GlassCard className="p-5">
-              <h3 className="text-sm font-semibold text-earth-100 mb-4 flex items-center gap-2">
-                <TrendingUp size={16} className="text-accent-info" />
+              <h3 className="text-sm font-semibold text-slate-100 mb-4 flex items-center gap-2">
+                <TrendingUp size={16} className="text-indigo" />
                 Prognoza: {data!.category} · typ {data!.typ_rms}
               </h3>
               <BandChartSVG data={data!.forecasts} />
@@ -1297,21 +1297,21 @@ function ProgNozaTab({ categories }: { categories: CategoryItem[] }) {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-earth-800">
+                    <tr className="border-b border-ink-800">
                       {['Okres', 'Prognoza', 'Dolny próg', 'Górny próg', 'MAPE %'].map(h => (
-                        <th key={h} className="pb-2 text-left text-xs text-earth-400 font-medium pr-4">{h}</th>
+                        <th key={h} className="pb-2 text-left text-xs text-slate-400 font-medium pr-4">{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {data!.forecasts.map((row, i) => (
-                      <tr key={i} className="border-b border-earth-800/40 hover:bg-accent-info/5 transition-colors">
-                        <td className="py-2 pr-4 font-mono text-xs text-earth-300">{row.period}</td>
-                        <td className="py-2 pr-4 font-medium text-earth-100">{fmtPLN(row.predicted_price)}</td>
-                        <td className="py-2 pr-4 text-earth-400">{fmtPLN(row.lower_bound)}</td>
-                        <td className="py-2 pr-4 text-earth-400">{fmtPLN(row.upper_bound)}</td>
+                      <tr key={i} className="border-b border-ink-800/40 hover:bg-indigo/5 transition-colors">
+                        <td className="py-2 pr-4 font-mono text-xs text-slate-300">{row.period}</td>
+                        <td className="py-2 pr-4 font-medium text-slate-100">{fmtPLN(row.predicted_price)}</td>
+                        <td className="py-2 pr-4 text-slate-400">{fmtPLN(row.lower_bound)}</td>
+                        <td className="py-2 pr-4 text-slate-400">{fmtPLN(row.upper_bound)}</td>
                         <td className={`py-2 font-medium ${
-                          row.mape_pct < 5 ? 'text-accent-success' : row.mape_pct < 15 ? 'text-accent-warning' : 'text-accent-danger'
+                          row.mape_pct < 5 ? 'text-go' : row.mape_pct < 15 ? 'text-warn' : 'text-nogo'
                         }`}>{row.mape_pct?.toFixed(2)}%</td>
                       </tr>
                     ))}
@@ -1324,7 +1324,7 @@ function ProgNozaTab({ categories }: { categories: CategoryItem[] }) {
 
         {!loading && !data && !error && (
           <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <div className="text-center py-16 text-earth-500 text-sm">
+            <div className="text-center py-16 text-slate-500 text-sm">
               Wybierz kategorię i typ, aby wyświetlić prognozy.
             </div>
           </motion.div>
@@ -1373,11 +1373,11 @@ function RegionyTab({ categories }: { categories: CategoryItem[] }) {
       <GlassCard className="p-5">
         <div className="flex gap-4 items-end">
           <div className="flex-1">
-            <label className="block text-xs text-earth-400 mb-1.5">Kategoria</label>
+            <label className="block text-xs text-slate-400 mb-1.5">Kategoria</label>
             <select
               value={selCat}
               onChange={e => { setSelCat(e.target.value); load(e.target.value); }}
-              className="w-full bg-earth-900/60 border border-earth-800 rounded-token px-3 py-2.5 text-sm text-earth-100 focus:outline-none focus:border-accent-info/60"
+              className="w-full bg-ink-900/60 border border-ink-800 rounded-md px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-indigo/60"
             >
               <option value="">— wybierz kategorię —</option>
               {categories.map(c => (
@@ -1405,21 +1405,21 @@ function RegionyTab({ categories }: { categories: CategoryItem[] }) {
         {data && !loading && (
           <motion.div key="data" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
             {/* National avg hero */}
-            <GlassCard className="p-6 text-center border-accent-info/30">
-              <div className="text-xs text-earth-400 uppercase tracking-widest mb-1">Średnia krajowa</div>
-              <div className="text-4xl font-bold text-accent-info">{fmtPLN(data.national_avg)}</div>
-              <div className="text-sm text-earth-400 mt-1">{data.category}</div>
+            <GlassCard className="p-6 text-center border-indigo/30">
+              <div className="text-xs text-slate-400 uppercase tracking-widest mb-1">Średnia krajowa</div>
+              <div className="text-4xl font-bold text-indigo">{fmtPLN(data.national_avg)}</div>
+              <div className="text-sm text-slate-400 mt-1">{data.category}</div>
             </GlassCard>
 
             {/* Regional bars */}
             <GlassCard className="p-5">
-              <h3 className="text-sm font-semibold text-earth-100 mb-4 flex items-center gap-2">
-                <Map size={16} className="text-accent-info" /> Porównanie regionalne
+              <h3 className="text-sm font-semibold text-slate-100 mb-4 flex items-center gap-2">
+                <Map size={16} className="text-indigo" /> Porównanie regionalne
               </h3>
               <div className="space-y-2">
                 {data.regions.map((r, i) => {
                   const barW = maxPrice > 0 ? (r.adjusted_price / maxPrice) * 100 : 0;
-                  const diffColor = r.diff_vs_national_pct > 0 ? 'text-accent-danger' : r.diff_vs_national_pct < 0 ? 'text-accent-success' : 'text-earth-400';
+                  const diffColor = r.diff_vs_national_pct > 0 ? 'text-nogo' : r.diff_vs_national_pct < 0 ? 'text-go' : 'text-slate-400';
                   return (
                     <motion.div
                       key={r.voivodeship}
@@ -1428,17 +1428,17 @@ function RegionyTab({ categories }: { categories: CategoryItem[] }) {
                       transition={{ delay: i * 0.03 }}
                       className="flex items-center gap-3"
                     >
-                      <div className="w-36 text-xs text-earth-300 truncate shrink-0">{r.voivodeship}</div>
-                      <div className="flex-1 bg-earth-900/60 rounded-full h-5 relative overflow-hidden">
+                      <div className="w-36 text-xs text-slate-300 truncate shrink-0">{r.voivodeship}</div>
+                      <div className="flex-1 bg-ink-900/60 rounded-full h-5 relative overflow-hidden">
                         <div
-                          className="h-full rounded-full bg-accent-info/70 transition-all duration-500"
+                          className="h-full rounded-full bg-indigo/70 transition-all duration-500"
                           style={{ width: `${barW}%` }}
                         />
-                        <span className="absolute inset-0 flex items-center px-2 text-xs text-earth-100">
+                        <span className="absolute inset-0 flex items-center px-2 text-xs text-slate-100">
                           {fmtPLN(r.adjusted_price)}
                         </span>
                       </div>
-                      <div className="w-16 text-xs text-earth-400 text-right shrink-0">
+                      <div className="w-16 text-xs text-slate-400 text-right shrink-0">
                         k={r.coefficient?.toFixed(3)}
                       </div>
                       <div className={`w-16 text-xs text-right shrink-0 font-medium ${diffColor}`}>
@@ -1454,7 +1454,7 @@ function RegionyTab({ categories }: { categories: CategoryItem[] }) {
 
         {!data && !loading && !error && (
           <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <div className="text-center py-16 text-earth-500 text-sm">
+            <div className="text-center py-16 text-slate-500 text-sm">
               Wybierz kategorię, aby porównać regiony.
             </div>
           </motion.div>
@@ -1508,14 +1508,14 @@ function ZmiennoscTab() {
   };
 
   const SortIcon = ({ f }: { f: SortField }) => {
-    if (sortField !== f) return <Minus size={10} className="text-earth-600" />;
-    return sortDir === 'asc' ? <ChevronUp size={10} className="text-accent-info" /> : <ChevronDown size={10} className="text-accent-info" />;
+    if (sortField !== f) return <Minus size={10} className="text-slate-600" />;
+    return sortDir === 'asc' ? <ChevronUp size={10} className="text-indigo" /> : <ChevronDown size={10} className="text-indigo" />;
   };
 
   const riskBadge = (r: string) => {
-    if (r === 'high') return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-accent-danger/20 text-accent-danger border border-accent-danger/30">Wysoki</span>;
-    if (r === 'medium') return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-accent-warning/20 text-accent-warning border border-accent-warning/30">Średni</span>;
-    return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-accent-success/20 text-accent-success border border-accent-success/30">Niski</span>;
+    if (r === 'high') return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-nogo/20 text-nogo border border-nogo/30">Wysoki</span>;
+    if (r === 'medium') return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-warn/20 text-warn border border-warn/30">Średni</span>;
+    return <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-go/20 text-go border border-go/30">Niski</span>;
   };
 
   if (loading) return <div className="flex justify-center py-20"><Spinner size={36} /></div>;
@@ -1524,15 +1524,15 @@ function ZmiennoscTab() {
   return (
     <GlassCard className="p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-earth-100 flex items-center gap-2">
-          <Activity size={16} className="text-accent-info" /> Macierz zmienności
+        <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
+          <Activity size={16} className="text-indigo" /> Macierz zmienności
         </h3>
-        <span className="text-xs text-earth-400">{sorted.length} pozycji</span>
+        <span className="text-xs text-slate-400">{sorted.length} pozycji</span>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-earth-800">
+            <tr className="border-b border-ink-800">
               {([
                 ['category', 'Kategoria'],
                 ['typ_rms', 'Typ'],
@@ -1543,7 +1543,7 @@ function ZmiennoscTab() {
                 <th
                   key={f}
                   onClick={() => toggleSort(f)}
-                  className="pb-2 text-left text-xs text-earth-400 font-medium pr-4 cursor-pointer hover:text-earth-200 transition-colors select-none"
+                  className="pb-2 text-left text-xs text-slate-400 font-medium pr-4 cursor-pointer hover:text-slate-200 transition-colors select-none"
                 >
                   <span className="inline-flex items-center gap-1">
                     {label} <SortIcon f={f} />
@@ -1554,14 +1554,14 @@ function ZmiennoscTab() {
           </thead>
           <tbody>
             {sorted.map((row, i) => (
-              <tr key={i} className="border-b border-earth-800/40 hover:bg-accent-info/5 transition-colors">
-                <td className="py-2 pr-4 text-earth-100 max-w-[200px] truncate" title={row.category}>{row.category}</td>
+              <tr key={i} className="border-b border-ink-800/40 hover:bg-indigo/5 transition-colors">
+                <td className="py-2 pr-4 text-slate-100 max-w-[200px] truncate" title={row.category}>{row.category}</td>
                 <td className="py-2 pr-4">
-                  <span className="font-mono text-xs px-1.5 py-0.5 bg-earth-800 rounded text-earth-300">{row.typ_rms}</span>
+                  <span className="font-mono text-xs px-1.5 py-0.5 bg-ink-800 rounded text-slate-300">{row.typ_rms}</span>
                 </td>
-                <td className="py-2 pr-4 text-earth-200 font-medium">{fmtPLN(row.mean_price)}</td>
+                <td className="py-2 pr-4 text-slate-200 font-medium">{fmtPLN(row.mean_price)}</td>
                 <td className={`py-2 pr-4 font-semibold ${
-                  row.cv > 30 ? 'text-accent-danger' : row.cv > 15 ? 'text-accent-warning' : 'text-accent-success'
+                  row.cv > 30 ? 'text-nogo' : row.cv > 15 ? 'text-warn' : 'text-go'
                 }`}>{row.cv?.toFixed(2)}%</td>
                 <td className="py-2">{riskBadge(row.risk_level)}</td>
               </tr>
@@ -1609,30 +1609,30 @@ function RobociznaTab() {
   return (
     <div className="space-y-5">
       {/* Hero */}
-      <GlassCard className="p-8 text-center border-accent-info/30">
-        <div className="flex items-center justify-center gap-2 text-xs text-earth-400 uppercase tracking-widest mb-2">
-          <HardHat size={14} className="text-accent-info" /> Robocizna — stawka krajowa R
+      <GlassCard className="p-8 text-center border-indigo/30">
+        <div className="flex items-center justify-center gap-2 text-xs text-slate-400 uppercase tracking-widest mb-2">
+          <HardHat size={14} className="text-indigo" /> Robocizna — stawka krajowa R
         </div>
-        <div className="text-5xl font-bold text-accent-info mb-1">
+        <div className="text-5xl font-bold text-indigo mb-1">
           {fmtPLN(data.national_avg_r)}
         </div>
-        <div className="text-sm text-earth-400">normatywna stawka robocizny / r-g</div>
+        <div className="text-sm text-slate-400">normatywna stawka robocizny / r-g</div>
       </GlassCard>
 
       {/* Regional table */}
       <GlassCard className="p-5">
-        <h3 className="text-sm font-semibold text-earth-100 mb-4 flex items-center gap-2">
-          <Map size={16} className="text-accent-info" /> Stawki regionalne
+        <h3 className="text-sm font-semibold text-slate-100 mb-4 flex items-center gap-2">
+          <Map size={16} className="text-indigo" /> Stawki regionalne
         </h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-earth-800">
-                <th className="pb-2 text-left text-xs text-earth-400 font-medium pr-4 whitespace-nowrap">Województwo</th>
-                <th className="pb-2 text-left text-xs text-earth-400 font-medium pr-4 whitespace-nowrap">Stawka R</th>
-                <th className="pb-2 text-left text-xs text-earth-400 font-medium pr-4 whitespace-nowrap">Współcz.</th>
+              <tr className="border-b border-ink-800">
+                <th className="pb-2 text-left text-xs text-slate-400 font-medium pr-4 whitespace-nowrap">Województwo</th>
+                <th className="pb-2 text-left text-xs text-slate-400 font-medium pr-4 whitespace-nowrap">Stawka R</th>
+                <th className="pb-2 text-left text-xs text-slate-400 font-medium pr-4 whitespace-nowrap">Współcz.</th>
                 {bKeys.map(k => (
-                  <th key={k} className="pb-2 text-left text-xs text-earth-400 font-medium pr-4 whitespace-nowrap">{k}</th>
+                  <th key={k} className="pb-2 text-left text-xs text-slate-400 font-medium pr-4 whitespace-nowrap">{k}</th>
                 ))}
               </tr>
             </thead>
@@ -1643,13 +1643,13 @@ function RobociznaTab() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: i * 0.02 }}
-                  className="border-b border-earth-800/40 hover:bg-accent-info/5 transition-colors"
+                  className="border-b border-ink-800/40 hover:bg-indigo/5 transition-colors"
                 >
-                  <td className="py-2 pr-4 text-earth-100 font-medium">{r.voivodeship}</td>
-                  <td className="py-2 pr-4 text-accent-info font-semibold">{fmtPLN(r.stawka_r)}</td>
-                  <td className="py-2 pr-4 text-earth-300 font-mono text-xs">{r.coefficient?.toFixed(3)}</td>
+                  <td className="py-2 pr-4 text-slate-100 font-medium">{r.voivodeship}</td>
+                  <td className="py-2 pr-4 text-indigo font-semibold">{fmtPLN(r.stawka_r)}</td>
+                  <td className="py-2 pr-4 text-slate-300 font-mono text-xs">{r.coefficient?.toFixed(3)}</td>
                   {bKeys.map(k => (
-                    <td key={k} className="py-2 pr-4 text-earth-400 text-xs">
+                    <td key={k} className="py-2 pr-4 text-slate-400 text-xs">
                       {r.breakdown?.[k] != null ? fmtPLN(r.breakdown[k]) : '—'}
                     </td>
                   ))}
@@ -1685,7 +1685,7 @@ export function ICBPage() {
       subtitle="Baza cen robocizny, materiałów, sprzętu"
     >
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 bg-earth-900/60 border border-earth-800 rounded-token-lg p-1 overflow-x-auto">
+      <div className="flex gap-1 mb-6 bg-ink-900/60 border border-ink-800 rounded-xl p-1 overflow-x-auto">
         {TABS.map(tab => {
           const Icon = tab.icon;
           const active = activeTab === tab.id;
@@ -1693,10 +1693,10 @@ export function ICBPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-token text-xs font-medium whitespace-nowrap transition-all flex-shrink-0 ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium whitespace-nowrap transition-all flex-shrink-0 ${
                 active
-                  ? 'bg-accent-info text-earth-950 shadow-token-md'
-                  : 'text-earth-400 hover:text-earth-200 hover:bg-earth-800/60'
+                  ? 'bg-indigo text-ink-950 shadow-md-md'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-ink-800/60'
               }`}
             >
               <Icon size={13} />

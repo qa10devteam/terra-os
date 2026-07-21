@@ -9,13 +9,14 @@ interface SelectOption {
 }
 
 interface SelectProps {
-  value: string;
-  onChange: (value: string) => void;
-  options: SelectOption[];
+  value:        string;
+  onChange:     (value: string) => void;
+  options:      SelectOption[];
   placeholder?: string;
-  disabled?: boolean;
-  label?: string;
-  error?: string;
+  disabled?:    boolean;
+  label?:       string;
+  error?:       string;
+  className?:   string;
 }
 
 export function Select({
@@ -23,9 +24,10 @@ export function Select({
   onChange,
   options,
   placeholder,
-  disabled = false,
+  disabled  = false,
   label,
   error,
+  className = '',
 }: SelectProps) {
   const selectId = useId();
 
@@ -37,11 +39,17 @@ export function Select({
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
         className={[
-          'input-base appearance-none w-full pr-8 cursor-pointer',
+          'w-full px-3.5 py-2.5 pr-9 rounded-md',
+          'appearance-none cursor-pointer',
+          'bg-ink-800 border',
+          'text-slate-100 text-sm',
+          'focus:outline-none focus:ring-1',
+          'transition-colors duration-150',
+          'disabled:opacity-40 disabled:cursor-not-allowed',
           error
-            ? 'border-accent-danger/50 focus:border-accent-danger/70 focus:ring-accent-danger/20'
-            : '',
-          disabled ? 'opacity-50 cursor-not-allowed' : '',
+            ? 'border-nogo/50 focus:border-nogo/70 focus:ring-nogo/20'
+            : 'border-ink-line focus:border-em/60 focus:ring-em/20',
+          className,
         ]
           .filter(Boolean)
           .join(' ')}
@@ -52,13 +60,12 @@ export function Select({
           </option>
         )}
         {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>
+          <option key={opt.value} value={opt.value} className="bg-ink-900">
             {opt.label}
           </option>
         ))}
       </select>
-      {/* Chevron icon — pointer-events-none so select is still clickable */}
-      <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-earth-500">
+      <span className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
         <ChevronDown className="w-4 h-4" />
       </span>
     </div>
@@ -69,16 +76,13 @@ export function Select({
   return (
     <div>
       {label && (
-        <label
-          htmlFor={selectId}
-          className="label-base block mb-1.5"
-        >
+        <label htmlFor={selectId} className="block text-xs font-medium text-slate-400 mb-1.5">
           {label}
         </label>
       )}
       {selectEl}
       {error && (
-        <p className="flex items-center gap-1 text-xs text-accent-danger mt-1">
+        <p className="flex items-center gap-1 text-xs text-nogo mt-1">
           <AlertCircle className="w-3 h-3 shrink-0" />
           {error}
         </p>

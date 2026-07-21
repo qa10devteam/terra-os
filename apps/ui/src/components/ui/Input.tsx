@@ -8,24 +8,23 @@ import { AlertCircle, CheckCircle2 } from 'lucide-react';
 type InputVariant = 'default' | 'error' | 'success';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?:      string;
-  helperText?: string;
-  errorText?:  string;
-  variant?:    InputVariant;
+  label?:            string;
+  helperText?:       string;
+  errorText?:        string;
+  variant?:          InputVariant;
   /** Icon to show inside input on the left */
-  iconLeft?:   React.ReactNode;
+  iconLeft?:         React.ReactNode;
   /** Icon to show inside input on the right */
-  iconRight?:  React.ReactNode;
-  /** Wrap in a <div> with label + helper text */
+  iconRight?:        React.ReactNode;
   wrapperClassName?: string;
 }
 
-// ── Style map ──────────────────────────────────────────────────────────────────
+// ── Style map — Brand Bible BudOS ─────────────────────────────────────────────
 
 const VARIANT_CLS: Record<InputVariant, string> = {
-  default: 'border-earth-700/50 focus:border-accent-primary/60 focus:ring-accent-primary/20',
-  error:   'border-accent-danger/50 focus:border-accent-danger/70 focus:ring-accent-danger/20',
-  success: 'border-accent-success/50 focus:border-accent-success/70 focus:ring-accent-success/20',
+  default: 'border-ink-line     focus:border-em/60  focus:ring-em/20',
+  error:   'border-nogo/50      focus:border-nogo/70 focus:ring-nogo/20',
+  success: 'border-go/50        focus:border-go/70  focus:ring-go/20',
 };
 
 // ── Component ──────────────────────────────────────────────────────────────────
@@ -35,23 +34,23 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     label,
     helperText,
     errorText,
-    variant    = 'default',
+    variant          = 'default',
     iconLeft,
     iconRight,
-    className   = '',
+    className        = '',
     wrapperClassName = '',
     id,
     ...rest
   },
   ref,
 ) {
-  const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
+  const inputId          = id ?? label?.toLowerCase().replace(/\s+/g, '-');
   const resolvedVariant: InputVariant = errorText ? 'error' : variant;
 
   const inputEl = (
     <div className="relative">
       {iconLeft && (
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-earth-500 pointer-events-none">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">
           {iconLeft}
         </span>
       )}
@@ -59,16 +58,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         ref={ref}
         id={inputId}
         className={[
-          'w-full px-3.5 py-2.5 rounded-token',
-          'bg-earth-800/60 border',
-          'text-earth-100 placeholder-earth-600 text-sm',
+          'w-full px-3.5 py-2.5 rounded-md',
+          'bg-ink-800 border',
+          'text-slate-100 placeholder-slate-600 text-sm',
           'focus:outline-none focus:ring-1',
           'transition-colors duration-150',
-          'disabled:opacity-50 disabled:cursor-not-allowed',
-          // Mobile: font-size 16px prevents iOS zoom
-          'text-base md:text-sm',
-          iconLeft  ? 'pl-9'  : '',
-          iconRight ? 'pr-9'  : '',
+          'disabled:opacity-40 disabled:cursor-not-allowed',
+          iconLeft  ? 'pl-10' : '',
+          iconRight ? 'pr-10' : '',
           VARIANT_CLS[resolvedVariant],
           className,
         ]
@@ -77,32 +74,37 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         {...rest}
       />
       {iconRight && (
-        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-earth-500">
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">
           {iconRight}
         </span>
       )}
     </div>
   );
 
-  // If no label / helper — return bare input
   if (!label && !helperText && !errorText) return inputEl;
 
   return (
     <div className={wrapperClassName}>
       {label && (
-        <label htmlFor={inputId} className="block text-xs font-medium text-earth-400 mb-1.5">
+        <label htmlFor={inputId} className="block text-xs font-medium text-slate-400 mb-1.5">
           {label}
         </label>
       )}
       {inputEl}
       {errorText ? (
-        <p className="flex items-center gap-1 text-xs text-accent-danger mt-1">
-          <AlertCircle className="w-3 h-3 shrink-0" />
+        <p className="flex items-center gap-1 mt-1 text-xs text-nogo">
+          <AlertCircle className="w-3 h-3 flex-shrink-0" />
           {errorText}
         </p>
       ) : helperText ? (
-        <p className="text-xs text-earth-600 mt-1">{helperText}</p>
+        <p className="mt-1 text-xs text-slate-600">{helperText}</p>
       ) : null}
+      {resolvedVariant === 'success' && !errorText && (
+        <p className="flex items-center gap-1 mt-1 text-xs text-go">
+          <CheckCircle2 className="w-3 h-3 flex-shrink-0" />
+          OK
+        </p>
+      )}
     </div>
   );
 });

@@ -29,7 +29,7 @@ const STATUS_META: Record<string, { label: string; bg: string }> = {
   active:     { label: 'Aktywny',          bg: 'bg-success/10 text-success border-success/20' },
   completed:  { label: 'Zakończony',       bg: 'bg-info/10 text-info border-info/20' },
   overdue:    { label: 'Opóźniony',        bg: 'bg-danger/10 text-danger border-danger/20' },
-  draft:      { label: 'Wersja robocza',   bg: 'bg-earth-700/30 text-earth-400 border-earth-700/40' },
+  draft:      { label: 'Wersja robocza',   bg: 'bg-ink-700/30 text-slate-400 border-ink-700/40' },
   BEFORE:     { label: 'Przed realizacją', bg: 'bg-warning/10 text-warning border-warning/20' },
   IN_PROGRESS:{ label: 'W trakcie',        bg: 'bg-success/10 text-success border-success/20' },
   DONE:       { label: 'Zakończony',       bg: 'bg-info/10 text-info border-info/20' },
@@ -120,13 +120,13 @@ export function ContractsPage() {
         {/* Stats */}
         <motion.div variants={itemVar} className="grid grid-cols-4 gap-3">
           {[
-            { label: 'Wartość kontraktów', value: fmtPLN(totals.value),  icon: DollarSign, color: 'text-accent-primary' },
+            { label: 'Wartość kontraktów', value: fmtPLN(totals.value),  icon: DollarSign, color: 'text-em' },
             { label: 'Zapłacono',          value: fmtPLN(totals.paid),   icon: TrendingUp, color: 'text-success' },
             { label: 'Aktywne',            value: String(totals.active), icon: Clock,      color: 'text-warning' },
             { label: 'Opóźnione',          value: String(totals.overdue),icon: AlertCircle,color: 'text-danger' },
           ].map(s => (
-            <div key={s.label} className="card rounded-token-lg p-4 shadow-token-sm">
-              <div className="flex items-center gap-2 text-earth-500 text-xs mb-2">
+            <div key={s.label} className="card rounded-xl p-4 shadow-md-sm">
+              <div className="flex items-center gap-2 text-slate-500 text-xs mb-2">
                 <s.icon className="w-3.5 h-3.5" />{s.label}
               </div>
               <p className={`text-xl font-bold ${s.color}`}>{loading ? '—' : s.value}</p>
@@ -136,11 +136,11 @@ export function ContractsPage() {
 
         {/* Filter tabs */}
         <motion.div variants={itemVar} className="flex items-center gap-3">
-          <Filter className="w-4 h-4 text-earth-600" />
-          <div className="flex gap-1 p-1 rounded-token-lg bg-earth-900 border border-earth-800/60">
+          <Filter className="w-4 h-4 text-slate-600" />
+          <div className="flex gap-1 p-1 rounded-xl bg-ink-900 border border-ink-800/60">
             {([['all', 'Wszystkie'], ['active', 'Aktywne'], ['completed', 'Zakończone'], ['overdue', 'Opóźnione'], ['draft', 'Robocze']] as const).map(([key, label]) => (
               <button key={key} onClick={() => setFilter(key)}
-                className={`px-3 py-1.5 rounded-token text-xs font-medium transition-all ${filter === key ? 'bg-earth-800 text-earth-100' : 'text-earth-500 hover:text-earth-300'}`}>
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${filter === key ? 'bg-ink-800 text-slate-100' : 'text-slate-500 hover:text-slate-300'}`}>
                 {label}
               </button>
             ))}
@@ -149,7 +149,7 @@ export function ContractsPage() {
 
         {/* Error */}
         {error && (
-          <motion.div variants={itemVar} className="flex items-center gap-2 px-4 py-3 rounded-token-lg bg-danger/10 border border-danger/20 text-danger text-sm">
+          <motion.div variants={itemVar} className="flex items-center gap-2 px-4 py-3 rounded-xl bg-danger/10 border border-danger/20 text-danger text-sm">
             <AlertCircle className="w-4 h-4 shrink-0" /> {error}
           </motion.div>
         )}
@@ -158,7 +158,7 @@ export function ContractsPage() {
         {loading && !error && (
           <motion.div variants={itemVar} className="space-y-3">
             {[1,2,3].map(i => (
-              <div key={i} className="h-28 rounded-token-lg bg-earth-900/50 animate-shimmer" />
+              <div key={i} className="h-28 rounded-xl bg-ink-900/50 animate-shimmer" />
             ))}
           </motion.div>
         )}
@@ -166,9 +166,9 @@ export function ContractsPage() {
         {/* Empty state */}
         {!loading && !error && displayed.length === 0 && (
           <motion.div variants={itemVar} className="flex flex-col items-center justify-center py-16 text-center">
-            <FileText className="w-10 h-10 text-earth-600 mb-3" />
-            <p className="text-earth-400 text-sm font-medium">Brak kontraktów</p>
-            <p className="text-earth-600 text-xs mt-1">Zmień filtr lub dodaj nowy kontrakt</p>
+            <FileText className="w-10 h-10 text-slate-600 mb-3" />
+            <p className="text-slate-400 text-sm font-medium">Brak kontraktów</p>
+            <p className="text-slate-600 text-xs mt-1">Zmień filtr lub dodaj nowy kontrakt</p>
           </motion.div>
         )}
 
@@ -179,37 +179,37 @@ export function ContractsPage() {
               const meta    = STATUS_META[c.status] ?? STATUS_META.active;
               const cashPct = c.value_pln > 0 ? Math.round((c.paid_pln / c.value_pln) * 100) : 0;
               return (
-                <div key={c.id} className="card rounded-token-lg p-5 card-hover shadow-token-sm">
+                <div key={c.id} className="card rounded-xl p-5 card-hover shadow-md-sm">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3 flex-1 min-w-0">
-                      <div className="w-10 h-10 rounded-token-lg bg-earth-800 flex items-center justify-center border border-earth-700/40 shrink-0">
-                        <FileText className="w-5 h-5 text-earth-500" />
+                      <div className="w-10 h-10 rounded-xl bg-ink-800 flex items-center justify-center border border-ink-700/40 shrink-0">
+                        <FileText className="w-5 h-5 text-slate-500" />
                       </div>
                       <div className="min-w-0">
-                        <h3 className="text-sm font-semibold text-earth-200 truncate">{c.title}</h3>
-                        <p className="text-xs text-earth-500 mt-0.5">{c.client}{c.contract_number ? ` · ${c.contract_number}` : ''}</p>
+                        <h3 className="text-sm font-semibold text-slate-200 truncate">{c.title}</h3>
+                        <p className="text-xs text-slate-500 mt-0.5">{c.client}{c.contract_number ? ` · ${c.contract_number}` : ''}</p>
                       </div>
                     </div>
                     <span className={`text-xs px-2.5 py-1 rounded-full font-medium border ${meta.bg}`}>{meta.label}</span>
                   </div>
 
                   <div className="mt-4 grid grid-cols-4 gap-4 text-xs">
-                    <div><p className="text-earth-600">Wartość</p><p className="text-earth-200 font-mono font-semibold mt-0.5">{fmtPLN(c.value_pln)}</p></div>
-                    <div><p className="text-earth-600">Zapłacono</p><p className="text-earth-200 font-mono font-semibold mt-0.5">{fmtPLN(c.paid_pln)}</p></div>
-                    <div><p className="text-earth-600">Termin</p><p className="text-earth-200 mt-0.5">{c.start_date || '—'} → {c.end_date || '—'}</p></div>
-                    <div><p className="text-earth-600">Postęp</p><p className="text-earth-200 font-semibold mt-0.5">{c.progress_pct}%</p></div>
+                    <div><p className="text-slate-600">Wartość</p><p className="text-slate-200 font-mono font-semibold mt-0.5">{fmtPLN(c.value_pln)}</p></div>
+                    <div><p className="text-slate-600">Zapłacono</p><p className="text-slate-200 font-mono font-semibold mt-0.5">{fmtPLN(c.paid_pln)}</p></div>
+                    <div><p className="text-slate-600">Termin</p><p className="text-slate-200 mt-0.5">{c.start_date || '—'} → {c.end_date || '—'}</p></div>
+                    <div><p className="text-slate-600">Postęp</p><p className="text-slate-200 font-semibold mt-0.5">{c.progress_pct}%</p></div>
                   </div>
 
                   <div className="mt-3 space-y-2">
                     <div>
-                      <div className="flex justify-between text-xs text-earth-600 mb-1"><span>Postęp prac</span><span>{c.progress_pct}%</span></div>
-                      <div className="h-1.5 bg-earth-800 rounded-full overflow-hidden">
-                        <div className="h-full bg-accent-primary rounded-full transition-all" style={{ width: `${c.progress_pct}%` }} />
+                      <div className="flex justify-between text-xs text-slate-600 mb-1"><span>Postęp prac</span><span>{c.progress_pct}%</span></div>
+                      <div className="h-1.5 bg-ink-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-em rounded-full transition-all" style={{ width: `${c.progress_pct}%` }} />
                       </div>
                     </div>
                     <div>
-                      <div className="flex justify-between text-xs text-earth-600 mb-1"><span>Cashflow</span><span>{cashPct}%</span></div>
-                      <div className="h-1.5 bg-earth-800 rounded-full overflow-hidden">
+                      <div className="flex justify-between text-xs text-slate-600 mb-1"><span>Cashflow</span><span>{cashPct}%</span></div>
+                      <div className="h-1.5 bg-ink-800 rounded-full overflow-hidden">
                         <div className="h-full bg-warning rounded-full transition-all" style={{ width: `${cashPct}%` }} />
                       </div>
                     </div>

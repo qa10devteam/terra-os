@@ -63,10 +63,10 @@ export default function BidIntelligencePage() {
         <div className="space-y-4">
           <div className="grid grid-cols-4 gap-3">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-24 rounded-token-lg bg-earth-900/50 animate-shimmer" />
+              <div key={i} className="h-24 rounded-xl bg-ink-900/50 animate-shimmer" />
             ))}
           </div>
-          <div className="h-80 rounded-token-lg bg-earth-900/50 animate-shimmer" />
+          <div className="h-80 rounded-xl bg-ink-900/50 animate-shimmer" />
         </div>
       )}
 
@@ -74,13 +74,13 @@ export default function BidIntelligencePage() {
       {!loading && stats && (
         <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { label: 'Łącznie ofert',     value: String(stats.total_bids),     icon: FileText,  color: 'text-earth-100' },
+            { label: 'Łącznie ofert',     value: String(stats.total_bids),     icon: FileText,  color: 'text-slate-100' },
             { label: 'Win Rate',           value: `${stats.win_rate}%`,          icon: TrendingUp, color: 'text-success' },
             { label: 'Optymalny markup',   value: `${stats.optimal_markup}%`,    icon: Target,    color: 'text-info' },
-            { label: 'Średni markup',      value: `${stats.avg_markup}%`,        icon: BarChart2, color: 'text-earth-100' },
+            { label: 'Średni markup',      value: `${stats.avg_markup}%`,        icon: BarChart2, color: 'text-slate-100' },
           ].map(s => (
-            <div key={s.label} className="card rounded-token-lg p-5 shadow-token-sm">
-              <div className="flex items-center gap-2 text-earth-500 text-xs mb-2">
+            <div key={s.label} className="card rounded-xl p-5 shadow-md-sm">
+              <div className="flex items-center gap-2 text-slate-500 text-xs mb-2">
                 <s.icon size={14} /> {s.label}
               </div>
               <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
@@ -91,21 +91,21 @@ export default function BidIntelligencePage() {
 
       {/* Bid History Table */}
       {!loading && (
-        <div className="card rounded-token-lg overflow-hidden shadow-token-sm">
-          <div className="border-b border-earth-800/60 px-6 py-4">
-            <h2 className="text-base font-semibold text-earth-100">Historia ofert</h2>
+        <div className="card rounded-xl overflow-hidden shadow-md-sm">
+          <div className="border-b border-ink-800/60 px-6 py-4">
+            <h2 className="text-base font-semibold text-slate-100">Historia ofert</h2>
           </div>
           {bids.length === 0 ? (
             <GlassCard className="flex flex-col items-center justify-center py-16">
-              <FileText size={48} className="text-earth-600 mb-3" />
-              <p className="text-sm text-earth-400">Brak historii ofert</p>
-              <p className="text-xs text-earth-500">Złóż oferty na przetargi, aby zobaczyć analitykę</p>
+              <FileText size={48} className="text-slate-600 mb-3" />
+              <p className="text-sm text-slate-400">Brak historii ofert</p>
+              <p className="text-xs text-slate-500">Złóż oferty na przetargi, aby zobaczyć analitykę</p>
             </GlassCard>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-earth-800/60 text-left text-xs text-earth-500">
+                  <tr className="border-b border-ink-800/60 text-left text-xs text-slate-500">
                     <th className="px-6 py-3 font-medium">Przetarg</th>
                     <th className="px-6 py-3 font-medium">Data</th>
                     <th className="px-6 py-3 font-medium">Markup</th>
@@ -115,13 +115,13 @@ export default function BidIntelligencePage() {
                 </thead>
                 <tbody>
                   {bids.map((bid) => (
-                    <tr key={bid.id} className="border-b border-earth-900 last:border-0 hover:bg-earth-900/40 transition-colors">
-                      <td className="px-6 py-3 text-earth-200">{bid.tender_title}</td>
-                      <td className="px-6 py-3 text-earth-400">
+                    <tr key={bid.id} className="border-b border-ink-900 last:border-0 hover:bg-ink-900/40 transition-colors">
+                      <td className="px-6 py-3 text-slate-200">{bid.tender_title}</td>
+                      <td className="px-6 py-3 text-slate-400">
                         {new Date(bid.submitted_at).toLocaleDateString('pl-PL')}
                       </td>
-                      <td className="px-6 py-3 text-earth-200 font-mono">{bid.markup_pct}%</td>
-                      <td className="px-6 py-3 text-earth-200 font-mono">
+                      <td className="px-6 py-3 text-slate-200 font-mono">{bid.markup_pct}%</td>
+                      <td className="px-6 py-3 text-slate-200 font-mono">
                         {(bid.bid_amount ?? 0).toLocaleString('pl-PL')} PLN
                       </td>
                       <td className="px-6 py-3">

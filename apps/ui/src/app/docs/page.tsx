@@ -136,7 +136,7 @@ export default function DocsPage() {
               ].map((ep) => (
                 <div key={ep.path} className="flex gap-3 items-center">
                   <span className={`text-xs font-bold px-2 py-0.5 rounded font-mono w-14 text-center ${
-                    ep.method === 'GET' ? 'bg-green-900/50 text-green-400' : 'bg-blue-900/50 text-blue-400'
+                    ep.method === 'GET' ? 'bg-go/10 text-go' : 'bg-indigo/10 text-indigo-400'
                   }`}>
                     {ep.method}
                   </span>
