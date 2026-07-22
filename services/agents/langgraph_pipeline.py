@@ -39,7 +39,9 @@ class AgentState(TypedDict, total=False):
     bid_strategy: dict
     decision_brief: str
     go_decision: str        # GO / NO-GO / CONSIDER
-    icb_pricing: dict       # InterCenBud pricing data
+    icb_pricing: dict
+    l1_feasible: bool       # L1 symbolic engine — brak BLOCK violations
+    l1_violations: list     # lista violation dicts z L1
     icb_estimate: dict      # ICB quick estimate from node_icb_estimate
 
 
@@ -116,12 +118,22 @@ def node_fetch_tender(state: AgentState) -> AgentState:
             elif hasattr(v, "__str__") and not isinstance(v, (str, int, float, bool, list, dict, type(None))):
                 tender_data[k] = str(v)
 
-        # Fetch documents
-        docs = _run_query(
-            "SELECT id, file_name, content_text FROM tender_document WHERE tender_id = :tid LIMIT 20",
+        # Fetch documents + ich chunki jako content_text
+        docs_raw = _run_query(
+            "SELECT id, filename FROM tender_document WHERE tender_id = :tid LIMIT 20",
             {"tid": tender_id},
         )
-        logger.info("fetch_tender: tender_id=%s docs=%d", tender_id, len(docs))
+        # Dołącz tekst z document_chunk (content) — konkatenacja chunków per dokument
+        docs = []
+        for doc in docs_raw:
+            chunks = _run_query(
+                "SELECT content FROM document_chunk WHERE document_id = :did ORDER BY ordinal LIMIT 30",
+                {"did": doc["id"]},
+            )
+            content_text = "\n".join(c["content"] for c in chunks if c.get("content"))
+            docs.append({**doc, "content_text": content_text, "file_name": doc["filename"]})
+        logger.info("fetch_tender: tender_id=%s docs=%d chunks_loaded=%d",
+                    tender_id, len(docs), sum(1 for d in docs if d["content_text"]))
         return {**state, "steps": steps, "tender_data": tender_data, "documents": docs}
     except Exception as exc:
         logger.exception("fetch_tender error")
@@ -375,10 +387,12 @@ def node_icb_estimate(state: AgentState) -> AgentState:
         # Get narzuty for markup estimate
         narzuty = get_narzuty(rok, nr)
 
+        # get_narzuty returns a single dict, get_all_narzuty returns list
+        narzuty_list = narzuty if isinstance(narzuty, list) else ([narzuty] if narzuty else [])
         icb_context = {
             'quarter': f'{rok}-Q{nr}',
             'relevant_materials': matches[:5],
-            'narzuty_sample': narzuty[:3] if narzuty else [],
+            'narzuty_sample': narzuty_list[:3],
         }
 
         # Store in state - merge with existing analysis
@@ -395,6 +409,71 @@ def node_icb_estimate(state: AgentState) -> AgentState:
 
 
 # ---------------------------------------------------------------------------
+# NODE 3c: l1_eval — L1 symbolic decision engine (clingo + Z3)
+# ---------------------------------------------------------------------------
+
+def node_l1_eval(state: AgentState) -> AgentState:
+    """Uruchom L1 symbolic engine — axiomy A001-A006, violations → red_flags."""
+    steps = list(state.get("steps", []))
+    steps.append("l1_eval")
+    if state.get("error"):
+        return {**state, "steps": steps}
+
+    try:
+        import sys as _sys
+        _sys.path.insert(0, "/home/ubuntu/terra-os/services")
+        from engine.l1_symbolic import run_l1
+
+        tender = state.get("tender_data", {})
+        analysis = state.get("analysis", {})
+        estimate = {}  # brak estimate na tym etapie
+
+        result = run_l1(
+            tender=tender,
+            przedmiar_items=[],
+            estimate=estimate,
+            analysis=analysis,
+        )
+
+        # Merge violations jako red_flags do analysis
+        analysis = dict(analysis)
+        existing_flags = list(analysis.get("red_flags") or [])
+        for v in result.violations:
+            flag = f"[L1/{v.axiom_code}/{v.severity.upper()}] {v.message}"
+            if flag not in existing_flags:
+                existing_flags.append(flag)
+
+        analysis["red_flags"] = existing_flags
+        analysis["l1_result"] = result.to_dict()
+
+        # Persist updated red_flags back to DB
+        if analysis.get("red_flags") and state.get("tender_id"):
+            try:
+                from terra_db.session import get_engine as _get_engine_l1
+                with _get_engine_l1().begin() as conn:
+                    conn.execute(
+                        sa.text(
+                            "UPDATE analysis SET red_flags = :rf WHERE tender_id = :tid"
+                        ),
+                        {
+                            "rf": json.dumps(analysis["red_flags"]),
+                            "tid": str(state["tender_id"]),
+                        },
+                    )
+            except Exception as db_err:
+                logger.warning("l1_eval: DB update failed: %s", db_err)
+
+        state = {**state, "steps": steps, "analysis": analysis,
+                 "l1_feasible": result.feasible,
+                 "l1_violations": [v.to_dict() for v in result.violations]}
+        logger.info("l1_eval: feasible=%s violations=%d", result.feasible, len(result.violations))
+    except Exception as e:
+        logger.warning("l1_eval failed: %s", e)
+        state = {**state, "steps": steps}
+
+    return state
+
+
 # NODE 4: ahp_eval
 # ---------------------------------------------------------------------------
 
@@ -773,11 +852,13 @@ def _build_graph_v1() -> Any:
     g.add_node("analyze_swz", node_analyze_swz)
     g.add_node("score_tender", node_score_tender)
     g.add_node("icb_estimate", node_icb_estimate)
+    g.add_node("l1_eval", node_l1_eval)
     g.set_entry_point("fetch_tender")
     g.add_edge("fetch_tender", "analyze_swz")
     g.add_edge("analyze_swz", "score_tender")
     g.add_edge("score_tender", "icb_estimate")
-    g.add_edge("icb_estimate", END)
+    g.add_edge("icb_estimate", "l1_eval")
+    g.add_edge("l1_eval", END)
     return g.compile()
 
 
@@ -787,6 +868,7 @@ def _build_graph_v2() -> Any:
     g.add_node("analyze_swz",     node_analyze_swz)
     g.add_node("score_tender",    node_score_tender)
     g.add_node("icb_estimate",    node_icb_estimate)
+    g.add_node("l1_eval",         node_l1_eval)
     g.add_node("ahp_eval",        node_ahp_eval)
     g.add_node("competitor_check", node_competitor_check)
     g.add_node("bid_strategy",    node_bid_strategy)
@@ -796,7 +878,8 @@ def _build_graph_v2() -> Any:
     g.add_edge("fetch_tender",    "analyze_swz")
     g.add_edge("analyze_swz",     "score_tender")
     g.add_edge("score_tender",    "icb_estimate")
-    g.add_edge("icb_estimate",    "ahp_eval")
+    g.add_edge("icb_estimate",    "l1_eval")
+    g.add_edge("l1_eval",         "ahp_eval")
     g.add_edge("ahp_eval",        "competitor_check")
     g.add_edge("competitor_check","bid_strategy")
     g.add_edge("bid_strategy",    "icb_pricing")

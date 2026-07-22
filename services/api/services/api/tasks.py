@@ -61,28 +61,106 @@ def sync_bzp_task(self, days_back: int = 7, offline: bool = False):
     max_retries=2,
 )
 def process_document_task(self, document_id: str, org_id: str):
-    """Process uploaded document — OCR, embedding, AI classification."""
+    """Process uploaded document — OCR (marker-pdf) → document_chunk."""
     try:
         from terra_db.session import get_engine
         from sqlalchemy import text
+        import uuid
+        from pathlib import Path
 
         engine = get_engine()
-        with engine.connect() as conn:
-            # Update job status to running
-            conn.execute(
-                text("""
-                    UPDATE tender_document
-                    SET parsed_ok = false
-                    WHERE id = :doc_id
-                """),
-                {"doc_id": document_id},
-            )
-            conn.commit()
 
-        logger.info("Document %s processing queued (placeholder)", document_id)
-        return {"status": "ok", "document_id": document_id}
+        # 1. Pobierz ścieżkę pliku z tender_document
+        with engine.connect() as conn:
+            row = conn.execute(
+                text("SELECT local_path, tenant_id, tender_id, mime FROM tender_document WHERE id = :id"),
+                {"id": document_id},
+            ).fetchone()
+
+        if not row or not row[0]:
+            logger.warning("process_document_task: brak local_path dla doc_id=%s", document_id)
+            return {"status": "skip", "reason": "no_local_path"}
+
+        local_path = Path(row[0])
+        tenant_id  = str(row[1])
+        tender_id  = str(row[2])
+
+        if not local_path.exists():
+            logger.warning("process_document_task: plik nie istnieje: %s", local_path)
+            return {"status": "skip", "reason": "file_not_found"}
+
+        # 2. OCR z marker-pdf
+        logger.info("OCR start: doc_id=%s path=%s", document_id, local_path)
+        try:
+            from marker.converters.pdf import PdfConverter
+            from marker.models import create_model_dict
+            from marker.config.parser import ConfigParser
+
+            config = ConfigParser({"output_format": "markdown"})
+            converter = PdfConverter(
+                config=config.generate_config_dict(),
+                artifact_dict=create_model_dict(),
+                processor_list=config.get_processors(),
+                renderer=config.get_renderer(),
+            )
+            rendered = converter(str(local_path))
+            markdown_text = rendered.markdown
+            pages_count = getattr(rendered, "page_count", None) or markdown_text.count("\n\n## ")
+        except Exception as ocr_exc:
+            logger.error("OCR failed doc_id=%s: %s", document_id, ocr_exc)
+            with engine.begin() as conn:
+                conn.execute(
+                    text("UPDATE tender_document SET parsed_ok=false WHERE id=:id"),
+                    {"id": document_id},
+                )
+            raise self.retry(exc=ocr_exc, countdown=60)
+
+        # 3. Split na chunki (co ~3000 znaków z zachowaniem akapitów)
+        def split_chunks(text: str, max_chars: int = 3000) -> list[str]:
+            paragraphs = text.split("\n\n")
+            chunks, current = [], ""
+            for p in paragraphs:
+                if len(current) + len(p) > max_chars and current:
+                    chunks.append(current.strip())
+                    current = p
+                else:
+                    current = (current + "\n\n" + p) if current else p
+            if current.strip():
+                chunks.append(current.strip())
+            return chunks
+
+        chunks = split_chunks(markdown_text)
+        logger.info("OCR done: doc_id=%s chunks=%d pages≈%s", document_id, len(chunks), pages_count)
+
+        # 4. Zapisz do document_chunk + oznacz tender_document.parsed_ok=true
+        with engine.begin() as conn:
+            for ordinal, chunk_text in enumerate(chunks):
+                conn.execute(
+                    text("""
+                        INSERT INTO document_chunk (id, tenant_id, document_id, page, ordinal, content, created_at)
+                        VALUES (:id, :tid, :doc_id, :page, :ordinal, :content, NOW())
+                        ON CONFLICT DO NOTHING
+                    """),
+                    {
+                        "id":      str(uuid.uuid4()),
+                        "tid":     tenant_id,
+                        "doc_id":  document_id,
+                        "page":    ordinal // 3,
+                        "ordinal": ordinal,
+                        "content": chunk_text,
+                    },
+                )
+            conn.execute(
+                text("UPDATE tender_document SET parsed_ok=true, pages=:pages WHERE id=:id"),
+                {"pages": len(chunks), "id": document_id},
+            )
+
+        logger.info("process_document_task done: doc_id=%s chunks=%d", document_id, len(chunks))
+        return {"status": "ok", "document_id": document_id, "chunks": len(chunks)}
+
     except Exception as exc:
-        logger.error("Document processing failed: %s", exc)
+        if not self.request.retries:
+            logger.error("Document processing failed: %s", exc)
         raise self.retry(exc=exc, countdown=30)
 
 

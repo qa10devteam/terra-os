@@ -196,11 +196,11 @@ def list_competitors(limit: int = 30) -> dict:
         # Try atlas_contractors first
         try:
             rows = conn.execute(sa.text("""
-                SELECT name, city, nip, win_count, bid_count,
-                       ROUND(win_count::numeric / NULLIF(bid_count, 0), 4) as win_rate,
-                       total_won_value
+                SELECT name, city, nip, total_wins, 0 as bid_count,
+                       COALESCE(win_rate, 0.0) as win_rate,
+                       total_value as total_won_value
                 FROM atlas_contractors
-                ORDER BY win_count DESC
+                ORDER BY total_wins DESC NULLS LAST
                 LIMIT :limit
             """), {"limit": limit}).fetchall()
 

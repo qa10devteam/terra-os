@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import {
   Search, ChevronDown, ChevronLeft, ChevronRight,
@@ -13,6 +13,7 @@ import { PageShell }   from '@/components/PageShell';
 import { useAuthFetch } from '@/lib/api-v2';
 import { useStore }     from '@/store/useStore';
 import { PageTransition } from '@/components/ui/PageTransition';
+import { PolandMap }   from '@/components/PolandMap';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -306,6 +307,17 @@ export function ZwiadPage() {
 
   const PER_PAGE = 8;
 
+  // ── Województwo counts (dla mapy) ─────────────────────────────────────────
+  const wojCounts = useMemo(() => {
+    const out: Record<string, number> = {};
+    for (const t of tenders) {
+      if (t.wojewodztwo && t.wojewodztwo !== '—') {
+        out[t.wojewodztwo] = (out[t.wojewodztwo] ?? 0) + 1;
+      }
+    }
+    return out;
+  }, [tenders]);
+
   // ── Debounced search ──────────────────────────────────────────────────────
   const handleSearchChange = (value: string) => {
     setSearch(value);
@@ -545,6 +557,27 @@ export function ZwiadPage() {
             <GlassSelect value={woj}    onChange={setWoj}    options={WOJEWODZTWA} label="Województwo" />
             <GlassSelect value={branza} onChange={setBranza} options={BRANZE}      label="Branża" />
             <GlassSelect value={status} onChange={setStatus} options={STATUSY}     label="Status" />
+          </div>
+
+          {/* Mapa Polski */}
+          <div className="flex flex-col sm:flex-row gap-4 items-start">
+            <div className="shrink-0">
+              <p className="text-[11px] text-slate-500 mb-2 uppercase tracking-wider">Mapa — kliknij województwo</p>
+              <PolandMap counts={wojCounts} selected={woj} onSelect={setWoj} />
+            </div>
+            {woj !== 'Wszystkie' && (
+              <div className="flex-1 min-w-0 pt-6">
+                <p className="text-sm text-slate-300 font-medium mb-1">{woj}</p>
+                <p className="text-xs text-slate-500">{wojCounts[woj] ?? 0} przetargów</p>
+                <button
+                  type="button"
+                  onClick={() => setWoj('Wszystkie')}
+                  className="mt-2 text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
+                >
+                  ✕ Wyczyść filtr
+                </button>
+              </div>
+            )}
           </div>
         </motion.div>
 

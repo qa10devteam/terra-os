@@ -1246,3 +1246,34 @@ HINT:  Create a unique index with no WHERE clause on one or more columns of the 
 2026-07-19 05:01:41,823 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert Coverage': 0 nowych przetargów od 2026-07-18 04:01 — pomijam
 2026-07-19 05:01:41,823 [INFO] ingestion.alert_dispatcher: Alert dispatcher zakończony: {'alerts_checked': 12, 'alerts_fired': 2, 'emails_sent': 2, 'tenders_found': 2, 'skipped': 10, 'since_minutes': 1500}
 2026-07-19 05:01:41,823 [INFO] daily_ingest: Alert dispatcher done: checked=12 fired=2 emails=2 tenders=2
+2026-07-22 22:15:06,039 [INFO] daily_ingest: Starting daily ingest (days_back=2, ted=True, bip=False, bip_region=None)
+2026-07-22 22:15:07,931 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-20T00%3A00%3A00&PublicationDateTo=2026-07-20T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-22 22:15:08,752 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-20T12%3A00%3A00&PublicationDateTo=2026-07-20T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-22 22:15:09,341 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-21T00%3A00%3A00&PublicationDateTo=2026-07-21T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-22 22:15:09,948 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-21T12%3A00%3A00&PublicationDateTo=2026-07-21T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-22 22:15:10,621 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-22T00%3A00%3A00&PublicationDateTo=2026-07-22T11%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-22 22:15:10,968 [INFO] httpx: HTTP Request: GET https://ezamowienia.gov.pl/mo-board/api/v1/notice?pageSize=500&pageNumber=0&NoticeType=ContractNotice&PublicationDateFrom=2026-07-22T12%3A00%3A00&PublicationDateTo=2026-07-22T23%3A59%3A59 "HTTP/1.1 200 OK"
+2026-07-22 22:15:11,027 [INFO] ingestion.bzp_connector: source=bzp type=ContractNotice days=3 fetched=1383 requests=6 errors=0 p50=557ms
+2026-07-22 22:15:11,029 [INFO] ingestion.pipeline: BZP fetched 1383 raw notices
+2026-07-22 22:15:11,184 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-22 22:15:13,169 [INFO] httpx: HTTP Request: POST https://api.ted.europa.eu/v3/notices/search "HTTP/1.1 200 OK"
+2026-07-22 22:15:13,352 [INFO] ingestion.ted_connector: source=ted days=3 fetched=148 requests=2 errors=0 p50=2152ms
+2026-07-22 22:15:13,352 [INFO] ingestion.pipeline: TED fetched 148 raw notices
+2026-07-22 22:15:13,353 [INFO] ingestion.bk_connector: source=bk fetching date_from=2026-07-20 date_to=2026-07-22 status=PUBLISHED
+2026-07-22 22:15:13,517 [INFO] ingestion.bk_connector: source=bk page=1 got=100 total_so_far=100 / 509
+2026-07-22 22:15:14,175 [INFO] ingestion.bk_connector: source=bk page=2 got=100 total_so_far=200 / 509
+2026-07-22 22:15:14,831 [INFO] ingestion.bk_connector: source=bk page=3 got=100 total_so_far=275 / 509
+2026-07-22 22:15:15,493 [INFO] ingestion.bk_connector: source=bk page=4 got=100 total_so_far=364 / 509
+2026-07-22 22:15:16,152 [INFO] ingestion.bk_connector: source=bk page=5 got=100 total_so_far=442 / 509
+2026-07-22 22:15:16,714 [INFO] ingestion.bk_connector: source=bk page=6 got=9 total_so_far=451 / 509
+2026-07-22 22:15:16,714 [INFO] ingestion.bk_connector: source=bk fetch complete: 451 notices
+2026-07-22 22:15:16,714 [INFO] ingestion.pipeline: BK fetched 451 raw notices
+2026-07-22 22:15:17,262 [INFO] ingestion.pipeline: Ingest for tenant_id=ec3d1e16-2139-48c2-93b5-ffe0defd606d
+2026-07-22 22:15:17,277 [INFO] ingestion.pipeline: Filter: 676 passed, 449 dropped
+2026-07-22 22:15:19,152 [INFO] ingestion.pipeline: Ingest done: IngestResult(fetched=1982, norm=1125, passed=676, dropped=449, created=0, updated=676, errors=0, bip=0, dedup=0)
+2026-07-22 22:15:19,205 [INFO] services.ingestion.deduplicator: Loaded 1879 tenders for deduplication
+2026-07-22 22:15:19,269 [INFO] services.ingestion.deduplicator: Searching for duplicate pairs (title sim >= 0.55)...
+2026-07-22 22:15:34,239 [INFO] services.ingestion.deduplicator: Candidate pairs from pg_trgm: 4
+2026-07-22 22:15:34,239 [INFO] services.ingestion.deduplicator: Confirmed duplicate pairs: 1
+2026-07-22 22:15:34,241 [INFO] services.ingestion.deduplicator: Deduplication done: 1 pairs found, 1 new, 0 skipped
+2026-07-22 22:15:34,242 [INFO] ingestion.pipeline: Dedup: 1 new duplicate pairs
