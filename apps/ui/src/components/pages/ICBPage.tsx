@@ -492,7 +492,7 @@ function DashboardTab() {
       label: 'Rekordów ICB',
       value: fmtM(data.total_records),
       icon: <Database size={20} className="text-indigo" />,
-      sub: 'InterCenBud',
+      sub: 'Baza cen KNR',
     },
     {
       label: 'Unikalnych symboli',

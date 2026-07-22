@@ -117,7 +117,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Czy można eksportować kosztorys do ATH?',
-    a: 'Tak. BudOS obsługuje natywny eksport do formatu ATH (Norma Pro / Zuzia), PDF oraz XLSX. Wszystkie pozycje kosztorysowe są zgodne z katalogami KNR i bazą InterCenBud.',
+    a: 'Tak. BudOS obsługuje natywny eksport do formatu ATH (Norma Pro / Zuzia), PDF oraz XLSX. Wszystkie pozycje kosztorysowe są zgodne z katalogami KNR oraz aktualnymi bazami cenowymi spełniającymi wymogi normy kosztorysowania.',
   },
   {
     q: 'Jakie bazy przetargów są monitorowane?',

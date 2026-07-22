@@ -365,7 +365,7 @@ const featuresSmall = [
   {
     Icon: Calculator,
     title: 'Silnik Kosztorysowy KNR',
-    desc:  'Automatyczne wyceny z bazy InterCenBud. Eksport PDF/Excel gotowy do podpisu.',
+    desc:  'Automatyczne wyceny z certyfikowanej bazy cen KNR. Eksport PDF/Excel gotowy do podpisu.',
   },
   {
     Icon: FileCheck,

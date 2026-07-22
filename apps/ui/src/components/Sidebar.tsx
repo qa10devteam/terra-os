@@ -62,7 +62,7 @@ const moduleGroups: ModuleGroup[] = [
     items: [
       { id: 'dashboard',    icon: LayoutDashboard, name: 'Dashboard',  desc: 'Panel główny' },
       { id: 'analytics',    icon: BarChart3,       name: 'Analityka',  desc: 'AHP, Friedman, Ryzyko' },
-      { id: 'icb',          icon: PackageSearch,   name: 'Cennik ICB', desc: 'Baza cen InterCenBud' },
+      { id: 'icb',          icon: PackageSearch,   name: 'Cennik KNR', desc: 'Baza cen robót budowlanych (KNR/norma)' },
       { id: 'market-intel', icon: TrendingUp,      name: 'Rynek',      desc: 'Trendy i benchmarki CPV' },
       { id: 'rynek',        icon: BarChart3,       name: 'Rynek S6',   desc: 'Dashboard BZP · TED · GUS' },
     ],
