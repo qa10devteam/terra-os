@@ -126,7 +126,7 @@ function NavLoginLink() {
   const [hover, setHover] = useState(false);
   return (
     <Link
-      href="/auth/login"
+      href="/login"
       tabIndex={0}
       style={{
         fontFamily: T.sans, fontSize: 13, color: hover ? T.ink : T.muted,
