@@ -168,15 +168,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const isAuth      = !!(user && accessToken);
 
   // Wait for Zustand persist rehydration before redirecting
+  // Merged: hydration + auth redirect in one effect (avoids effect chain)
   const [hydrated, setHydrated] = useState(false);
-  useEffect(() => { setHydrated(true); }, []);
-
   const [mobileOpen,  setMobileOpen]  = useState(false);
   const [collapsed,   setCollapsed]   = useState(false);
 
   useEffect(() => {
-    if (hydrated && !isAuth) router.replace('/login');
-  }, [hydrated, isAuth, router]);
+    setHydrated(true);
+    if (!isAuth) router.replace('/login');
+  }, [isAuth, router]);
 
   // Close mobile sidebar on navigation
   useEffect(() => {
@@ -326,7 +326,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* ── Desktop sidebar ── */}
       <aside
-        className="hidden lg:flex flex-col fixed top-0 left-0 h-screen z-30 transition-[width] duration-200"
+        className="hidden lg:flex flex-col fixed top-0 left-0 h-screen z-30"
         style={{
           width:               sidebarWidth,
           background:          'rgba(5,5,8,0.95)',
@@ -374,7 +374,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* ── Main area ── */}
       <div
-        className="flex-1 flex flex-col min-w-0 transition-[margin] duration-200"
+        className="flex-1 flex flex-col min-w-0"
         style={{ marginLeft: `var(--sidebar-offset, 0)` }}
       >
         {/* CSS var trick to apply dynamic margin on lg+ */}
