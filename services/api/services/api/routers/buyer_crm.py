@@ -88,8 +88,20 @@ class BuyerCRMUpdate(BaseModel):
 
 @router.get("/contacts", summary="Lista kontaktów CRM (alias /)")
 def list_contacts(user: AuthUser, db: DB, limit: int = Query(20, le=100), offset: int = 0):
-    """Alias dla GET / — przekierowuje do list_crm."""
-    return list_crm(user=user, db=db, limit=limit, offset=offset)
+    """Alias dla GET / — uproszczona lista bez filtrów stage/priority/territory."""
+    org_id = _require_org(user)
+    rows = db.execute(text("""
+        SELECT crm.id, crm.buyer_nip, crm.crm_stage, crm.priority,
+               crm.contact_name, crm.contact_email, crm.contact_phone,
+               crm.last_contact, crm.next_followup, crm.created_at,
+               ab.name AS buyer_name, ab.city, ab.province
+        FROM buyer_crm crm
+        LEFT JOIN atlas_buyers ab ON ab.nip = crm.buyer_nip
+        WHERE crm.tenant_id = :org_id
+        ORDER BY crm.priority ASC, crm.created_at DESC
+        LIMIT :limit OFFSET :offset
+    """), {"org_id": org_id, "limit": limit, "offset": offset}).mappings().all()
+    return {"items": [dict(r) for r in rows], "total": len(rows)}
 
 
 @router.get("/search", summary="Szukaj zamawiającego w atlas_buyers (23k)")

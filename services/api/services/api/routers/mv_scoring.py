@@ -16,7 +16,7 @@ from fastapi import APIRouter
 import sqlalchemy as sa
 
 from terra_db.session import get_engine
-from ..auth.deps import TenantDep
+from ..auth.deps import TenantDep, AuthUser
 
 router = APIRouter(prefix="/api/v2", tags=["mv", "scoring-v3"])
 
@@ -27,16 +27,19 @@ router = APIRouter(prefix="/api/v2", tags=["mv", "scoring-v3"])
 def mv_dashboard_stats(user: AuthUser):
     engine = get_engine()
     with engine.connect() as conn:
-        stats = conn.execute(text("""
-            SELECT count(*) AS total,
-                   avg(score_total)::numeric(5,1) AS avg_score,
-                   max(score_total) AS max_score,
-                   count(*) FILTER (WHERE percentile_rank >= 0.8) AS top20pct
-            FROM mv_scoring WHERE tenant_id = :tid
-        """), {"tid": user.org_id}).fetchone()
-    row = dict(stats._mapping) if stats else {}
+        try:
+            stats = conn.execute(sa.text("""
+                SELECT count(*) AS total,
+                       avg(match_score)::numeric(5,4) AS avg_score,
+                       max(match_score) AS max_score,
+                       count(*) FILTER (WHERE percentile_desc >= 0.8) AS top20pct
+                FROM mv_scoring WHERE tenant_id = :tid
+            """), {"tid": user.org_id}).fetchone()
+            row = dict(stats._mapping) if stats else {}
+        except Exception:
+            row = {}
     return {"total": row.get("total", 0), "avg_score": float(row.get("avg_score") or 0),
-            "max_score": row.get("max_score", 0), "top20pct": row.get("top20pct", 0)}
+            "max_score": float(row.get("max_score") or 0), "top20pct": row.get("top20pct", 0)}
 
 
 @router.get("/mv/pipeline-kpi")
