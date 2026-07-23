@@ -789,3 +789,61 @@ def check_resource_collision(body: CollisionCheckRequest, user: AuthUser = None)
         "collision": count > 0,
         "conflict_days": count,
     }
+
+
+# ─── Missing stub: GET /api/v2/resources (list) ──────────────────────────────
+
+@res_v2_router.get("")
+def list_resources(
+    user: AuthUser = None,
+    limit: int = 20,
+    offset: int = 0,
+) -> dict:
+    """List resources (employees + equipment) for the current tenant. Frontend uses ?limit=5."""
+    engine = get_engine()
+    tenant_id = str(user.org_id) if user else ""
+
+    with engine.connect() as conn:
+        try:
+            employees = conn.execute(
+                sa.text(
+                    """SELECT id, name, 'employee' as kind, role as detail
+                       FROM employee
+                       WHERE tenant_id=:t
+                       ORDER BY name
+                       LIMIT :lim OFFSET :off"""
+                ),
+                {"t": tenant_id, "lim": limit, "off": offset}
+            ).mappings().fetchall()
+        except Exception:
+            employees = []
+
+        try:
+            equipment = conn.execute(
+                sa.text(
+                    """SELECT id, name, 'equipment' as kind, type as detail
+                       FROM equipment
+                       WHERE tenant_id=:t
+                       ORDER BY name
+                       LIMIT :lim OFFSET :off"""
+                ),
+                {"t": tenant_id, "lim": max(0, limit - len(employees)), "off": offset}
+            ).mappings().fetchall()
+        except Exception:
+            equipment = []
+
+    items = [dict(r) for r in list(employees) + list(equipment)]
+    return {
+        "items": [
+            {
+                "id": str(r.get("id", "")),
+                "name": r.get("name", ""),
+                "kind": r.get("kind", ""),
+                "detail": r.get("detail", ""),
+            }
+            for r in items
+        ],
+        "total": len(items),
+        "limit": limit,
+        "offset": offset,
+    }

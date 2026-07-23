@@ -6,7 +6,7 @@ import uuid
 from pathlib import Path
 
 import sqlalchemy as sa
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
 
 from terra_db.session import get_engine
 from ..auth.deps import AuthUser
@@ -23,6 +23,47 @@ ALLOWED_TYPES = {
 }
 ALLOWED_EXTENSIONS = {".pdf", ".docx", ".xlsx", ".zip"}
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
+
+
+@router.get("")
+@router.get("/")
+def list_documents(
+    user: AuthUser,
+    limit: int = Query(default=20, le=100),
+    offset: int = Query(default=0, ge=0),
+    tender_id: str | None = Query(default=None),
+) -> dict:
+    """Lista dokumentów przetargowych tenanta."""
+    engine = get_engine()
+    tenant_id = user.org_id or user.user_id
+    filters = "WHERE tenant_id = :tid"
+    params: dict = {"tid": tenant_id, "limit": limit, "offset": offset}
+    if tender_id:
+        filters += " AND tender_id = :tender_id"
+        params["tender_id"] = tender_id
+    with engine.connect() as conn:
+        rows = conn.execute(sa.text(f"""
+            SELECT id, tender_id, filename, pages, parsed_ok, created_at, kind
+            FROM tender_document {filters}
+            ORDER BY created_at DESC
+            LIMIT :limit OFFSET :offset
+        """), params).fetchall()
+        count_params = {k: v for k, v in params.items() if k not in ("limit", "offset")}
+        total = conn.execute(sa.text(
+            f"SELECT COUNT(*) FROM tender_document {filters}"
+        ), count_params).scalar() or 0
+    return {
+        "items": [
+            {
+                "id": str(r[0]), "tender_id": str(r[1]),
+                "filename": r[2], "pages": r[3],
+                "parsed_ok": r[4], "created_at": str(r[5]),
+                "kind": r[6],
+            }
+            for r in rows
+        ],
+        "total": total, "limit": limit, "offset": offset,
+    }
 
 
 @router.post("/upload")
@@ -106,4 +147,63 @@ async def upload_document(
         "size": len(content),
         "content_type": content_type,
         "path": str(file_path),
+    }
+
+
+# ─── Missing stub: GET /api/v2/documents (list) ───────────────────────────────
+
+@router.get("")
+def list_documents(
+    user: AuthUser,
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+) -> dict:
+    """List documents for the current tenant. Frontend uses ?limit=5."""
+    from terra_db.session import get_engine
+    import sqlalchemy as sa
+
+    engine = get_engine()
+    tenant_id = str(user.org_id)
+
+    with engine.connect() as conn:
+        try:
+            # tender_documents joined with tender to filter by tenant
+            rows = conn.execute(
+                sa.text(
+                    """SELECT td.id, td.tender_id, td.filename, td.file_size, td.status, td.uploaded_at
+                       FROM tender_documents td
+                       JOIN tender t ON t.id = td.tender_id
+                       WHERE t.tenant_id=:tid
+                       ORDER BY td.uploaded_at DESC
+                       LIMIT :lim OFFSET :off"""
+                ),
+                {"tid": tenant_id, "lim": limit, "off": offset}
+            ).mappings().fetchall()
+            total = conn.execute(
+                sa.text(
+                    """SELECT count(*) FROM tender_documents td
+                       JOIN tender t ON t.id = td.tender_id
+                       WHERE t.tenant_id=:tid"""
+                ),
+                {"tid": tenant_id}
+            ).scalar() or 0
+        except Exception:
+            rows = []
+            total = 0
+
+    return {
+        "items": [
+            {
+                "id": str(r["id"]),
+                "tender_id": str(r["tender_id"]) if r["tender_id"] else None,
+                "filename": r["filename"],
+                "file_size": r["file_size"],
+                "status": r["status"],
+                "uploaded_at": str(r["uploaded_at"]) if r["uploaded_at"] else None,
+            }
+            for r in rows
+        ],
+        "total": total,
+        "limit": limit,
+        "offset": offset,
     }

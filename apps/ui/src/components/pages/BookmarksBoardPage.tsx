@@ -74,6 +74,7 @@ function BookmarkCard({
           <button type="button"
             onPointerDown={e => { e.stopPropagation(); }}
             onClick={e => { e.stopPropagation(); onDelete(item.id); }}
+            aria-label="Usuń zakładkę"
             className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-nogo/20 text-slate-600 hover:text-nogo transition-[color,background-color,border-color,opacity,transform,box-shadow] shrink-0"
           >
             <Trash2 size={13} />
@@ -379,6 +380,7 @@ function AlertsList() {
         </div>
         <button type="button"
           onClick={() => setShowForm(true)}
+          aria-label="Nowy alert"
           className="btn-secondary flex items-center gap-1.5 text-xs"
         >
           <Plus size={13} />

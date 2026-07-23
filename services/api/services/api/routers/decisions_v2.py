@@ -26,8 +26,8 @@ class DecisionCreate(BaseModel):
     value_pln: float | None = None  # S74: bid value for escalation
 
 
-@router.get("")
-def list_decisions(tender_id: str, user: AuthUser) -> dict:
+@router.get("", summary="Lista decyzji — opcjonalny filtr tender_id")
+def list_decisions(user: AuthUser, tender_id: str | None = None, limit: int = 20) -> dict:
     """Lista decyzji dla przetargu (filtr po payload.tender_id)."""
     engine = get_engine()
     tenant_id = user.org_id
@@ -36,16 +36,27 @@ def list_decisions(tender_id: str, user: AuthUser) -> dict:
         raise HTTPException(status_code=403, detail={"error": "no_org", "message": "Brak org_id"})
 
     with engine.connect() as conn:
-        rows = conn.execute(
-            sa.text(
-                """SELECT id, action, payload, status, requested_at, decided_at
-                   FROM approval_request
-                   WHERE tenant_id = :tenant_id
-                     AND payload->>'tender_id' = :tender_id
-                   ORDER BY requested_at DESC"""
-            ),
-            {"tenant_id": tenant_id, "tender_id": tender_id},
-        ).fetchall()
+        if tender_id:
+            rows = conn.execute(
+                sa.text(
+                    """SELECT id, action, payload, status, requested_at, decided_at
+                       FROM approval_request
+                       WHERE tenant_id = :tenant_id
+                         AND payload->>'tender_id' = :tender_id
+                       ORDER BY requested_at DESC LIMIT :limit"""
+                ),
+                {"tenant_id": tenant_id, "tender_id": tender_id, "limit": limit},
+            ).fetchall()
+        else:
+            rows = conn.execute(
+                sa.text(
+                    """SELECT id, action, payload, status, requested_at, decided_at
+                       FROM approval_request
+                       WHERE tenant_id = :tenant_id
+                       ORDER BY requested_at DESC LIMIT :limit"""
+                ),
+                {"tenant_id": tenant_id, "limit": limit},
+            ).fetchall()
 
     return {
         "items": [

@@ -290,3 +290,95 @@ def risk_extract(body: RiskRequest, user: AuthUser) -> dict:
     if body.use_ai:
         return extract_risks_with_ai(body.text)
     return extract_risks_from_text(body.text)
+
+
+# ─── Missing stubs: /overview and /pipeline (aliases requested by frontend) ───
+
+@router.get("/overview")
+def analytics_overview(user: AuthUser) -> dict:
+    """Analytics overview — alias/summary endpoint for frontend /app/analytics."""
+    if not user.org_id:
+        raise HTTPException(status_code=403, detail={"error": "no_org", "message": "Brak org_id"})
+
+    engine = get_engine()
+    tenant_id = str(user.org_id)
+
+    with engine.connect() as conn:
+        total_tenders = conn.execute(
+            sa.text("SELECT count(*) FROM tender WHERE tenant_id=:t"),
+            {"t": tenant_id}
+        ).scalar() or 0
+
+        won = conn.execute(
+            sa.text("SELECT count(*) FROM offer_result WHERE tenant_id=:t AND status='won'"),
+            {"t": tenant_id}
+        ).scalar() or 0
+
+        lost = conn.execute(
+            sa.text("SELECT count(*) FROM offer_result WHERE tenant_id=:t AND status='lost'"),
+            {"t": tenant_id}
+        ).scalar() or 0
+
+        total_results = conn.execute(
+            sa.text("SELECT count(*) FROM offer_result WHERE tenant_id=:t"),
+            {"t": tenant_id}
+        ).scalar() or 1
+
+        pipeline_value = conn.execute(
+            sa.text("SELECT COALESCE(sum(value_pln),0) FROM tender WHERE tenant_id=:t AND match_score>=0.5"),
+            {"t": tenant_id}
+        ).scalar() or 0
+
+    return {
+        "total_tenders": total_tenders,
+        "won": won,
+        "lost": lost,
+        "win_rate": round(won / total_results * 100, 1),
+        "pipeline_value_pln": float(pipeline_value),
+        "status": "ok",
+    }
+
+
+@router.get("/pipeline")
+def analytics_pipeline(
+    user: AuthUser,
+    limit: int = Query(20, ge=1, le=100),
+    min_score: float = Query(0.0, ge=0.0, le=1.0),
+) -> dict:
+    """Analytics pipeline — active tenders in pipeline for frontend /app/analytics."""
+    if not user.org_id:
+        raise HTTPException(status_code=403, detail={"error": "no_org", "message": "Brak org_id"})
+
+    engine = get_engine()
+    tenant_id = str(user.org_id)
+
+    with engine.connect() as conn:
+        rows = conn.execute(
+            sa.text(
+                """SELECT id, title, value_pln, match_score, status, deadline_at, cpv
+                   FROM tender
+                   WHERE tenant_id=:t AND match_score>=:ms
+                   ORDER BY match_score DESC
+                   LIMIT :lim"""
+            ),
+            {"t": tenant_id, "ms": min_score, "lim": limit}
+        ).mappings().fetchall()
+
+    items = [
+        {
+            "id": str(r["id"]),
+            "name": r["title"],
+            "value_pln": float(r["value_pln"] or 0),
+            "match_score": float(r["match_score"] or 0),
+            "status": r["status"],
+            "deadline": str(r["deadline_at"]) if r["deadline_at"] else None,
+            "cpv_code": (r["cpv"] or [None])[0] if r["cpv"] else None,
+        }
+        for r in rows
+    ]
+
+    return {
+        "items": items,
+        "total": len(items),
+        "limit": limit,
+    }

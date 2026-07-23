@@ -19,8 +19,26 @@ from pydantic import BaseModel
 import sqlalchemy as sa
 
 from terra_db.session import get_engine
+from ..auth.deps import AuthUser
 
 router = APIRouter(prefix="/api/v2/scoring", tags=["scoring-v2"])
+
+
+@router.get("/leaderboard", summary="Top przetargi wg scoring — ranking")
+def scoring_leaderboard(user: AuthUser, limit: int = Query(10, le=50)):
+    engine = get_engine()
+    with engine.connect() as conn:
+        try:
+            rows = conn.execute(sa.text("""
+                SELECT t.id, t.title, ms.score_total, ms.percentile_rank
+                FROM mv_scoring ms JOIN tender t ON ms.tender_id::text = t.id::text
+                WHERE ms.tenant_id = :tid
+                ORDER BY ms.score_total DESC NULLS LAST
+                LIMIT :limit
+            """), {"tid": user.org_id, "limit": limit}).fetchall()
+            return {"items": [dict(r._mapping) for r in rows], "total": len(rows)}
+        except Exception:
+            return {"items": [], "total": 0}
 logger = logging.getLogger(__name__)
 
 

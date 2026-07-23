@@ -88,3 +88,43 @@ def report_benchmark(user: AuthUser, db: DB):
         'your_tenders': my.cnt if my else 0,
         'your_avg_score': float(my.avg_score) if my else 0,
     }
+
+
+# ─── Missing stub: GET /api/v2/reports (list) ────────────────────────────────
+
+@router.get('')
+def list_reports(
+    user: AuthUser,
+    limit: int = 20,
+    offset: int = 0,
+) -> dict:
+    """List available reports for the current tenant. Frontend uses ?limit=5."""
+    tid = str(user.org_id)
+    try:
+        monthly = monthly_report(user, next(get_db()), 2026, 7)
+    except Exception:
+        monthly = {}
+
+    reports = [
+        {
+            "id": "monthly-2026-07",
+            "type": "monthly",
+            "title": "Raport miesięczny Lipiec 2026",
+            "year": 2026,
+            "month": 7,
+            "summary": monthly,
+            "url": "/api/v2/reports/monthly?year=2026&month=7",
+        },
+        {
+            "id": "benchmark-latest",
+            "type": "benchmark",
+            "title": "Benchmark vs. rynek",
+            "url": "/api/v2/reports/benchmark",
+        },
+    ]
+    return {
+        "items": reports[offset: offset + limit],
+        "total": len(reports),
+        "limit": limit,
+        "offset": offset,
+    }

@@ -25,6 +25,28 @@ router = APIRouter(prefix="/api/v2/audit", tags=["audit"])
 logger = logging.getLogger(__name__)
 
 
+@router.get("/logs", summary="Alias dla /trail — paginowany log zmian")
+def get_audit_logs(
+    user: AuthUser,
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = 0,
+):
+    """Alias /logs → /trail dla kompatybilności."""
+    engine = get_engine()
+    with engine.connect() as conn:
+        try:
+            rows = conn.execute(sa.text("""
+                SELECT id, entity_type, entity_id, action, user_id, created_at
+                FROM audit_trail
+                ORDER BY created_at DESC
+                LIMIT :limit OFFSET :offset
+            """), {"limit": limit, "offset": offset}).fetchall()
+            total = conn.execute(sa.text("SELECT count(*) FROM audit_trail")).scalar() or 0
+            return {"items": [dict(r._mapping) for r in rows], "total": total}
+        except Exception:
+            return {"items": [], "total": 0, "status": "no_data"}
+
+
 @router.get("/recent")
 def get_audit_recent(
     limit: int = Query(15, ge=1, le=100),

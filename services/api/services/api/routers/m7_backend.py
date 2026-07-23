@@ -590,3 +590,69 @@ def bid_intel_stats(tenant_id: TenantDep) -> dict:
         "total_wins": row[3] or 0,
         "win_rate_pct": float(row[4]) if row[4] else 0,
     }
+
+
+# ─── Missing stubs: GET /api/v2/team (list) and /api/v2/settings ─────────────
+
+@router.get("/team")
+def team_list(
+    tenant_id: TenantDep,
+    limit: int = 20,
+    offset: int = 0,
+) -> dict:
+    """List team members for the current tenant. Frontend uses /api/v2/team?limit=5."""
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(sa.text("""
+            SELECT id, email, name, role, created_at
+            FROM users
+            WHERE org_id = :tid
+            ORDER BY created_at
+            LIMIT :lim OFFSET :off
+        """), {"tid": tenant_id, "lim": limit, "off": offset}).mappings().fetchall()
+        total = conn.execute(
+            sa.text("SELECT count(*) FROM users WHERE org_id = :tid"),
+            {"tid": tenant_id}
+        ).scalar() or 0
+    items = [
+        {
+            "id": str(r["id"]),
+            "email": r["email"],
+            "full_name": r["name"],
+            "role": r["role"],
+            "created_at": str(r["created_at"]),
+        }
+        for r in rows
+    ]
+    return {
+        "items": items,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
+
+
+@router.get("/settings")
+def settings_get(tenant_id: TenantDep) -> dict:
+    """Get tenant settings. Frontend calls /api/v2/settings."""
+    import sqlalchemy as sa
+    from terra_db.session import get_engine
+    engine = get_engine()
+    with engine.connect() as conn:
+        try:
+            row = conn.execute(
+                sa.text("SELECT id, name, plan, settings FROM organizations WHERE id=:t"),
+                {"t": str(tenant_id)}
+            ).mappings().fetchone()
+        except Exception:
+            row = None
+
+    return {
+        "tenant_id": str(tenant_id),
+        "org_name": row["name"] if row else "YU-NA",
+        "plan": row["plan"] if row else "standard",
+        "features": row["settings"] if row else {},
+        "notifications_enabled": True,
+        "language": "pl",
+        "timezone": "Europe/Warsaw",
+    }

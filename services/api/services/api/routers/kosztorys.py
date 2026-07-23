@@ -115,6 +115,26 @@ def _generate_ath_xml(items: list[dict]) -> bytes:
 # CRUD endpoints (Faza 47)
 # ──────────────────────────────────────────────────────────────────────────────
 
+@router.get("", summary="Lista kosztorysów (v1 deprecated — użyj v2)")
+def list_all_kosztorys(user: AuthUser, limit: int = Query(20, le=100), offset: int = 0) -> JSONResponse:
+    """Lista wszystkich kosztorysów dla tenantu. DEPRECATED — użyj /api/v2/kosztorys."""
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(sa.text("""
+            SELECT DISTINCT k.tender_id, t.title, count(k.id) as items_count
+            FROM kosztorys_items k
+            LEFT JOIN tender t ON t.id::text = k.tender_id::text
+            WHERE k.org_id = :tid
+            GROUP BY k.tender_id, t.title
+            ORDER BY k.tender_id
+            LIMIT :limit OFFSET :offset
+        """), {"tid": user.org_id, "limit": limit, "offset": offset}).fetchall()
+    return JSONResponse(
+        content={"items": [dict(r._mapping) for r in rows], "total": len(rows)},
+        headers=_deprecation_headers(),
+    )
+
+
 @router.get("/{tender_id}")
 def list_kosztorys_items(tender_id: str, user: AuthUser) -> JSONResponse:
     """Lista pozycji kosztorysu dla przetargu. DEPRECATED — użyj /api/v2/kosztorys."""

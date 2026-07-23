@@ -61,10 +61,12 @@ try:
     from .routers import market_intelligence
     from .routers import intelligence as historical_intelligence_router
     _phase3_routers = [tender_alerts, tender_bookmarks, competitor_watch, buyer_crm, market_intelligence, historical_intelligence_router]
+    _extra_routers_direct = [market_intelligence.market_intel_router]
 except ImportError as e:  # pragma: no cover
     import logging
     logging.getLogger(__name__).warning("Phase 3 routers import error: %s", e)
     _phase3_routers = []
+    _extra_routers_direct = []
 
 # Fazy 41-60 — optional routers (graceful import)
 _optional_routers = []
@@ -459,6 +461,8 @@ app.include_router(contracts.router)
 # Fazy 63-81 — Advanced routers (other agent)
 for _r in _phase3_routers:
     app.include_router(_r.router)
+for _r in globals().get("_extra_routers_direct", []):
+    app.include_router(_r)
 
 app.include_router(monitoring.router)
 app.include_router(gdpr.router)
@@ -688,6 +692,18 @@ except ImportError as _e:  # pragma: no cover
 # ─── M7 Intelligence Layer ────────────────────────────────────────────────────
 if 'semantic_search' in _opt_map:
     app.include_router(_opt_map['semantic_search'].router)
+
+try:
+    from .routers import embeddings as _embeddings_mod
+    app.include_router(_embeddings_mod.router)
+except Exception as _e:
+    logging.getLogger(__name__).warning("embeddings router: %s", _e)
+
+try:
+    from .routers import rag as _rag_mod
+    app.include_router(_rag_mod.router)
+except Exception as _e:
+    logging.getLogger(__name__).warning("rag router: %s", _e)
 if 'mv_scoring' in _opt_map:
     app.include_router(_opt_map['mv_scoring'].router)
 if 'agent_pipeline' in _opt_map:
@@ -753,6 +769,7 @@ except Exception as _e:
 try:
     from .routers import bid_writing as _bid_writing_mod
     app.include_router(_bid_writing_mod.router)
+    app.include_router(_bid_writing_mod.bid_intelligence_router)
 except Exception as _e:
     logging.getLogger(__name__).warning("bid_writing router error: %s", _e)
 

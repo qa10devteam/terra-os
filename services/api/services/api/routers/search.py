@@ -9,6 +9,7 @@ import base64
 import functools
 import json
 import logging
+import re
 from datetime import datetime
 
 import sqlalchemy as sa
@@ -57,12 +58,40 @@ def _decode_cursor(cursor: str) -> tuple[str | None, str | None]:
         )
 
 
+# ─── Input validation ──────────────────────────────────────────────────────
+
+_SQL_PATTERN = re.compile(
+    r"(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|EXEC|UNION|TRUNCATE|GRANT|REVOKE)\b|"
+    r"(--)|(;.*)|(/\*)|(\*/)|(\bOR\b\s+\d+=\d+)|(\bAND\b\s+\d+=\d+))",
+    re.IGNORECASE,
+)
+_XSS_PATTERN = re.compile(r"<[^>]+>", re.IGNORECASE)
+
+
+def _validate_search_query(q: str) -> str:
+    """Strip dangerous patterns, return sanitised string."""
+    if _SQL_PATTERN.search(q):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "invalid_query",
+                "message": "Zapytanie zawiera niedozwolone znaki lub słowa kluczowe SQL",
+            },
+        )
+    if _XSS_PATTERN.search(q):
+        raise HTTPException(
+            status_code=400,
+            detail={"error": "invalid_query", "message": "Zapytanie zawiera niedozwolone znaczniki HTML"},
+        )
+    return q.strip()
+
+
 # ─── Endpoint ──────────────────────────────────────────────────────────────
 
 @router.get("")
 def search(
     user: AuthUser,
-    q: str = Query(..., min_length=2, description="Fraza wyszukiwania"),
+    q: str = Query(..., min_length=2, max_length=500, description="Fraza wyszukiwania"),
     type: str = Query("all", description="all|tenders|documents"),
     source: str | None = Query(None, description="Filtr źródła: bzp|ted|bip"),
     status: str | None = Query(None, description="Filtr statusu przetargu, np. active"),
@@ -76,6 +105,7 @@ def search(
 ) -> dict:
     """Full-text search po przetargach i dokumentach z kursorową paginacją."""
     tenant_id = user.org_id
+    q = _validate_search_query(q)
     if not tenant_id:
         raise HTTPException(
             status_code=403,

@@ -86,6 +86,12 @@ class BuyerCRMUpdate(BaseModel):
 
 # ─── Endpoints ────────────────────────────────────────────────────────────────
 
+@router.get("/contacts", summary="Lista kontaktów CRM (alias /)")
+def list_contacts(user: AuthUser, db: DB, limit: int = Query(20, le=100), offset: int = 0):
+    """Alias dla GET / — przekierowuje do list_crm."""
+    return list_crm(user=user, db=db, limit=limit, offset=offset)
+
+
 @router.get("/search", summary="Szukaj zamawiającego w atlas_buyers (23k)")
 def search_buyers(
     user: AuthUser,

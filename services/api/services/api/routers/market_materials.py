@@ -60,6 +60,16 @@ def _fetch_gus_variable(var_id: str, years: list[int]) -> list[dict]:
 
 
 # S55: GET /api/v2/market/materials?category=cement
+@router.get("/overview", summary="Przegląd rynku — KPI materiały + ceny")
+def market_overview(user: AuthUser):
+    engine = get_engine()
+    with engine.connect() as conn:
+        tender_count = conn.execute(sa.text(
+            "SELECT count(*) FROM tender WHERE tenant_id=:tid AND status NOT IN ('archived')"
+        ), {"tid": user.org_id}).scalar() or 0
+    return {"tender_count": tender_count, "currency": "PLN", "market": "PL"}
+
+
 @router.get("/materials")
 def get_materials(
     user: AuthUser,

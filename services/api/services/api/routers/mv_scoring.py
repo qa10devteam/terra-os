@@ -23,6 +23,22 @@ router = APIRouter(prefix="/api/v2", tags=["mv", "scoring-v3"])
 
 # ─── Materialized Views ──────────────────────────────────────────────────────
 
+@router.get("/mv/dashboard-stats", summary="Szybkie statystyki dla dashboard MV")
+def mv_dashboard_stats(user: AuthUser):
+    engine = get_engine()
+    with engine.connect() as conn:
+        stats = conn.execute(text("""
+            SELECT count(*) AS total,
+                   avg(score_total)::numeric(5,1) AS avg_score,
+                   max(score_total) AS max_score,
+                   count(*) FILTER (WHERE percentile_rank >= 0.8) AS top20pct
+            FROM mv_scoring WHERE tenant_id = :tid
+        """), {"tid": user.org_id}).fetchone()
+    row = dict(stats._mapping) if stats else {}
+    return {"total": row.get("total", 0), "avg_score": float(row.get("avg_score") or 0),
+            "max_score": row.get("max_score", 0), "top20pct": row.get("top20pct", 0)}
+
+
 @router.get("/mv/pipeline-kpi")
 def pipeline_kpi(tenant_id: TenantDep) -> dict[str, Any]:
     """Pipeline KPI from materialized view."""

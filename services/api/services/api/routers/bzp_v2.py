@@ -12,6 +12,19 @@ from .tenders_v2 import TenderListResponse, list_tenders as _list_tenders
 router = APIRouter(prefix="/api/v2/bzp", tags=["bzp-v2"])
 
 
+@router.get("/stats", summary="Statystyki BZP — liczba zsynchronizowanych przetargów")
+def bzp_stats(user: AuthUser):
+    engine = get_engine()
+    with engine.connect() as conn:
+        total = conn.execute(sa.text(
+            "SELECT count(*) FROM tender WHERE tenant_id = :tid"
+        ), {"tid": user.org_id}).scalar() or 0
+        today = conn.execute(sa.text(
+            "SELECT count(*) FROM tender WHERE tenant_id = :tid AND created_at::date = current_date"
+        ), {"tid": user.org_id}).scalar() or 0
+    return {"total": total, "synced_today": today, "source": "BZP"}
+
+
 @router.post("/sync")
 def bzp_sync_v2(background_tasks: BackgroundTasks, user: AuthUser, days_back: int = 7) -> dict:
     """Ręczny trigger synchronizacji BZP."""

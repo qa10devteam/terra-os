@@ -539,3 +539,25 @@ def _try_log_bid_writing(
             conn.commit()
     except Exception as exc:
         logger.debug("Nie udało się zapisać do bid_writing_log (tabela może nie istnieć): %s", exc)
+
+
+# ─── /api/v2/bid-intelligence alias router ─────────────────────────────────
+import sqlalchemy as _sa
+
+bid_intelligence_router = APIRouter(prefix="/api/v2/bid-intelligence", tags=["bid-intelligence"])
+
+
+@bid_intelligence_router.get("/recent", summary="Ostatnie sesje bid writing")
+def bid_intelligence_recent(user: AuthUser, limit: int = 10):
+    engine = get_engine()
+    with engine.connect() as conn:
+        try:
+            rows = conn.execute(_sa.text("""
+                SELECT id, tender_id, created_at, status
+                FROM bid_writing_log
+                WHERE tenant_id = :tid
+                ORDER BY created_at DESC LIMIT :limit
+            """), {"tid": user.tenant_id, "limit": limit}).fetchall()
+            return {"items": [dict(r._mapping) for r in rows], "total": len(rows)}
+        except Exception:
+            return {"items": [], "total": 0, "status": "no_data"}

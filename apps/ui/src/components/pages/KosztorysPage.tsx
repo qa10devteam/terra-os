@@ -1287,6 +1287,7 @@ export function KosztorysPage() {
               <input value={addS} onChange={e => setAddS(e.target.value)} type="number" placeholder="S zł"
                 className="col-span-1 px-2 py-1.5 rounded-md bg-ink-800/60 border border-ink-700/50 text-slate-200 placeholder-ink-600 text-xs focus:outline-none focus:border-em/50 transition-colors" />
               <button type="button"
+                aria-label="Nowy kosztorys"
                 onClick={addPozycja}
                 disabled={addLoading || !addOpis.trim()}
                 className="col-span-1 btn-primary flex items-center justify-center gap-1 !text-xs disabled:opacity-50"

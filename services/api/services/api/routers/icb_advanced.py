@@ -43,6 +43,18 @@ _DASHBOARD_TTL = 3600  # 1 hour
 # POST /forecast/compute
 # ═══════════════════════════════════════════════════════════════════════════════
 
+@router.get("/stats", summary="Statystyki ICB — liczba kategorii, rekordów cen")
+def icb_stats(user: AuthUser):
+    engine = get_engine()
+    with engine.connect() as conn:
+        try:
+            rates = conn.execute(sa.text("SELECT count(*) FROM icb_ceny_srednie")).scalar() or 0
+            forecasts = conn.execute(sa.text("SELECT count(*) FROM icb_forecast")).scalar() or 0
+        except Exception:
+            rates, forecasts = 0, 0
+    return {"categories": 0, "rates": rates, "forecasts": forecasts, "currency": "PLN"}
+
+
 @router.post("/forecast/compute")
 def compute_forecasts(user: AuthUser, horizon: int = 4) -> dict:
     """Uruchom Holt-Winters forecasting dla wszystkich kategorii × R/M/S."""

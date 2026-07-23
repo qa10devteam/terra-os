@@ -237,3 +237,52 @@ def predict(
         "last_period": last_period.isoformat() if last_period else None,
         "forecasts": forecasts,
     }
+
+
+# ─── Missing stub: GET /api/v2/forecast/pipeline ─────────────────────────────
+
+@router.get("/pipeline")
+def forecast_pipeline(
+    user: AuthUser,
+    limit: int = Query(20, ge=1, le=100),
+) -> dict:
+    """Forecast pipeline — list tenders with win probability. Frontend /app/forecast."""
+    import sqlalchemy as sa
+    from terra_db.session import get_engine
+
+    engine = get_engine()
+    tenant_id = str(user.org_id)
+
+    with engine.connect() as conn:
+        try:
+            rows = conn.execute(
+                sa.text(
+                    """SELECT id, title, value_pln, match_score, status, deadline_at
+                       FROM tender
+                       WHERE tenant_id=:t
+                       ORDER BY match_score DESC NULLS LAST
+                       LIMIT :lim"""
+                ),
+                {"t": tenant_id, "lim": limit}
+            ).mappings().fetchall()
+        except Exception:
+            rows = []
+
+    items = [
+        {
+            "id": str(r["id"]),
+            "name": r["title"],
+            "value_pln": float(r["value_pln"] or 0),
+            "win_probability": round(float(r["match_score"] or 0) * 100, 1),
+            "status": r["status"],
+            "deadline": str(r["deadline_at"]) if r["deadline_at"] else None,
+        }
+        for r in rows
+    ]
+
+    return {
+        "items": items,
+        "total": len(items),
+        "limit": limit,
+        "forecast_model": "match_score_v1",
+    }

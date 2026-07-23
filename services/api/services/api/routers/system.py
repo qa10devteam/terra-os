@@ -368,6 +368,85 @@ def read_audit(
 # v2 endpoints
 # ──────────────────────────────────────────────────────────────────────────────
 
+@router_v2.get("/system/metrics")
+def get_system_metrics(user: AuthUser) -> dict:
+    """Metryki systemowe — CPU, RAM, DB connections."""
+    import psutil, time
+    engine = get_engine()
+    db_ok = False
+    db_pool = {}
+    try:
+        with engine.connect() as conn:
+            conn.execute(sa.text("SELECT 1"))
+            db_ok = True
+            pool = engine.pool
+            db_pool = {
+                "size": getattr(pool, "size", lambda: 0)(),
+                "checked_in": getattr(pool, "checkedin", lambda: 0)(),
+                "overflow": getattr(pool, "overflow", lambda: 0)(),
+            }
+    except Exception:
+        pass
+    return {
+        "cpu_percent": psutil.cpu_percent(interval=None),
+        "memory": {
+            "total_gb": round(psutil.virtual_memory().total / 1e9, 1),
+            "used_gb": round(psutil.virtual_memory().used / 1e9, 1),
+            "percent": psutil.virtual_memory().percent,
+        },
+        "disk": {
+            "total_gb": round(psutil.disk_usage("/").total / 1e9, 1),
+            "free_gb": round(psutil.disk_usage("/").free / 1e9, 1),
+            "percent": psutil.disk_usage("/").percent,
+        },
+        "database": {"ok": db_ok, **db_pool},
+        "uptime_s": round(time.time() - psutil.boot_time()),
+        "timestamp": time.time(),
+    }
+
+
+@router_v2.get("/system/db-stats")
+def get_db_stats(user: AuthUser) -> dict:
+    """Statystyki bazy danych — tabele, rozmiary, rekordy."""
+    engine = get_engine()
+    with engine.connect() as conn:
+        tables = conn.execute(sa.text("""
+            SELECT relname AS table_name,
+                   n_live_tup AS row_count,
+                   pg_size_pretty(pg_total_relation_size(relid)) AS total_size
+            FROM pg_stat_user_tables
+            ORDER BY n_live_tup DESC
+            LIMIT 20
+        """)).fetchall()
+        db_size = conn.execute(sa.text(
+            "SELECT pg_size_pretty(pg_database_size(current_database()))"
+        )).scalar()
+    return {
+        "db_size": db_size,
+        "top_tables": [{"name": r[0], "rows": r[1], "size": r[2]} for r in tables],
+    }
+
+
+@router_v2.get("/system/routes")
+def get_all_routes() -> dict:
+    """Lista wszystkich zarejestrowanych ścieżek API."""
+    from fastapi import FastAPI
+    import sys
+    # Grab app from module — works at runtime
+    app_mod = sys.modules.get("services.api.main") or sys.modules.get("__main__")
+    app_obj = getattr(app_mod, "app", None)
+    if app_obj is None:
+        return {"routes": [], "count": 0}
+    routes = []
+    for route in getattr(app_obj, "routes", []):
+        methods = list(getattr(route, "methods", None) or [])
+        path = getattr(route, "path", "")
+        if path.startswith("/api/"):
+            routes.append({"path": path, "methods": methods})
+    routes.sort(key=lambda r: r["path"])
+    return {"routes": routes, "count": len(routes)}
+
+
 @router_v2.get("/system/version")
 def get_version_v2():
     """Version info on /api/v2 prefix (mirrors /api/v1/system/version)."""
@@ -375,4 +454,17 @@ def get_version_v2():
         "version": os.environ.get("APP_VERSION", "1.0.0"),
         "environment": os.environ.get("ENVIRONMENT", "production"),
         "api_version": "v2",
+    }
+
+
+@router_v2.get("/system/info", summary="Informacje o instancji serwera")
+def get_system_info():
+    """Podstawowe informacje o instancji: wersja, środowisko, uptime."""
+    import time
+    return {
+        "version": os.environ.get("APP_VERSION", "1.0.0"),
+        "environment": os.environ.get("ENVIRONMENT", "production"),
+        "api_version": "v2",
+        "service": "terra-os",
+        "timestamp": int(time.time()),
     }

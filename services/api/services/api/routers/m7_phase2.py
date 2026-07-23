@@ -75,7 +75,7 @@ def list_buyers(
                    COALESCE(SUM(value_pln), 0) as total_value,
                    ROUND(AVG(value_pln)::numeric, 0) as avg_value,
                    MAX(published_at) as last_seen,
-                   array_agg(DISTINCT COALESCE((cpv::jsonb->>0)::text, '')) as cpvs
+                   array_agg(DISTINCT COALESCE(cpv[1], '')) as cpvs
             FROM tender
             WHERE buyer IS NOT NULL AND buyer != ''
             {search_filter.replace('WHERE', 'AND') if search_filter else ''}

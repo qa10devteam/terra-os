@@ -536,3 +536,26 @@ def get_market_charts(user: AuthUser) -> dict:
             status_code=500,
             detail={"error": "market_charts_failed", "message": "Błąd pobierania danych rynkowych."},
         )
+
+
+@router.get("/api/v2/dashboard/recent-tenders", summary="Ostatnio dodane przetargi dla dashboardu")
+def dashboard_recent_tenders(user: AuthUser, limit: int = 10):
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(sa.text("""
+            SELECT id, title, status, value_pln, deadline_at, created_at
+            FROM tender
+            WHERE tenant_id = :tid
+            ORDER BY created_at DESC LIMIT :limit
+        """), {"tid": user.org_id, "limit": limit}).fetchall()
+    return {"items": [dict(r._mapping) for r in rows], "total": len(rows)}
+
+
+@router.get("/api/v1/dashboard/summary", summary="Skrót statystyk v1 (legacy)")
+def dashboard_summary_v1(user: AuthUser):
+    engine = get_engine()
+    with engine.connect() as conn:
+        total = conn.execute(sa.text(
+            "SELECT count(*) FROM tender WHERE tenant_id=:tid"
+        ), {"tid": user.org_id}).scalar() or 0
+    return {"total_tenders": total, "status": "ok", "version": "v1"}

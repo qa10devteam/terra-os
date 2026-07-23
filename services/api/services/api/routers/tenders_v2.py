@@ -194,7 +194,7 @@ def list_tenders(
     max_value: float | None = Query(None, ge=0, description="Alias for value_max"),
     deadline_before: str | None = Query(None, description="ISO date, np. 2026-08-01"),
     hide_duplicates: bool = Query(False, description="Ukryj rekordy zduplikowane (pozostaw master)"),
-    q: str | None = Query(None, min_length=2, description="Full-text search"),
+    q: str | None = Query(None, min_length=2, max_length=500, description="Full-text search"),
     fields: str | None = Query(None, description="Sparse fieldset: id,title,match_score,... (mobile)"),
     sort: str | None = Query(None, description="Sort field: match_score|deadline_at|value_pln|created_at"),
 ) -> TenderListResponse:
@@ -440,7 +440,7 @@ def tender_stats(user: AuthUser) -> TenderStatsResponse:
 @router.get("/search", summary="Szybkie wyszukiwanie przetargów")
 def search_tenders(
     user: AuthUser,
-    q: str = Query(..., min_length=1, description="Fraza wyszukiwania"),
+    q: str = Query(..., min_length=1, max_length=500, description="Fraza wyszukiwania"),
     limit: int = Query(20, ge=1, le=100),
     source: str | None = Query(None),
     status: str | None = Query(None),

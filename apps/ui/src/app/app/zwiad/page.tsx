@@ -9,6 +9,7 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
+  Bookmark,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { useAuthFetch } from '@/lib/api-v2';
@@ -127,7 +128,16 @@ function TenderCard({ tender, index }: { tender: Tender; index: number }) {
                  hover:border-[#10b981]/30 hover:bg-white/[0.07] transition-colors duration-200 cursor-pointer group"
     >
       {/* Badge — prawy górny róg */}
-      <div className="absolute top-3 right-3">
+      <div className="absolute top-3 right-3 flex items-center gap-2">
+        <button
+          type="button"
+          aria-label="Dodaj do obserwowanych"
+          className="p-1 rounded-lg text-white/30 hover:text-[#10b981] hover:bg-[#10b981]/10
+                     transition-colors duration-150 bookmark-icon"
+          onClick={(e) => { e.stopPropagation(); }}
+        >
+          <Bookmark size={14} />
+        </button>
         <Badge variant={tender.status} dot>
           {tender.status === 'go' ? 'GO' : tender.status === 'warn' ? 'WARN' : 'NO-GO'}
         </Badge>

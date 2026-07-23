@@ -703,3 +703,44 @@ def sekocenbud_search(
         "total": total,
         "items": [dict(r) for r in rows],
     }
+
+
+# ─── /api/v2/market-intel alias router ────────────────────────────────────────
+market_intel_router = APIRouter(prefix="/api/v2/market-intel", tags=["market-intel"])
+
+
+@market_intel_router.get("/summary", summary="Szybkie KPI rynkowe dla dashboardu")
+def market_intel_summary(user: AuthUser):
+    engine = get_engine()
+    with engine.connect() as conn:
+        total = conn.execute(text("SELECT count(*) FROM historical_tenders")).scalar() or 0
+        recent = conn.execute(text(
+            "SELECT count(*) FROM historical_tenders WHERE date >= current_date - interval '90 days'"
+        )).scalar() or 0
+    return {"total_tenders": total, "recent_90d": recent, "status": "ok"}
+
+
+@market_intel_router.get("/cpv-trends", summary="Trendy CPV ostatnie 12 miesięcy")
+def market_intel_cpv_trends(user: AuthUser, limit: int = Query(10, le=50)):
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(text("""
+            SELECT cpv_code, count(*) AS cnt
+            FROM historical_tenders
+            WHERE cpv_code IS NOT NULL AND date >= current_date - interval '365 days'
+            GROUP BY cpv_code ORDER BY cnt DESC LIMIT :limit
+        """), {"limit": limit}).fetchall()
+    return {"items": [dict(r._mapping) for r in rows]}
+
+
+@market_intel_router.get("/regional", summary="Dane regionalne per województwo")
+def market_intel_regional(user: AuthUser, limit: int = Query(16, le=50)):
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(text("""
+            SELECT province, count(*) AS cnt, sum(value_pln)::bigint AS total_pln
+            FROM historical_tenders
+            WHERE province IS NOT NULL
+            GROUP BY province ORDER BY cnt DESC LIMIT :limit
+        """), {"limit": limit}).fetchall()
+    return {"items": [dict(r._mapping) for r in rows]}
