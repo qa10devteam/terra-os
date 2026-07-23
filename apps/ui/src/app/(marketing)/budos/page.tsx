@@ -3,12 +3,21 @@
 import { useState, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { motion, AnimatePresence, useScroll, useTransform } from 'motion/react';
+import { motion, AnimatePresence, useScroll, useTransform, useReducedMotion } from 'motion/react';
 import {
-  ArrowLeft, ArrowRight, ChevronDown, CheckCircle2,
+  ArrowLeft, ArrowRight, ChevronDown, Check,
   Satellite, Brain, Calculator, Hexagon,
-  ChevronRight, Plus, Minus,
+  ChevronRight,
 } from 'lucide-react';
+
+// ─── Design Tokens ────────────────────────────────────────────────────────────
+const T = {
+  bg0: '#07070d',
+  bg1: '#0d0d14',
+  accent: '#10b981',
+  accentBrd: 'rgba(16,185,129,0.5)',
+  edge0: 'rgba(255,255,255,0.07)',
+} as const;
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
@@ -63,10 +72,9 @@ const KOSZTORYS_FEATURES = [
 const PRICING = [
   {
     name: 'Starter',
-    price: 'Bezpłatny',
-    period: '14 dni próby',
-    desc: 'Dla pojedynczego estimatora',
-    features: ['5 przetargów miesięcznie', 'Podstawowa analiza AI', 'Alerty email', 'BZP Sync', '1 użytkownik'],
+    price: '299',
+    period: 'PLN/mies',
+    features: ['Monitor BZP + TED', '5 analiz GO/NO-GO / mies', 'Kosztorys PDF'],
     cta: 'Zacznij za darmo',
     href: '/signup',
     highlight: false,
@@ -74,36 +82,20 @@ const PRICING = [
   },
   {
     name: 'Professional',
-    price: '499 zł',
-    period: '/mies.',
-    desc: 'Dla aktywnego zespołu ofertowego',
-    features: [
-      'Nielimitowane przetargi',
-      'Pełny Silnik Decyzyjny AI',
-      'Kosztorys AI (ATH/PDF/KNR)',
-      'Alerty push i email',
-      'Do 5 użytkowników',
-      'Priorytetowy support',
-    ],
-    cta: 'Wybierz Professional',
+    price: '799',
+    period: 'PLN/mies',
+    features: ['Nieograniczone analizy', 'Kosztorys ATH + PDF', 'Alerty e-mail', 'Priorytetowe wsparcie'],
+    cta: 'Zacznij za darmo',
     href: '/signup',
     highlight: true,
-    badge: 'Najczęściej wybierany',
+    badge: 'Najpopularniejszy',
   },
   {
     name: 'Enterprise',
-    price: 'Wycena',
-    period: 'indywidualna',
-    desc: 'Dla firm z dużym portfolio',
-    features: [
-      'Wszystko z Professional',
-      'Nielimitowani użytkownicy',
-      'Dedykowany model AI',
-      'SLA 99,9%',
-      'Wdrożenie i integracje',
-      'Analiza konkurencji premium',
-    ],
-    cta: 'Porozmawiajmy',
+    price: 'Kontakt',
+    period: '',
+    features: ['Wdrożenie na żądanie', 'SLA 99.9%', 'SAML SSO', 'Dedicated CSM'],
+    cta: 'Skontaktuj się',
     href: '/contact',
     highlight: false,
     badge: null,
@@ -112,24 +104,28 @@ const PRICING = [
 
 const FAQ_ITEMS = [
   {
+    q: 'Czy BudOS działa z TED (UE)?',
+    a: 'Tak, monitorujemy BZP i TED Official Journal.',
+  },
+  {
+    q: 'Jak szybko AI ocenia przetarg?',
+    a: '30-60 sekund po wczytaniu dokumentów SWZ.',
+  },
+  {
+    q: 'Czy mogę eksportować kosztorys do ATH?',
+    a: 'Tak, eksport ATH i PDF.',
+  },
+  {
+    q: 'Co to jest GO/NO-GO?',
+    a: 'Decyzja AI: czy opłaca się złożyć ofertę na ten przetarg.',
+  },
+  {
     q: 'Jak działa dopasowanie AI?',
-    a: 'Silnik porównuje pełną treść ogłoszenia przetargowego z profilem Twojej firmy — branżą, kodami CPV, historią wygranych i deklarowanymi kompetencjami. Wynik dopasowania 0–100 jest generowany automatycznie i możesz go dostosować własną wagą kryteriów.',
-  },
-  {
-    q: 'Czy można eksportować kosztorys do ATH?',
-    a: 'Tak. BudOS obsługuje natywny eksport do formatu ATH (Norma Pro / Zuzia), PDF oraz XLSX. Wszystkie pozycje kosztorysowe są zgodne z katalogami KNR oraz aktualnymi bazami cenowymi spełniającymi wymogi normy kosztorysowania.',
-  },
-  {
-    q: 'Jakie bazy przetargów są monitorowane?',
-    a: 'BudOS monitoruje Biuletyn Zamówień Publicznych (BZP), Dziennik Urzędowy UE (TED/eTendering) oraz wybrane platformy e-zamówienia.gov.pl. Synchronizacja odbywa się co godzinę.',
+    a: 'Silnik porównuje pełną treść ogłoszenia przetargowego z profilem Twojej firmy — branżą, kodami CPV, historią wygranych i deklarowanymi kompetencjami. Wynik dopasowania 0–100 jest generowany automatycznie.',
   },
   {
     q: 'Czy jest integracja z innymi systemami?',
     a: 'Plan Professional i Enterprise obsługują eksport do Excel / PDF / DOCX. Enterprise zawiera pełne API REST, umożliwiające integrację z systemami ERP, CRM i własnymi narzędziami biurowymi.',
-  },
-  {
-    q: 'Ile kosztuje plan Enterprise?',
-    a: 'Enterprise wyceniamy indywidualnie na podstawie liczby użytkowników, wolumenu przetargów i wymaganych integracji. Skontaktuj się z nami — zazwyczaj odpowiadamy w ciągu 24 godzin roboczych.',
   },
 ];
 
@@ -139,7 +135,10 @@ function Navbar() {
     <nav className="fixed top-0 inset-x-0 z-50 glass-nav border-b border-white/[0.07] py-3">
       <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href="/" className="flex items-center gap-1.5 text-slate-500 hover:text-slate-300 transition-colors text-xs">
+          <Link
+            href="/"
+            className="flex items-center gap-1.5 text-slate-500 hover:text-slate-300 transition-colors text-xs"
+          >
             <ArrowLeft className="w-3.5 h-3.5" /> YU-NA
           </Link>
           <span className="text-slate-700">|</span>
@@ -154,7 +153,7 @@ function Navbar() {
           <a href="#zwiad" className="text-xs text-slate-500 hover:text-slate-300 transition-colors">Zwiad</a>
           <a href="#silnik" className="text-xs text-slate-500 hover:text-slate-300 transition-colors">Silnik AI</a>
           <a href="#kosztorys" className="text-xs text-slate-500 hover:text-slate-300 transition-colors">Kosztorys</a>
-          <a href="#pricing" className="text-xs text-slate-500 hover:text-slate-300 transition-colors">Cennik</a>
+          <a href="#cennik" className="text-xs text-slate-500 hover:text-slate-300 transition-colors">Cennik</a>
         </div>
         <div className="flex items-center gap-2">
           <Link
@@ -172,6 +171,7 @@ function Navbar() {
 // ─── Hero ─────────────────────────────────────────────────────────────────────
 function Hero() {
   const ref = useRef<HTMLElement>(null);
+  const prefersReduced = useReducedMotion();
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] });
   const imgY = useTransform(scrollYProgress, [0, 1], [0, 60]);
   const opacity = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
@@ -197,8 +197,8 @@ function Hero() {
       <motion.div style={{ opacity }} className="relative z-10 text-center max-w-4xl mx-auto mb-16">
         {/* Eyebrow */}
         <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={prefersReduced ? {} : { opacity: 0, y: 10 }}
+          animate={prefersReduced ? {} : { opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
           className="eyebrow text-em mb-6"
         >
@@ -207,8 +207,8 @@ function Hero() {
 
         {/* Headline */}
         <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={prefersReduced ? {} : { opacity: 0, y: 20 }}
+          animate={prefersReduced ? {} : { opacity: 1, y: 0 }}
           transition={{ duration: 0.65, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
           className="display text-gradient-white mb-6"
           style={{ fontFamily: 'var(--font-space)' }}
@@ -218,8 +218,8 @@ function Hero() {
 
         {/* Subline */}
         <motion.p
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={prefersReduced ? {} : { opacity: 0, y: 12 }}
+          animate={prefersReduced ? {} : { opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.25 }}
           className="text-lg text-white/40 max-w-xl mx-auto leading-relaxed"
         >
@@ -228,8 +228,8 @@ function Hero() {
 
         {/* CTAs */}
         <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={prefersReduced ? {} : { opacity: 0, y: 8 }}
+          animate={prefersReduced ? {} : { opacity: 1, y: 0 }}
           transition={{ delay: 0.38 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-10"
         >
@@ -248,8 +248,8 @@ function Hero() {
         </motion.div>
 
         <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          initial={prefersReduced ? {} : { opacity: 0 }}
+          animate={prefersReduced ? {} : { opacity: 1 }}
           transition={{ delay: 0.55 }}
           className="text-[11px] text-slate-700 mt-5"
         >
@@ -259,19 +259,19 @@ function Hero() {
 
       {/* Hero screenshot in glass frame */}
       <motion.div
-        style={{ y: imgY }}
-        initial={{ opacity: 0, y: 48 }}
-        animate={{ opacity: 1, y: 0 }}
+        style={{ y: prefersReduced ? 0 : imgY }}
+        initial={prefersReduced ? {} : { opacity: 0, y: 48 }}
+        animate={prefersReduced ? {} : { opacity: 1, y: 0 }}
         transition={{ duration: 1, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
         className="relative z-10 w-full max-w-6xl"
       >
         {/* Glow below frame */}
         <div className="absolute inset-x-24 bottom-0 h-24 rounded-full blur-3xl bg-em/10 pointer-events-none" />
 
-        {/* Glass frame */}
+        {/* Glass frame — mobile: max-h-56 clipped, md+: full */}
         <div
-          className="glass-card rounded-2xl overflow-hidden"
-          style={{ boxShadow: '0 40px 100px rgba(0,0,0,.75), 0 0 0 1px rgba(16,185,129,.09), inset 0 1px 0 rgba(255,255,255,0.10)' }}
+          className="glass-card rounded-2xl overflow-hidden max-h-56 md:max-h-none"
+          style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.6)' }}
         >
           {/* Fake browser bar */}
           <div className="flex items-center gap-2 px-4 py-3 bg-ink-900/80 border-b border-white/[0.06]">
@@ -298,21 +298,31 @@ function Hero() {
 
 // ─── Three Pillars ────────────────────────────────────────────────────────────
 function ThreePillars() {
+  const prefersReduced = useReducedMotion();
   return (
     <section className="px-6 py-24">
       <div className="max-w-6xl mx-auto">
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {PILLARS.map((p, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={prefersReduced ? {} : { opacity: 0, y: 20 }}
+              whileInView={prefersReduced ? {} : { opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
             >
-              <a
+              <motion.a
                 href={p.href}
-                className="glass-card-hover rounded-2xl p-7 flex flex-col h-full group"
+                className="glass-card-hover rounded-2xl p-7 flex flex-col h-full group border border-white/[0.07]"
+                whileHover={
+                  prefersReduced
+                    ? {}
+                    : {
+                        boxShadow: '0 0 24px rgba(16,185,129,0.15)',
+                        borderColor: T.accentBrd,
+                      }
+                }
+                transition={{ duration: 0.2 }}
               >
                 {/* Icon */}
                 <div className="w-11 h-11 rounded-xl bg-em/10 border border-em/20 flex items-center justify-center mb-5">
@@ -320,7 +330,10 @@ function ThreePillars() {
                 </div>
 
                 {/* Content */}
-                <h3 className="text-[17px] font-bold text-slate-100 mb-2.5" style={{ fontFamily: 'var(--font-space)' }}>
+                <h3
+                  className="text-[17px] font-bold text-slate-100 mb-2.5"
+                  style={{ fontFamily: 'var(--font-space)' }}
+                >
                   {p.title}
                 </h3>
                 <p className="text-sm text-slate-500 leading-relaxed flex-1">{p.desc}</p>
@@ -329,7 +342,7 @@ function ThreePillars() {
                 <div className="flex items-center gap-1.5 mt-6 text-xs text-em font-semibold group-hover:gap-2.5 transition-[color,background-color,border-color,opacity,transform,box-shadow]">
                   {p.label} <ChevronRight className="w-3.5 h-3.5" />
                 </div>
-              </a>
+              </motion.a>
             </motion.div>
           ))}
         </div>
@@ -353,15 +366,19 @@ interface FeatureSectionProps {
 function FeatureSection({
   id, eyebrow, headline, subline, screenshot, screenshotAlt, features, reverse = false,
 }: FeatureSectionProps) {
+  const prefersReduced = useReducedMotion();
   return (
     <section id={id} className="px-6 py-28 scroll-mt-20">
       <div className="max-w-6xl mx-auto">
-        <div className={`grid lg:grid-cols-2 gap-16 items-center ${reverse ? 'lg:[&>*:first-child]:order-2' : ''}`}>
-
+        <div
+          className={`grid lg:grid-cols-2 gap-16 items-center ${
+            reverse ? 'lg:[&>*:first-child]:order-2' : ''
+          }`}
+        >
           {/* Text */}
           <motion.div
-            initial={{ opacity: 0, x: reverse ? 24 : -24 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={prefersReduced ? {} : { opacity: 0, x: reverse ? 24 : -24 }}
+            whileInView={prefersReduced ? {} : { opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
           >
@@ -378,13 +395,13 @@ function FeatureSection({
               {features.map((f, i) => (
                 <motion.li
                   key={i}
-                  initial={{ opacity: 0, x: -12 }}
-                  whileInView={{ opacity: 1, x: 0 }}
+                  initial={prefersReduced ? {} : { opacity: 0, x: -12 }}
+                  whileInView={prefersReduced ? {} : { opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: 0.1 + i * 0.07, ease: [0.16, 1, 0.3, 1] }}
                   className="flex items-center gap-3 text-sm text-slate-300"
                 >
-                  <CheckCircle2 className="w-4 h-4 text-em shrink-0" />
+                  <Check className="w-3.5 h-3.5 text-em shrink-0" />
                   {f}
                 </motion.li>
               ))}
@@ -393,8 +410,8 @@ function FeatureSection({
 
           {/* Screenshot */}
           <motion.div
-            initial={{ opacity: 0, x: reverse ? -24 : 24 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={prefersReduced ? {} : { opacity: 0, x: reverse ? -24 : 24 }}
+            whileInView={prefersReduced ? {} : { opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.65, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
           >
@@ -404,19 +421,25 @@ function FeatureSection({
               {/* Glass frame */}
               <div
                 className="glass-card rounded-2xl overflow-hidden relative"
-                style={{ boxShadow: '0 32px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(16,185,129,.08), inset 0 1px 0 rgba(255,255,255,0.10)' }}
+                style={{
+                  boxShadow: '0 32px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(16,185,129,.08), inset 0 1px 0 rgba(255,255,255,0.10)',
+                }}
               >
-                <Image
-                  src={screenshot}
-                  alt={screenshotAlt}
-                  width={800}
-                  height={560}
-                  className="w-full h-auto block"
-                />
+                <motion.div
+                  whileHover={prefersReduced ? {} : { scale: 1.02 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Image
+                    src={screenshot}
+                    alt={screenshotAlt}
+                    width={800}
+                    height={560}
+                    className="w-full h-auto block"
+                  />
+                </motion.div>
               </div>
             </div>
           </motion.div>
-
         </div>
       </div>
     </section>
@@ -425,30 +448,31 @@ function FeatureSection({
 
 // ─── Pricing ──────────────────────────────────────────────────────────────────
 function PricingSection() {
+  const prefersReduced = useReducedMotion();
   return (
-    <section id="pricing" className="px-6 py-28 scroll-mt-16">
+    <section id="cennik" className="px-6 py-28 scroll-mt-16">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={prefersReduced ? {} : { opacity: 0, y: 16 }}
+          whileInView={prefersReduced ? {} : { opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="text-center mb-16"
         >
           <p className="eyebrow text-em mb-4">Cennik</p>
           <h2 className="h2 text-gradient-white" style={{ fontFamily: 'var(--font-space)' }}>
-            Prosty i transparentny.
+            Przejrzyste ceny
           </h2>
-          <p className="text-[15px] text-white/40 mt-4">Bez ukrytych opłat. Anuluj kiedy chcesz.</p>
+          <p className="text-[15px] text-white/40 mt-4">Zacznij za darmo. Skaluj gdy rośniesz.</p>
         </motion.div>
 
         {/* Cards */}
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {PRICING.map((plan, i) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={prefersReduced ? {} : { opacity: 0, y: 20 }}
+              whileInView={prefersReduced ? {} : { opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
               className="relative"
@@ -456,31 +480,42 @@ function PricingSection() {
               {/* Badge */}
               {plan.badge && (
                 <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
-                  <span className="text-[10px] font-bold text-ink-950 bg-em px-3 py-1 rounded-full whitespace-nowrap">
+                  <span
+                    className="text-[10px] font-bold text-ink-950 bg-em px-3 py-1 rounded-full whitespace-nowrap"
+                  >
                     {plan.badge}
                   </span>
                 </div>
               )}
 
               <div
-                className={`glass-card rounded-2xl p-7 flex flex-col h-full ${
-                  plan.highlight
-                    ? 'border-em/30 animate-glow-pulse ring-1 ring-em/10'
-                    : ''
+                className={`rounded-2xl p-7 flex flex-col h-full border ${
+                  plan.highlight ? 'border-em/30' : ''
                 }`}
-                style={plan.highlight ? { borderColor: 'rgba(16,185,129,0.30)' } : undefined}
+                style={{
+                  background: T.bg1,
+                  borderColor: plan.highlight ? 'rgba(16,185,129,0.70)' : T.edge0,
+                }}
               >
                 {/* Plan name */}
-                <h3 className="text-[17px] font-bold text-slate-100 mb-1" style={{ fontFamily: 'var(--font-space)' }}>
+                <h3
+                  className="text-[17px] font-bold text-slate-100 mb-1"
+                  style={{ fontFamily: 'var(--font-space)' }}
+                >
                   {plan.name}
                 </h3>
-                <p className="text-xs text-slate-600 mb-6">{plan.desc}</p>
 
                 {/* Price */}
-                <div className="mb-7">
-                  <span className="text-3xl font-bold text-slate-100 font-mono">{plan.price}</span>
-                  {plan.period && (
-                    <span className="text-sm text-slate-500 ml-1.5">{plan.period}</span>
+                <div className="mb-7 mt-4">
+                  {plan.price === 'Kontakt' ? (
+                    <span className="text-3xl font-bold text-slate-100 font-mono">{plan.price}</span>
+                  ) : (
+                    <>
+                      <span className="text-4xl font-bold text-slate-100 font-mono">{plan.price}</span>
+                      {plan.period && (
+                        <span className="text-sm text-slate-500 ml-1.5">{plan.period}</span>
+                      )}
+                    </>
                   )}
                 </div>
 
@@ -488,7 +523,7 @@ function PricingSection() {
                 <ul className="space-y-2.5 mb-8 flex-1">
                   {plan.features.map((f, fi) => (
                     <li key={fi} className="flex items-start gap-2.5 text-sm text-slate-400">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-em shrink-0 mt-0.5" />
+                      <Check className="w-3.5 h-3.5 text-em shrink-0 mt-0.5" />
                       {f}
                     </li>
                   ))}
@@ -517,40 +552,37 @@ function PricingSection() {
 // ─── FAQ ──────────────────────────────────────────────────────────────────────
 function FAQItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false);
+  const prefersReduced = useReducedMotion();
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      initial={prefersReduced ? {} : { opacity: 0, y: 8 }}
+      whileInView={prefersReduced ? {} : { opacity: 1, y: 0 }}
       viewport={{ once: true }}
       className="glass-card rounded-xl overflow-hidden"
     >
-      <button type="button"
+      <button
+        type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-6 py-5 text-left hover:bg-white/[0.02] transition-colors"
+        className="w-full flex items-center justify-between px-6 py-5 text-left hover:bg-white/[0.02] transition-colors min-h-[44px]"
       >
         <span className="text-sm font-semibold text-slate-200 pr-4">{q}</span>
-        <motion.div
-          animate={{ rotate: open ? 45 : 0 }}
-          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-          className="shrink-0"
-        >
-          {open ? (
-            <Minus className="w-4 h-4 text-em" />
-          ) : (
-            <Plus className="w-4 h-4 text-slate-500" />
-          )}
-        </motion.div>
+        <ChevronDown
+          className={`w-4 h-4 shrink-0 transition-transform duration-200 ${
+            open ? 'rotate-180 text-em' : 'text-slate-500'
+          }`}
+        />
       </button>
 
       <AnimatePresence initial={false}>
         {open && (
           <motion.div
             key="answer"
-            initial={{ height: 0, opacity: 0 }}
+            initial={prefersReduced ? {} : { height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            exit={prefersReduced ? {} : { height: 0, opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            style={{ overflow: 'hidden' }}
           >
             <div className="px-6 pb-5 pt-0 border-t border-white/[0.06]">
               <p className="text-sm text-slate-500 leading-relaxed pt-4">{a}</p>
@@ -563,12 +595,13 @@ function FAQItem({ q, a }: { q: string; a: string }) {
 }
 
 function FAQSection() {
+  const prefersReduced = useReducedMotion();
   return (
     <section className="px-6 py-24 border-t border-white/[0.05]">
       <div className="max-w-2xl mx-auto">
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={prefersReduced ? {} : { opacity: 0, y: 12 }}
+          whileInView={prefersReduced ? {} : { opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="text-center mb-12"
         >
@@ -590,11 +623,12 @@ function FAQSection() {
 
 // ─── Final CTA ────────────────────────────────────────────────────────────────
 function FinalCTA() {
+  const prefersReduced = useReducedMotion();
   return (
     <section className="px-6 py-28 border-t border-white/[0.05]">
       <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        whileInView={{ opacity: 1, y: 0 }}
+        initial={prefersReduced ? {} : { opacity: 0, y: 16 }}
+        whileInView={prefersReduced ? {} : { opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ ease: [0.16, 1, 0.3, 1] }}
         className="max-w-3xl mx-auto text-center"
@@ -631,17 +665,19 @@ function FinalCTA() {
 function Footer() {
   return (
     <footer className="border-t border-white/[0.05] px-6 py-8">
-      <div className="max-w-6xl mx-auto flex items-center justify-between">
+      <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <Hexagon className="w-4 h-4 text-em/60" strokeWidth={1.5} />
           <span className="text-xs text-slate-600" style={{ fontFamily: 'var(--font-space)' }}>
-            YU-NA / <span className="text-slate-500">BudOS</span>
+            © BudOS by{' '}
+            <span className="text-slate-500">YU-NA Intelligence</span>{' '}
+            2026
           </span>
         </div>
         <div className="flex gap-5 text-[11px] text-slate-700">
-          <Link href="/" className="hover:text-slate-400 transition-colors">Platforma</Link>
           <Link href="/terms" className="hover:text-slate-400 transition-colors">Regulamin</Link>
           <Link href="/privacy" className="hover:text-slate-400 transition-colors">Prywatność</Link>
+          <Link href="/cookies" className="hover:text-slate-400 transition-colors">Cookies</Link>
         </div>
       </div>
     </footer>

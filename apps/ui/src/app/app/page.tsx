@@ -8,12 +8,37 @@ import { motion, useReducedMotion } from 'motion/react';
 import { useStore } from '@/store/useStore';
 import {
   ArrowRight, Bell, LogOut, TrendingUp, Activity, FileText,
-  Zap, BarChart3, ChevronRight,
+  Zap, BarChart3, ChevronRight, Search, Calculator, Brain,
 } from 'lucide-react';
 
-// ── YU-NA Hub v3 ─────────────────────────────────────────────────────────────
-// Bud.OS: hero card z żywym screenshotem + metrykami.
-// Infra.OS / Dev.OS: pełne karty z opisem — widoczne nazwy, bez "in shadow".
+// ── YU-NA Hub v4 — Faza 2+3 ──────────────────────────────────────────────────
+// Live API metrics · Recent tenders · Quick actions · Mobile responsive · Motion
+
+interface TenderRow {
+  id: string;
+  title?: string;
+  name?: string;
+  score?: number;
+  value?: number;
+  value_pln?: number;
+}
+
+interface TendersResponse {
+  total?: number;
+  items?: TenderRow[];
+  data?: TenderRow[];
+  results?: TenderRow[];
+}
+
+// ── Shimmer skeleton helper ───────────────────────────────────────────────────
+function Shimmer({ className = '' }: { className?: string }) {
+  return (
+    <div
+      className={`animate-shimmer rounded bg-gradient-to-r from-zinc-200 via-zinc-100 to-zinc-200 ${className}`}
+      style={{ backgroundSize: '200% 100%' }}
+    />
+  );
+}
 
 export default function YunaHubPage() {
   const user        = useStore((s) => s.user);
@@ -28,20 +53,79 @@ export default function YunaHubPage() {
     try {
       const raw = localStorage.getItem('yuna-store');
       if (!raw) return false;
-      const parsed = JSON.parse(raw);
+      const parsed = JSON.parse(raw) as { state?: { accessToken?: unknown; user?: unknown } };
       return !!(parsed?.state?.accessToken && parsed?.state?.user);
     } catch { return false; }
   });
+
+  // ── Stats state ─────────────────────────────────────────────────────────────
+  const [stats, setStats] = useState({ active: '—', week: '—', mine: '—' });
+  const [statsLoaded, setStatsLoaded] = useState(false);
+
+  // ── Recent tenders state ────────────────────────────────────────────────────
+  const [recentTenders, setRecentTenders] = useState<TenderRow[]>([]);
+  const [tendersLoaded, setTendersLoaded] = useState(false);
 
   useEffect(() => { setHydrated(true); }, []);
   useEffect(() => {
     if (hydrated && !isAuth) router.replace('/login');
   }, [hydrated, isAuth, router]);
 
-  if (!hydrated || !isAuth) return null;
+  // ── Fetch stats (total count) ────────────────────────────────────────────────
+  useEffect(() => {
+    const ctrl = new AbortController();
+    fetch('/api/tenders?limit=1', { signal: ctrl.signal })
+      .then((r) => r.ok ? r.json() as Promise<TendersResponse> : null)
+      .then((d) => {
+        if (d) setStats({ active: String(d.total ?? '—'), week: '—', mine: '—' });
+        setStatsLoaded(true);
+      })
+      .catch(() => { setStatsLoaded(true); });
+    return () => ctrl.abort();
+  }, []);
+
+  // ── Fetch recent tenders ─────────────────────────────────────────────────────
+  useEffect(() => {
+    const ctrl = new AbortController();
+    fetch('/api/tenders?limit=3&sort=-created_at', { signal: ctrl.signal })
+      .then((r) => r.ok ? r.json() as Promise<TendersResponse> : null)
+      .then((d) => {
+        if (d) {
+          const rows = d.items ?? d.data ?? d.results ?? [];
+          setRecentTenders(rows);
+        }
+        setTendersLoaded(true);
+      })
+      .catch(() => { setTendersLoaded(true); });
+    return () => ctrl.abort();
+  }, []);
+
+  // ── Auth gate ────────────────────────────────────────────────────────────────
+  if (!hydrated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-zinc-50">
+        <div className="w-8 h-8 border-2 border-zinc-300 border-t-zinc-700 rounded-full animate-spin" />
+      </div>
+    );
+  }
+  if (!isAuth) return null;
 
   const firstName = user?.name?.split(' ')[0] || 'użytkowniku';
   const initials  = user?.name?.slice(0, 2).toUpperCase() || 'U';
+  const today     = new Date().toLocaleDateString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long' });
+
+  // ── Score badge helper ───────────────────────────────────────────────────────
+  function ScoreBadge({ score }: { score?: number }) {
+    if (score === undefined || score === null) {
+      return <span className="text-[10.5px] px-2 py-0.5 rounded-full font-semibold bg-zinc-100 text-zinc-400">—</span>;
+    }
+    const cls = score >= 80
+      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+      : score >= 65
+        ? 'bg-amber-50 text-amber-700 border border-amber-200'
+        : 'bg-zinc-100 text-zinc-500 border border-zinc-200';
+    return <span className={`text-[10.5px] px-2 py-0.5 rounded-full font-semibold tabular-nums font-mono ${cls}`}>{score}</span>;
+  }
 
   return (
     <div
@@ -84,12 +168,12 @@ export default function YunaHubPage() {
       {/* ─── Main ────────────────────────────────────────────────────────────── */}
       <main className="max-w-5xl mx-auto px-6 py-12">
 
-        {/* Welcome row */}
+        {/* Welcome row — mobile: stack date below name */}
         <motion.div
           initial={reduce ? false : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="flex items-center justify-between mb-8"
+          className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-3"
         >
           <div>
             <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">
@@ -99,17 +183,20 @@ export default function YunaHubPage() {
               YU-NA Intelligence Platform
             </p>
           </div>
-          <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-zinc-500 bg-white border border-zinc-200 rounded-full px-3 py-1.5 shadow-sm">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-            Wszystkie systemy online
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <span className="text-[12px] text-zinc-400 capitalize">{today}</span>
+            <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-zinc-500 bg-white border border-zinc-200 rounded-full px-3 py-1.5 shadow-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+              Wszystkie systemy online
+            </div>
           </div>
         </motion.div>
 
         {/* ─── Bud.OS hero card ──────────────────────────────────────────────── */}
         <motion.div
-          initial={reduce ? false : { opacity: 0, y: 16 }}
+          initial={reduce ? false : { opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           className="mb-4"
         >
           <Link
@@ -121,7 +208,7 @@ export default function YunaHubPage() {
             <div className="absolute -bottom-20 left-40 w-64 h-64 bg-emerald-500/4 rounded-full blur-3xl pointer-events-none" />
 
             {/* Header row */}
-            <div className="relative z-10 flex items-center justify-between px-7 pt-6 pb-5">
+            <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between px-7 pt-6 pb-5 gap-4">
               <div className="flex items-center gap-3.5">
                 <Image src="/brand/B01-app-icon-budos.png" alt="Bud.OS" width={40} height={40} className="rounded-xl shrink-0" />
                 <div>
@@ -133,18 +220,22 @@ export default function YunaHubPage() {
                 </div>
               </div>
 
-              {/* Metrics */}
-              <div className="flex items-center gap-2.5 shrink-0">
+              {/* Live Metrics */}
+              <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 overflow-x-auto pb-1 sm:pb-0">
                 {[
-                  { icon: Activity,   value: '14',  label: 'nowych dziś' },
-                  { icon: FileText,   value: '3',   label: 'w analizie' },
-                  { icon: TrendingUp, value: '—',   label: 'win rate', accent: true },
+                  { icon: Activity,   value: stats.active, label: 'przetargów',   accent: false },
+                  { icon: FileText,   value: stats.week,   label: 'ten tydzień',  accent: false },
+                  { icon: TrendingUp, value: stats.mine,   label: 'win rate',     accent: true  },
                 ].map((m) => (
-                  <div key={m.label} className="flex flex-col items-center px-4 py-3 rounded-xl bg-white/[0.05] border border-white/[0.07] min-w-[76px]">
+                  <div key={m.label} className="flex flex-col items-center px-3 sm:px-4 py-3 rounded-xl bg-white/[0.05] border border-white/[0.07] min-w-[68px] sm:min-w-[76px] shrink-0">
                     <m.icon className={`w-3.5 h-3.5 mb-1.5 ${m.accent ? 'text-emerald-400' : 'text-zinc-500'}`} />
-                    <div className={`text-[1.35rem] font-bold leading-none tabular-nums ${m.accent ? 'text-emerald-400' : 'text-white'}`}>
-                      {m.value}
-                    </div>
+                    {!statsLoaded ? (
+                      <div className="bg-zinc-200/60 animate-pulse h-6 w-10 rounded mb-1" />
+                    ) : (
+                      <div className={`text-[1.25rem] sm:text-[1.35rem] font-bold leading-none tabular-nums font-mono ${m.accent ? 'text-emerald-400' : 'text-white'}`}>
+                        {m.value}
+                      </div>
+                    )}
                     <div className="text-[9.5px] text-zinc-500 mt-1 text-center leading-tight">{m.label}</div>
                   </div>
                 ))}
@@ -174,7 +265,7 @@ export default function YunaHubPage() {
 
             {/* Footer CTA */}
             <div className="relative z-10 px-7 py-4 flex items-center justify-between border-t border-white/[0.05]">
-              <p className="text-[12.5px] text-zinc-500 max-w-[48ch]">
+              <p className="text-[12.5px] text-zinc-500 max-w-[48ch] hidden sm:block">
                 Przetargi z BZP i TED, scoring GO/NO-GO, kosztorysy KNR/ICB, analiza konkurencji.
               </p>
               <div className="flex items-center gap-1.5 text-[13px] font-semibold text-emerald-400 group-hover:gap-2.5 transition-all shrink-0">
@@ -184,8 +275,124 @@ export default function YunaHubPage() {
           </Link>
         </motion.div>
 
-        {/* ─── Infra.OS + Dev.OS ─────────────────────────────────────────────── */}
-        <div className="grid md:grid-cols-2 gap-4">
+        {/* ─── Quick Actions ──────────────────────────────────────────────────── */}
+        <motion.div
+          initial={reduce ? false : { opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+          className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-6 mb-6"
+        >
+          <Link
+            href="/app/zwiad"
+            className="col-span-1 flex items-center gap-3 border border-zinc-200 rounded-xl p-4 bg-white hover:bg-zinc-50 transition-colors shadow-sm"
+          >
+            <div className="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center shrink-0">
+              <Search className="w-4 h-4 text-zinc-600" />
+            </div>
+            <div>
+              <div className="text-[13.5px] font-semibold text-zinc-900">Zwiad</div>
+              <div className="text-[11px] text-zinc-400">Przetargi</div>
+            </div>
+          </Link>
+
+          <Link
+            href="/app/kosztorys"
+            className="col-span-1 flex items-center gap-3 border border-zinc-200 rounded-xl p-4 bg-white hover:bg-zinc-50 transition-colors shadow-sm"
+          >
+            <div className="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center shrink-0">
+              <Calculator className="w-4 h-4 text-zinc-600" />
+            </div>
+            <div>
+              <div className="text-[13.5px] font-semibold text-zinc-900">Kosztorys</div>
+              <div className="text-[11px] text-zinc-400">KNR / ICB</div>
+            </div>
+          </Link>
+
+          {/* Last item spans full width on 2-col mobile, normal on 3-col desktop */}
+          <Link
+            href="/app/silnik"
+            className="col-span-2 sm:col-span-1 flex items-center gap-3 border border-zinc-200 rounded-xl p-4 bg-white hover:bg-zinc-50 transition-colors shadow-sm"
+          >
+            <div className="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center shrink-0">
+              <Brain className="w-4 h-4 text-zinc-600" />
+            </div>
+            <div>
+              <div className="text-[13.5px] font-semibold text-zinc-900">Silnik AI</div>
+              <div className="text-[11px] text-zinc-400">Analiza i scoring</div>
+            </div>
+          </Link>
+        </motion.div>
+
+        {/* ─── Recent Tenders ─────────────────────────────────────────────────── */}
+        <motion.div
+          initial={reduce ? false : { opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          className="mb-8"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-[13.5px] font-semibold text-zinc-700">Ostatnie przetargi</h3>
+            <Link href="/app/zwiad" className="text-[12px] text-zinc-400 hover:text-zinc-600 transition-colors">
+              Zobacz wszystkie →
+            </Link>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-zinc-200 overflow-hidden shadow-sm">
+            {!tendersLoaded ? (
+              /* Skeleton rows */
+              <div className="divide-y divide-zinc-100">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="flex items-center gap-4 px-5 py-4">
+                    <Shimmer className="h-4 flex-1 max-w-[55%]" />
+                    <Shimmer className="h-5 w-10 rounded-full" />
+                    <Shimmer className="h-4 w-20 ml-auto" />
+                  </div>
+                ))}
+              </div>
+            ) : recentTenders.length === 0 ? (
+              /* Empty state */
+              <div className="px-6 py-8 flex flex-col items-center text-center gap-3">
+                <FileText className="w-8 h-8 text-zinc-300" />
+                <p className="text-[13.5px] text-zinc-500">Brak przetargów w systemie.</p>
+                <Link
+                  href="/app/zwiad"
+                  className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
+                >
+                  Zacznij od zwiadowania rynku <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            ) : (
+              /* Data rows — mobile: card layout, desktop: row layout */
+              <div className="divide-y divide-zinc-100">
+                {recentTenders.map((t) => {
+                  const title = t.title ?? t.name ?? '(bez tytułu)';
+                  const value = t.value_pln ?? t.value;
+                  const valueFmt = value != null
+                    ? new Intl.NumberFormat('pl-PL', { style: 'currency', currency: 'PLN', maximumFractionDigits: 0 }).format(value)
+                    : '—';
+                  return (
+                    <Link
+                      key={t.id}
+                      href="/app/zwiad"
+                      className="group flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-5 py-4 hover:bg-zinc-50 transition-colors"
+                    >
+                      <span className="text-[13px] text-zinc-800 font-medium truncate flex-1 min-w-0 group-hover:text-zinc-900">
+                        {title}
+                      </span>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <ScoreBadge score={t.score} />
+                        <span className="text-[12px] text-zinc-500 font-mono tabular-nums">{valueFmt}</span>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </motion.div>
+
+        {/* ─── Infra.OS + Dev.OS — mobile: 1 col, desktop: 2 col ────────────── */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[
             {
               id: 'infra',
@@ -195,7 +402,7 @@ export default function YunaHubPage() {
               desc: 'Harmonogramy, zasoby, logistyka placu budowy i monitoring postępów — wszystko w jednym miejscu.',
               eta: 'Q3 2026',
               color: 'amber' as const,
-              delay: 0.12,
+              index: 0,
             },
             {
               id: 'dev',
@@ -205,7 +412,7 @@ export default function YunaHubPage() {
               desc: 'Feasibility studies, ROI inwestycji, analiza lokalizacji i wyceny rynkowe dla deweloperów.',
               eta: 'Q4 2026',
               color: 'blue' as const,
-              delay: 0.18,
+              index: 1,
             },
           ].map((p) => {
             const colorMap = {
@@ -235,7 +442,7 @@ export default function YunaHubPage() {
                 key={p.id}
                 initial={reduce ? false : { opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.45, delay: p.delay, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: 0.4, delay: 0.1 * p.index + 0.3, ease: [0.16, 1, 0.3, 1] }}
               >
                 <div className={`relative h-full p-6 rounded-2xl bg-gradient-to-br ${c.bg} border ${c.border} bg-white transition-all shadow-sm`}>
                   {/* Header */}

@@ -1,8 +1,8 @@
 'use client';
-/* YU-NA Landing v4 — Platform Intelligence, nie single product
- * Hero: YU-NA jako data intelligence platform
+/* YU-NA Landing v5 — Faza 2+3: Mobile Responsiveness, Scroll Reveals, Micro-interactions
+ * Hero: 58/42 split with live DataPanel
  * Products: BudOS (featured), + "Stay Tuned" upcoming
- * Tone: szeroki, ambicja, market edge — nie "przetargi"
+ * Tone: szeroki, ambicja, market edge
  */
 
 import Link from 'next/link';
@@ -33,11 +33,22 @@ const T = {
   mono:       'var(--font-jetbrains)',
 } as const;
 
+// ── FROZEN MOCK DATA ──────────────────────────────────────────────────────────
+const TENDER_MOCK = [
+  { id: 'WR/2026/0041', title: 'Rozbudowa drogi gminnej nr 104', budget: '2.4M', score: 87, go: true,  cat: 'Drogi'      },
+  { id: 'GD/2026/0289', title: 'Budowa przedszkola Gdańsk',      budget: '8.1M', score: 72, go: true,  cat: 'Kubatura'   },
+  { id: 'KR/2026/1102', title: 'Remont siedziby ZUS Kraków',     budget: '1.2M', score: 51, go: false, cat: 'Remonty'    },
+  { id: 'WA/2026/0773', title: 'Modernizacja sieci wod-kan',     budget: '5.7M', score: 91, go: true,  cat: 'Instalacje' },
+  { id: 'PO/2026/0156', title: 'Hala sportowa MOSiR Poznań',     budget: '12.3M',score: 65, go: true,  cat: 'Kubatura'   },
+  { id: 'LU/2026/0387', title: 'Termomodernizacja SP nr 3',      budget: '3.1M', score: 78, go: true,  cat: 'Remonty'    },
+] as const;
+
 // ── ANIMATED COUNTER ──────────────────────────────────────────────────────────
-function Counter({ to, suffix = '' }: { to: number; suffix?: string }) {
+function Counter({ to, suffix = '', fast }: { to: number; suffix?: string; fast?: boolean }) {
   const [val, setVal] = useState(0);
   const started = useRef(false);
   const ref = useRef<HTMLSpanElement>(null);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
     const el = ref.current;
@@ -45,10 +56,11 @@ function Counter({ to, suffix = '' }: { to: number; suffix?: string }) {
     const obs = new IntersectionObserver(([e]) => {
       if (e.isIntersecting && !started.current) {
         started.current = true;
-        const dur = 1400;
-        const start = performance.now();
+        if (reduceMotion) { setVal(to); return; }
+        const dur = fast ? 800 : 1400;
+        const startTime = performance.now();
         const tick = (now: number) => {
-          const t = Math.min((now - start) / dur, 1);
+          const t = Math.min((now - startTime) / dur, 1);
           const ease = 1 - Math.pow(1 - t, 3);
           setVal(Math.round(ease * to));
           if (t < 1) requestAnimationFrame(tick);
@@ -58,9 +70,128 @@ function Counter({ to, suffix = '' }: { to: number; suffix?: string }) {
     }, { threshold: 0.3 });
     obs.observe(el);
     return () => obs.disconnect();
-  }, [to]);
+  }, [to, fast, reduceMotion]);
 
   return <span ref={ref}>{val.toLocaleString('pl-PL')}{suffix}</span>;
+}
+
+// ── SCORE BADGE ───────────────────────────────────────────────────────────────
+function ScoreBadge({ score, go }: { score: number; go: boolean }) {
+  const color  = go ? T.accent : T.amber;
+  const bg     = go ? T.accentSub : 'rgba(245,158,11,0.08)';
+  const border = go ? T.accentBrd : 'rgba(245,158,11,0.2)';
+  return (
+    <span
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 4,
+        background: bg, border: `1px solid ${border}`,
+        borderRadius: 8, padding: '3px 8px',
+        fontFamily: T.mono, fontSize: 11, fontWeight: 700, color,
+        transition: 'transform 0.15s',
+        cursor: 'default',
+        flexShrink: 0,
+      }}
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'scale(1.08)'; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; }}
+    >
+      {score}
+      <span style={{ fontSize: 9, opacity: 0.7 }}>{go ? '↑GO' : 'NO'}</span>
+    </span>
+  );
+}
+
+// ── DATA PANEL ────────────────────────────────────────────────────────────────
+function DataPanel() {
+  return (
+    <div style={{
+      background: T.bg1,
+      border: `1px solid ${T.edge0}`,
+      borderRadius: 20,
+      overflow: 'hidden',
+      boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06), 0 16px 48px rgba(0,0,0,0.08)',
+    }}>
+      {/* Header */}
+      <div style={{
+        padding: '14px 18px',
+        borderBottom: `1px solid ${T.edge0}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        background: T.bg0,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{
+            width: 7, height: 7, borderRadius: '50%',
+            background: T.accent,
+            display: 'block',
+            animation: 'blink 1.5s infinite',
+          }} />
+          <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 700, color: T.ink, letterSpacing: '0.08em' }}>
+            AKTYWNE PRZETARGI
+          </span>
+        </div>
+        <span style={{ fontFamily: T.mono, fontSize: 10, color: T.faint }}>
+          {TENDER_MOCK.length} wyników
+        </span>
+      </div>
+
+      {/* Tender rows */}
+      <div className="data-panel-scroll">
+        {TENDER_MOCK.map((t) => (
+          <div
+            key={t.id}
+            style={{
+              padding: '11px 18px',
+              borderBottom: `1px solid ${T.edge0}`,
+              display: 'flex', alignItems: 'flex-start', gap: 10,
+              transition: 'background 0.15s, transform 0.15s',
+              cursor: 'pointer',
+            }}
+            onMouseEnter={e => {
+              const el = e.currentTarget as HTMLElement;
+              el.style.background = T.bg2;
+              el.style.transform = 'translateX(4px)';
+            }}
+            onMouseLeave={e => {
+              const el = e.currentTarget as HTMLElement;
+              el.style.background = '';
+              el.style.transform = '';
+            }}
+          >
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: T.mono, fontSize: 10, color: T.faint, marginBottom: 3 }}>{t.id}</div>
+              <div style={{
+                fontFamily: T.sans, fontSize: 12, fontWeight: 600, color: T.ink,
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>{t.title}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                <span style={{ fontFamily: T.mono, fontSize: 11, color: T.muted }}>{t.budget} PLN</span>
+                <span style={{
+                  fontFamily: T.sans, fontSize: 9, color: T.faint,
+                  background: T.bg2, borderRadius: 4, padding: '1px 5px',
+                }}>{t.cat}</span>
+              </div>
+            </div>
+            <ScoreBadge score={t.score} go={t.go} />
+          </div>
+        ))}
+      </div>
+
+      {/* Footer */}
+      <div style={{
+        padding: '10px 18px',
+        background: T.bg0,
+        display: 'flex', alignItems: 'center', gap: 6,
+      }}>
+        <span style={{
+          width: 5, height: 5, borderRadius: '50%',
+          background: T.accent, display: 'block',
+          animation: 'blink 1.5s infinite',
+        }} />
+        <span style={{ fontFamily: T.mono, fontSize: 10, color: T.faint }}>
+          Dane aktualne · BZP/TED · odświeżane co 15 min
+        </span>
+      </div>
+    </div>
+  );
 }
 
 // ── NAV ───────────────────────────────────────────────────────────────────────
@@ -73,7 +204,7 @@ function Nav() {
   }, []);
 
   return (
-    <nav style={{
+    <nav className="nav-pill" style={{
       position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)',
       zIndex: 100, display: 'flex', alignItems: 'center',
       gap: 0,
@@ -93,23 +224,25 @@ function Nav() {
         </span>
       </div>
 
-      {/* Links */}
-      {[
-        { label: 'BudOS', href: '/budos' },
-        { label: 'O platformie', href: '#platforma' },
-      ].map(l => (
-        <Link key={l.label} href={l.href} style={{
-          fontFamily: T.sans, fontSize: 13, color: T.muted, fontWeight: 500,
-          padding: '6px 14px', borderRadius: 999,
-          transition: 'color 0.2s',
-          textDecoration: 'none',
-        }}
-          onMouseEnter={e => (e.currentTarget.style.color = T.ink)}
-          onMouseLeave={e => (e.currentTarget.style.color = T.muted)}
-        >
-          {l.label}
-        </Link>
-      ))}
+      {/* Links — hidden on mobile via CSS */}
+      <div className="nav-links">
+        {[
+          { label: 'BudOS', href: '/budos' },
+          { label: 'O platformie', href: '#platforma' },
+        ].map(l => (
+          <Link key={l.label} href={l.href} style={{
+            fontFamily: T.sans, fontSize: 13, color: T.muted, fontWeight: 500,
+            padding: '6px 14px', borderRadius: 999,
+            transition: 'color 0.15s',
+            textDecoration: 'none',
+          }}
+            onMouseEnter={e => (e.currentTarget.style.color = T.ink)}
+            onMouseLeave={e => (e.currentTarget.style.color = T.muted)}
+          >
+            {l.label}
+          </Link>
+        ))}
+      </div>
 
       {/* CTA */}
       <Link href="/signup" style={{
@@ -148,140 +281,180 @@ function Hero({ reduce }: { reduce: boolean | null }) {
         background: 'radial-gradient(ellipse 70% 50% at 50% 20%, rgba(22,201,132,0.055) 0%, transparent 70%)',
       }} />
 
-      {/* Eyebrow */}
-      <motion.div
-        initial={reduce ? false : { opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8,
-          background: T.accentSub,
-          border: `1px solid ${T.accentBrd}`,
-          borderRadius: 999, padding: '5px 14px',
-          marginBottom: 40,
-        }}
-      >
-        <span style={{
-          width: 6, height: 6, borderRadius: '50%',
-          background: T.accent,
-          boxShadow: `0 0 8px ${T.accent}`,
-          display: 'block',
-          animation: 'pulse 2s ease-in-out infinite',
-        }} />
-        <span style={{ fontFamily: T.mono, fontSize: 11, fontWeight: 600, color: T.accent, letterSpacing: '0.1em' }}>
-          MARKET INTELLIGENCE PLATFORM
-        </span>
-      </motion.div>
+      {/* 58/42 split */}
+      <div className="hero-grid" style={{
+        display: 'flex', flexDirection: 'row', gap: 48,
+        maxWidth: 1100, width: '100%', position: 'relative',
+        alignItems: 'center',
+      }}>
+        {/* Left — 58% */}
+        <div className="hero-left" style={{ flex: '0 0 58%', maxWidth: '58%' }}>
+          {/* Eyebrow */}
+          <motion.div
+            initial={reduce ? false : { opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              background: T.accentSub,
+              border: `1px solid ${T.accentBrd}`,
+              borderRadius: 999, padding: '5px 14px',
+              marginBottom: 32,
+            }}
+          >
+            <span style={{
+              width: 6, height: 6, borderRadius: '50%',
+              background: T.accent,
+              boxShadow: `0 0 8px ${T.accent}`,
+              display: 'block',
+              animation: 'pulse 2s ease-in-out infinite',
+            }} />
+            <span style={{ fontFamily: T.mono, fontSize: 11, fontWeight: 600, color: T.accent, letterSpacing: '0.1em' }}>
+              MARKET INTELLIGENCE PLATFORM
+            </span>
+          </motion.div>
 
-      {/* Headline */}
-      <motion.h1
+          {/* Headline */}
+          <motion.h1
+            initial={reduce ? false : { opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+            style={{
+              fontFamily: T.serif,
+              fontSize: 'clamp(36px, 4.5vw, 56px)',
+              fontWeight: 400,
+              color: T.ink,
+              lineHeight: 1.08,
+              letterSpacing: '-0.02em',
+              maxWidth: 560,
+              marginBottom: 24,
+            }}
+          >
+            Dane, które dają<br />
+            <em style={{ fontStyle: 'italic', color: T.accent }}>przewagę.</em>
+          </motion.h1>
+
+          {/* Subline */}
+          <motion.p
+            initial={reduce ? false : { opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.2 }}
+            style={{
+              fontFamily: T.sans, fontSize: 17, color: T.muted,
+              maxWidth: 480, lineHeight: 1.65,
+              marginBottom: 40,
+            }}
+          >
+            YU-NA to platforma intelligence, która zamienia surowe dane rynkowe
+            w konkretne decyzje biznesowe — szybciej niż konkurencja.
+          </motion.p>
+
+          {/* CTAs */}
+          <motion.div
+            initial={reduce ? false : { opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.32 }}
+            style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}
+          >
+            <Link href="/budos" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              background: T.accent, color: T.bg1,
+              fontFamily: T.sans, fontSize: 15, fontWeight: 700,
+              padding: '14px 32px', borderRadius: 999,
+              textDecoration: 'none',
+              boxShadow: `0 4px 24px rgba(22,201,132,0.28)`,
+              transition: 'all 0.2s',
+            }}
+              onMouseEnter={e => {
+                e.currentTarget.style.transform = 'scale(1.02)';
+                e.currentTarget.style.boxShadow = `0 8px 32px rgba(22,201,132,0.36)`;
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = '';
+                e.currentTarget.style.boxShadow = `0 4px 24px rgba(22,201,132,0.28)`;
+              }}
+            >
+              Odkryj BudOS
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </Link>
+            <Link href="/budos" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              border: `1.5px solid ${T.edge1}`, color: T.muted,
+              fontFamily: T.sans, fontSize: 15, fontWeight: 500,
+              padding: '13px 28px', borderRadius: 999,
+              textDecoration: 'none', background: T.bg1,
+              transition: 'all 0.2s',
+            }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = T.accentSub;
+                e.currentTarget.style.borderColor = T.accentBrd;
+                e.currentTarget.style.color = T.ink;
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = T.bg1;
+                e.currentTarget.style.borderColor = T.edge1;
+                e.currentTarget.style.color = T.muted;
+              }}
+            >
+              Poznaj Bud.OS
+            </Link>
+          </motion.div>
+        </div>
+
+        {/* Right — 42% DataPanel */}
+        <motion.div
+          className="hero-right"
+          initial={reduce ? false : { opacity: 0, x: 24 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.7, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+          style={{ flex: '0 0 42%', maxWidth: '42%' }}
+        >
+          <DataPanel />
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+// ── STAT STRIP SECTION ────────────────────────────────────────────────────────
+function StatStripSection({ reduce }: { reduce: boolean | null }) {
+  return (
+    <section style={{ padding: '0 24px 64px', background: T.bg0 }}>
+      <motion.div
         initial={reduce ? false : { opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
-        style={{
-          fontFamily: T.serif,
-          fontSize: 'clamp(52px, 7vw, 96px)',
-          fontWeight: 400,
-          color: T.ink,
-          textAlign: 'center',
-          lineHeight: 1.08,
-          letterSpacing: '-0.03em',
-          maxWidth: 900,
-          marginBottom: 28,
-        }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
       >
-        Dane, które dają<br />
-        <em style={{ fontStyle: 'italic', color: T.accent }}>przewagę.</em>
-      </motion.h1>
-
-      {/* Subline */}
-      <motion.p
-        initial={reduce ? false : { opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.55, delay: 0.2 }}
-        style={{
-          fontFamily: T.sans, fontSize: 18, color: T.muted,
-          textAlign: 'center', maxWidth: 560, lineHeight: 1.65,
-          marginBottom: 48,
-        }}
-      >
-        YU-NA to platforma intelligence, która zamienia surowe dane rynkowe
-        w konkretne decyzje biznesowe — szybciej niż konkurencja.
-      </motion.p>
-
-      {/* CTAs */}
-      <motion.div
-        initial={reduce ? false : { opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.32 }}
-        style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}
-      >
-        <Link href="/budos" style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8,
-          background: T.accent, color: T.bg1,
-          fontFamily: T.sans, fontSize: 15, fontWeight: 700,
-          padding: '14px 32px', borderRadius: 999,
-          textDecoration: 'none',
-          boxShadow: `0 4px 24px rgba(22,201,132,0.28)`,
-          transition: 'all 0.2s',
-        }}
-          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = `0 8px 32px rgba(22,201,132,0.36)`; }}
-          onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = `0 4px 24px rgba(22,201,132,0.28)`; }}
-        >
-          Odkryj BudOS
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </Link>
-        <a href="#platforma" style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8,
-          border: `1.5px solid ${T.edge1}`, color: T.muted,
-          fontFamily: T.sans, fontSize: 15, fontWeight: 500,
-          padding: '13px 28px', borderRadius: 999,
-          textDecoration: 'none', background: T.bg1,
-          transition: 'all 0.2s',
-        }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = T.edge0; e.currentTarget.style.color = T.ink; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = T.edge1; e.currentTarget.style.color = T.muted; }}
-        >
-          O platformie
-        </a>
-      </motion.div>
-
-      {/* Stat strip */}
-      <motion.div
-        initial={reduce ? false : { opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        style={{
-          marginTop: 80,
-          display: 'flex', gap: 0, alignItems: 'stretch',
-          background: T.bg1,
-          border: `1px solid ${T.edge0}`,
-          borderRadius: 20,
-          overflow: 'hidden',
+        <div className="stat-strip-grid" style={{
+          maxWidth: 1100, margin: '0 auto',
+          display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+          background: T.bg1, border: `1px solid ${T.edge0}`,
+          borderRadius: 20, overflow: 'hidden',
           boxShadow: '0 2px 16px rgba(12,21,36,0.05)',
-        }}
-      >
-        {[
-          { value: 1400000, suffix: '+', label: 'ogłoszeń w bazie' },
-          { value: 12, suffix: 'K+', label: 'zamawiających' },
-          { value: 30, suffix: 's', label: 'czas analizy AI' },
-          { value: 3, suffix: ' branże', label: 'w przygotowaniu' },
-        ].map((s, i) => (
-          <div key={i} style={{
-            padding: '20px 36px',
-            borderRight: i < 3 ? `1px solid ${T.edge0}` : undefined,
-            textAlign: 'center',
-          }}>
-            <div style={{ fontFamily: T.mono, fontSize: 26, fontWeight: 700, color: T.ink, letterSpacing: '-0.03em' }}>
-              <Counter to={s.value} suffix={s.suffix} />
+        }}>
+          {[
+            { value: 1626,    suffix: '',   label: 'nowych przetargów w tygodniu', fast: true  },
+            { value: 9913,    suffix: '',   label: 'zamawiających w bazie',        fast: true  },
+            { value: 1400000, suffix: '+',  label: 'ogłoszeń przeanalizowanych',   fast: false },
+            { value: 30,      suffix: 's',  label: 'czas analizy SWZ',             fast: false },
+          ].map((s, i) => (
+            <div key={i} style={{
+              padding: '24px 32px',
+              borderRight: i < 3 ? `1px solid ${T.edge0}` : undefined,
+              textAlign: 'center',
+            }}>
+              <div style={{ fontFamily: T.mono, fontSize: 28, fontWeight: 700, color: T.ink, letterSpacing: '-0.03em' }}>
+                <Counter to={s.value} suffix={s.suffix} fast={s.fast} />
+              </div>
+              <div style={{ fontFamily: T.sans, fontSize: 11, color: T.faint, marginTop: 4, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                {s.label}
+              </div>
             </div>
-            <div style={{ fontFamily: T.sans, fontSize: 11, color: T.faint, marginTop: 4, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-              {s.label}
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </motion.div>
     </section>
   );
@@ -291,7 +464,7 @@ function Hero({ reduce }: { reduce: boolean | null }) {
 function PlatformSection({ reduce }: { reduce: boolean | null }) {
   return (
     <section id="platforma" style={{
-      padding: '100px 24px',
+      padding: 'clamp(40px, 5vw, 64px) 24px',
       borderTop: `1px solid ${T.edge0}`,
       background: T.bg1,
     }}>
@@ -299,16 +472,16 @@ function PlatformSection({ reduce }: { reduce: boolean | null }) {
 
         {/* Header */}
         <motion.div
-          initial={reduce ? false : { opacity: 0, y: 20 }}
+          initial={reduce ? false : { opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-          style={{ textAlign: 'center', marginBottom: 72 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          style={{ textAlign: 'center', marginBottom: 60 }}
         >
           <p style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: '0.12em', color: T.accent, fontWeight: 600, textTransform: 'uppercase', marginBottom: 20 }}>
             Jak działa YU-NA
           </p>
-          <h2 style={{ fontFamily: T.serif, fontSize: 'clamp(36px, 4vw, 60px)', color: T.ink, lineHeight: 1.1, letterSpacing: '-0.025em', marginBottom: 20 }}>
+          <h2 style={{ fontFamily: T.serif, fontSize: 'clamp(28px, 3vw, 40px)', color: T.ink, lineHeight: 1.1, letterSpacing: '-0.02em', marginBottom: 20 }}>
             Dane rynkowe → decyzja<br />w minutach, nie tygodniach.
           </h2>
           <p style={{ fontFamily: T.sans, fontSize: 17, color: T.muted, maxWidth: 520, margin: '0 auto', lineHeight: 1.65 }}>
@@ -316,8 +489,8 @@ function PlatformSection({ reduce }: { reduce: boolean | null }) {
           </p>
         </motion.div>
 
-        {/* 3-column feature grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+        {/* 3-column steps */}
+        <div className="steps-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
           {[
             {
               icon: (
@@ -351,8 +524,8 @@ function PlatformSection({ reduce }: { reduce: boolean | null }) {
               key={i}
               initial={reduce ? false : { opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ duration: 0.45, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
               style={{
                 background: T.bg0,
                 border: `1px solid ${T.edge0}`,
@@ -382,23 +555,95 @@ function PlatformSection({ reduce }: { reduce: boolean | null }) {
   );
 }
 
+// ── DLA KOGO? ─────────────────────────────────────────────────────────────────
+function DlaKogoSection({ reduce }: { reduce: boolean | null }) {
+  return (
+    <section style={{
+      padding: 'clamp(40px, 5vw, 64px) 24px',
+      borderTop: `1px solid ${T.edge0}`,
+      background: T.bg0,
+    }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        <motion.div
+          initial={reduce ? false : { opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <h2 style={{
+            fontFamily: T.serif,
+            fontSize: 'clamp(28px, 3vw, 40px)',
+            color: T.ink, lineHeight: 1.1,
+            letterSpacing: '-0.02em',
+            marginBottom: 32, textAlign: 'center',
+          }}>
+            Dla kogo?
+          </h2>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'center' }}>
+            {[
+              {
+                icon: (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/>
+                  </svg>
+                ),
+                label: 'Właściciel firmy budowlanej',
+              },
+              {
+                icon: (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-5 0v-15A2.5 2.5 0 0 1 9.5 2z"/><path d="M14.5 8A2.5 2.5 0 0 1 17 10.5v9a2.5 2.5 0 0 1-5 0v-9A2.5 2.5 0 0 1 14.5 8z"/>
+                  </svg>
+                ),
+                label: 'Dyrektor przetargów',
+              },
+              {
+                icon: (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/>
+                  </svg>
+                ),
+                label: 'Kosztorysant',
+              },
+            ].map((p) => (
+              <div key={p.label} style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                border: `1px solid ${T.edge0}`,
+                borderRadius: 999,
+                paddingTop: 12, paddingBottom: 12,
+                paddingLeft: 24, paddingRight: 24,
+                background: T.bg1,
+                fontFamily: T.sans, fontSize: 14, fontWeight: 500, color: T.ink,
+                cursor: 'default',
+              }}>
+                <span style={{ color: T.accent, display: 'flex' }}>{p.icon}</span>
+                {p.label}
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
 // ── PRODUCTS SECTION ──────────────────────────────────────────────────────────
 function ProductsSection({ reduce }: { reduce: boolean | null }) {
   return (
-    <section style={{ padding: '100px 24px', borderTop: `1px solid ${T.edge0}` }}>
+    <section style={{ padding: 'clamp(40px, 5vw, 64px) 24px', borderTop: `1px solid ${T.edge0}` }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
 
         <motion.div
-          initial={reduce ? false : { opacity: 0, y: 16 }}
+          initial={reduce ? false : { opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          style={{ marginBottom: 56 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          style={{ marginBottom: 48 }}
         >
           <p style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: '0.12em', color: T.accent, fontWeight: 600, textTransform: 'uppercase', marginBottom: 16 }}>
             Produkty
           </p>
-          <h2 style={{ fontFamily: T.serif, fontSize: 'clamp(34px, 4vw, 56px)', color: T.ink, lineHeight: 1.1, letterSpacing: '-0.025em' }}>
+          <h2 style={{ fontFamily: T.serif, fontSize: 'clamp(28px, 3vw, 40px)', color: T.ink, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
             Jeden ekosystem.<br />Wiele rynków.
           </h2>
         </motion.div>
@@ -407,15 +652,16 @@ function ProductsSection({ reduce }: { reduce: boolean | null }) {
         <motion.div
           initial={reduce ? false : { opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+          viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           style={{ marginBottom: 20 }}
         >
-          <Link href="/budos" style={{
+          <Link href="/budos" className="budos-card" style={{
             display: 'grid', gridTemplateColumns: '1fr 1fr',
             background: T.ink, borderRadius: 24, overflow: 'hidden',
             textDecoration: 'none', position: 'relative',
             boxShadow: '0 8px 48px rgba(12,21,36,0.14)',
+            transition: 'box-shadow 0.3s',
           }}
             onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 16px 64px rgba(12,21,36,0.22)')}
             onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 8px 48px rgba(12,21,36,0.14)')}
@@ -429,7 +675,11 @@ function ProductsSection({ reduce }: { reduce: boolean | null }) {
                   background: T.accentSub, border: `1px solid ${T.accentBrd}`,
                   borderRadius: 999, padding: '5px 14px', marginBottom: 32,
                 }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: T.accent, display: 'block' }} />
+                  <span style={{
+                    width: 6, height: 6, borderRadius: '50%',
+                    background: T.accent, display: 'block',
+                    animation: 'blink 1.5s infinite',
+                  }} />
                   <span style={{ fontFamily: T.mono, fontSize: 10, fontWeight: 700, color: T.accent, letterSpacing: '0.12em' }}>PRODUKT #1 · LIVE</span>
                 </div>
 
@@ -469,8 +719,8 @@ function ProductsSection({ reduce }: { reduce: boolean | null }) {
               </div>
             </div>
 
-            {/* Right — screenshot */}
-            <div style={{ position: 'relative', overflow: 'hidden' }}>
+            {/* Right — screenshot with hover scale */}
+            <div className="budos-screenshot" style={{ position: 'relative', overflow: 'hidden', transition: 'transform 0.3s ease' }}>
               {/* Ambient glow */}
               <div style={{
                 position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none',
@@ -506,7 +756,7 @@ function ProductsSection({ reduce }: { reduce: boolean | null }) {
         </motion.div>
 
         {/* Coming soon grid — 2 teaser cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <div className="bento-coming" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
           {[
             {
               label: 'Wkrótce',
@@ -527,17 +777,21 @@ function ProductsSection({ reduce }: { reduce: boolean | null }) {
           ].map((p, i) => (
             <motion.div
               key={i}
-              initial={reduce ? false : { opacity: 0, y: 20 }}
+              initial={reduce ? false : { opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.45, delay: i * 0.1 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ duration: 0.45, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
               style={{
                 background: T.bg0,
                 border: `1.5px solid ${T.edge0}`,
                 borderRadius: 20, padding: '40px 36px',
                 display: 'flex', flexDirection: 'column', gap: 16,
                 position: 'relative', overflow: 'hidden',
+                transition: 'border-color 0.2s',
+                cursor: 'default',
               }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = T.accent; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = T.edge0; }}
             >
               {/* Subtle glow */}
               <div style={{
@@ -593,25 +847,25 @@ function ProductsSection({ reduce }: { reduce: boolean | null }) {
 function FinalCTA({ reduce }: { reduce: boolean | null }) {
   return (
     <section style={{
-      padding: '120px 24px',
+      padding: 'clamp(80px, 10vw, 120px) 24px',
       borderTop: `1px solid ${T.edge0}`,
       background: T.bg1,
       textAlign: 'center',
     }}>
       <motion.div
-        initial={reduce ? false : { opacity: 0, y: 20 }}
+        initial={reduce ? false : { opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
+        viewport={{ once: true, amount: 0.2 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         style={{ maxWidth: 640, margin: '0 auto' }}
       >
         <p style={{ fontFamily: T.mono, fontSize: 11, letterSpacing: '0.12em', color: T.accent, fontWeight: 600, textTransform: 'uppercase', marginBottom: 24 }}>
           Zacznij teraz
         </p>
-        <h2 style={{ fontFamily: T.serif, fontSize: 'clamp(40px, 5vw, 68px)', color: T.ink, lineHeight: 1.08, letterSpacing: '-0.03em', marginBottom: 24 }}>
-          Twój rynek.<br />Twoja przewaga.
+        <h2 style={{ fontFamily: T.serif, fontSize: 'clamp(40px, 5vw, 68px)', color: T.ink, lineHeight: 1.08, letterSpacing: '-0.02em', marginBottom: 24 }}>
+          Gotowy na przewagę?
         </h2>
-        <p style={{ fontFamily: T.sans, fontSize: 17, color: T.muted, lineHeight: 1.65, marginBottom: 48 }}>
+        <p style={{ fontFamily: T.sans, fontSize: 17, color: T.muted, lineHeight: 1.65, marginBottom: 40 }}>
           Dołącz do firm które już działają szybciej dzięki YU-NA.
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -622,25 +876,54 @@ function FinalCTA({ reduce }: { reduce: boolean | null }) {
             padding: '15px 36px', borderRadius: 999,
             textDecoration: 'none',
             boxShadow: `0 4px 24px rgba(22,201,132,0.28)`,
-          }}>
+            transition: 'all 0.2s',
+          }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = 'scale(1.02)';
+              e.currentTarget.style.boxShadow = `0 8px 32px rgba(22,201,132,0.36)`;
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = '';
+              e.currentTarget.style.boxShadow = `0 4px 24px rgba(22,201,132,0.28)`;
+            }}
+          >
             Odkryj BudOS
           </Link>
-          <Link href="/signup" style={{
+          <Link href="/budos" style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
             border: `1.5px solid ${T.edge1}`, color: T.muted,
             fontFamily: T.sans, fontSize: 15, fontWeight: 500,
             padding: '14px 28px', borderRadius: 999,
             textDecoration: 'none', background: T.bg1,
-          }}>
-            Zarejestruj się
+            transition: 'all 0.2s',
+          }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = T.accentSub;
+              e.currentTarget.style.borderColor = T.accentBrd;
+              e.currentTarget.style.color = T.ink;
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = T.bg1;
+              e.currentTarget.style.borderColor = T.edge1;
+              e.currentTarget.style.color = T.muted;
+            }}
+          >
+            Poznaj Bud.OS
           </Link>
         </div>
+        {/* Social proof */}
+        <p style={{
+          fontFamily: T.sans, fontSize: 12,
+          color: T.muted, marginTop: 20, opacity: 0.8,
+        }}>
+          Bez karty kredytowej · 14 dni za darmo · Anuluj kiedy chcesz
+        </p>
       </motion.div>
     </section>
   );
 }
 
-// ── FOOTER ────────────────────────────────────────────────────────────────────
+// ── FOOTER Ft5 ────────────────────────────────────────────────────────────────
 function Footer() {
   return (
     <footer style={{
@@ -656,15 +939,14 @@ function Footer() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <Image src="/brand/01-logo-concept.png" alt="YU-NA" width={20} height={20} style={{ borderRadius: 5, opacity: 0.7 }} />
           <span style={{ fontFamily: T.sans, fontSize: 13, color: T.faint }}>
-            © 2026 YU-NA · Market Intelligence Platform
+            © YU-NA Intelligence 2026
           </span>
         </div>
         <div style={{ display: 'flex', gap: 24 }}>
           {[
-            { l: 'BudOS', h: '/budos' },
-            { l: 'Logowanie', h: '/login' },
-            { l: 'Regulamin', h: '/terms' },
+            { l: 'Regulamin', h: '/terms'   },
             { l: 'Prywatność', h: '/privacy' },
+            { l: 'RODO',      h: '/rodo'    },
           ].map(item => (
             <Link key={item.l} href={item.h} style={{
               fontFamily: T.sans, fontSize: 12, color: T.faint,
@@ -694,11 +976,75 @@ export default function YunaLandingPage() {
           0%, 100% { opacity: 1; transform: scale(1); }
           50%       { opacity: 0.6; transform: scale(0.85); }
         }
+        @keyframes blink {
+          0%, 100% { opacity: 1; }
+          50%       { opacity: 0.3; }
+        }
+
+        /* Nav pill: cap width on mobile */
+        .nav-pill {
+          max-width: calc(100% - 2rem);
+        }
+
+        /* BudOS screenshot scale on card hover */
+        .budos-card:hover .budos-screenshot {
+          transform: scale(1.02);
+        }
+
+        /* ── MOBILE BREAKPOINT ── */
+        @media (max-width: 767px) {
+          /* Hero: stack vertically */
+          .hero-grid {
+            flex-direction: column !important;
+          }
+          .hero-left {
+            flex: 0 0 100% !important;
+            max-width: 100% !important;
+          }
+          .hero-right {
+            flex: 0 0 100% !important;
+            max-width: 100% !important;
+          }
+
+          /* DataPanel: constrained height, scrollable */
+          .data-panel-scroll {
+            max-height: 18rem;
+            overflow-y: auto;
+          }
+
+          /* Nav links: hide on mobile */
+          .nav-links {
+            display: none !important;
+          }
+
+          /* Steps: single column */
+          .steps-row {
+            grid-template-columns: 1fr !important;
+            gap: 2rem !important;
+          }
+
+          /* Bento coming-soon: single column */
+          .bento-coming {
+            grid-template-columns: 1fr !important;
+          }
+
+          /* Stat strip: 2 columns */
+          .stat-strip-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+
+          /* BudOS card: stack vertically */
+          .budos-card {
+            grid-template-columns: 1fr !important;
+          }
+        }
       `}</style>
 
       <Nav />
       <Hero reduce={reduce} />
+      <StatStripSection reduce={reduce} />
       <PlatformSection reduce={reduce} />
+      <DlaKogoSection reduce={reduce} />
       <ProductsSection reduce={reduce} />
       <FinalCTA reduce={reduce} />
       <Footer />
