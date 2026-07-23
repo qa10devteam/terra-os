@@ -59,7 +59,8 @@ try:
     from .routers import competitor_watch
     from .routers import buyer_crm
     from .routers import market_intelligence
-    _phase3_routers = [tender_alerts, tender_bookmarks, competitor_watch, buyer_crm, market_intelligence]
+    from .routers import intelligence as historical_intelligence_router
+    _phase3_routers = [tender_alerts, tender_bookmarks, competitor_watch, buyer_crm, market_intelligence, historical_intelligence_router]
 except ImportError as e:  # pragma: no cover
     import logging
     logging.getLogger(__name__).warning("Phase 3 routers import error: %s", e)

@@ -1,496 +1,81 @@
-"""Terra-OS Intelligence Router — /api/v2/intelligence/*
+"""
+/api/v2/intelligence/* — Historical Intelligence endpoints.
 
-Endpointy:
-  GET  /prices/icb            — wyszukiwanie ICB
-  GET  /prices/inflation      — indeks inflacji kosztów budowlanych
-  GET  /prices/trend          — trend ceny kategorii/symbolu
-  GET  /prices/forecast       — prognoza ceny na N kwartałów
-  GET  /prices/index          — zagregowany indeks R/M/S per kwartał
-  GET  /material-risk         — Material Risk Score per kategorię
-  GET  /narzuty               — narzuty ICB per branżę i kwartał
-  GET  /regional              — współczynnik regionalny
-  GET  /benchmark             — CPV × region benchmark (market_results)
-  POST /anomaly/bid           — anomaly detection dla oferty
-  POST /anomaly/kosztorys     — anomaly detection dla kosztorysu (lista pozycji)
-  POST /win-probability       — P(win) dla naszej ceny
-  GET  /robocizna-rates       — stawki robocizny per województwo
+Expose historical_tenders intelligence: similar tenders, benchmarks, buyer profiles.
 """
 from __future__ import annotations
 
-from typing import Any
-
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from ..auth.deps import AuthUser, get_current_user as _get_current_user
-from ..redis_cache import (
-    rcache_get, rcache_set,
-    TTL_INTELLIGENCE_SUMMARY, TTL_ICB_SUGGEST,
-)
+from ..auth.deps import get_current_user
 
 router = APIRouter(prefix="/api/v2/intelligence", tags=["intelligence"])
 
 
-# ─── Lazy imports (moduły ICB mogą nie być dostępne w testach) ─────────────────
-
-def _icb():
-    from ..intelligence.icb_service import (
-        search_icb, get_narzuty, get_all_narzuty,
-        get_regional_coefficient, get_robocizna_rates,
-        get_price_trend, get_latest_quarter, get_categories,
-    )
-    return {
-        "search_icb": search_icb,
-        "get_narzuty": get_narzuty,
-        "get_all_narzuty": get_all_narzuty,
-        "get_regional_coefficient": get_regional_coefficient,
-        "get_robocizna_rates": get_robocizna_rates,
-        "get_price_trend": get_price_trend,
-        "get_latest_quarter": get_latest_quarter,
-        "get_categories": get_categories,
-    }
-
-
-def _pi():
-    from ..intelligence.price_intelligence import (
-        get_inflation_index, get_material_risk_score, get_all_material_risks,
-        forecast_price, get_price_index,
-    )
-    return {
-        "get_inflation_index": get_inflation_index,
-        "get_material_risk_score": get_material_risk_score,
-        "get_all_material_risks": get_all_material_risks,
-        "forecast_price": forecast_price,
-        "get_price_index": get_price_index,
-    }
-
-
-def _bi():
-    from ..intelligence.bid_intelligence import (
-        get_cpv_benchmark, detect_bid_anomalies,
-        estimate_win_probability, detect_kosztorys_anomalies,
-    )
-    return {
-        "get_cpv_benchmark": get_cpv_benchmark,
-        "detect_bid_anomalies": detect_bid_anomalies,
-        "estimate_win_probability": estimate_win_probability,
-        "detect_kosztorys_anomalies": detect_kosztorys_anomalies,
-    }
-
-
-# ─── Pydantic models ──────────────────────────────────────────────────────────
-
-class BidAnomalyRequest(BaseModel):
-    bid_price: float
-    estimated_value: float
-    cpv_prefix: str = "45"
+class SimilarRequest(BaseModel):
+    title: str
+    cpv_code: str | None = None
     province: str | None = None
-    n_competitors: int | None = None
+    estimated_value: float | None = None
+    buyer: str | None = None
+    limit: int = 10
 
 
-class WinProbRequest(BaseModel):
-    our_price: float
-    estimated_value: float
-    cpv_prefix: str = "45"
-    province: str | None = None
-    n_competitors: int = 4
+@router.post("/similar")
+async def find_similar(req: SimilarRequest, _user=Depends(get_current_user)):
+    """Find similar historical tenders based on title, CPV, region."""
+    from ..intelligence.historical_intelligence import get_historical_context
+    ctx = get_historical_context(
+        title=req.title,
+        cpv_code=req.cpv_code,
+        province=req.province,
+        estimated_value=req.estimated_value,
+        buyer=req.buyer,
+        limit=req.limit,
+    )
+    return ctx
 
 
-class KosztorysItem(BaseModel):
-    description: str
-    unit: str = "szt"
-    quantity: float = 1.0
-    unit_price: float = 0.0
-    category: str = "inne"
+@router.get("/benchmark/{cpv_prefix}")
+async def cpv_benchmark(cpv_prefix: str, province: str | None = None, _user=Depends(get_current_user)):
+    """Get value benchmark for CPV segment from 1.4M historical tenders."""
+    from ..intelligence.historical_intelligence import _segment_benchmark
+    from terra_db.session import get_engine
+    engine = get_engine()
+    result = _segment_benchmark(engine, cpv_prefix, province)
+    if not result:
+        raise HTTPException(404, "No data for this CPV prefix")
+    return result
 
 
-class KosztorysAnomalyRequest(BaseModel):
-    items: list[KosztorysItem]
-    cpv_prefix: str = "45"
-    province: str | None = None
+@router.get("/buyer/{buyer_name}")
+async def buyer_profile(buyer_name: str, _user=Depends(get_current_user)):
+    """Get buyer profile — past tenders, winners, budget patterns."""
+    from ..intelligence.historical_intelligence import _buyer_profile
+    from terra_db.session import get_engine
+    engine = get_engine()
+    result = _buyer_profile(engine, buyer_name)
+    if not result:
+        raise HTTPException(404, "Buyer not found in historical data")
+    return result
 
 
-# ─── Endpointy ────────────────────────────────────────────────────────────────
-
-@router.get("/prices/icb")
-def api_search_icb(
-    q: str = Query(..., description="Fraza wyszukiwania (nazwa materiału, robocizny, sprzętu)"),
-    typ_rms: str | None = Query(None, description="R, M lub S"),
-    category: str | None = Query(None),
-    year: int = Query(2026),
-    quarter: int = Query(2),
-    limit: int = Query(20, le=100),
-) -> dict:
-    """Wyszukaj pozycje z bazy ICB (784k wierszy, Q1-2008→Q2-2026)."""
-    # Redis cache: TTL 5min (ICB data changes quarterly)
-    _cache_key = f"intel:icb_search:{q}:{typ_rms}:{category}:{year}:{quarter}:{limit}"
-    _cached = rcache_get(_cache_key)
-    if _cached is not None:
-        return _cached
-    try:
-        svc = _icb()
-        results = svc["search_icb"](q, typ_rms, year, quarter, category, limit)
-        data = {
-            "query": q,
-            "period": f"{year}-Q{quarter}",
-            "results": results,
-            "count": len(results),
-        }
-        rcache_set(_cache_key, data, ttl=TTL_INTELLIGENCE_SUMMARY)
-        return data
-    except Exception as e:
-        import logging as _log
-        _log.getLogger(__name__).exception("ICB search failed for q=%r", q)
-        raise HTTPException(
-            status_code=500,
-            detail={"error": "icb_search_failed", "message": "Błąd wyszukiwania ICB. Spróbuj ponownie."},
-        )
+@router.get("/contractors/{cpv_prefix}")
+async def top_contractors(cpv_prefix: str, province: str | None = None, _user=Depends(get_current_user)):
+    """Top contractors (winners) in a CPV segment."""
+    from ..intelligence.historical_intelligence import _top_contractors
+    from terra_db.session import get_engine
+    engine = get_engine()
+    result = _top_contractors(engine, cpv_prefix, province)
+    return {"cpv_prefix": cpv_prefix, "province": province, "contractors": result}
 
 
-@router.get("/prices/inflation")
-def api_inflation_index(
-    category: str | None = Query(None),
-    typ_rms: str | None = Query(None),
-    quarters: int = Query(8, le=40),
-) -> dict:
-    """Indeks inflacji kosztów budowlanych z mv_labor_inflation_index."""
-    try:
-        pi = _pi()
-        data = pi["get_inflation_index"](category, typ_rms, quarters)
-        return {"data": data, "n": len(data)}
-    except Exception as e:
-        import logging as _log
-        _log.getLogger(__name__).exception("Inflation index query failed")
-        raise HTTPException(
-            status_code=500,
-            detail={"error": "inflation_query_failed", "message": "Błąd pobierania indeksu inflacji."},
-        )
-
-
-@router.get("/prices/trend")
-def api_price_trend(
-    category: str | None = Query(None),
-    symbol: str | None = Query(None),
-    typ_rms: str = Query("M"),
-    from_year: int = Query(2019),
-) -> dict:
-    """Trend ceny danej kategorii lub symbolu ICB od from_year."""
-    try:
-        svc = _icb()
-        data = svc["get_price_trend"](symbol, category, typ_rms, from_year)
-        return {
-            "category": category,
-            "symbol": symbol,
-            "typ_rms": typ_rms,
-            "from_year": from_year,
-            "data": data,
-            "n": len(data),
-        }
-    except Exception as e:
-        import logging as _log
-        _log.getLogger(__name__).exception("Price trend query failed")
-        raise HTTPException(
-            status_code=500,
-            detail={"error": "price_trend_failed", "message": "Błąd pobierania trendu cen."},
-        )
-
-
-@router.get("/prices/forecast")
-def api_price_forecast(
-    category: str | None = Query(None),
-    symbol: str | None = Query(None),
-    typ_rms: str = Query("M"),
-    horizon: int = Query(4, le=12, description="Liczba kwartałów prognozy"),
-) -> dict:
-    """Prognoza ceny na kolejne N kwartałów (linear trend / Prophet)."""
-    try:
-        pi = _pi()
-        return pi["forecast_price"](category, symbol, typ_rms, horizon)
-    except Exception as e:
-        import logging as _log
-        _log.getLogger(__name__).exception("Price forecast failed")
-        raise HTTPException(
-            status_code=500,
-            detail={"error": "forecast_failed", "message": "Błąd generowania prognozy cen."},
-        )
-
-
-@router.get("/prices/index")
-def api_price_index(
-    quarters: int = Query(8, le=40),
-) -> dict:
-    """Zagregowany indeks cen R/M/S per kwartał."""
-    try:
-        pi = _pi()
-        data = pi["get_price_index"](quarters)
-        return {"data": data, "n": len(data)}
-    except Exception as e:
-        import logging as _log
-        _log.getLogger(__name__).exception("Price index query failed")
-        raise HTTPException(
-            status_code=500,
-            detail={"error": "price_index_failed", "message": "Błąd pobierania indeksu cen."},
-        )
-
-
-@router.get("/material-risk")
-def api_material_risk(
-    category: str | None = Query(None),
-    quarters: int = Query(8, le=20),
-) -> dict:
-    """Material Risk Score dla kategorii(i) materiałów."""
-    try:
-        pi = _pi()
-        if category:
-            result = pi["get_material_risk_score"](category, quarters)
-            return result
-        else:
-            results = pi["get_all_material_risks"](quarters)
-            return {"risks": results, "n": len(results)}
-    except Exception as e:
-        import logging as _log
-        _log.getLogger(__name__).exception("Material risk query failed")
-        raise HTTPException(
-            status_code=500,
-            detail={"error": "material_risk_failed", "message": "Błąd pobierania Material Risk Score."},
-        )
-
-
-@router.get("/narzuty")
-def api_narzuty(
-    branża: str = Query("roboty ogólnobudowlane"),
-    year: int = Query(2026),
-    quarter: int = Query(2),
-    all: bool = Query(False, description="Zwróć wszystkie branże"),
-) -> dict:
-    """Narzuty ICB: Ko%, Z%, Kz% per branżę i kwartał."""
-    try:
-        svc = _icb()
-        if all:
-            data = svc["get_all_narzuty"](year, quarter)
-            return {"data": data, "period": f"{year}-Q{quarter}"}
-        else:
-            return svc["get_narzuty"](year, quarter, branża)
-    except Exception as e:
-        import logging as _log
-        _log.getLogger(__name__).exception("Narzuty query failed")
-        raise HTTPException(
-            status_code=500,
-            detail={"error": "narzuty_failed", "message": "Błąd pobierania narzutów ICB."},
-        )
-
-
-@router.get("/regional")
-def api_regional_coefficient(
-    voivodeship: str = Query(...),
-    rate_type: str = Query("Ogolne"),
-    year: int = Query(2026),
-    quarter: int = Query(2),
-) -> dict:
-    """Współczynnik regionalny ICB dla województwa i typu robót."""
-    try:
-        svc = _icb()
-        coeff = svc["get_regional_coefficient"](voivodeship, rate_type, year, quarter)
-        return {
-            "voivodeship": voivodeship,
-            "rate_type": rate_type,
-            "period": f"{year}-Q{quarter}",
-            "coefficient": coeff,
-        }
-    except Exception as e:
-        import logging as _log
-        _log.getLogger(__name__).exception("Regional coefficient query failed")
-        raise HTTPException(
-            status_code=500,
-            detail={"error": "regional_coeff_failed", "message": "Błąd pobierania współczynnika regionalnego."},
-        )
-
-
-@router.get("/robocizna-rates")
-def api_robocizna_rates(
-    voivodeship: str | None = Query(None),
-    year: int = Query(2026),
-    quarter: int = Query(2),
-) -> dict:
-    """Stawki robocizny kosztorysowej [zł/r-g] z korekcją regionalną."""
-    try:
-        svc = _icb()
-        return svc["get_robocizna_rates"](voivodeship, year, quarter)
-    except Exception as e:
-        import logging as _log
-        _log.getLogger(__name__).exception("Robocizna rates query failed")
-        raise HTTPException(
-            status_code=500,
-            detail={"error": "robocizna_rates_failed", "message": "Błąd pobierania stawek robocizny."},
-        )
-
-
-@router.get("/benchmark")
-def api_benchmark(
-    cpv_prefix: str = Query("45", description="Prefix CPV np. '45', '4523', '45230'"),
-    province: str | None = Query(None),
-    quarters: int = Query(8),
-) -> dict:
-    """CPV × region benchmark: rozkład wartości przetargów + win_ratio."""
-    _cache_key = f"intel:benchmark:{cpv_prefix}:{province}:{quarters}"
-    _cached = rcache_get(_cache_key)
-    if _cached is not None:
-        return _cached
-    try:
-        bi = _bi()
-        result = bi["get_cpv_benchmark"](cpv_prefix, province, quarters)
-        rcache_set(_cache_key, result, ttl=TTL_INTELLIGENCE_SUMMARY)
-        return result
-    except Exception as e:
-        import logging as _log
-        _log.getLogger(__name__).exception("Benchmark query failed")
-        raise HTTPException(
-            status_code=500,
-            detail={"error": "benchmark_failed", "message": "Błąd pobierania benchmarku CPV."},
-        )
-
-
-@router.get("/categories")
-def api_categories() -> dict:
-    """Lista dostępnych kategorii ICB."""
-    try:
-        svc = _icb()
-        return {"categories": svc["get_categories"]()}
-    except Exception as e:
-        import logging as _log
-        _log.getLogger(__name__).exception("Categories query failed")
-        raise HTTPException(
-            status_code=500,
-            detail={"error": "categories_failed", "message": "Błąd pobierania kategorii ICB."},
-        )
-
-
-@router.post("/anomaly/bid")
-def api_anomaly_bid(req: BidAnomalyRequest) -> dict:
-    """Wykrywanie anomalii w cenie oferty przetargowej.
-
-    Metody: z-score vs market_results, PZP Art.224 check, Benford.
-    """
-    try:
-        bi = _bi()
-        return bi["detect_bid_anomalies"](
-            req.bid_price, req.estimated_value, req.cpv_prefix,
-            req.province, req.n_competitors,
-        )
-    except Exception as e:
-        import logging as _log
-        _log.getLogger(__name__).exception("Bid anomaly detection failed")
-        raise HTTPException(
-            status_code=500,
-            detail={"error": "anomaly_detection_failed", "message": "Błąd wykrywania anomalii oferty."},
-        )
-
-
-@router.post("/anomaly/kosztorys")
-def api_anomaly_kosztorys(req: KosztorysAnomalyRequest) -> dict:
-    """Wykrywanie anomalii w kosztorysie (lista pozycji).
-
-    Per-item z-score vs ICB + Isolation Forest (sklearn).
-    """
-    try:
-        bi = _bi()
-        items_dicts = [it.model_dump() for it in req.items]
-        return bi["detect_kosztorys_anomalies"](items_dicts, req.cpv_prefix, req.province)
-    except Exception as e:
-        import logging as _log
-        _log.getLogger(__name__).exception("Kosztorys anomaly detection failed")
-        raise HTTPException(
-            status_code=500,
-            detail={"error": "kosztorys_anomaly_failed", "message": "Błąd wykrywania anomalii kosztorysu."},
-        )
-
-
-@router.post("/win-probability")
-def api_win_probability(req: WinProbRequest) -> dict:
-    """Szacuj P(win) dla naszej ceny ofertowej.
-
-    Quantile model z market_results (2504 realnych wyników).
-    Zwraca: p_win, sweet_spot, rekomendacja korekty ceny.
-    """
-    try:
-        bi = _bi()
-        return bi["estimate_win_probability"](
-            req.our_price, req.estimated_value, req.cpv_prefix,
-            req.province, req.n_competitors,
-        )
-    except Exception as e:
-        import logging as _log
-        _log.getLogger(__name__).exception("Win probability estimation failed")
-        raise HTTPException(
-            status_code=500,
-            detail={"error": "win_prob_failed", "message": "Błąd szacowania prawdopodobieństwa wygranej."},
-        )
-
-
-# ─── S48: ML Win Probability per tender_id ─────────────────────────────────────
-
-from sqlalchemy import text as _sa_text
-from terra_db.session import get_engine as _get_engine
-
-
-@router.get("/win-prob/{tender_id}")
-def get_win_prob_ml(tender_id: str, user: AuthUser) -> dict:
-    """S48: Probabilistyczna ocena szansy wygranej dla przetargu (ML model)."""
-    tenant_id = user.org_id if user else None
-    try:
-        from ..intelligence.win_prob_ml import predict_win_prob
-        engine = _get_engine()
-        with engine.connect() as conn:
-            prob = predict_win_prob(tender_id, tenant_id, conn)
-        return {
-            "tender_id": tender_id,
-            "win_probability": prob,
-            "model": "logistic_regression",
-        }
-    except Exception as e:
-        import logging as _log
-        _log.getLogger(__name__).exception("ML win-prob prediction failed for tender=%s", tender_id)
-        raise HTTPException(
-            status_code=500,
-            detail={"error": "win_prob_ml_failed", "message": "Błąd modelu ML predykcji wygranej."},
-        )
-
-
-# ─── Agent Brief proxy — /api/v2/intelligence/agent/brief ─────────────────────
-
-@router.get("/agent/brief")
-def get_agent_brief_by_query(tender_id: str = Query(...)) -> dict:
-    """Proxy to agent_pipeline brief: GET /api/v2/intelligence/agent/brief?tender_id=<id>.
-
-    Delegates to agent_run table — same logic as /api/v2/agent/brief/{tender_id}.
-    """
-    import logging as _log
-    try:
-        from sqlalchemy import text as _text
-        engine = _get_engine()
-        with engine.connect() as conn:
-            row = conn.execute(_text("""
-                SELECT id, output, finished_at FROM agent_run
-                WHERE status='succeeded'
-                  AND input::jsonb->>'tender_id' = :tid
-                ORDER BY finished_at DESC LIMIT 1
-            """), {"tid": tender_id}).fetchone()
-
-        if not row:
-            return {"tender_id": tender_id, "brief": None, "status": "not_found"}
-
-        output = row[1] if isinstance(row[1], dict) else {}
-        return {
-            "tender_id": tender_id,
-            "agent_run_id": str(row[0]),
-            "brief": output.get("brief"),
-            "go_decision": output.get("go_decision"),
-            "finished_at": str(row[2]) if row[2] else None,
-            "status": "ok",
-        }
-    except Exception as e:
-        _log.getLogger(__name__).exception("Agent brief query failed for tender=%s", tender_id)
-        raise HTTPException(
-            status_code=500,
-            detail={"error": "agent_brief_failed", "message": "Błąd pobierania briefu agenta."},
-        )
+@router.get("/seasonality/{cpv_prefix}")
+async def seasonality(cpv_prefix: str, _user=Depends(get_current_user)):
+    """Monthly distribution of tenders for CPV segment."""
+    from ..intelligence.historical_intelligence import _seasonality
+    from terra_db.session import get_engine
+    engine = get_engine()
+    result = _seasonality(engine, cpv_prefix)
+    return result

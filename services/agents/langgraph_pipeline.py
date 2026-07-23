@@ -200,6 +200,23 @@ def node_analyze_swz(state: AgentState) -> AgentState:
             raw_txt = json.dumps(raw, ensure_ascii=False)[:2000]
             ctx_parts.append(f"\nRaw data: {raw_txt}")
 
+    # ── Historical Intelligence (benchmark z 1.4M przetargów) ──
+    try:
+        from services.api.services.api.intelligence.historical_intelligence import enrich_tender_analysis
+        hist_ctx = enrich_tender_analysis(
+            tender_id=tender_id,
+            title=tender_data.get("title", ""),
+            cpv_code=(tender_data.get("cpv") or [""])[0] if isinstance(tender_data.get("cpv"), list) else tender_data.get("cpv"),
+            province=tender_data.get("province"),
+            estimated_value=tender_data.get("value_pln"),
+            buyer=tender_data.get("buyer"),
+        )
+        if hist_ctx:
+            ctx_parts.append(f"\n{hist_ctx}")
+            logger.info("source=langgraph node=analyze_swz historical_intelligence=injected")
+    except Exception as hist_exc:
+        logger.debug("source=langgraph node=analyze_swz historical_intelligence skip: %s", hist_exc)
+
     context_str = "\n".join(ctx_parts)
 
     system = (
