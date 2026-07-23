@@ -168,15 +168,26 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const isAuth      = !!(user && accessToken);
 
   // Wait for Zustand persist rehydration before redirecting
-  // Merged: hydration + auth redirect in one effect (avoids effect chain)
   const [hydrated, setHydrated] = useState(false);
   const [mobileOpen,  setMobileOpen]  = useState(false);
   const [collapsed,   setCollapsed]   = useState(false);
 
   useEffect(() => {
-    setHydrated(true);
-    if (!isAuth) router.replace('/login');
-  }, [isAuth, router]);
+    // Zustand persist rehydrates LS synchronously but React state updates async.
+    // Subscribe to onFinishHydration to know when store values are ready.
+    const unsub = useStore.persist.onFinishHydration(() => {
+      setHydrated(true);
+    });
+    // If already hydrated (e.g. fast re-mount)
+    if (useStore.persist.hasHydrated()) {
+      setHydrated(true);
+    }
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    if (hydrated && !isAuth) router.replace('/login');
+  }, [hydrated, isAuth, router]);
 
   // Close mobile sidebar on navigation
   useEffect(() => {
@@ -320,6 +331,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   );
 
   const sidebarWidth = collapsed ? '56px' : '240px';
+
+  // ── YU-NA Hub mode: /app exact → render children without BudOS shell ──
+  if (pathname === '/app') {
+    return <>{children}</>;
+  }
 
   return (
     <div className="min-h-screen flex" style={{ background: '#050508' }}>
