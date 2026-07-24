@@ -186,7 +186,7 @@ function ProfileTab({ authFetch }: { authFetch: ReturnType<typeof useAuthFetch> 
           {([['kp_pct','KP %'],['kz_pct','KZ %'],['zysk_pct','Zysk %'],['robocizna_zl_rg','Robocizna (PLN/rg)']] as [string,string][]).map(([k,lbl]) => (
             <label key={k} className="space-y-1">
               <span className="text-slate-500 text-xs">{lbl}</span>
-              <input className="input-dark w-full text-sm" type="number" step="0.1" value={rc[k] ?? ''} onChange={e => setRC(k, e.target.value)} />
+              <input className="input-dark w-full text-sm" type="number" step="0.1" value={(rc as Record<string,string>)[k] ?? ''} onChange={e => setRC(k, e.target.value)} />
             </label>
           ))}
         </div>

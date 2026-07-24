@@ -12,7 +12,7 @@ import {
   RotateCcw, SlidersHorizontal, Info, PanelRightOpen, PanelRightClose,
   BookOpen, CheckCircle2, Package, Database, Columns2, FileDown,
   BarChart2, Target, Shield, RefreshCw, Wrench, ChevronDown, ChevronUp, AlertTriangle,
-  Upload, Bot,
+  Upload, Bot, Sparkles,
 } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { useAuthFetch } from '@/lib/api-v2';
@@ -734,6 +734,7 @@ export function KosztorysPage() {
   const [kosztLoading, setKosztLoading] = useState(false);
   const [narzuty, setNarzuty] = useState<Narzuty>({ ...DEFAULT_NARZUTY });
   const [showNarzuty, setShowNarzuty] = useState(false);
+  const [kbFilling, setKbFilling] = useState(false);
 
   // ── Tabs ───────────────────────────────────────────────────────────────────
   const [activeKTab, setActiveKTab] = useState<'pozycje' | 'ryzyko' | 'prognoza'>('pozycje');
@@ -1170,6 +1171,32 @@ export function KosztorysPage() {
     }
   }
 
+  // ── KB Fill — zastosuj narzuty z Bazy Wiedzy Firmy ────────────────────────
+  async function applyKbFill() {
+    if (!kosztorysId) {
+      showToast('error', 'Najpierw wybierz kosztorys');
+      return;
+    }
+    setKbFilling(true);
+    try {
+      const result = await authFetch(`/api/v2/estimates/${kosztorysId}/kb-fill`, {
+        method: 'POST',
+      }) as { kb_fill?: { applied_from_kb: boolean; message: string; narzuty_applied?: Narzuty }; narzuty?: Narzuty };
+
+      if (result?.narzuty) setNarzuty(result.narzuty as Narzuty);
+      if (result?.kb_fill?.narzuty_applied) setNarzuty(result.kb_fill.narzuty_applied);
+      await loadPozycje(kosztorysId);
+
+      const msg = result?.kb_fill?.message || 'Narzuty zaktualizowane z KB';
+      const wasApplied = result?.kb_fill?.applied_from_kb ?? false;
+      showToast(wasApplied ? 'success' : 'info', msg);
+    } catch (err) {
+      showToast('error', (err as Error).message || 'Błąd KB Fill');
+    } finally {
+      setKbFilling(false);
+    }
+  }
+
   // ── Header actions ─────────────────────────────────────────────────────────
   const headerActions = (
     <>
@@ -1183,6 +1210,18 @@ export function KosztorysPage() {
       >
         <Database className="w-3.5 h-3.5" />
         ICB
+      </button>
+      <button type="button"
+        onClick={applyKbFill}
+        disabled={kbFilling || !kosztorysId}
+        title="Zastosuj narzuty z Bazy Wiedzy Firmy"
+        className="btn-secondary flex items-center gap-1.5 text-xs disabled:opacity-40"
+      >
+        {kbFilling
+          ? <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+          : <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+        }
+        Mózg firmy
       </button>
       <button type="button"
         onClick={() => setShowNarzuty(true)}

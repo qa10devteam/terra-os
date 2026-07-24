@@ -787,6 +787,7 @@ interface Step3Props {
   setData: React.Dispatch<React.SetStateAction<FinalizacjaData>>;
   grossTotal: number;
   saving: boolean;
+  kbFilled?: boolean;
   onSaveDraft: () => void;
   onGeneratePDF: () => void;
   onBack: () => void;
@@ -797,6 +798,7 @@ function Step3Finalizacja({
   setData,
   grossTotal,
   saving,
+  kbFilled,
   onSaveDraft,
   onGeneratePDF,
   onBack,
@@ -827,6 +829,12 @@ function Step3Finalizacja({
           <span className="section-label">
             Dane wykonawcy
           </span>
+          {kbFilled && (
+            <span className="ml-auto flex items-center gap-1 text-[10px] font-semibold uppercase tracking-widest text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-full px-2 py-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
+              z Bazy Wiedzy
+            </span>
+          )}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="sm:col-span-2">
@@ -1071,6 +1079,22 @@ export function OfertaPage() {
   });
   const [saving, setSaving] = useState(false);
 
+  // KB — Baza Wiedzy Firmy (auto-load przy montowaniu)
+  const [kbProfile, setKbProfile] = useState<{ company_name?: string; nip?: string; address_full?: string } | null>(null);
+  const [kbLoaded, setKbLoaded] = useState(false);
+
+  useEffect(() => {
+    authFetch('/api/v2/company/profile')
+      .then((d: unknown) => {
+        const data = d as { company_name?: string; nip?: string; address_full?: string } | null;
+        if (data?.company_name) {
+          setKbProfile(data);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setKbLoaded(true));
+  }, [authFetch]);
+
   // ── Derived ────────────────────────────────────────────────────────────────
   const netTotal = items.reduce((s, it) => s + it.quantity * it.unit_price, 0);
   const grossTotal = netTotal * (1 + vatPct / 100);
@@ -1130,9 +1154,10 @@ export function OfertaPage() {
     setItems([]);
     setVatPct(23);
     setFinData({
-      name: '',
-      nip: '',
-      address: '',
+      // Auto-uzupełnij z KB jeśli dostępne
+      name: kbProfile?.company_name || '',
+      nip: kbProfile?.nip || '',
+      address: kbProfile?.address_full || '',
       delivery_days: 90,
       warranty_months: 36,
       payment_terms: PAYMENT_TERMS_OPTIONS[0],
@@ -1566,6 +1591,7 @@ export function OfertaPage() {
                           setData={setFinData}
                           grossTotal={grossTotal}
                           saving={saving}
+                          kbFilled={kbLoaded && !!kbProfile && !editingOfferId && !!finData.name}
                           onSaveDraft={saveDraft}
                           onGeneratePDF={generatePDF}
                           onBack={() => setWizardStep(1)}

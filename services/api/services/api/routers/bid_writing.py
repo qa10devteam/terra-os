@@ -42,12 +42,14 @@ MODEL_ID = os.getenv("BEDROCK_MODEL_ID", "eu.anthropic.claude-sonnet-4-20250514-
 
 class BidWritingRequest(BaseModel):
     tender_id: str = Field(..., description="UUID przetargu")
-    company_name: str = Field(..., description="Nazwa firmy")
-    company_nip: str = Field(..., description="NIP firmy")
-    company_description: str = Field("", description="Opis firmy, doświadczenie")
-    key_projects: list[str] = Field(default_factory=list, description="Lista kluczowych realizacji")
-    certifications: list[str] = Field(default_factory=list, description="Certyfikaty, uprawnienia")
+    # Pola opcjonalne — jeśli puste, system pobiera z Bazy Wiedzy Firmy automatycznie
+    company_name: str = Field("", description="Nazwa firmy (opcjonalne — domyślnie z KB)")
+    company_nip: str = Field("", description="NIP firmy (opcjonalne — domyślnie z KB)")
+    company_description: str = Field("", description="Opis firmy (opcjonalne — domyślnie z KB)")
+    key_projects: list[str] = Field(default_factory=list, description="Kluczowe realizacje (opcjonalne — domyślnie z KB)")
+    certifications: list[str] = Field(default_factory=list, description="Certyfikaty (opcjonalne — domyślnie z KB)")
     tone: str = Field("professional", description="Tonacja: professional | technical | concise")
+    use_kb: bool = Field(True, description="Czy wczytać dane z Bazy Wiedzy Firmy (domyślnie: tak)")
 
 
 class BidWritingSections(BaseModel):
@@ -131,6 +133,171 @@ Wygeneruj 5 sekcji oferty. Zwróć WYŁĄCZNIE JSON:
 
 
 # ─── DB helpers ───────────────────────────────────────────────────────────────
+
+
+def _fetch_company_kb(tenant_id: str) -> dict:
+    """Pobiera pełny profil firmy + referencje + historię ofert z Bazy Wiedzy Firmy."""
+    engine = get_engine()
+    profile: dict = {}
+    references: list[dict] = []
+    bid_stats: dict = {}
+    company_rates: list[dict] = []
+
+    with engine.connect() as conn:
+        # Profil firmy
+        try:
+            row = conn.execute(
+                text("""
+                    SELECT company_name, nip, regon, krs, certifications,
+                           specialization_md, references_md, rate_card,
+                           cpv_preferred, contact_person, employees_count, founded_year
+                    FROM owner_profile WHERE tenant_id = :tid LIMIT 1
+                """),
+                {"tid": tenant_id},
+            ).fetchone()
+            if row:
+                profile = {
+                    "company_name": row[0] or "",
+                    "nip": row[1] or "",
+                    "regon": row[2] or "",
+                    "krs": row[3] or "",
+                    "certifications": row[4] or [],
+                    "specialization_md": row[5] or "",
+                    "references_md": row[6] or "",
+                    "rate_card": row[7] or {},
+                    "cpv_preferred": row[8] or [],
+                    "contact_person": row[9] or "",
+                    "employees_count": row[10],
+                    "founded_year": row[11],
+                }
+        except Exception as exc:
+            logger.warning("Błąd pobierania owner_profile: %s", exc)
+
+        # Referencje projektów z nowej tabeli
+        try:
+            rows = conn.execute(
+                text("""
+                    SELECT nazwa, inwestor, rok_realizacji, wartosc_pln, zakres_md, cpv_codes
+                    FROM company_references
+                    WHERE tenant_id = :tid
+                    ORDER BY rok_realizacji DESC NULLS LAST
+                    LIMIT 10
+                """),
+                {"tid": tenant_id},
+            ).fetchall()
+            for r in rows:
+                references.append({
+                    "nazwa": r[0] or "",
+                    "inwestor": r[1] or "",
+                    "rok": r[2],
+                    "wartosc_pln": float(r[3]) if r[3] else None,
+                    "zakres": r[4] or "",
+                    "cpv": r[5] or [],
+                })
+        except Exception as exc:
+            logger.warning("Błąd pobierania company_references: %s", exc)
+
+        # Statystyki historii ofert
+        try:
+            row = conn.execute(
+                text("""
+                    SELECT COUNT(*) as total,
+                           SUM(CASE WHEN won THEN 1 ELSE 0 END) as wins,
+                           AVG(markup_pct) as avg_markup,
+                           AVG(CASE WHEN winning_price > 0
+                               THEN our_price / winning_price ELSE NULL END) as price_ratio
+                    FROM historical_bids WHERE tenant_id = :tid
+                """),
+                {"tid": tenant_id},
+            ).fetchone()
+            if row and row[0]:
+                bid_stats = {
+                    "total": row[0],
+                    "wins": row[1] or 0,
+                    "win_rate_pct": round(((row[1] or 0) / row[0]) * 100, 1),
+                    "avg_markup_pct": round(float(row[2]), 1) if row[2] else None,
+                    "avg_price_ratio": round(float(row[3]), 3) if row[3] else None,
+                }
+        except Exception as exc:
+            logger.warning("Błąd pobierania bid stats: %s", exc)
+
+        # Własne stawki robocizny
+        try:
+            rows = conn.execute(
+                text("""
+                    SELECT nazwa, jednostka, cena_netto, kategoria
+                    FROM company_rates_import
+                    WHERE tenant_id = :tid
+                    ORDER BY created_at DESC
+                    LIMIT 20
+                """),
+                {"tid": tenant_id},
+            ).fetchall()
+            for r in rows:
+                company_rates.append({
+                    "nazwa": r[0] or "",
+                    "jednostka": r[1] or "",
+                    "cena_netto": float(r[2]) if r[2] else None,
+                    "kategoria": r[3] or "",
+                })
+        except Exception as exc:
+            logger.warning("Błąd pobierania company_rates: %s", exc)
+
+    return {
+        "profile": profile,
+        "references": references,
+        "bid_stats": bid_stats,
+        "company_rates": company_rates,
+    }
+
+
+def _kb_to_prompt_block(kb: dict) -> str:
+    """Buduje blok tekstowy z danych KB do wstrzyknięcia do prompta AI."""
+    lines = []
+    prof = kb.get("profile", {})
+    refs = kb.get("references", [])
+    stats = kb.get("bid_stats", {})
+
+    if prof.get("specialization_md"):
+        lines.append(f"Specjalizacja firmy:\n{prof['specialization_md'][:800]}")
+
+    if refs:
+        lines.append(f"\nZrealizowane projekty ({len(refs)}):")
+        for ref in refs[:6]:
+            val = f"{ref['wartosc_pln']:,.0f} PLN" if ref.get("wartosc_pln") else "n/d"
+            lines.append(
+                f"  - {ref['nazwa']} | {ref.get('inwestor','')} | {ref.get('rok','')} | {val}\n"
+                f"    {ref.get('zakres','')[:200]}"
+            )
+
+    if prof.get("references_md"):
+        lines.append(f"\nDodatkowe referencje:\n{prof['references_md'][:600]}")
+
+    if prof.get("certifications"):
+        certs = prof["certifications"]
+        if isinstance(certs, list):
+            lines.append(f"\nCertyfikaty i uprawnienia: {', '.join(str(c) for c in certs[:8])}")
+        elif isinstance(certs, str):
+            lines.append(f"\nCertyfikaty i uprawnienia: {certs[:300]}")
+
+    if stats:
+        lines.append(
+            f"\nHistoria przetargów: {stats.get('total', 0)} złożonych ofert, "
+            f"win-rate {stats.get('win_rate_pct', 0)}%, "
+            f"średni narzut {stats.get('avg_markup_pct', 'n/d')}%"
+        )
+        if stats.get("avg_price_ratio"):
+            direction = "powyżej" if stats["avg_price_ratio"] > 1.0 else "poniżej"
+            lines.append(
+                f"Nasze ceny średnio {stats['avg_price_ratio']}× względem wygrywającej ({direction} rynku)"
+            )
+
+    if prof.get("employees_count"):
+        lines.append(f"Zatrudnienie: {prof['employees_count']} pracowników")
+    if prof.get("founded_year"):
+        lines.append(f"Rok założenia: {prof['founded_year']}")
+
+    return "\n".join(lines)
 
 
 def _fetch_tender_data(tenant_id: str, tender_id: str) -> dict | None:
@@ -362,9 +529,30 @@ async def generate_bid_writing(
     if swz_chunks:
         description = f"{description}\n\nFragmenty SWZ:\n{swz_chunks}"
 
-    # 3. Pobierz historyczny kontekst
+    # 3. Pobierz historyczny kontekst rynkowy
     cpv_prefix = (cpv_main or "")[:8]
     historical_context = _fetch_historical_context(cpv_prefix)
+
+    # 3b. Pobierz Bazę Wiedzy Firmy — auto-load profilu, referencji, historii
+    kb = _fetch_company_kb(tenant_id) if req.use_kb else {}
+    kb_block = _kb_to_prompt_block(kb) if kb else ""
+    kb_profile = kb.get("profile", {})
+
+    # Merge: KB ma priorytet nad req jeśli req jest puste
+    company_name = req.company_name or kb_profile.get("company_name", "")
+    company_nip = req.company_nip or kb_profile.get("nip", "")
+    company_description = req.company_description or kb_profile.get("specialization_md", "")
+    key_projects = req.key_projects or [r["nazwa"] for r in kb.get("references", [])[:5]]
+    certifications_raw = kb_profile.get("certifications", [])
+    if isinstance(certifications_raw, list):
+        kb_certs = [str(c) for c in certifications_raw]
+    else:
+        kb_certs = [str(certifications_raw)] if certifications_raw else []
+    certifications = req.certifications or kb_certs
+
+    # Jeśli mamy pełny blok KB, wstrzyknij do opisu
+    if kb_block:
+        description = f"{description}\n\n--- BAZA WIEDZY FIRMY ---\n{kb_block}"
 
     # 4. Zbuduj prompt i wywołaj Bedrock
     source = "ai"
@@ -376,11 +564,11 @@ async def generate_bid_writing(
         cpv_main=cpv_main,
         estimated_value=estimated_value,
         description=description,
-        company_name=req.company_name,
-        company_nip=req.company_nip,
-        company_description=req.company_description,
-        key_projects=req.key_projects,
-        certifications=req.certifications,
+        company_name=company_name,
+        company_nip=company_nip,
+        company_description=company_description,
+        key_projects=key_projects,
+        certifications=certifications,
         historical_context=historical_context,
         cpv_prefix=cpv_prefix,
     )
@@ -398,10 +586,10 @@ async def generate_bid_writing(
             tender_title=tender_title,
             buyer=buyer,
             cpv_main=cpv_main,
-            company_name=req.company_name,
-            company_description=req.company_description,
-            key_projects=req.key_projects,
-            certifications=req.certifications,
+            company_name=company_name,
+            company_description=company_description,
+            key_projects=key_projects,
+            certifications=certifications,
         )
 
     # 5. Zbuduj obiekt sekcji

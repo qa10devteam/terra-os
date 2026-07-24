@@ -281,6 +281,75 @@ def _default_icb_lines(area_m2: float | None) -> list[dict]:
     ]
 
 
+def _custom_rate_lines(conn, tenant_id: str, area_m2: float | None) -> list[dict]:
+    """Generuje linie kosztorysu z własnych stawek firmy (company_rates_import + rate_card)."""
+    area = area_m2 or 1.0
+    lines = []
+
+    # Próba 1: tabela company_rates_import (zaimportowane z excela)
+    try:
+        rows = conn.execute(sa.text("""
+            SELECT nazwa, jednostka, cena_netto, kategoria
+            FROM company_rates_import
+            WHERE tenant_id = :tid
+              AND cena_netto IS NOT NULL AND cena_netto > 0
+            ORDER BY kategoria, nazwa
+            LIMIT 20
+        """), {"tid": tenant_id}).fetchall()
+
+        if rows:
+            for i, r in enumerate(rows, 1):
+                cena = float(r.cena_netto)
+                # Kategoryzuj jako R/M/S na podstawie kategorii
+                kat = (r.kategoria or "").lower()
+                r_jcena = cena if "robocizna" in kat or "praca" in kat or "r" == kat else 0.0
+                m_jcena = cena if "material" in kat or "mat" in kat or "m" == kat else 0.0
+                s_jcena = cena if "sprzet" in kat or "sprz" in kat or "s" == kat else 0.0
+                # Jeśli żadna kategoria — przypisz do robocizny
+                if r_jcena == 0 and m_jcena == 0 and s_jcena == 0:
+                    r_jcena = cena
+
+                lines.append({
+                    "kst_code": f"FIRMA-{i:03d}",
+                    "opis": r.nazwa or f"Pozycja własna {i}",
+                    "jednostka": r.jednostka or "szt.",
+                    "ilosc": area,
+                    "r_jcena": r_jcena,
+                    "m_jcena": m_jcena,
+                    "s_jcena": s_jcena,
+                })
+            return lines
+    except Exception as exc:
+        logger.warning("Błąd _custom_rate_lines company_rates_import: %s", exc)
+
+    # Próba 2: rate_card z owner_profile (jsonb)
+    try:
+        row = conn.execute(sa.text("""
+            SELECT rate_card FROM owner_profile WHERE tenant_id = :tid LIMIT 1
+        """), {"tid": tenant_id}).fetchone()
+        if row and row[0]:
+            rc = row[0] if isinstance(row[0], dict) else json.loads(row[0])
+            # Typowy format rate_card: {"pozycja": {"r": x, "m": x, "s": x, "jm": "m2"}}
+            for i, (nazwa, vals) in enumerate(rc.items(), 1):
+                if isinstance(vals, dict):
+                    lines.append({
+                        "kst_code": f"RC-{i:03d}",
+                        "opis": nazwa,
+                        "jednostka": vals.get("jm", "m2"),
+                        "ilosc": area,
+                        "r_jcena": float(vals.get("r", vals.get("robocizna", 0))),
+                        "m_jcena": float(vals.get("m", vals.get("material", 0))),
+                        "s_jcena": float(vals.get("s", vals.get("sprzet", 0))),
+                    })
+            if lines:
+                return lines
+    except Exception as exc:
+        logger.warning("Błąd _custom_rate_lines rate_card: %s", exc)
+
+    # Fallback do ICB gdy brak własnych stawek
+    return _default_icb_lines(area_m2)
+
+
 # ─── Endpoints ────────────────────────────────────────────────────────────────
 
 @router.get("")
@@ -366,6 +435,11 @@ def create_estimate(body: EstimateCreate, user: AuthUser) -> dict:
         with engine.connect() as read_conn:
             auto_lines = _icb_autofill_lines(read_conn, cpv_prefix, body.area_m2)
 
+    elif variant == "custom":
+        # Custom variant: załaduj własne stawki firmy z rate_card (owner_profile)
+        with engine.connect() as read_conn:
+            auto_lines = _custom_rate_lines(read_conn, tenant_id, body.area_m2)
+
     narzuty = body.narzuty.model_dump()
     nazwa = body.nazwa or (f"{tender.title[:80]} [{variant.upper()}]" if tender.title else f"Kosztorys {variant.upper()}")
 
@@ -388,8 +462,8 @@ def create_estimate(body: EstimateCreate, user: AuthUser) -> dict:
             "params": json.dumps({}),
         })
 
-        # ICB variant: insert auto-generated lines
-        if variant == "icb" and auto_lines:
+        # ICB / Custom variant: insert auto-generated lines
+        if variant in ("icb", "custom") and auto_lines:
             for i, ln in enumerate(auto_lines, 1):
                 calc = _calc_line(ln["r_jcena"], ln["m_jcena"], ln["s_jcena"], narzuty, ln["ilosc"])
                 conn.execute(sa.text("""
@@ -772,3 +846,82 @@ def _recalc_sums(estimate_id: str, tenant_id: str, engine, narzuty: dict) -> Non
             "sko": sums["suma_ko"], "sz": sums["suma_z"], "skz": sums["suma_kz"],
             "sn": sums["suma_netto"], "sb": sums["suma_brutto"],
         })
+
+
+@router.post("/{estimate_id}/kb-fill", status_code=200)
+def kb_fill_estimate(estimate_id: str, user: AuthUser) -> dict:
+    """Uzupełnij istniejący kosztorys stawkami z Bazy Wiedzy Firmy.
+    
+    Ładuje narzuty z rate_card (KP%, KZ%, zysk%) oraz przelicza
+    istniejące pozycje używając aktualnych stawek firmy.
+    Nie usuwa ręcznie dodanych pozycji — tylko przelicza wartości.
+    """
+    tenant_id = _get_tenant(user)
+    engine = get_engine()
+
+    with engine.connect() as conn:
+        # Sprawdź czy estimate istnieje
+        est = conn.execute(
+            sa.text("SELECT id, ko_r_pct, ko_s_pct, z_pct, kz_pct, vat_pct FROM estimate WHERE id=:id AND tenant_id=:tid"),
+            {"id": estimate_id, "tid": tenant_id},
+        ).fetchone()
+        if not est:
+            raise HTTPException(404, {"error": "not_found"})
+
+        # Pobierz rate_card z owner_profile
+        rate_row = conn.execute(
+            sa.text("SELECT rate_card FROM owner_profile WHERE tenant_id=:tid LIMIT 1"),
+            {"tid": tenant_id},
+        ).fetchone()
+
+    rate_card = {}
+    if rate_row and rate_row[0]:
+        rc = rate_row[0] if isinstance(rate_row[0], dict) else json.loads(rate_row[0])
+        # Wyodrębnij narzuty jeśli są w rate_card
+        narzuty_rc = rc.get("narzuty", rc.get("overhead", {}))
+        if isinstance(narzuty_rc, dict):
+            rate_card = narzuty_rc
+
+    # Zbuduj nowe narzuty: KB ma priorytet, fallback do obecnych wartości
+    new_narzuty = {
+        "ko_r_pct": float(rate_card.get("kp_r", rate_card.get("ko_r", est.ko_r_pct or 65))),
+        "ko_s_pct": float(rate_card.get("kp_s", rate_card.get("ko_s", est.ko_s_pct or 30))),
+        "z_pct":    float(rate_card.get("zysk", rate_card.get("z",    est.z_pct or 10))),
+        "kz_pct":   float(rate_card.get("kz",   est.kz_pct or 2)),
+        "vat_pct":  float(rate_card.get("vat",  est.vat_pct or 23)),
+    }
+
+    applied_from_kb = bool(rate_card)
+
+    # Zaktualizuj narzuty w estimate
+    with engine.begin() as conn:
+        conn.execute(sa.text("""
+            UPDATE estimate SET
+                ko_r_pct=:ko_r, ko_s_pct=:ko_s, z_pct=:z, kz_pct=:kz, vat_pct=:vat
+            WHERE id=:id
+        """), {
+            "id": estimate_id,
+            "ko_r": new_narzuty["ko_r_pct"], "ko_s": new_narzuty["ko_s_pct"],
+            "z": new_narzuty["z_pct"], "kz": new_narzuty["kz_pct"], "vat": new_narzuty["vat_pct"],
+        })
+
+    # Przelicz sumy z nowymi narzutami
+    _recalc_sums(estimate_id, tenant_id, engine, new_narzuty)
+
+    with engine.connect() as conn:
+        row = conn.execute(
+            sa.text("SELECT * FROM estimate WHERE id=:id"), {"id": estimate_id}
+        ).fetchone()
+        lines = _fetch_lines(conn, estimate_id, tenant_id, new_narzuty)
+
+    result = _row_to_estimate(row, lines, new_narzuty)
+    result["kb_fill"] = {
+        "applied_from_kb": applied_from_kb,
+        "narzuty_applied": new_narzuty,
+        "message": (
+            "Narzuty zaktualizowane z Bazy Wiedzy Firmy" if applied_from_kb
+            else "Brak rate_card w KB — zachowano obecne narzuty"
+        ),
+    }
+    return result
+

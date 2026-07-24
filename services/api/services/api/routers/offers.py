@@ -178,7 +178,7 @@ def list_offers(
 
 @router.post("", status_code=201)
 def create_offer(body: OfferCreate, user: AuthUser) -> dict:
-    """Utwórz nową ofertę."""
+    """Utwórz nową ofertę. Jeśli contractor_name/nip są puste — uzupełnia z Bazy Wiedzy Firmy."""
     tenant_id = user.org_id
     if not tenant_id:
         raise HTTPException(status_code=403, detail={"error": "no_tenant", "message": "Brak tenant_id w tokenie"})
@@ -189,6 +189,26 @@ def create_offer(body: OfferCreate, user: AuthUser) -> dict:
         raise HTTPException(status_code=422, detail={"error": "invalid_source", "message": f"Nieprawidłowe źródło: {body.source}. Dozwolone: {sorted(VALID_SOURCES)}"})
 
     engine = get_engine()
+
+    # Auto-uzupełnij dane firmy z KB jeśli puste
+    contractor_name = body.contractor_name
+    contractor_nip = body.contractor_nip
+    contractor_address = body.contractor_address
+
+    if not contractor_name or not contractor_nip:
+        try:
+            with engine.connect() as conn:
+                kb_row = conn.execute(
+                    sa.text("SELECT company_name, nip, address_full FROM owner_profile WHERE tenant_id=:tid LIMIT 1"),
+                    {"tid": tenant_id},
+                ).fetchone()
+                if kb_row:
+                    contractor_name = contractor_name or (kb_row[0] or "")
+                    contractor_nip = contractor_nip or (kb_row[1] or "")
+                    contractor_address = contractor_address or (kb_row[2] or "")
+        except Exception:
+            pass  # graceful — tabela może nie mieć wszystkich kolumn
+
     with engine.begin() as conn:
         row = conn.execute(
             sa.text("""
@@ -212,9 +232,9 @@ def create_offer(body: OfferCreate, user: AuthUser) -> dict:
                 "title": body.title,
                 "status": body.status,
                 "source": body.source,
-                "contractor_name": body.contractor_name,
-                "contractor_nip": body.contractor_nip,
-                "contractor_address": body.contractor_address,
+                "contractor_name": contractor_name,
+                "contractor_nip": contractor_nip,
+                "contractor_address": contractor_address,
                 "delivery_days": body.delivery_days,
                 "warranty_months": body.warranty_months,
                 "payment_terms": body.payment_terms,
