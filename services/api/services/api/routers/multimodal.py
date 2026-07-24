@@ -40,13 +40,20 @@ async def upload_document(
     user: AuthUser,
     file: UploadFile = File(...),
     tender_id: Optional[str] = None,
+    tender_id_form: Optional[str] = None,
 ) -> dict[str, Any]:
-    """Upload a PDF document for processing."""
-    if not file.filename or not file.filename.lower().endswith('.pdf'):
-        raise HTTPException(400, "Only PDF files are supported")
+    """Upload a PDF document for processing. tender_id is optional."""
+    # Accept PDF, DOCX, XLSX, ZIP
+    fname = (file.filename or "upload").lower()
+    allowed_exts = (".pdf", ".docx", ".xlsx", ".zip")
+    if not any(fname.endswith(e) for e in allowed_exts):
+        raise HTTPException(400, f"Only PDF/DOCX/XLSX/ZIP files are supported")
 
     doc_id = str(uuid.uuid4())
-    file_path = UPLOAD_DIR / f"{doc_id}.pdf"
+    # Zachowaj oryginalne rozszerzenie (nie zawsze .pdf)
+    from pathlib import Path as _Path
+    _ext = _Path(file.filename or "upload").suffix.lower() or ".pdf"
+    file_path = UPLOAD_DIR / f"{doc_id}{_ext}"
 
     content = await file.read()
     if len(content) > 50 * 1024 * 1024:  # 50MB limit
@@ -169,6 +176,9 @@ async def analyze_document(doc_id: str, user: AuthUser) -> dict[str, Any]:
     return {
         "document_id": doc_id,
         "status": "analyzed",
+        "has_text": bool(extracted_text),
+        "has_analysis": True,
+        "has_estimate": False,
         "pages": page_count,
         "text_chars": len(extracted_text),
         "elements": elements_found[:20],
@@ -232,9 +242,11 @@ def get_cost_estimate(doc_id: str, user: AuthUser) -> dict[str, Any]:
 
     # If estimate already cached, return it
     if row[1]:
-        return json.loads(row[1])
+        cached = row[1] if isinstance(row[1], dict) else json.loads(row[1])
+        return cached
 
-    analysis = json.loads(row[0])
+    # analysis_result może być dict (jsonb z SQLAlchemy) lub str (legacy)
+    analysis = row[0] if isinstance(row[0], dict) else json.loads(row[0])
     categories = analysis.get("categories_detected", [])
 
     # Map detected categories to ICB categories and fetch prices
@@ -256,21 +268,15 @@ def get_cost_estimate(doc_id: str, user: AuthUser) -> dict[str, Any]:
 
     for cat in categories:
         icb_name = category_mapping.get(cat, cat)
-        
-        # Query ICB for price range
-        icb_row = conn.execute(sa.text("""
-            SELECT MIN(price) as min_price, MAX(price) as max_price, 
-                   AVG(price) as avg_price, COUNT(*) as sample_count
-            FROM icb_price
-            WHERE category ILIKE '%' || :cat || '%'
-        """), {"cat": icb_name}).fetchone() if True else None
-        
+
+        # Query ICB — tabela icb_ceny_srednie (cena_netto, cena_narzut)
         with engine.connect() as conn2:
             icb_row = conn2.execute(sa.text("""
-                SELECT MIN(price) as min_price, MAX(price) as max_price, 
-                       AVG(price) as avg_price, COUNT(*) as sample_count
-                FROM icb_price
-                WHERE category ILIKE '%' || :cat || '%'
+                SELECT MIN(cena_netto) as min_price, MAX(cena_netto) as max_price,
+                       AVG(cena_netto) as avg_price, COUNT(*) as sample_count
+                FROM icb_ceny_srednie
+                WHERE nazwa ILIKE '%' || :cat || '%'
+                   OR category ILIKE '%' || :cat || '%'
             """), {"cat": icb_name}).fetchone()
 
         if icb_row and icb_row[3] and icb_row[3] > 0:

@@ -1,12 +1,13 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import { useAuthFetch } from '@/lib/api-v2';
+import { useStore } from '@/store/useStore';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { PageShell } from '@/components/PageShell';
 import { motion } from 'motion/react';
 import {
   Upload, FileText, FileSpreadsheet, Cpu, Calculator,
-  CheckCircle, AlertCircle, Loader2, CloudUpload,
+  CheckCircle, AlertCircle, Loader2, CloudUpload, Sparkles,
 } from 'lucide-react';
 
 interface Document {
@@ -75,6 +76,7 @@ function StatusBadge({ status }: { status: string }) {
 // ─── Component ────────────────────────────────────────────────────────────────
 export function DocumentsPage() {
   const authFetch = useAuthFetch();
+  const accessToken = useStore(s => s.accessToken);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [docsLoading, setDocsLoading] = useState(true);
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
@@ -129,18 +131,28 @@ export function DocumentsPage() {
   };
 
   const handleUpload = useCallback(async (file: File) => {
-    if (!file.name.toLowerCase().endsWith('.pdf')) return;
+    const allowed = ['.pdf', '.docx', '.xlsx', '.zip'];
+    const ext = '.' + (file.name.split('.').pop() ?? '').toLowerCase();
+    if (!allowed.includes(ext)) return;
     setUploading(true);
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const res = await fetch('/api/v2/documents/upload', { method: 'POST', body: formData });
+      // Multipart upload — nie można użyć authFetch (nadpisuje Content-Type na JSON)
+      // Pobieramy token z Zustand store bezpośrednio
+      const headers: Record<string, string> = {};
+      if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+      const res = await fetch('/api/v2/documents/upload', {
+        method: 'POST',
+        body: formData,
+        headers,
+      });
       if (res.ok) {
         const data = await res.json();
         const doc: Document = {
-          document_id: data.document_id,
+          document_id: data.document_id ?? data.id,
           filename: data.filename,
-          size_bytes: data.size_bytes,
+          size_bytes: data.size_bytes ?? 0,
           status: 'uploaded',
           has_text: false,
           has_analysis: false,
@@ -152,15 +164,25 @@ export function DocumentsPage() {
       }
     } catch {}
     setUploading(false);
-  }, []);
+  }, [accessToken]);
 
   const analyzeDoc = useCallback(async (docId: string) => {
     setAnalyzing(true);
+    // Optimistic update — pokaż status analyzing natychmiast
+    setSelectedDoc(prev => prev ? { ...prev, status: 'analyzing' } : prev);
+    setDocuments(prev => prev.map(d => d.document_id === docId ? { ...d, status: 'analyzing' } : d));
     try {
-      await authFetch(`/api/v2/documents/${docId}/analyze`, { method: 'POST' });
-      const updated = await authFetch(`/api/v2/documents/${docId}`);
-      setSelectedDoc(updated);
-      setDocuments(prev => prev.map(d => d.document_id === docId ? { ...d, ...updated } : d));
+      const res = await authFetch(`/api/v2/documents/${docId}/analyze`, { method: 'POST' });
+      // Odpowiedź z analyze już zawiera has_analysis, pages, etc.
+      const normalized: Partial<Document> = {
+        status: res.status ?? 'analyzed',
+        has_text: res.has_text ?? true,
+        has_analysis: res.has_analysis ?? true,
+        has_estimate: res.has_estimate ?? false,
+        pages: res.pages,
+      };
+      setSelectedDoc(prev => prev ? { ...prev, ...normalized } : prev);
+      setDocuments(prev => prev.map(d => d.document_id === docId ? { ...d, ...normalized } : d));
     } catch {}
     setAnalyzing(false);
   }, [authFetch]);
@@ -169,6 +191,9 @@ export function DocumentsPage() {
     try {
       const data = await authFetch(`/api/v2/documents/${docId}/estimate`);
       setEstimate(data);
+      // Oznacz dokument jako wyceniony
+      setSelectedDoc(prev => prev ? { ...prev, status: 'estimated', has_estimate: true } : prev);
+      setDocuments(prev => prev.map(d => d.document_id === docId ? { ...d, status: 'estimated', has_estimate: true } : d));
     } catch { setEstimate(null); }
   }, [authFetch]);
 
@@ -229,7 +254,7 @@ export function DocumentsPage() {
               </span>
               <input
                 type="file"
-                accept=".pdf,.docx,.xlsx"
+                accept=".pdf,.docx,.xlsx,.zip"
                 className="hidden"
                 onChange={e => { if (e.target.files?.[0]) handleUpload(e.target.files[0]); }}
               />
@@ -314,22 +339,26 @@ export function DocumentsPage() {
                   {formatSize(selectedDoc.size_bytes)} · przesłany {formatDate(selectedDoc.uploaded_at)}
                 </div>
 
-                {/* Pipeline steps */}
-                <div className="flex items-center gap-2 mt-5">
-                  {(['Upload', 'Analiza', 'Kosztorys'] as const).map((step, i) => {
-                    const done = i === 0
-                      || (i === 1 && selectedDoc.has_analysis)
-                      || (i === 2 && selectedDoc.has_estimate);
+                {/* Pipeline steps — Upload → Analiza → Kosztorys → Oferta */}
+                <div className="flex items-center gap-1.5 mt-5 overflow-x-auto pb-1">
+                  {([
+                    { label: 'Upload',    done: true },
+                    { label: 'Analiza',   done: selectedDoc.has_analysis },
+                    { label: 'Kosztorys', done: selectedDoc.has_estimate },
+                    { label: 'Oferta',    done: false },
+                  ] as const).map((step, i, arr) => {
                     return (
-                      <div key={step} className="flex items-center gap-2 flex-1">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                          done ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'
+                      <div key={step.label} className="flex items-center gap-1.5 flex-1 min-w-0">
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
+                          step.done ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'
                         }`}>
-                          {done ? <CheckCircle size={16} /> : <span className="text-xs">{i + 1}</span>}
+                          {step.done ? <CheckCircle size={14} /> : <span className="text-[11px]">{i + 1}</span>}
                         </div>
-                        <span className={`text-xs ${done ? 'text-emerald-400' : 'text-slate-500'}`}>{step}</span>
-                        {i < 2 && (
-                          <div className={`flex-1 h-0.5 ${done ? 'bg-emerald-500/30' : 'bg-slate-800'}`} />
+                        <span className={`text-[11px] truncate ${step.done ? 'text-emerald-400' : 'text-slate-500'}`}>
+                          {step.label}
+                        </span>
+                        {i < arr.length - 1 && (
+                          <div className={`flex-1 h-px min-w-[12px] ${step.done ? 'bg-emerald-500/30' : 'bg-slate-800'}`} />
                         )}
                       </div>
                     );
@@ -412,6 +441,23 @@ export function DocumentsPage() {
                     </div>
 
                     <p className="text-slate-600 text-xs mt-3 italic">{estimate.disclaimer}</p>
+
+                    {/* CTA: Utwórz ofertę na bazie kosztorysu */}
+                    <div className="mt-4 pt-4 border-t border-slate-800/60">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const url = selectedDoc?.document_id
+                            ? `/app/offers/new?source_doc=${selectedDoc.document_id}&estimate_mid=${estimate.total.mid_pln}`
+                            : '/app/offers/new';
+                          window.location.href = url;
+                        }}
+                        className="w-full px-4 py-3 bg-gradient-to-r from-emerald-600/20 to-indigo-600/20 hover:from-emerald-600/30 hover:to-indigo-600/30 text-slate-100 border border-emerald-500/25 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all duration-150"
+                      >
+                        <Sparkles size={15} className="text-emerald-400" />
+                        Utwórz ofertę z tego kosztorysu
+                      </button>
+                    </div>
                   </GlassCard>
                 </motion.div>
               )}
