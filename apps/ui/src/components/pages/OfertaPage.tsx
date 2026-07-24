@@ -1249,7 +1249,7 @@ export function OfertaPage() {
   const [offerTitle, setOfferTitle] = useState('');
 
   // Step 2
-  const [items, setItems] = useState<EditableItem[]>([]);\
+  const [items, setItems] = useState<EditableItem[]>([]);
   const [loadingItems, setLoadingItems] = useState(false);
   const [vatPct, setVatPct] = useState(23);
 

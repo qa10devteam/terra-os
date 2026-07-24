@@ -717,6 +717,14 @@ export function KosztorysPage() {
   const { accessToken } = useStore();
   const authFetch = useAuthFetch();
 
+  // ── KB status ───────────────────────────────────────────────────────────────
+  const [kbReady, setKbReady] = useState<boolean | null>(null);
+  useEffect(() => {
+    authFetch('/api/v2/company/profile')
+      .then((d: { company_name?: string }) => setKbReady(!!d?.company_name))
+      .catch(() => setKbReady(false));
+  }, [authFetch]);
+
   // ── Tender selector ────────────────────────────────────────────────────────
   const [tender, setTender] = useState<TenderItem | null>(null);
   const [tenders, setTenders] = useState<TenderItem[]>([]);
@@ -1242,6 +1250,18 @@ export function KosztorysPage() {
       noPadding={false}
     >
       <div className="flex gap-4 flex-1 min-h-0">
+        {/* KB setup banner */}
+        {kbReady === false && (
+          <div className="absolute top-0 left-0 right-0 z-20 mx-4 mt-2">
+            <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-indigo-950/80 border border-indigo-700/50 backdrop-blur-sm text-sm">
+              <Sparkles size={14} className="text-indigo-400 shrink-0" />
+              <span className="text-slate-300 flex-1">Skonfiguruj <strong className="text-indigo-300">Bazę Wiedzy firmy</strong> — AI będzie dobierać stawki i narzuty automatycznie.</span>
+              <a href="/app/firma" className="text-indigo-400 hover:text-indigo-300 font-medium whitespace-nowrap flex items-center gap-1">
+                Konfiguruj <ChevronRight size={13} />
+              </a>
+            </div>
+          </div>
+        )}
         {/* Main content */}
         <div className="flex-1 flex flex-col gap-4 min-w-0">
           {/* Tender selector */}
