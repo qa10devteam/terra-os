@@ -447,7 +447,7 @@ function IntelligencePanel({
 
       // Price index trend
       try {
-        const idx = await authFetch('/api/v2/intelligence/prices/index?years=3');
+        const idx = await authFetch('/api/v2/analytics/price-index?years=3');
         setPriceIndex((idx as { data?: PriceIndex[] })?.data ?? []);
       } catch { /* ok */ }
 
@@ -460,7 +460,7 @@ function IntelligencePanel({
       } else if (sumaNet && cpv) {
         // Quick win probability estimate
         try {
-          const wp = await authFetch('/api/v2/intelligence/win-probability', {
+          const wp = await authFetch('/api/v2/analytics/win-probability', {
             method: 'POST',
             body: JSON.stringify({ our_price: sumaNet, cpv5: tender?.cpv?.[0]?.replace(/[^0-9]/g, '').slice(0, 5) }),
           });
