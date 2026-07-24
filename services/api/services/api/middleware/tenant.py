@@ -75,38 +75,27 @@ def _install_rls_listener(engine: sa.engine.Engine) -> None:
 # Middleware
 # ---------------------------------------------------------------------------
 
-class TenantMiddleware(BaseHTTPMiddleware):
-    """Starlette/FastAPI middleware that propagates tenant context to DB.
+class TenantMiddleware:
+    """Pure ASGI tenant context propagation — sets _current_tenant_id ContextVar per request."""
 
-    Flow:
-    1. Reads ``request.state.tenant_id`` (UUID string or None).
-       Auth dependencies (``auth/deps.py`` → ``get_tenant_id``) should set
-       this on ``request.state`` **before** this middleware fires, i.e. it
-       must be placed *inside* (lower stack than) any auth middleware.
-       Because FastAPI route-level dependencies run after middleware, the
-       simpler approach is to use the ``set_tenant_context`` helper inside
-       each route that touches the DB, or to call the helper inside the
-       ``get_db`` dependency.  Both patterns are shown below.
-    2. Sets the ``_current_tenant_id`` ContextVar for the duration of the
-       request so that the engine checkout listener picks it up.
-    3. Resets the ContextVar after the response is sent (cleanup).
-    """
+    def __init__(self, app):
+        self.app = app
 
-    async def dispatch(self, request: Request, call_next) -> Response:
-        # Auth dependencies run inside FastAPI — by the time this middleware
-        # fires the dependencies haven't executed yet.  We therefore rely on
-        # the ContextVar being set by get_db / route-level logic.
-        # If a caller already pre-set request.state.tenant_id (e.g. via a
-        # custom auth middleware that runs before this one), honour it.
-        tenant_id: str | None = getattr(request.state, "tenant_id", None)
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
 
-        token = _current_tenant_id.set(tenant_id)  # may be None for public routes
+        # Auth deps run inside FastAPI route — tenant_id may be set later via get_db
+        # Pull from scope state if pre-set by earlier middleware
+        state = scope.get("state", {})
+        tenant_id: str | None = state.get("tenant_id") if isinstance(state, dict) else getattr(state, "tenant_id", None)
+
+        token = _current_tenant_id.set(tenant_id)
         try:
-            response = await call_next(request)
+            await self.app(scope, receive, send)
         finally:
             _current_tenant_id.reset(token)
-
-        return response
 
 
 # ---------------------------------------------------------------------------

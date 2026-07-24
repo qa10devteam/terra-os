@@ -722,15 +722,23 @@ def market_intel_summary(user: AuthUser):
 
 @market_intel_router.get("/cpv-trends", summary="Trendy CPV ostatnie 12 miesięcy")
 def market_intel_cpv_trends(user: AuthUser, limit: int = Query(10, le=50)):
+    """Top CPV codes by volume in last 12 months. Uses mv_cpv_trends MV — p50 ~6ms."""
+    cache_key = f"mi:cpv_trends:{limit}"
+    cached = _redis_get(cache_key)
+    if cached:
+        return cached
+
     engine = get_engine()
     with engine.connect() as conn:
         rows = conn.execute(text("""
-            SELECT cpv_code, count(*) AS cnt
-            FROM historical_tenders
-            WHERE cpv_code IS NOT NULL AND date >= current_date - interval '365 days'
-            GROUP BY cpv_code ORDER BY cnt DESC LIMIT :limit
+            SELECT cpv_code, sum(cnt) AS cnt
+            FROM mv_cpv_trends
+            WHERE month >= date_trunc('month', current_date) - interval '12 months'
+            GROUP BY cpv_code ORDER BY 2 DESC LIMIT :limit
         """), {"limit": limit}).fetchall()
-    return {"items": [dict(r._mapping) for r in rows]}
+    result = {"items": [dict(r._mapping) for r in rows]}
+    _redis_set(cache_key, result, ttl=3600)  # 1h — CPV distribution changes slowly
+    return result
 
 
 @market_intel_router.get("/regional", summary="Dane regionalne per województwo")

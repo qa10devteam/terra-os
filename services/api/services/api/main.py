@@ -286,9 +286,25 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # pragma: no co
             logging.getLogger(__name__).info("ICB dashboard cache warm-up OK")
         except Exception as e:
             logging.getLogger(__name__).debug("ICB dashboard warm-up: %s", e)
+        # Warm-up market-intel/summary (most-fetched endpoint, 170ms cold)
+        try:
+            import urllib.request as _ureq, json as _json
+            _base = "http://127.0.0.1:8000"
+            _req = _ureq.Request(_base + "/api/v2/auth/login",
+                data=_json.dumps({"email": "demo@terra-os.pl", "password": "BudOS2026!Demo"}).encode(),
+                headers={"Content-Type": "application/json"}, method="POST")
+            with _ureq.urlopen(_req, timeout=5) as _r:
+                _tok = _json.load(_r)["access_token"]
+            for _ep in ["/api/v2/market-intel/summary", "/api/v2/market-intel/cpv-trends"]:
+                _req = _ureq.Request(_base + _ep, headers={"Authorization": f"Bearer {_tok}"})
+                with _ureq.urlopen(_req, timeout=10) as _r:
+                    pass
+            logging.getLogger(__name__).info("market-intel warm-up OK")
+        except Exception as e:
+            logging.getLogger(__name__).debug("market-intel warm-up: %s", e)
         try:
             from .routers.market_intelligence import market_summary
-            # market_summary requires auth user — skip, Redis hit via direct call
+            # market_summary requires auth user — skip, Redis hit via direct call above
         except Exception:
             pass
     threading.Thread(target=_warm_up_caches, daemon=True).start()
@@ -297,10 +313,26 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # pragma: no co
     try:
         from apscheduler.schedulers.asyncio import AsyncIOScheduler
         from services.agents.bzp_sync import sync_bzp_batch
+
+        async def _refresh_mvs():
+            """Odświeża materialized views co godzinę (mv_cpv_trends, mv_province_stats, mv_icb_volatility)."""
+            try:
+                from terra_db.session import get_engine as _ge
+                import sqlalchemy as _sa
+                _e = _ge()
+                with _e.connect() as _c:
+                    for mv in ["mv_cpv_trends", "mv_province_stats", "mv_icb_volatility"]:
+                        _c.execute(_sa.text(f"REFRESH MATERIALIZED VIEW CONCURRENTLY {mv}"))
+                    _c.commit()
+                logging.getLogger(__name__).debug("Materialized views refreshed OK")
+            except Exception as _ex:
+                logging.getLogger(__name__).warning("MV refresh failed: %s", _ex)
+
         _scheduler = AsyncIOScheduler()
         _scheduler.add_job(sync_bzp_batch, "interval", minutes=15, id="bzp_sync", replace_existing=True)
+        _scheduler.add_job(_refresh_mvs, "interval", hours=1, id="mv_refresh", replace_existing=True)
         _scheduler.start()
-        logging.getLogger(__name__).info("BZP auto-sync scheduler started (every 15 min)")
+        logging.getLogger(__name__).info("BZP auto-sync + MV refresh scheduler started")
     except Exception as e:
         logging.getLogger(__name__).warning("BZP scheduler not started: %s", e)
     yield
@@ -364,44 +396,93 @@ app.state.limiter = limiter
 
 
 # ─── Faza 64 / Faza 2: Security Headers Middleware ─────────────────────────────
+# Pure ASGI (no BaseHTTPMiddleware overhead)
 
-class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        response = await call_next(request)
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X-XSS-Protection"] = "0"  # Disabled — modern browsers use CSP instead
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-        response.headers["Cache-Control"] = (
-            "no-store" if request.url.path.startswith("/api/v2/auth")
-            else response.headers.get("Cache-Control", "")
-        )
-        return response
+class SecurityHeadersMiddleware:
+    """Add security headers to every response — pure ASGI, zero BaseHTTPMiddleware overhead."""
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] not in ("http", "websocket"):
+            await self.app(scope, receive, send)
+            return
+
+        is_auth_path = scope.get("path", "").startswith("/api/v2/auth")
+
+        async def send_with_headers(message):
+            if message["type"] == "http.response.start":
+                headers = list(message.get("headers", []))
+                headers += [
+                    (b"x-content-type-options", b"nosniff"),
+                    (b"x-frame-options", b"DENY"),
+                    (b"x-xss-protection", b"0"),
+                    (b"referrer-policy", b"strict-origin-when-cross-origin"),
+                    (b"strict-transport-security", b"max-age=31536000; includeSubDomains"),
+                ]
+                if is_auth_path:
+                    headers.append((b"cache-control", b"no-store"))
+                message = {**message, "headers": headers}
+            await send(message)
+
+        await self.app(scope, receive, send_with_headers)
 
 
 # ─── Faza 67: Request Counter Middleware ───────────────────────────────────────
 
-class RequestCounterMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        from .routers.monitoring import increment_request_count
-        increment_request_count()
-        response = await call_next(request)
-        return response
+class RequestCounterMiddleware:
+    """Pure ASGI request counter — no BaseHTTPMiddleware overhead."""
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http":
+            try:
+                from .routers.monitoring import increment_request_count
+                increment_request_count()
+            except Exception:
+                pass
+        await self.app(scope, receive, send)
 
 
 # ─── Request ID Middleware (tracing) ──────────────────────────────────────────
 
 import secrets as _secrets
 
-class RequestIDMiddleware(BaseHTTPMiddleware):
-    """Attach a unique X-Request-ID to every request/response for distributed tracing."""
-    async def dispatch(self, request: Request, call_next):
-        req_id = request.headers.get("X-Request-ID") or _secrets.token_hex(16)
-        request.state.request_id = req_id
-        response = await call_next(request)
-        response.headers["X-Request-ID"] = req_id
-        return response
+class RequestIDMiddleware:
+    """Attach a unique X-Request-ID to every request/response — pure ASGI."""
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        # Extract or generate request ID
+        req_id = None
+        for k, v in scope.get("headers", []):
+            if k.lower() == b"x-request-id":
+                req_id = v.decode()
+                break
+        if not req_id:
+            req_id = _secrets.token_hex(16)
+
+        # Inject into state via scope
+        if "state" not in scope:
+            scope["state"] = {}
+        scope["state"]["request_id"] = req_id
+
+        req_id_bytes = req_id.encode()
+
+        async def send_with_id(message):
+            if message["type"] == "http.response.start":
+                headers = list(message.get("headers", []))
+                headers.append((b"x-request-id", req_id_bytes))
+                message = {**message, "headers": headers}
+            await send(message)
+
+        await self.app(scope, receive, send_with_id)
 
 
 # ─── Register middleware (order matters: outer → inner) ────────────────────────

@@ -69,7 +69,8 @@ interface KosztorysHeader {
   nazwa: string;
   inwestor?: string;
   obiekt?: string;
-  typ: string;
+  typ: string;        // alias for variant field from backend
+  variant?: string;   // backend field name
   status: string;
   suma_netto: number;
   suma_brutto: number;
@@ -727,6 +728,8 @@ export function KosztorysPage() {
 
   // ── Kosztorys v2 state ─────────────────────────────────────────────────────
   const [kosztorysId, setKosztorysId] = useState<string | null>(null);
+  const [kosztorysVariant, setKosztorysVariant] = useState<'doc' | 'icb' | 'custom'>('doc');
+  const [kosztorysList, setKosztorysList] = useState<KosztorysHeader[]>([]);
   const [pozycje, setPozycje] = useState<KPozycja[]>([]);
   const [kosztLoading, setKosztLoading] = useState(false);
   const [narzuty, setNarzuty] = useState<Narzuty>({ ...DEFAULT_NARZUTY });
@@ -812,95 +815,87 @@ export function KosztorysPage() {
       .finally(() => setTendersLoading(false));
   }, [authFetch]);
 
-  // ── Load / create kosztorys when tender changes ────────────────────────────
+  // ── Load / create kosztorys when tender or variant changes ──────────────────
   useEffect(() => {
     if (!tender) { return; }
     const controller = new AbortController();
     setKosztLoading(true);
-    // Spróbuj v2 najpierw
-    authFetch(`/api/v2/estimates?tender_id=${tender.id}&limit=5`)
+    setPozycje([]);
+    setKosztorysId(null);
+
+    authFetch(`/api/v2/estimates?tender_id=${tender.id}&limit=10`)
       .then((d: unknown) => {
         const list = (d as { items?: KosztorysHeader[] }).items ?? [];
-        if (list.length > 0) {
-          const k = list[0];
-          setKosztorysId(k.id);
-          if (k.narzuty) setNarzuty(k.narzuty as Narzuty);
-          return loadPozycje(k.id);
+        setKosztorysList(list);
+
+        // Szukaj kosztorysu pasującego do aktywnego wariantu
+        const match = list.find(k => (k.variant ?? k.typ) === kosztorysVariant) ?? null;
+        if (match) {
+          setKosztorysId(match.id);
+          if (match.narzuty) setNarzuty(match.narzuty as Narzuty);
+          return loadPozycje(match.id);
         } else {
-          // Utwórz nowy kosztorys v2
+          // Utwórz nowy kosztorys tego wariantu
           return authFetch('/api/v2/estimates', {
             method: 'POST',
             body: JSON.stringify({
-              nazwa: tender.title.slice(0, 120),
               tender_id: tender.id,
-              ...narzuty,
+              variant: kosztorysVariant,
+              narzuty,
             }),
           }).then((k: unknown) => {
             const kid = (k as KosztorysHeader).id;
             setKosztorysId(kid);
+            setKosztorysList(prev => [...prev, k as KosztorysHeader]);
             setPozycje([]);
           });
         }
       })
-      .catch(() => {
-        // Fallback to v1
-        authFetch(`/api/v2/estimates?tender_id=${tender.id}`)
-          .then((d: unknown) => {
-            const items = (d as { items?: { id: string; description: string; unit: string; quantity: number; unit_price: number }[] }).items ?? [];
-            // Convert v1 items to KPozycja (uproszczone)
-            const poz: KPozycja[] = items.map((it, idx) => ({
-              id: it.id,
-              lp: idx + 1,
-              kst_code: '',
-              opis: it.description,
-              jednostka: it.unit,
-              ilosc: it.quantity,
-              r_jcena: 0,
-              m_jcena: it.unit_price,
-              s_jcena: 0,
-              jcena_netto: it.unit_price,
-              wartosc_netto: it.quantity * it.unit_price,
-            }));
-            setPozycje(poz);
-          })
-          .catch(() => {});
-      })
+      .catch(() => {})
       .finally(() => { if (!controller.signal.aborted) setKosztLoading(false); });
     return () => controller.abort();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tender?.id]);
+  }, [tender?.id, kosztorysVariant]);
 
   async function loadPozycje(kid: string) {
-    // GET /api/v2/estimates/{id} returns full estimate with lines[]
+    // GET /api/v2/estimates/{id} returns full estimate with lines[] (new R/M/S model)
     const d = await authFetch(`/api/v2/estimates/${kid}`);
-    const raw = (d as { lines?: Array<Record<string, unknown>> }).lines ?? [];
-    // Map backend fields → KPozycja (backend: description/unit/labor_pln → opis/jednostka/r_jcena)
+    const est = d as {
+      lines?: Array<Record<string, unknown>>;
+      narzuty?: Narzuty;
+      variant?: string;
+    };
+    // Sync narzuty from backend
+    if (est.narzuty) setNarzuty(est.narzuty as Narzuty);
+    const raw = est.lines ?? [];
     const items: KPozycja[] = raw.map((it, idx) => {
-      const r = (it.labor_pln as number) ?? 0;
-      const m = (it.material_pln as number) ?? 0;
-      const s = (it.equipment_pln as number) ?? 0;
-      const jcena = (it.unit_price as number) ?? (r + m + s);
-      const ilosc = (it.quantity as number) ?? 1;
-      const narzuty_local = narzuty;
-      const ko = r * narzuty_local.ko_r_pct / 100 + s * narzuty_local.ko_s_pct / 100;
-      const kz = m * narzuty_local.kz_pct / 100;
-      const z  = (r + m + s + ko + kz) * narzuty_local.z_pct / 100;
+      // New fields first, fall back to legacy field names
+      const r = Number(it.r_jcena ?? it.labor_pln ?? 0);
+      const m = Number(it.m_jcena ?? it.material_pln ?? 0);
+      const s = Number(it.s_jcena ?? it.equipment_pln ?? 0);
+      const ilosc = Number(it.ilosc ?? it.quantity ?? 1);
+      const jcena = Number(it.jcena_netto ?? it.unit_price ?? r + m + s);
+      const wart  = Number(it.wartosc_netto ?? it.line_total_pln ?? jcena * ilosc);
       return {
         id: it.id as string,
-        lp: idx + 1,
-        kst_code: (it.kst_code as string) ?? '',
-        opis: (it.description as string) ?? '',
-        jednostka: (it.unit as string) ?? 'szt',
+        lp: Number(it.lp ?? idx + 1),
+        kst_code: String(it.kst_code ?? ''),
+        opis: String(it.opis ?? it.description ?? ''),
+        jednostka: String(it.jednostka ?? it.unit ?? 'szt'),
         ilosc,
         r_jcena: r, m_jcena: m, s_jcena: s,
-        jcena_netto: (it.line_total_pln as number) ? ((it.line_total_pln as number) / ilosc) : jcena,
-        wartosc_netto: (it.line_total_pln as number) ?? (jcena * ilosc),
-        r_total: r * ilosc,
-        m_total: m * ilosc,
-        s_total: s * ilosc,
-        ko_total: ko * ilosc,
-        z_total: z * ilosc,
-        kz_total: kz * ilosc,
+        jcena_netto: jcena,
+        wartosc_netto: wart,
+        r_total: Number(it.r_total ?? r * ilosc),
+        m_total: Number(it.m_total ?? m * ilosc),
+        s_total: Number(it.s_total ?? s * ilosc),
+        ko_total: Number(it.ko_total ?? 0),
+        z_total: Number(it.z_total ?? 0),
+        kz_total: Number(it.kz_total ?? 0),
+        is_anomaly: Boolean(it.is_anomaly),
+        icb_r_id: it.icb_r_id as number | null,
+        icb_m_id: it.icb_m_id as number | null,
+        icb_s_id: it.icb_s_id as number | null,
       };
     });
     setPozycje(items);
@@ -917,18 +912,18 @@ export function KosztorysPage() {
     if (kosztorysId) {
       setAddLoading(true);
       try {
-        // Backend uses PATCH /lines with description/unit/labor_pln/material_pln/equipment_pln
+        // POST /lines — new R/M/S model
         await authFetch(`/api/v2/estimates/${kosztorysId}/lines`, {
-          method: 'PATCH',
-          body: JSON.stringify([{
-            description: addOpis,
-            unit: addJm,
-            quantity: ilosc,
-            unit_price: r_jcena + m_jcena + s_jcena,
-            labor_pln: r_jcena,
-            material_pln: m_jcena,
-            equipment_pln: s_jcena,
-          }]),
+          method: 'POST',
+          body: JSON.stringify({
+            kst_code: addKst,
+            opis: addOpis,
+            jednostka: addJm,
+            ilosc,
+            r_jcena,
+            m_jcena,
+            s_jcena,
+          }),
         });
         await loadPozycje(kosztorysId);
       } catch (e) {
@@ -1265,7 +1260,41 @@ export function KosztorysPage() {
             )}
           </GlassCard>
 
-          {/* Add row form */}
+          {/* Selektor wariantów kosztorysu */}
+          {tender && (
+            <GlassCard className="p-3 shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="text-slate-500 text-xs font-semibold shrink-0">Wariant:</span>
+                {([
+                  { key: 'doc',    label: 'Dokumentacyjny', icon: <FileText className="w-3.5 h-3.5" />, desc: 'Opis słowny, bez R/M/S' },
+                  { key: 'icb',    label: 'ICB – Auto',     icon: <Database className="w-3.5 h-3.5" />, desc: 'Auto-generacja z bazy cen' },
+                  { key: 'custom', label: 'Własny',         icon: <Wrench className="w-3.5 h-3.5" />,   desc: 'Własne stawki R/M/S' },
+                ] as const).map(v => (
+                  <button
+                    key={v.key}
+                    type="button"
+                    onClick={() => {
+                      if (kosztorysVariant !== v.key) setKosztorysVariant(v.key);
+                    }}
+                    title={v.desc}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                      kosztorysVariant === v.key
+                        ? v.key === 'icb'    ? 'bg-indigo/15 border-indigo/40 text-indigo-300'
+                        : v.key === 'custom' ? 'bg-em/15 border-em/40 text-em-300'
+                        :                     'bg-ink-700/60 border-ink-600 text-slate-200'
+                        : 'bg-transparent border-ink-800 text-slate-600 hover:border-ink-700 hover:text-slate-400'
+                    }`}
+                  >
+                    {v.icon}{v.label}
+                    {kosztorysList.find(k => (k.variant ?? k.typ) === v.key) && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-go shrink-0" title="Kosztorys istnieje" />
+                    )}
+                  </button>
+                ))}
+                {kosztLoading && <Loader2 className="w-3.5 h-3.5 text-slate-600 animate-spin ml-1" />}
+              </div>
+            </GlassCard>
+          )}
           <GlassCard className="p-3 shrink-0">
             <div className="flex items-center gap-2 mb-2">
               <Plus className="w-3.5 h-3.5 text-em" />

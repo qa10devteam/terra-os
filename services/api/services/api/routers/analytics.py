@@ -190,7 +190,7 @@ def win_rate_trend(user: AuthUser, months: int = Query(6, ge=1, le=24)) -> dict:
 @router.get("/win-probability")
 def win_probability_endpoint(
     user: AuthUser,
-    markup: float = Query(..., description="Narzut jako decimal (np. 0.12 = 12%)"),
+    markup: float = Query(0.10, description="Narzut jako decimal (np. 0.12 = 12%). Domyślnie 10%."),
     cpv: str = Query("45", description="CPV prefix"),
     n_competitors: int = Query(4, ge=1, le=20),
 ) -> dict:

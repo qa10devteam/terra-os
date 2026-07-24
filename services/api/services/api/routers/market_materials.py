@@ -28,8 +28,35 @@ MATERIAL_VARIABLES: dict[str, str] = {
 CEMENT_VAR_ID = "282893"
 
 
+import redis as _redis_module
+
+# Singleton Redis pool (reused across requests)
+_GUS_REDIS: '_redis_module.Redis | None' = None
+
+def _get_gus_redis():
+    global _GUS_REDIS
+    if _GUS_REDIS is None:
+        try:
+            _GUS_REDIS = _redis_module.Redis(decode_responses=True)
+            _GUS_REDIS.ping()
+        except Exception:
+            _GUS_REDIS = None
+    return _GUS_REDIS
+
+
 def _fetch_gus_variable(var_id: str, years: list[int]) -> list[dict]:
-    """Pobierz dane z GUS BDL dla podanego variableId i lat."""
+    """Pobierz dane z GUS BDL dla podanego variableId i lat. Redis cache 24h."""
+    import json as _json
+    cache_key = f"gus:var:{var_id}:{':'.join(map(str, years))}"
+    _rd = _get_gus_redis()
+    try:
+        if _rd:
+            cached = _rd.get(cache_key)
+            if cached:
+                return _json.loads(cached)
+    except Exception:
+        pass
+
     results = []
     try:
         with httpx.Client(timeout=20) as client:
@@ -56,6 +83,13 @@ def _fetch_gus_variable(var_id: str, years: list[int]) -> list[dict]:
                     results.append({"variable_id": var_id, "year": year, "value_pln": None, "error": "fetch_error"})
     except Exception as exc:
         results.append({"variable_id": var_id, "error": str(exc)})
+
+    # Cache for 24h — GUS data changes monthly
+    if _rd and cache_key and results and not any("error" in r for r in results):
+        try:
+            _rd.setex(cache_key, 86400, _json.dumps(results))
+        except Exception:
+            pass
     return results
 
 

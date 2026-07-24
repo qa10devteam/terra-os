@@ -23,6 +23,7 @@ import {
   Wrench,
   PackageSearch,
   Users,
+  Workflow,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -41,6 +42,7 @@ const moduleGroups: ModuleGroup[] = [
     items: [
       { id: 'zwiad',    icon: Radar,     name: 'Zwiad',      desc: 'Zwiad przetargowy BZP/TED' },
       { id: 'pipeline', icon: GitBranch, name: 'Lejek',      desc: 'Kanban przetargów' },
+      { id: 'workflow', icon: Workflow,  name: 'Workflow',   desc: 'Przepływ BudOS per przetarg' },
       { id: 'silnik',   icon: Brain,     name: 'Silnik AI',  desc: 'Analiza AHP + Friedman' },
       { id: 'decyzja',  icon: Scale,     name: 'Decyzja',    desc: 'Rekomendacje AI' },
     ],
