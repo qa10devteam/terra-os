@@ -8,7 +8,15 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from terra_db.session import get_engine
-from services.ai.clients import StubClient
+
+# StubClient — legacy AI client (services.ai removed), minimal stub
+try:
+    from services.ai.clients import StubClient  # type: ignore[import-not-found]
+except ModuleNotFoundError:
+    class StubClient:  # type: ignore[no-redef]
+        """Fallback stub when services.ai is not installed."""
+        def analyze(self, *args: object, **kwargs: object) -> dict:
+            return {"summary": "", "red_flags": [], "key_facts": {}}
 from services.documents.ocr import extract_text, _fixture_extract
 from services.documents.parse_przedmiar import parse_przedmiar
 from services.documents.classify import classify_document

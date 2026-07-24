@@ -10,6 +10,10 @@ from sqlalchemy.orm import sessionmaker, Session
 
 
 def get_db_url() -> str:
+    # If DATABASE_URL is set directly (URL-encoded password), prefer it
+    direct = os.getenv("DATABASE_URL")
+    if direct:
+        return direct
     host = os.getenv("DB_HOST", "127.0.0.1")
     port = os.getenv("DB_PORT", "5432")
     name = os.getenv("DB_NAME", "terraos")

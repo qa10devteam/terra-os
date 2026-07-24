@@ -7,7 +7,8 @@ import {
   Loader2, Check, Download, Save, Edit2, Trash2,
   Building2, Calendar, AlertCircle, X, RefreshCw,
   Package, FileCheck, Send, Trophy, XCircle, Clock,
-  SlidersHorizontal, ClipboardList,
+  SlidersHorizontal, ClipboardList, Bot, Sparkles,
+  ChevronDown, ChevronUp, Copy, CheckCircle2,
 } from 'lucide-react';
 import { useAuthFetch } from '@/lib/api-v2';
 import { useStore } from '@/store/useStore';
@@ -65,6 +66,15 @@ interface FinalizacjaData {
   warranty_months: number;
   payment_terms: string;
   notes: string;
+}
+
+interface BidSections {
+  opis_podejscia: string;
+  metodologia: string;
+  doswiadczenie: string;
+  propozycja_wartosci: string;
+  podsumowanie: string;
+  generated_by?: string;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -138,8 +148,8 @@ function OfferStatusBadge({ status }: { status: Offer['status'] }) {
 
 // ── Wizard steps ──────────────────────────────────────────────────────────────
 
-const STEPS = ['Przetarg', 'Kosztorys', 'Finalizacja', 'PDF'] as const;
-type WizardStep = 0 | 1 | 2 | 3;
+const STEPS = ['Przetarg', 'Kosztorys', 'AI Oferta', 'Finalizacja', 'PDF'] as const;
+type WizardStep = 0 | 1 | 2 | 3 | 4;
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 
@@ -769,6 +779,182 @@ function Step2Kosztorys({
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// Step 2.5 – AI Sekcje Oferty (bid_writing)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const BID_SECTION_LABELS: Record<keyof Omit<BidSections, 'generated_by'>, string> = {
+  opis_podejscia:    'Opis podejścia',
+  metodologia:       'Metodologia realizacji',
+  doswiadczenie:     'Doświadczenie firmy',
+  propozycja_wartosci: 'Propozycja wartości',
+  podsumowanie:      'Podsumowanie oferty',
+};
+
+interface Step25Props {
+  tenderId: string;
+  sections: BidSections | null;
+  setSections: (s: BidSections | null) => void;
+  onNext: () => void;
+  onBack: () => void;
+}
+
+function Step25BidWriting({ tenderId, sections, setSections, onNext, onBack }: Step25Props) {
+  const authFetch = useAuthFetch();
+  const [loading, setLoading] = useState(false);
+  const [expanded, setExpanded] = useState<string | null>('opis_podejscia');
+  const [copied, setCopied] = useState<string | null>(null);
+
+  async function generate() {
+    if (!tenderId) return;
+    setLoading(true);
+    try {
+      const res = await authFetch('/api/v2/bid-writing/generate', {
+        method: 'POST',
+        body: JSON.stringify({ tender_id: tenderId, use_kb: true }),
+      }) as BidSections & { sections?: BidSections };
+      // backend może zwrócić sekcje w root lub w .sections
+      const data: BidSections = (res as { sections?: BidSections }).sections ?? (res as BidSections);
+      setSections(data);
+      setExpanded('opis_podejscia');
+      showToast('success', 'AI wygenerowało sekcje oferty');
+    } catch (e) {
+      showToast('error', (e as Error).message || 'Błąd generowania sekcji');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function copySection(key: string, text: string) {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(key);
+      setTimeout(() => setCopied(null), 1500);
+    });
+  }
+
+  const sectionKeys = Object.keys(BID_SECTION_LABELS) as (keyof Omit<BidSections, 'generated_by'>)[];
+
+  return (
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex items-start gap-3">
+        <div className="w-9 h-9 rounded-xl bg-violet-500/15 border border-violet-500/25 flex items-center justify-center shrink-0">
+          <Bot className="w-4.5 h-4.5 text-violet-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-slate-100 font-semibold text-sm">AI Sekcje Oferty</h3>
+          <p className="text-slate-400 text-xs mt-0.5">
+            AI generuje merytoryczne sekcje oferty na podstawie danych przetargu i Bazy Wiedzy Firmy.
+            Możesz edytować każdą sekcję przed przejściem dalej.
+          </p>
+        </div>
+      </div>
+
+      {/* KB badge */}
+      <div className="flex items-center gap-2 rounded-lg bg-violet-500/8 border border-violet-500/15 px-3 py-2.5">
+        <Sparkles className="w-3.5 h-3.5 text-violet-400 shrink-0" />
+        <span className="text-xs text-violet-300">
+          Generowanie uwzględnia profil firmy, referencje i historię ofert z Bazy Wiedzy
+        </span>
+      </div>
+
+      {/* Generate button or sections */}
+      {!sections ? (
+        <button
+          onClick={generate}
+          disabled={loading || !tenderId}
+          className="w-full flex items-center justify-center gap-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm py-3.5 transition-colors"
+        >
+          {loading ? (
+            <><Loader2 className="w-4 h-4 animate-spin" /> Generowanie…</>
+          ) : (
+            <><Bot className="w-4 h-4" /> Generuj sekcje oferty z AI</>
+          )}
+        </button>
+      ) : (
+        <div className="space-y-2">
+          {/* Regenerate */}
+          <button
+            onClick={generate}
+            disabled={loading}
+            className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-violet-400 transition-colors"
+          >
+            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+            Regeneruj
+          </button>
+
+          {/* Accordions */}
+          {sectionKeys.map((key) => {
+            const isOpen = expanded === key;
+            const text = sections[key] ?? '';
+            return (
+              <div key={key} className="rounded-xl border border-white/8 overflow-hidden">
+                <button
+                  onClick={() => setExpanded(isOpen ? null : key)}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left bg-white/3 hover:bg-white/5 transition-colors"
+                >
+                  <span className="flex-1 text-sm font-medium text-slate-200">
+                    {BID_SECTION_LABELS[key]}
+                  </span>
+                  {isOpen ? <ChevronUp className="w-3.5 h-3.5 text-slate-500" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-500" />}
+                </button>
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.15 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-4 pb-4 pt-2 relative">
+                        <textarea
+                          value={text}
+                          onChange={(e) => setSections({ ...sections, [key]: e.target.value })}
+                          className="w-full bg-transparent text-sm text-slate-300 leading-relaxed resize-none outline-none min-h-[80px]"
+                          rows={Math.max(3, Math.ceil(text.length / 80))}
+                        />
+                        <button
+                          onClick={() => copySection(key, text)}
+                          className="absolute top-2 right-4 p-1 rounded text-slate-500 hover:text-slate-300 transition-colors"
+                          title="Kopiuj"
+                        >
+                          {copied === key
+                            ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                            : <Copy className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
+
+          {sections.generated_by && (
+            <p className="text-[10px] text-slate-600 text-right">
+              Wygenerowano przez: {sections.generated_by}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Navigation */}
+      <div className="flex justify-between items-center pt-2">
+        <button onClick={onBack} className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-200 transition-colors">
+          <ChevronLeft className="w-4 h-4" /> Wstecz
+        </button>
+        <button
+          onClick={onNext}
+          className="flex items-center gap-1.5 rounded-lg bg-em/90 hover:bg-em text-white font-semibold text-sm px-5 py-2.5 transition-colors"
+        >
+          Dane wykonawcy <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
 // Step 3 – Finalizacja
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -1063,9 +1249,12 @@ export function OfertaPage() {
   const [offerTitle, setOfferTitle] = useState('');
 
   // Step 2
-  const [items, setItems] = useState<EditableItem[]>([]);
+  const [items, setItems] = useState<EditableItem[]>([]);\
   const [loadingItems, setLoadingItems] = useState(false);
   const [vatPct, setVatPct] = useState(23);
+
+  // Step 2.5 — AI Sekcje Oferty
+  const [bidSections, setBidSections] = useState<BidSections | null>(null);
 
   // Step 3
   const [finData, setFinData] = useState<FinalizacjaData>({
@@ -1153,6 +1342,7 @@ export function OfertaPage() {
     setOfferTitle('');
     setItems([]);
     setVatPct(23);
+    setBidSections(null);
     setFinData({
       // Auto-uzupełnij z KB jeśli dostępne
       name: kbProfile?.company_name || '',
@@ -1171,6 +1361,7 @@ export function OfertaPage() {
     setSelectedTenderId(offer.tender_id ?? '');
     setOfferTitle(offer.title);
     setVatPct(offer.vat_pct ?? 23);
+    setBidSections(null);
     setFinData({
       name: offer.contractor_name ?? '',
       nip: offer.contractor_nip ?? '',
@@ -1272,7 +1463,7 @@ export function OfertaPage() {
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank');
       showToast('success', 'PDF wygenerowany — sprawdź nową kartę');
-      setWizardStep(3);
+      setWizardStep(4);
       await loadOffers();
     } catch (e: unknown) {
       showToast('error', (e as Error).message || 'Błąd generowania PDF');
@@ -1580,7 +1771,25 @@ export function OfertaPage() {
 
                     {wizardStep === 2 && (
                       <motion.div
-                        key="s2"
+                        key="s2-bid"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.18 }}
+                      >
+                        <Step25BidWriting
+                          tenderId={selectedTenderId}
+                          sections={bidSections}
+                          setSections={setBidSections}
+                          onNext={() => setWizardStep(3)}
+                          onBack={() => setWizardStep(1)}
+                        />
+                      </motion.div>
+                    )}
+
+                    {wizardStep === 3 && (
+                      <motion.div
+                        key="s3"
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: -20 }}
@@ -1594,14 +1803,14 @@ export function OfertaPage() {
                           kbFilled={kbLoaded && !!kbProfile && !editingOfferId && !!finData.name}
                           onSaveDraft={saveDraft}
                           onGeneratePDF={generatePDF}
-                          onBack={() => setWizardStep(1)}
+                          onBack={() => setWizardStep(2)}
                         />
                       </motion.div>
                     )}
 
-                    {wizardStep === 3 && (
+                    {wizardStep === 4 && (
                       <motion.div
-                        key="s3"
+                        key="s4"
                         initial={{ opacity: 0, scale: 0.96 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0 }}

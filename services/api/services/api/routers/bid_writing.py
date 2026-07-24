@@ -24,7 +24,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 
-from ..auth.deps import AuthUser
+from ..auth.deps import AuthUser, get_tenant_id
 from ..auth.plan_gate import require_plan, PlanLevel
 from terra_db.session import get_engine
 
@@ -306,7 +306,7 @@ def _fetch_tender_data(tenant_id: str, tender_id: str) -> dict | None:
     with engine.connect() as conn:
         row = conn.execute(
             text(
-                "SELECT id, title, buyer, cpv_main, estimated_value, description "
+                "SELECT id, title, buyer_name, cpv, value_pln, raw "
                 "FROM tender "
                 "WHERE id = :tid AND tenant_id = :tenant_id"
             ),
@@ -314,13 +314,23 @@ def _fetch_tender_data(tenant_id: str, tender_id: str) -> dict | None:
         ).fetchone()
     if row is None:
         return None
+    raw = row[5] or {}
+    description = ""
+    if isinstance(raw, dict):
+        description = raw.get("opis", raw.get("description", raw.get("przedmiot", "")))
+    elif isinstance(raw, str):
+        import json as _json
+        try:
+            description = _json.loads(raw).get("opis", "")
+        except Exception:
+            description = raw[:500]
     return {
         "id": str(row[0]),
         "title": row[1] or "",
         "buyer": row[2] or "",
         "cpv_main": row[3] or "",
         "estimated_value": row[4],
-        "description": row[5] or "",
+        "description": description,
     }
 
 
@@ -502,13 +512,14 @@ def _build_fallback_sections(
 async def generate_bid_writing(
     req: BidWritingRequest,
     user: AuthUser,
+    tenant_id: str = Depends(get_tenant_id),
     _gate: None = require_plan(PlanLevel.PRO),
 ) -> BidWritingResponse:
     """Generuje profesjonalny szkielet oferty technicznej dla przetargu.
 
     Wywołuje AWS Bedrock Claude. Przy niedostępności AI zwraca szablon fallback.
     """
-    tenant_id = user.tenant_id
+    # tenant_id comes from Depends(get_tenant_id) injection — resolved from JWT
 
     # 1. Pobierz dane przetargu z DB
     tender = _fetch_tender_data(tenant_id, req.tender_id)

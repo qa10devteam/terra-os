@@ -41,8 +41,8 @@ from terra_shared.errors import TerraError
 
 # ─── Routers ───────────────────────────────────────────────────────────────────
 from .routers import (
-    health, zwiad, documents, estimator, engine,
-    rfq, chat, module3, system, export, bzp, market_data,
+    health,
+    rfq, market_data,
     monitoring, gdpr, api_keys, billing, demo,
     tenders_v2, estimates_v2, decisions_v2, documents_upload, bzp_v2,
     notifications, search, audit, analytics,
@@ -51,6 +51,16 @@ from .routers import (
     offers,  # Faza 7 — Oferty
     dashboard,  # BUG FIX — dashboard endpoints
 )
+
+# Legacy routers z brakującymi dependencies — graceful import
+_legacy_routers: list = []
+for _name in ['zwiad', 'estimator', 'engine', 'rfq_legacy', 'chat', 'module3', 'system', 'export', 'bzp']:
+    try:
+        import importlib as _il
+        _mod = _il.import_module(f'.routers.{_name}', package=__package__)
+        _legacy_routers.append(_mod)
+    except (ImportError, ModuleNotFoundError):
+        pass  # services.* not installed — skip
 
 # Faza 3 — nowe routery analytics/intelligence
 try:
@@ -543,19 +553,15 @@ except ImportError:  # pragma: no cover
 # Faza 1 — Core routers
 app.include_router(health.router)
 app.include_router(auth_router)
-app.include_router(export.router)   # MUST precede zwiad.router — /api/v1/tenders/csv|xlsx static routes
-app.include_router(zwiad.router)
-app.include_router(documents.router)
-app.include_router(estimator.router)
-app.include_router(engine.router)
+# Legacy routers (zwiad, estimator, engine, chat, module3, system, export, bzp) —
+# loaded conditionally above via _legacy_routers (services.* may be missing)
+for _lr in _legacy_routers:
+    for _attr in ('router', 'router_v2'):
+        if hasattr(_lr, _attr):
+            app.include_router(getattr(_lr, _attr))
 app.include_router(rfq.router)
-app.include_router(chat.router)
-app.include_router(module3.router)
-app.include_router(system.router)
-app.include_router(system.router_v2)
-app.include_router(offers.router)   # Faza 7 — Oferty
-app.include_router(bzp.router)
 app.include_router(market_data.router)
+app.include_router(offers.router)   # Faza 7 — Oferty
 app.include_router(dashboard.router)  # BUG FIX — dashboard endpoints
 
 # Contracts router
