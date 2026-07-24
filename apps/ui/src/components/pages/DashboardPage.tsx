@@ -36,6 +36,8 @@ interface DashboardKPI {
   avg_deal_size: number;
   new_today: number;
   total_value?: number;
+  high_score_count?: number;
+  kosztorysy_count?: number;
 }
 
 interface DashboardTender {
@@ -434,7 +436,18 @@ export function DashboardPage() {
       // /api/v2/dashboard returns active_tenders, pipeline_value, win_rate_mtd, avg_deal_size, new_today
       const data = await authFetch('/api/v2/dashboard') as DashboardKPI;
       if (data && typeof data === 'object' && 'active_tenders' in data) {
-        setKpi(data as DashboardKPI);
+        // Enrich with high_score_count and kosztorysy_count from parallel calls
+        const [statsData, kosztData] = await Promise.allSettled([
+          authFetch('/api/v2/dashboard/stats') as Promise<Record<string, unknown>>,
+          authFetch('/api/v2/kosztorys?limit=1') as Promise<Record<string, unknown>>,
+        ]);
+        const stats = statsData.status === 'fulfilled' ? statsData.value : {};
+        const kosz  = kosztData.status  === 'fulfilled' ? kosztData.value  : {};
+        setKpi({
+          ...data,
+          high_score_count:  (stats.high_score_count as number) ?? undefined,
+          kosztorysy_count:  (kosz.total as number) ?? undefined,
+        } as DashboardKPI);
         return;
       }
       // fallback: /api/v2/dashboard/stats returns total_tenders — map it
@@ -449,6 +462,7 @@ export function DashboardPage() {
           avg_deal_size:   0,
           new_today:       (stats.new_today as number) ?? 0,
           total_value:     (stats.pipeline_value as number) ?? 0,
+          high_score_count: (stats.high_score_count as number) ?? undefined,
         });
       }
     } catch (err) {
@@ -601,7 +615,7 @@ export function DashboardPage() {
           <span className="text-emerald-400 font-semibold">
             {animActiveTenders} aktywnych przetargów
           </span>{' '}
-          i 3 kosztorysy do przeglądu. YU-NA jest gotowa.
+          i {kpi?.kosztorysy_count ?? '—'} kosztorysów w systemie. YU-NA jest gotowa.
         </p>
       </motion.div>
 
@@ -620,26 +634,26 @@ export function DashboardPage() {
         />
         <InlineMetricCard
           icon={Zap}
-          label="Analiza AI dziś"
-          value="8"
-          trend={5}
-          trendLabel="więcej niż wczoraj"
+          label="Wysokie dopasowanie"
+          value={kpi?.high_score_count != null ? String(kpi.high_score_count) : '—'}
+          trend={null}
+          trendLabel="score > 70%"
           delay={0.08}
         />
         <InlineMetricCard
           icon={Target}
           label="Średnie GO"
           value={`${animWinRate}%`}
-          trend={4}
-          trendLabel="+4pp wobec poprzedniego m-ca"
+          trend={null}
+          trendLabel="skuteczność ofert"
           delay={0.16}
         />
         <InlineMetricCard
           icon={FileText}
           label="Kosztorysy"
-          value="3"
-          trend={1}
-          trendLabel="nowy w tym tygodniu"
+          value={kpi?.kosztorysy_count != null ? String(kpi.kosztorysy_count) : '—'}
+          trend={null}
+          trendLabel="łącznie w systemie"
           delay={0.24}
         />
       </div>

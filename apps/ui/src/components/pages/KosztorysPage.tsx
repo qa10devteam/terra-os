@@ -1036,8 +1036,8 @@ export function KosztorysPage() {
           params: { ko_r_pct: narzuty.ko_r_pct, ko_s_pct: narzuty.ko_s_pct, kz_pct: narzuty.kz_pct, z_pct: narzuty.z_pct },
         }),
       });
-      // recalc not available in v2 — skip
-      // await authFetch(`/api/v2/estimates/${kosztorysId}/recalc`, { method: 'POST' });
+      // recalc: przelicz summy R/M/S + narzuty
+      await authFetch(`/api/v2/estimates/${kosztorysId}/recalc`, { method: 'POST' });
       await loadPozycje(kosztorysId);
       showToast('success', 'Przeliczono kosztorys');
     } catch (e) {

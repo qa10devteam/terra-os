@@ -1,0 +1,1024 @@
+{
+  "pages": [
+    {
+      "name": "AlertsPage",
+      "lines": 544,
+      "api_calls": [
+        "/api/v2/tender-alerts",
+        "/api/v2/tender-alerts (POST)",
+        "/api/v2/tender-alerts/{id}/toggle (PATCH)",
+        "/api/v2/tender-alerts/{id} (DELETE)",
+        "/api/v2/tender-alerts/{id}/test (POST)"
+      ],
+      "mock_data": false,
+      "mock_detail": "Brak. useState inicjowane pustą tablicą [], dane ładowane z API.",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "AnalyticsPage",
+      "lines": 798,
+      "api_calls": [
+        "/api/v2/analytics/pipeline-funnel",
+        "/api/v2/analytics/win-rate-trend",
+        "/api/v2/analytics/ahp (POST)",
+        "/api/v2/analytics/bidding (POST)",
+        "/api/v2/analytics/risk-extract (POST)",
+        "/api/v2/analytics/dashboard (POST)",
+        "/api/v2/analytics/win-probability (POST)"
+      ],
+      "mock_data": false,
+      "mock_detail": "DEFAULT_CRITERIA to stała konfiguracyjna AHP (nie mock danych), useState inicjowane [].",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "AutomationPage",
+      "lines": 898,
+      "api_calls": [
+        "/api/v2/automations/suggestions/{entityType}/{entityId}",
+        "/api/v2/automations/trigger (POST)",
+        "/api/v2/automations/webhooks",
+        "/api/v2/automations/webhooks (POST)",
+        "/api/v2/automations/webhooks/{wid} (PATCH/DELETE)",
+        "/api/v2/automations/history?limit=10",
+        "/api/v2/automations/n8n/status",
+        "/api/v2/automations/n8n/workflows"
+      ],
+      "mock_data": true,
+      "mock_detail": "NODES: BpmnNode[] — hardcoded BPMN diagram nodes z sublabel danymi statystycznymi (np. '847 przetargów', '~23/mies.'). Dane wizualizacyjne, nie operacyjne.",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "AxiomEnginePage",
+      "lines": 198,
+      "api_calls": [
+        "${NEXT_PUBLIC_API_URL}/api/v2/axioms",
+        "${NEXT_PUBLIC_API_URL}/api/v2/axioms/{id} (PUT/DELETE)",
+        "${NEXT_PUBLIC_API_URL}/api/v2/axioms (POST)"
+      ],
+      "mock_data": false,
+      "mock_detail": "useState<Axiom[]>([]) — puste. UWAGA: używa NEXT_PUBLIC_API_URL zamiast ścieżki względnej — potencjalny broken path jeśli env nie ustawiony.",
+      "broken_paths": [
+        "Używa ${process.env.NEXT_PUBLIC_API_URL}/api/v2/axioms — jeśli NEXT_PUBLIC_API_URL nie jest ustawiony w .env, wywołania mogą trafiać do undefined/api/v2/axioms"
+      ],
+      "todos": []
+    },
+    {
+      "name": "BidIntelligencePage",
+      "lines": 253,
+      "api_calls": [
+        "/api/v2/bid-intelligence?limit=20",
+        "/api/v2/bid-intelligence/optimal-markup",
+        "/api/v2/bid-intelligence/stats",
+        "/api/v2/scoring/leaderboard?limit=10"
+      ],
+      "mock_data": false,
+      "mock_detail": "useState inicjowane pustymi tablicami. silentGet — wywołania z cichym fallbackiem null przy błędzie.",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "BookmarksBoardPage",
+      "lines": 619,
+      "api_calls": [
+        "/api/v2/bookmarks (via useBookmarks hook)",
+        "/api/v2/bookmarks/stats",
+        "/api/v2/bookmarks/{id} (PATCH/DELETE)"
+      ],
+      "mock_data": false,
+      "mock_detail": "STAGES — to konfiguracja tablic Kanban, nie mock danych. useState inicjowane [].",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "BuyerCRMPage",
+      "lines": 1249,
+      "api_calls": [
+        "/api/v2/buyer-crm (POST)",
+        "/api/v2/buyer-crm/{itemId}/tenders?offset=0&limit=20",
+        "/api/v2/buyer-crm/search?q={q}&limit=10",
+        "/api/v2/buyer-crm (via useBuyerCRM hook)",
+        "/api/v2/buyer-crm?limit=50",
+        "/api/v2/buyer-crm/followups?days=7"
+      ],
+      "mock_data": false,
+      "mock_detail": "STAGES, CPV_BAR_COLORS — konfiguracja UI. useState inicjowane [].",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "CompetitorPage",
+      "lines": 511,
+      "api_calls": [
+        "/api/v2/competitors (via useCompetitorWatch hook)",
+        "/api/v2/competitors?limit=50",
+        "/api/v2/competitors (POST)",
+        "/api/v2/competitors/{id} (DELETE)",
+        "/api/v2/competitors/intel/{nip}",
+        "/api/v2/competitors/search?q={q}&limit=10"
+      ],
+      "mock_data": false,
+      "mock_detail": "COLORS — tylko stała kolorów wykresów. useState inicjowane [].",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "ContractsPage",
+      "lines": 231,
+      "api_calls": [
+        "/api/v1/contracts"
+      ],
+      "mock_data": false,
+      "mock_detail": "useState<Contract[]>([]) — puste, dane z API.",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "DashboardPage",
+      "lines": 948,
+      "api_calls": [
+        "/api/v2/dashboard",
+        "/api/v2/dashboard/stats",
+        "/api/v2/tenders?sort=match_score&limit=5&deadline_days=14",
+        "/api/v2/audit/recent?limit=15",
+        "/api/v2/dashboard/digest",
+        "/api/v2/dashboard/digest/generate (POST)"
+      ],
+      "mock_data": true,
+      "mock_detail": "CHART_DATA = [3,5,4,8,6,9,8] — hardcoded tygodniowy wykres analiz w miniaturce. CHART_LABELS = ['Pon','Wt','Śr','Czw','Pt','Sob','Ndz']. Wyświetla 'Łącznie 43 analiz w tygodniu' z hardcoded danych.",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "DecyzjaPage",
+      "lines": 882,
+      "api_calls": [
+        "/api/v2/tenders?pipeline_status=ANALIZOWANY&limit=20",
+        "/api/v2/tenders?status=decided_go&limit=5",
+        "/api/v2/tenders?status=decided_nogo&limit=5",
+        "/api/v1/tenders/{id}/analysis",
+        "/api/v1/tenders/{id}/engine",
+        "/api/v1/tenders/{id}/estimate/compare",
+        "/api/v2/agent/analyze/{id} (POST)",
+        "/api/v2/agent/analyze/{id}/stream (SSE)",
+        "/api/v2/tenders/{id} (PATCH)"
+      ],
+      "mock_data": false,
+      "mock_detail": "PROGRESS_STEPS — konfiguracja UI kroków. useState inicjowane [].",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "DocumentsPage",
+      "lines": 410,
+      "api_calls": [
+        "/api/v2/documents",
+        "/api/v2/documents/upload (POST)",
+        "/api/v2/documents/{docId}/analyze (POST)",
+        "/api/v2/documents/{docId}",
+        "/api/v2/documents/{docId}/estimate"
+      ],
+      "mock_data": false,
+      "mock_detail": "useState<Document[]>([]) — puste.",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "ExportPage",
+      "lines": 321,
+      "api_calls": [
+        "/api/v2/bookmarks/export",
+        "/api/v1/excel/export/tenders?{params}",
+        "/api/v2/gdpr/export"
+      ],
+      "mock_data": false,
+      "mock_detail": "PROVINCES, TENDER_LIMITS — konfiguracja UI. Brak mock danych.",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "ICBPage",
+      "lines": 1729,
+      "api_calls": [
+        "/api/v2/icb/categories",
+        "/api/v2/icb/category/{cat}/detail",
+        "/api/v2/icb/forecast?category={cat}&typ_rms={typ}",
+        "/api/v2/icb/forecast/compute (POST)",
+        "/api/v2/icb/compare?category={cat}",
+        "/api/v2/icb/volatility-matrix",
+        "/api/v2/icb/robocizna/map",
+        "/api/v2/icb/dashboard",
+        "/api/v2/icb/suggest?{params}",
+        "/api/v2/icb/search?{params}"
+      ],
+      "mock_data": false,
+      "mock_detail": "TABS, TYP_OPTIONS — konfiguracja UI. useState inicjowane [].",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "ImportPage",
+      "lines": 538,
+      "api_calls": [
+        "/api/v1/excel/imports (GET/POST)",
+        "/api/v1/excel/import/tenders (POST)"
+      ],
+      "mock_data": false,
+      "mock_detail": "TARGET_FIELDS, STEPS — konfiguracja UI.",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "KosztorysPage",
+      "lines": 1820,
+      "api_calls": [
+        "/api/v2/icb/suggest?q={q}&limit=20",
+        "/api/v2/intelligence/benchmark?cpv_prefix={cpv5}",
+        "/api/v2/analytics/price-index?years=3",
+        "/api/v2/analytics/cost-estimate",
+        "/api/v2/analytics/win-probability (POST)",
+        "/api/v2/forecast/predict?{params}",
+        "/api/v2/tenders?limit=100",
+        "/api/v2/estimates?tender_id={id}&limit=10",
+        "/api/v2/estimates (POST)",
+        "/api/v2/estimates/{id}",
+        "/api/v2/estimates/{id} (PUT — narzuty)",
+        "/api/v2/estimates/{id}/lines (POST)",
+        "/api/v2/estimates/{id}/lines/{poz.id} (DELETE)",
+        "/api/v2/market/materials",
+        "/api/v1/estimates/{id}/export/docx",
+        "/api/v1/estimates/{id}/export/xlsx",
+        "/api/v1/kosztorys/{tender.id}/import/ath (POST)",
+        "/api/v1/estimates/{id}/chat (POST)"
+      ],
+      "mock_data": false,
+      "mock_detail": "useState inicjowane []. UWAGA: /api/v2/estimates/{id}/recalc jest zakomentowany (broken path — endpoint nie jest wywoływany).",
+      "broken_paths": [
+        "// await authFetch(`/api/v2/estimates/${kosztorysId}/recalc`, { method: 'POST' }) — zakomentowany, recalc nie jest wywoływany po zmianie narzutów"
+      ],
+      "todos": []
+    },
+    {
+      "name": "LogistykaPage",
+      "lines": 1353,
+      "api_calls": [
+        "/api/v1/resources/employees (GET/POST)",
+        "/api/v1/resources/equipment (GET/POST)",
+        "/api/v1/logistics/optimize (POST)",
+        "/api/v1/subcontractors?limit=100",
+        "/api/v1/subcontractors (POST)",
+        "/api/v1/contracts"
+      ],
+      "mock_data": false,
+      "mock_detail": "GANTT_COLORS, TABS — konfiguracja UI. useState inicjowane [].",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "MarketDashboardPage",
+      "lines": 861,
+      "api_calls": [
+        "/api/v2/dashboard/market-charts",
+        "/api/v2/intelligence/trends?quarters=8 (via useIntelTrends)",
+        "/api/v2/intelligence/competitors/top?limit=10",
+        "/api/v2/intelligence/buyers/top?limit=10",
+        "/api/v2/intelligence/prices/inflation?quarters=8",
+        "/api/v2/intelligence/win-rates",
+        "/api/v2/intelligence/prices/icb?q=robocizna&limit=10"
+      ],
+      "mock_data": false,
+      "mock_detail": "PIE_COLORS — konfiguracja UI. cards — tablica konfiguracyjna kart KPI (nie dane). useState inicjowane [].",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "MarketIntelPage",
+      "lines": 404,
+      "api_calls": [
+        "/api/v2/analytics/olap?{params}",
+        "/api/v2/analytics/price-index",
+        "/api/v2/forecast/predict?{params}",
+        "/api/v2/forecast/seasonality?{params}",
+        "/api/v2/analytics/cohort"
+      ],
+      "mock_data": false,
+      "mock_detail": "tabs, monthNames — konfiguracja UI. useState inicjowane [].",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "NotificationsPage",
+      "lines": 264,
+      "api_calls": [
+        "/api/v2/notifications/unread-count",
+        "/api/v2/notifications?limit=50 (z filtrami)",
+        "/api/v2/notifications/read-all (POST)",
+        "/api/v2/notifications/{id}/read (POST)"
+      ],
+      "mock_data": false,
+      "mock_detail": "useState<Notification[]>([]) — puste.",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "OfertaPage",
+      "lines": 1601,
+      "api_calls": [
+        "/api/v2/offers",
+        "/api/v2/tenders?limit=20&status=new",
+        "/api/v2/estimates?tender_id={id}",
+        "/api/v2/offers/{id} (PUT/POST)",
+        "/api/v2/offers/{id}/pdf"
+      ],
+      "mock_data": false,
+      "mock_detail": "STEPS, PAYMENT_TERMS_OPTIONS, WARRANTY_OPTIONS — konfiguracja UI wizard. useState inicjowane [].",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "PipelinePage",
+      "lines": 783,
+      "api_calls": [
+        "/api/v2/tenders?q={query}&limit=10",
+        "/api/v2/tenders?include_pipeline=true&limit=100",
+        "/api/v2/dashboard/pipeline-kpi",
+        "/api/v2/tenders/{tenderId} (PATCH — zmiana statusu)"
+      ],
+      "mock_data": false,
+      "mock_detail": "COLUMNS — konfiguracja kolumn Kanban. useState inicjowane {}.",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "PogodaPage",
+      "lines": 427,
+      "api_calls": [
+        "/api/v1/market/weather/city/{city}?days=14"
+      ],
+      "mock_data": false,
+      "mock_detail": "PL_CITIES, PL_DAYS — konfiguracja. useState inicjowane null/[].",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "PricingPage",
+      "lines": 229,
+      "api_calls": [
+        "/api/v2/billing/checkout (POST)"
+      ],
+      "mock_data": true,
+      "mock_detail": "PLANS = [...] — hardcoded definicje planów cenowych z cenami (Pro: 890 PLN, Enterprise: custom). Używane do renderowania kart — nie z API.",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "ProactivePage",
+      "lines": 269,
+      "api_calls": [
+        "/api/v2/proactive/alerts?days_ahead=30",
+        "/api/v2/proactive/portfolio?max_concurrent=5&budget_hours=200",
+        "/api/v2/proactive/scan (POST)"
+      ],
+      "mock_data": false,
+      "mock_detail": "useState<Alert[]>([]) — puste.",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "ReportsPage",
+      "lines": 265,
+      "api_calls": [
+        "/api/v2/reports/monthly"
+      ],
+      "mock_data": true,
+      "mock_detail": "STATIC_CHART = [{month:'Lut',count:12},…{month:'Lip',count:24}] — 6 hardcoded rekordów. Używane jako fallback gdy monthlyData puste: `data?.length ? data : STATIC_CHART`.",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "ResourcesPage",
+      "lines": 246,
+      "api_calls": [
+        "/api/v1/resources/employees",
+        "/api/v1/resources/equipment"
+      ],
+      "mock_data": false,
+      "mock_detail": "useState<Resource[]>([]) — puste. Catch fallback { items: [] }.",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "RfqPage",
+      "lines": 323,
+      "api_calls": [
+        "/api/v2/rfq",
+        "/api/v2/rfq/{id} (PATCH)"
+      ],
+      "mock_data": false,
+      "mock_detail": "useState<RfqItem[]>([]) — puste.",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "SettingsPage",
+      "lines": 1646,
+      "api_calls": [
+        "/api/v2/settings/usage",
+        "/api/v2/billing/subscription",
+        "/api/v2/billing/checkout-url",
+        "/api/v2/api-keys (GET/POST)",
+        "/api/v2/api-keys/{id} (DELETE)",
+        "/api/v2/organizations/me (GET/PUT)",
+        "/api/v2/organizations/me/members (GET/PATCH/DELETE)",
+        "/api/v2/organizations/me/invites (GET/DELETE)",
+        "/api/v2/organizations/me/invite (POST)",
+        "/api/v2/scoring/config (GET/POST)",
+        "/api/v2/scoring/rescore (POST)"
+      ],
+      "mock_data": false,
+      "mock_detail": "SECTIONS, CPV_OPTIONS, VOIVODESHIPS, WEIGHT_FIELDS — konfiguracja UI. useState inicjowane [].",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "SilnikPage",
+      "lines": 1028,
+      "api_calls": [
+        "/api/v2/scoring/config (GET/POST)",
+        "/api/v2/tenders?sort=match_score&limit=10",
+        "/api/v2/tenders?limit=50",
+        "/api/v1/tenders/{id}/analysis",
+        "/api/v2/market/cpv-heatmap",
+        "/api/v2/audit/recent?limit=20"
+      ],
+      "mock_data": true,
+      "mock_detail": "DEADLINE_BONUS_DATA = [{days:0,bonus:50},…{days:60,bonus:0}] — hardcoded dane wykresu bonusu za termin (statyczna wizualizacja algorytmu, nie dane operacyjne).",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "SystemPage",
+      "lines": 206,
+      "api_calls": [
+        "/api/v2/system/metrics",
+        "/api/v2/system/db-stats",
+        "/api/v2/system/routes"
+      ],
+      "mock_data": false,
+      "mock_detail": "useState inicjowane null.",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "TeamPage",
+      "lines": 154,
+      "api_calls": [
+        "/api/v1/resources/employees"
+      ],
+      "mock_data": false,
+      "mock_detail": "Komentarz: '// No more DEMO data — fetched from /api/v1/resources/employees'. useState<TeamMember[]>([]) — puste.",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "WebhooksPage",
+      "lines": 242,
+      "api_calls": [
+        "${NEXT_PUBLIC_API_URL}/api/v2/webhooks (GET/POST)",
+        "${NEXT_PUBLIC_API_URL}/api/v2/webhooks/{id} (PATCH/DELETE)",
+        "${NEXT_PUBLIC_API_URL}/api/v2/webhooks/{id}/test (POST)"
+      ],
+      "mock_data": false,
+      "mock_detail": "EVENT_OPTIONS — konfiguracja. UWAGA: używa NEXT_PUBLIC_API_URL zamiast ścieżki względnej.",
+      "broken_paths": [
+        "Używa ${process.env.NEXT_PUBLIC_API_URL}/api/v2/webhooks — jeśli NEXT_PUBLIC_API_URL nie ustawiony, URL = undefined/api/v2/webhooks"
+      ],
+      "todos": []
+    },
+    {
+      "name": "WorkflowPage",
+      "lines": 651,
+      "api_calls": [
+        "/api/v2/workflows/budos",
+        "/api/v2/tenders?limit=50&sort=updated_at_desc",
+        "/api/v2/workflow-instances",
+        "/api/v2/workflow-instances?tender_id={id}",
+        "/api/v2/workflow-instances/{id}",
+        "/api/v2/workflow-instances (POST)",
+        "/api/v2/workflow-instances/{id}/transition (POST)",
+        "/api/v2/workflow-instances/{id}/complete (POST)"
+      ],
+      "mock_data": false,
+      "mock_detail": "useState inicjowane [].",
+      "broken_paths": [],
+      "todos": []
+    },
+    {
+      "name": "ZwiadPage",
+      "lines": 853,
+      "api_calls": [
+        "/api/v2/tenders?{params}"
+      ],
+      "mock_data": false,
+      "mock_detail": "WOJEWODZTWA, BRANZE, STATUSY, CPV_CHIPS — konfiguracja filtrów. useState inicjowane [].",
+      "broken_paths": [],
+      "todos": []
+    }
+  ],
+  "routes": [
+    {
+      "path": "/app",
+      "component": "app/app/page.tsx (redirect to /app/budos legacy SPA)",
+      "is_stub": false
+    },
+    {
+      "path": "/app/budos",
+      "component": "BudOSApp (legacy SPA z Sidebar + switch na currentModule)",
+      "is_stub": false
+    },
+    {
+      "path": "/app/analytics",
+      "component": "AnalyticsPage",
+      "is_stub": false
+    },
+    {
+      "path": "/app/bid-intelligence",
+      "component": "BidIntelligencePage",
+      "is_stub": false
+    },
+    {
+      "path": "/app/bookmarks",
+      "component": "BookmarksBoardPage",
+      "is_stub": false
+    },
+    {
+      "path": "/app/buyer-crm",
+      "component": "BuyerCRMPage",
+      "is_stub": false
+    },
+    {
+      "path": "/app/competitors",
+      "component": "CompetitorPage",
+      "is_stub": false
+    },
+    {
+      "path": "/app/contracts",
+      "component": "ContractsPage",
+      "is_stub": false
+    },
+    {
+      "path": "/app/decyzja",
+      "component": "DecyzjaPage",
+      "is_stub": false
+    },
+    {
+      "path": "/app/documents",
+      "component": "DocumentsPage",
+      "is_stub": false
+    },
+    {
+      "path": "/app/icb",
+      "component": "ICBPage",
+      "is_stub": false
+    },
+    {
+      "path": "/app/kosztorys",
+      "component": "KosztorysPage",
+      "is_stub": false
+    },
+    {
+      "path": "/app/logistyka",
+      "component": "LogistykaPage",
+      "is_stub": false
+    },
+    {
+      "path": "/app/market-intel",
+      "component": "MarketIntelPage",
+      "is_stub": false
+    },
+    {
+      "path": "/app/oferta",
+      "component": "OfertaPage",
+      "is_stub": false
+    },
+    {
+      "path": "/app/pipeline",
+      "component": "PipelinePage",
+      "is_stub": false
+    },
+    {
+      "path": "/app/reports",
+      "component": "ReportsPage",
+      "is_stub": false
+    },
+    {
+      "path": "/app/resources",
+      "component": "ResourcesPage",
+      "is_stub": false
+    },
+    {
+      "path": "/app/settings",
+      "component": "SettingsPage",
+      "is_stub": false
+    },
+    {
+      "path": "/app/silnik",
+      "component": "SilnikPage",
+      "is_stub": false
+    },
+    {
+      "path": "/app/team",
+      "component": "TeamPage",
+      "is_stub": false
+    },
+    {
+      "path": "/app/workflow",
+      "component": "WorkflowPage",
+      "is_stub": false
+    },
+    {
+      "path": "/app/zwiad",
+      "component": "ZwiadPage (dynamic import, SSR=false)",
+      "is_stub": false
+    },
+    {
+      "path": "BRAKUJE W /app/app/: /app/alerts, /app/automations, /app/axiom, /app/export, /app/import, /app/market-dashboard (rynek), /app/notifications, /app/pricing, /app/proactive, /app/rfq, /app/system, /app/webhooks",
+      "component": "Dostępne tylko przez legacy SPA /app/budos (switch na currentModule)",
+      "is_stub": true
+    }
+  ],
+  "api_calls_all": [
+    "/api/v1/bzp/documents/{tenderId}/fetch (POST)",
+    "/api/v1/bzp/documents/{tenderId}",
+    "/api/v1/contracts",
+    "/api/v1/estimates/{id}/chat (POST)",
+    "/api/v1/estimates/{id}/export/docx",
+    "/api/v1/estimates/{id}/export/xlsx",
+    "/api/v1/excel/export/tenders?{params}",
+    "/api/v1/excel/import/tenders (POST)",
+    "/api/v1/excel/imports (GET/POST)",
+    "/api/v1/health",
+    "/api/v1/ingest/run (POST)",
+    "/api/v1/kosztorys/{tender.id}/import/ath (POST)",
+    "/api/v1/logistics/optimize (POST)",
+    "/api/v1/market/currencies",
+    "/api/v1/market/weather/city/{city}?days=14",
+    "/api/v1/resources/employees (GET/POST)",
+    "/api/v1/resources/equipment (GET/POST)",
+    "/api/v1/subcontractors?limit=100",
+    "/api/v1/subcontractors (POST)",
+    "/api/v1/tenders/{id}/analysis",
+    "/api/v1/tenders/{id}/engine",
+    "/api/v1/tenders/{id}/estimate/compare",
+    "/api/v2/agent/analyze/{id} (POST)",
+    "/api/v2/agent/analyze/{id}/stream (SSE)",
+    "/api/v2/alerts (GET/POST)",
+    "/api/v2/alerts/{id}/toggle (PATCH)",
+    "/api/v2/alerts/{id} (DELETE)",
+    "/api/v2/analytics/ahp (POST)",
+    "/api/v2/analytics/bidding (POST)",
+    "/api/v2/analytics/cohort",
+    "/api/v2/analytics/cost-estimate",
+    "/api/v2/analytics/dashboard (POST)",
+    "/api/v2/analytics/olap?{params}",
+    "/api/v2/analytics/pipeline-funnel",
+    "/api/v2/analytics/price-index",
+    "/api/v2/analytics/price-index?years=3",
+    "/api/v2/analytics/risk-extract (POST)",
+    "/api/v2/analytics/win-probability (POST)",
+    "/api/v2/analytics/win-rate-trend",
+    "/api/v2/api-keys (GET/POST)",
+    "/api/v2/api-keys/{id} (DELETE)",
+    "/api/v2/audit/recent?limit=15",
+    "/api/v2/audit/recent?limit=20",
+    "/api/v2/audit?tender_id={id}&limit=30",
+    "/api/v2/auth/forgot-password (POST)",
+    "/api/v2/auth/login (POST)",
+    "/api/v2/auth/refresh (POST)",
+    "/api/v2/auth/register (POST)",
+    "/api/v2/automations/history?limit=10",
+    "/api/v2/automations/n8n/status",
+    "/api/v2/automations/n8n/workflows",
+    "/api/v2/automations/suggestions/{entityType}/{entityId}",
+    "/api/v2/automations/trigger (POST)",
+    "/api/v2/automations/webhooks (GET/POST)",
+    "/api/v2/automations/webhooks/{id} (PATCH/DELETE)",
+    "/api/v2/axioms (GET/POST)",
+    "/api/v2/axioms/{id} (PUT/DELETE)",
+    "/api/v2/bid-intelligence?limit=20",
+    "/api/v2/bid-intelligence/optimal-markup",
+    "/api/v2/bid-intelligence/stats",
+    "/api/v2/billing/checkout (POST)",
+    "/api/v2/billing/checkout-url",
+    "/api/v2/billing/invoices",
+    "/api/v2/billing/subscription",
+    "/api/v2/bookmarks (GET)",
+    "/api/v2/bookmarks/export",
+    "/api/v2/bookmarks/stats",
+    "/api/v2/bookmarks/{id} (PATCH/DELETE)",
+    "/api/v2/buyer-crm (GET/POST)",
+    "/api/v2/buyer-crm/followups?days=7",
+    "/api/v2/buyer-crm/search?q={q}&limit=10",
+    "/api/v2/buyer-crm/{id}/tenders?offset=0&limit=20",
+    "/api/v2/buyer-crm/{id} (PUT/DELETE)",
+    "/api/v2/chat/sessions (POST)",
+    "/api/v2/chat/sessions/{sid}/messages (POST)",
+    "/api/v2/competitors (GET/POST)",
+    "/api/v2/competitors/intel/{nip}",
+    "/api/v2/competitors/search?q={q}&limit=10",
+    "/api/v2/competitors/{id} (DELETE)",
+    "/api/v2/dashboard",
+    "/api/v2/dashboard/digest (GET/POST generate)",
+    "/api/v2/dashboard/market-charts",
+    "/api/v2/dashboard/pipeline-kpi",
+    "/api/v2/dashboard/recent-tenders",
+    "/api/v2/dashboard/stats",
+    "/api/v2/documents (GET)",
+    "/api/v2/documents/upload (POST)",
+    "/api/v2/documents/{id}/analyze (POST)",
+    "/api/v2/documents/{id}/estimate",
+    "/api/v2/documents/{id}",
+    "/api/v2/estimates (GET/POST)",
+    "/api/v2/estimates/{id} (GET/PUT)",
+    "/api/v2/estimates/{id}/lines (POST)",
+    "/api/v2/estimates/{id}/lines/{poz_id} (DELETE)",
+    "/api/v2/events/stream (SSE)",
+    "/api/v2/forecast/predict?{params}",
+    "/api/v2/forecast/seasonality?{params}",
+    "/api/v2/gdpr/consent (POST)",
+    "/api/v2/gdpr/export",
+    "/api/v2/icb/categories",
+    "/api/v2/icb/category/{cat}/detail",
+    "/api/v2/icb/compare?category={cat}",
+    "/api/v2/icb/dashboard",
+    "/api/v2/icb/forecast?category={cat}&typ_rms={typ}",
+    "/api/v2/icb/forecast/compute (POST)",
+    "/api/v2/icb/robocizna/map",
+    "/api/v2/icb/search?{params}",
+    "/api/v2/icb/suggest?{params}",
+    "/api/v2/icb/volatility-matrix",
+    "/api/v2/intelligence/benchmark?cpv_prefix={cpv5}",
+    "/api/v2/intelligence/buyers/top?{params}",
+    "/api/v2/intelligence/competitors/top?{params}",
+    "/api/v2/intelligence/fts?{params}",
+    "/api/v2/intelligence/prices/icb?{params}",
+    "/api/v2/intelligence/prices/inflation?{params}",
+    "/api/v2/intelligence/seasonality?{params}",
+    "/api/v2/intelligence/summary?{params}",
+    "/api/v2/intelligence/top-buyers-cpv?{params}",
+    "/api/v2/intelligence/trends?{params}",
+    "/api/v2/intelligence/win-rates?{params}",
+    "/api/v2/market/cpv-heatmap",
+    "/api/v2/market/kpi-bar",
+    "/api/v2/market/materials",
+    "/api/v2/notifications (GET)",
+    "/api/v2/notifications/count",
+    "/api/v2/notifications/read-all (POST)",
+    "/api/v2/notifications/unread-count",
+    "/api/v2/notifications/{id}/read (POST)",
+    "/api/v2/offers (GET/POST)",
+    "/api/v2/offers/{id} (PUT)",
+    "/api/v2/offers/{id}/pdf",
+    "/api/v2/onboarding/start (POST)",
+    "/api/v2/organizations/{orgId} (PUT)",
+    "/api/v2/organizations/me (GET/PUT)",
+    "/api/v2/organizations/me/invite (POST)",
+    "/api/v2/organizations/me/invites (GET)",
+    "/api/v2/organizations/me/invites/{id} (DELETE)",
+    "/api/v2/organizations/me/members (GET)",
+    "/api/v2/organizations/me/members/{id} (PATCH/DELETE)",
+    "/api/v2/proactive/alerts?days_ahead=30",
+    "/api/v2/proactive/portfolio?max_concurrent=5&budget_hours=200",
+    "/api/v2/proactive/scan (POST)",
+    "/api/v2/reports/monthly",
+    "/api/v2/rfq (GET)",
+    "/api/v2/rfq/{id} (PATCH)",
+    "/api/v2/scoring/config (GET/POST)",
+    "/api/v2/scoring/leaderboard?limit=10",
+    "/api/v2/scoring/rescore (POST)",
+    "/api/v2/search?q={q}&limit=8&type=tenders",
+    "/api/v2/settings/usage",
+    "/api/v2/system/db-stats",
+    "/api/v2/system/metrics",
+    "/api/v2/system/routes",
+    "/api/v2/tender-alerts (GET/POST)",
+    "/api/v2/tender-alerts/{id}/toggle (PATCH)",
+    "/api/v2/tender-alerts/{id} (DELETE)",
+    "/api/v2/tender-alerts/{id}/test (POST)",
+    "/api/v2/tenders?{params} (GET)",
+    "/api/v2/tenders/{id} (PATCH)",
+    "/api/v2/webhooks (GET/POST)",
+    "/api/v2/webhooks/{id} (PATCH/DELETE)",
+    "/api/v2/webhooks/{id}/test (POST)",
+    "/api/v2/workflow-instances (GET/POST)",
+    "/api/v2/workflow-instances/{id} (GET)",
+    "/api/v2/workflow-instances/{id}/complete (POST)",
+    "/api/v2/workflow-instances/{id}/transition (POST)",
+    "/api/v2/workflows/budos"
+  ],
+  "sidebar_items": [
+    {
+      "label": "Dashboard",
+      "path": "/app",
+      "disabled": false,
+      "note": "Renderuje dzieci bez BudOS shell (pathname === '/app')"
+    },
+    {
+      "label": "Przetargi (Zwiad)",
+      "path": "/app/zwiad",
+      "disabled": false
+    },
+    {
+      "label": "Lejek (Pipeline)",
+      "path": "/app/pipeline",
+      "disabled": false
+    },
+    {
+      "label": "Bookmarki",
+      "path": "/app/bookmarks",
+      "disabled": false
+    },
+    {
+      "label": "Silnik AI",
+      "path": "/app/silnik",
+      "disabled": false
+    },
+    {
+      "label": "Decyzja",
+      "path": "/app/decyzja",
+      "disabled": false
+    },
+    {
+      "label": "Kosztorys",
+      "path": "/app/kosztorys",
+      "disabled": false
+    },
+    {
+      "label": "Bid Intel",
+      "path": "/app/bid-intelligence",
+      "disabled": false
+    },
+    {
+      "label": "Oferta",
+      "path": "/app/oferta",
+      "disabled": false
+    },
+    {
+      "label": "Kontrakty",
+      "path": "/app/contracts",
+      "disabled": false
+    },
+    {
+      "label": "Dokumenty",
+      "path": "/app/documents",
+      "disabled": false
+    },
+    {
+      "label": "Zamawiający (Buyer CRM)",
+      "path": "/app/buyer-crm",
+      "disabled": false
+    },
+    {
+      "label": "Konkurenci",
+      "path": "/app/competitors",
+      "disabled": false
+    },
+    {
+      "label": "Rynek (Market Intel)",
+      "path": "/app/market-intel",
+      "disabled": false
+    },
+    {
+      "label": "Ceny ICB",
+      "path": "/app/icb",
+      "disabled": false
+    },
+    {
+      "label": "Logistyka",
+      "path": "/app/logistyka",
+      "disabled": false
+    },
+    {
+      "label": "Zasoby",
+      "path": "/app/resources",
+      "disabled": false
+    },
+    {
+      "label": "Zespół",
+      "path": "/app/team",
+      "disabled": false
+    },
+    {
+      "label": "Analityka",
+      "path": "/app/analytics",
+      "disabled": false
+    },
+    {
+      "label": "Raporty",
+      "path": "/app/reports",
+      "disabled": false
+    },
+    {
+      "label": "Ustawienia",
+      "path": "/app/settings",
+      "disabled": false
+    },
+    {
+      "label": "BRAK W app/layout NAV: Alerts",
+      "path": "/app/alerts",
+      "disabled": true,
+      "note": "Dostępny tylko przez legacy SPA /app/budos"
+    },
+    {
+      "label": "BRAK W app/layout NAV: Automations",
+      "path": "/app/automations",
+      "disabled": true,
+      "note": "Dostępny tylko przez legacy SPA /app/budos"
+    },
+    {
+      "label": "BRAK W app/layout NAV: Axiom Engine",
+      "path": "/app/axiom",
+      "disabled": true,
+      "note": "Dostępny tylko przez legacy SPA /app/budos"
+    },
+    {
+      "label": "BRAK W app/layout NAV: Export",
+      "path": "/app/export",
+      "disabled": true,
+      "note": "Dostępny tylko przez legacy SPA /app/budos"
+    },
+    {
+      "label": "BRAK W app/layout NAV: Import",
+      "path": "/app/import",
+      "disabled": true,
+      "note": "Dostępny tylko przez legacy SPA /app/budos"
+    },
+    {
+      "label": "BRAK W app/layout NAV: Rynek S6 (MarketDashboard)",
+      "path": "/app/rynek",
+      "disabled": true,
+      "note": "Dostępny w Sidebar.tsx (stary) jako 'Rynek S6', ale nie ma /app/app/rynek/page.tsx"
+    },
+    {
+      "label": "BRAK W app/layout NAV: Notifications",
+      "path": "/app/notifications",
+      "disabled": true,
+      "note": "Dostępny tylko przez legacy SPA /app/budos"
+    },
+    {
+      "label": "BRAK W app/layout NAV: Pricing",
+      "path": "/app/pricing",
+      "disabled": true,
+      "note": "Dostępny tylko przez legacy SPA /app/budos"
+    },
+    {
+      "label": "BRAK W app/layout NAV: Proactive",
+      "path": "/app/proactive",
+      "disabled": true,
+      "note": "Dostępny tylko przez legacy SPA /app/budos"
+    },
+    {
+      "label": "BRAK W app/layout NAV: RFQ",
+      "path": "/app/rfq",
+      "disabled": true,
+      "note": "Dostępny tylko przez legacy SPA /app/budos"
+    },
+    {
+      "label": "BRAK W app/layout NAV: System",
+      "path": "/app/system",
+      "disabled": true,
+      "note": "Dostępny tylko przez legacy SPA /app/budos"
+    },
+    {
+      "label": "BRAK W app/layout NAV: Webhooks",
+      "path": "/app/webhooks",
+      "disabled": true,
+      "note": "Dostępny tylko przez legacy SPA /app/budos"
+    },
+    {
+      "label": "BRAK W app/layout NAV: Workflow",
+      "path": "/app/workflow",
+      "disabled": true,
+      "note": "Ma page.tsx w /app/app/workflow/ ale nie ma go w NAV config w layout.tsx"
+    }
+  ],
+  "_audit_notes": {
+    "dual_routing": "Aplikacja ma dwa równoległe systemy routingu: (1) Next.js App Router /app/app/* — modern routing z indywidualnymi page.tsx, (2) Legacy SPA /app/app/budos/page.tsx — Sidebar.tsx + switch(currentModule) zarządzany przez Zustand store. Wiele stron jest dostępnych TYLKO przez legacy SPA.",
+    "broken_paths_summary": [
+      "AxiomEnginePage i WebhooksPage używają ${NEXT_PUBLIC_API_URL}/api/v2/... zamiast relative paths — potencjalny błąd jeśli env nie ustawiony",
+      "/api/v2/estimates/{id}/recalc jest zakomentowany w KosztorysPage — narzuty nie triggerują przeliczenia",
+      "/app/app/rynek/page.tsx NIE ISTNIEJE — MarketDashboardPage dostępna tylko przez legacy SPA",
+      "WorkflowPage ma /app/app/workflow/page.tsx ale brak go w NAV layout.tsx"
+    ],
+    "mock_data_summary": [
+      "DashboardPage: CHART_DATA=[3,5,4,8,6,9,8] — tygodniowy wykres analiz (hardcoded)",
+      "ReportsPage: STATIC_CHART z 6 hardcoded miesięcy — fallback gdy API zwróci puste dane",
+      "SilnikPage: DEADLINE_BONUS_DATA — statyczna wizualizacja bonusu za termin (nie operacyjna)",
+      "PricingPage: PLANS — hardcoded plany cenowe (nie z API)",
+      "AutomationPage: NODES (BPMN) — hardcoded diagram procesu z mock statystykami ('847 przetargów')"
+    ],
+    "api_v2_hooks_no_mock_fallback": "Wszystkie hooki w lib/api-v2.ts (useIntelSummary, useIntelTrends, useCompetitorsTop, useBuyersTop, useInflation, useFTS, useWinRates, useTopBuyersCpv, useSeasonality, useAlerts, useBookmarks, useCompetitorWatch, useCompetitorIntel, useCompetitorSearch, useBuyerCRM, useBuyerCRMList, useNotifications, useOrgSettings) — BRAK fallback mock, zwracają error state lub puste tablice przy niepowodzeniu API."
+  }
+}

@@ -229,7 +229,7 @@ export function DecyzjaPage() {
   const fetchQueue = useCallback(async () => {
     setQueueLoading(true);
     try {
-      const data = await authFetch('/api/v2/tenders?pipeline_status=ANALIZOWANY&limit=20');
+      const data = await authFetch('/api/v2/tenders?pipeline_status=analyzing&limit=20');
       const items: ApiTender[] = data?.items ?? data ?? [];
       setQueue(items.filter((t) => (t.match_score ?? 0) > 0.5));
     } catch {

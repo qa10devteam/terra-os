@@ -28,7 +28,7 @@ export default function AxiomEnginePage() {
 
   const fetchAxioms = async () => {
     try {
-      const data = await authFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v2/axioms`);
+      const data = await authFetch(`/api/v2/axioms`);
       setAxioms(data.axioms || []);
     } catch (err) {
       console.error("Failed to fetch axioms:", err);
@@ -39,7 +39,7 @@ export default function AxiomEnginePage() {
 
   const toggleAxiom = async (id: string, enabled: boolean) => {
     try {
-      await authFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v2/axioms/${id}`, {
+      await authFetch(`/api/v2/axioms/${id}`, {
         method: "PATCH",
         body: JSON.stringify({ enabled: !enabled }),
       });
@@ -51,7 +51,7 @@ export default function AxiomEnginePage() {
 
   const deleteAxiom = async (id: string) => {
     try {
-      await authFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v2/axioms/${id}`, { method: "DELETE" });
+      await authFetch(`/api/v2/axioms/${id}`, { method: "DELETE" });
       setAxioms((prev) => prev.filter((a) => a.id !== id));
     } catch (err) {
       console.error("Failed to delete axiom:", err);
@@ -60,7 +60,7 @@ export default function AxiomEnginePage() {
 
   const createAxiom = async () => {
     try {
-      const data = await authFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v2/axioms`, {
+      const data = await authFetch(`/api/v2/axioms`, {
         method: "POST",
         body: JSON.stringify(newAxiom),
       });

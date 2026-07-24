@@ -537,6 +537,7 @@ except ImportError:  # pragma: no cover
 # Faza 1 — Core routers
 app.include_router(health.router)
 app.include_router(auth_router)
+app.include_router(export.router)   # MUST precede zwiad.router — /api/v1/tenders/csv|xlsx static routes
 app.include_router(zwiad.router)
 app.include_router(documents.router)
 app.include_router(estimator.router)
@@ -546,7 +547,6 @@ app.include_router(chat.router)
 app.include_router(module3.router)
 app.include_router(system.router)
 app.include_router(system.router_v2)
-app.include_router(export.router)
 app.include_router(offers.router)   # Faza 7 — Oferty
 app.include_router(bzp.router)
 app.include_router(market_data.router)
@@ -889,6 +889,21 @@ except Exception as _e:
 # ── v1 compat aliases — frontend używa /api/v1/tenders ──────────────────────
 from fastapi import Request as _Request
 from fastapi.responses import JSONResponse as _JSONResponse
+
+# NOTE: csv/xlsx aliases must come BEFORE the /{tender_id} wildcard alias below
+from .auth.deps import AuthUser as _AuthUser  # noqa: E402
+
+@app.get("/api/v1/tenders/csv", include_in_schema=False)
+def v1_tenders_csv(user: _AuthUser):
+    """v1 alias → direct call to export handler."""
+    from .routers.export import export_tenders_csv
+    return export_tenders_csv(user=user)
+
+@app.get("/api/v1/tenders/xlsx", include_in_schema=False)
+def v1_tenders_xlsx(user: _AuthUser):
+    """v1 alias → direct call to export handler."""
+    from .routers.export import export_tenders_xlsx
+    return export_tenders_xlsx(user=user)
 
 @app.get("/api/v1/tenders", include_in_schema=False)
 async def v1_tenders_list(_req: _Request):

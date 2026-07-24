@@ -251,7 +251,7 @@ def compare_estimate_endpoint(tender_id: str) -> CompareResponse:
             estimates[v] = Estimate(
                 variant=v,
                 lines=lines,
-                total_net_pln=Decimal(str(row[1])),
+                total_net_pln=Decimal(str(row[1] or "0")),
             )
 
     if "doc" not in estimates or "owner" not in estimates:

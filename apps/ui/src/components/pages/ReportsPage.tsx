@@ -35,7 +35,7 @@ const TYPE_META: Record<string, { label: string; icon: React.ReactNode; color: s
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } };
 const item      = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0, transition: { duration: 0.3 } } };
 
-// Static chart data — fallback / always-visible
+// Static chart data — displayed as demo when /api/v2/reports/monthly returns no rows
 const STATIC_CHART: { month: string; count: number }[] = [
   { month: 'Lut', count: 12 },
   { month: 'Mar', count: 18 },
@@ -117,11 +117,13 @@ export function ReportsPage() {
   const totalPages     = reports.reduce((s, r) => s + r.pages, 0);
   const scheduledCount = reports.filter(r => r.status === 'scheduled').length;
 
-  // Derive chart rows: prefer API data when available, otherwise static
+  const isDemo = monthlyData.length === 0;
+
+  // Derive chart rows: prefer API data, otherwise static demo
   const chartRows: { month: string; count: number }[] =
-    monthlyData.length > 0
-      ? monthlyData.map(r => ({ month: r.month, count: r.count }))
-      : STATIC_CHART;
+    isDemo
+      ? STATIC_CHART
+      : monthlyData.map(r => ({ month: r.month, count: r.count }));
 
   const actions = (
     <button type="button" className="btn-primary flex items-center gap-2">
@@ -180,7 +182,15 @@ export function ReportsPage() {
               <Loader2 className="w-6 h-6 text-slate-500 animate-spin" />
             </div>
           ) : (
-            <InlineBarChart data={chartRows} />
+            <>
+              {isDemo && (
+                <div className="mb-2 text-xs text-amber-400/70 flex items-center gap-1">
+                  <span className="px-1.5 py-0.5 rounded bg-amber-400/10 font-medium tracking-wide">DEMO</span>
+                  dane przykładowe — brak historii z API
+                </div>
+              )}
+              <InlineBarChart data={chartRows} />
+            </>
           )}
         </motion.div>
 

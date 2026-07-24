@@ -161,6 +161,127 @@ def add_competitor(body: CompetitorCreate, user: AuthUser, db: DB):
     return dict(row)
 
 
+# ─── Static-path routes BEFORE /{watch_id} to avoid UUID capture ──────────────
+
+@router.get("/last-checked")
+def get_competitor_watch_list(user: AuthUser) -> dict:
+    """S52: Lista obserwowanych konkurentów z last_checked_at."""
+    org_id = _require_org(user)
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(
+            text("""
+                SELECT id, competitor_nip, competitor_name, notes, tags,
+                       notify_on_win, created_at,
+                       COALESCE(last_checked_at::text, 'never') AS last_checked_at
+                FROM competitor_watch
+                WHERE tenant_id = :tenant_id
+                ORDER BY created_at DESC
+            """),
+            {"tenant_id": org_id},
+        ).fetchall()
+    return {
+        "items": [
+            {
+                "id": str(r[0]),
+                "competitor_nip": r[1],
+                "competitor_name": r[2],
+                "notes": r[3],
+                "tags": r[4] or [],
+                "notify_on_win": r[5],
+                "created_at": str(r[6]),
+                "last_checked_at": r[7],
+            }
+            for r in rows
+        ]
+    }
+
+
+@router.get("/intel/{nip}", summary="Pełny profil rynkowy firmy po NIP")
+def competitor_intel(
+    nip: str,
+    user: AuthUser,
+    db: DB,
+):
+    """Deep intel: atlas_contractors + wygrane per CPV5/region (2 lata)."""
+    _require_org(user)
+
+    if not _NIP_RE.match(nip):
+        raise HTTPException(status_code=400, detail="Nieprawidłowy format NIP (8-12 cyfr)")
+
+    profile = db.execute(text("""
+        SELECT nip, name, city, province, total_wins, total_value,
+               win_rate, top_cpv
+        FROM atlas_contractors WHERE nip = :nip
+    """), {"nip": nip}).mappings().one_or_none()
+
+    cpv_breakdown = db.execute(text("""
+        SELECT left(cpv_code, 5) AS cpv5, count(*) AS wins,
+               round(avg(estimated_value)::numeric) AS avg_value,
+               round(sum(estimated_value)::numeric) AS total_value
+        FROM historical_tenders
+        WHERE contractor_national_id = :nip
+          AND procedure_result = 'zawarcieUmowy'
+          AND date >= (SELECT max(date) FROM historical_tenders) - INTERVAL '2 years'
+        GROUP BY 1 ORDER BY wins DESC LIMIT 10
+    """), {"nip": nip}).mappings().all()
+
+    region_breakdown = db.execute(text("""
+        SELECT province, count(*) AS wins,
+               round(avg(estimated_value)::numeric) AS avg_value,
+               round(sum(estimated_value)::numeric) AS total_value
+        FROM historical_tenders
+        WHERE contractor_national_id = :nip
+          AND procedure_result = 'zawarcieUmowy'
+          AND date >= (SELECT max(date) FROM historical_tenders) - INTERVAL '2 years'
+        GROUP BY 1 ORDER BY wins DESC LIMIT 10
+    """), {"nip": nip}).mappings().all()
+
+    recent_wins = db.execute(text("""
+        SELECT cpv5, tender_province, win_date, value,
+               buyer_name, title, ht_id
+        FROM mv_competitor_recent_wins
+        WHERE contractor_nip = :nip
+        ORDER BY win_date DESC
+        LIMIT 10
+    """), {"nip": nip}).mappings().all()
+
+    return {
+        "nip": nip,
+        "profile": dict(profile) if profile else None,
+        "cpv_breakdown": [dict(r) for r in cpv_breakdown],
+        "region_breakdown": [dict(r) for r in region_breakdown],
+        "recent_wins": [dict(r) for r in recent_wins],
+    }
+
+
+@router.get("/heatmap", summary="Mapa ciepła wygranych przetargów konkurentów (alias)")
+def competitor_heatmap_alias(user: AuthUser) -> dict:
+    """P1-13 fix: static /heatmap must precede /{watch_id} wildcard.
+    Delegates to m7_phase2 competitor_heatmap logic inline.
+    """
+    org_id = _require_org(user)
+    engine = get_engine()
+    with engine.connect() as conn:
+        rows = conn.execute(
+            text("""
+                SELECT ac.province, COUNT(*) AS wins, SUM(ac.total_value) AS total_value_pln
+                FROM competitor_watch cw
+                JOIN atlas_contractors ac ON ac.nip = cw.competitor_nip
+                WHERE cw.tenant_id = :tid AND ac.province IS NOT NULL
+                GROUP BY ac.province
+                ORDER BY wins DESC
+            """),
+            {"tid": org_id},
+        ).fetchall()
+    return {
+        "items": [
+            {"province": r[0], "wins": r[1], "total_value_pln": float(r[2] or 0)}
+            for r in rows
+        ]
+    }
+
+
 @router.get("/{watch_id}", summary="Profil obserwowanego konkurenta z enrichmentem")
 def get_competitor(watch_id: UUID, user: AuthUser, db: DB):
     org_id = _require_org(user)
@@ -263,100 +384,6 @@ def competitor_wins(
         "wins": [dict(r) for r in rows],
         "total": len(rows),
         "total_value": round(total_value) if total_value else None,
-    }
-
-
-@router.get("/intel/{nip}", summary="Pełny profil rynkowy firmy po NIP")
-def competitor_intel(
-    nip: str,
-    user: AuthUser,
-    db: DB,
-):
-    """Deep intel: atlas_contractors + wygrane per CPV5/region (2 lata)."""
-    _require_org(user)
-
-    if not _NIP_RE.match(nip):
-        raise HTTPException(status_code=400, detail="Nieprawidłowy format NIP (8-12 cyfr)")
-
-    profile = db.execute(text("""
-        SELECT nip, name, city, province, total_wins, total_value,
-               win_rate, top_cpv
-        FROM atlas_contractors WHERE nip = :nip
-    """), {"nip": nip}).mappings().one_or_none()
-
-    cpv_breakdown = db.execute(text("""
-        SELECT left(cpv_code, 5) AS cpv5, count(*) AS wins,
-               round(avg(estimated_value)::numeric) AS avg_value,
-               round(sum(estimated_value)::numeric) AS total_value
-        FROM historical_tenders
-        WHERE contractor_national_id = :nip
-          AND procedure_result = 'zawarcieUmowy'
-          AND date >= (SELECT max(date) FROM historical_tenders) - INTERVAL '2 years'
-        GROUP BY 1 ORDER BY wins DESC LIMIT 10
-    """), {"nip": nip}).mappings().all()
-
-    region_breakdown = db.execute(text("""
-        SELECT province, count(*) AS wins,
-               round(avg(estimated_value)::numeric) AS avg_value,
-               round(sum(estimated_value)::numeric) AS total_value
-        FROM historical_tenders
-        WHERE contractor_national_id = :nip
-          AND procedure_result = 'zawarcieUmowy'
-          AND date >= (SELECT max(date) FROM historical_tenders) - INTERVAL '2 years'
-        GROUP BY 1 ORDER BY wins DESC LIMIT 10
-    """), {"nip": nip}).mappings().all()
-
-    recent_wins = db.execute(text("""
-        SELECT cpv5, tender_province, win_date, value,
-               buyer_name, title, ht_id
-        FROM mv_competitor_recent_wins
-        WHERE contractor_nip = :nip
-        ORDER BY win_date DESC
-        LIMIT 10
-    """), {"nip": nip}).mappings().all()
-
-    return {
-        "nip": nip,
-        "profile": dict(profile) if profile else None,
-        "cpv_breakdown": [dict(r) for r in cpv_breakdown],
-        "region_breakdown": [dict(r) for r in region_breakdown],
-        "recent_wins": [dict(r) for r in recent_wins],
-    }
-
-
-# ─── S52/S53/S54 extensions ────────────────────────────────────────────────────
-
-@router.get("/last-checked")
-def get_competitor_watch_list(user: AuthUser) -> dict:
-    """S52: Lista obserwowanych konkurentów z last_checked_at."""
-    org_id = _require_org(user)
-    engine = get_engine()
-    with engine.connect() as conn:
-        rows = conn.execute(
-            text("""
-                SELECT id, competitor_nip, competitor_name, notes, tags,
-                       notify_on_win, created_at,
-                       COALESCE(last_checked_at::text, 'never') AS last_checked_at
-                FROM competitor_watch
-                WHERE tenant_id = :tenant_id
-                ORDER BY created_at DESC
-            """),
-            {"tenant_id": org_id},
-        ).fetchall()
-    return {
-        "items": [
-            {
-                "id": str(r[0]),
-                "competitor_nip": r[1],
-                "competitor_name": r[2],
-                "notes": r[3],
-                "tags": r[4] or [],
-                "notify_on_win": r[5],
-                "created_at": str(r[6]),
-                "last_checked_at": r[7],
-            }
-            for r in rows
-        ]
     }
 
 

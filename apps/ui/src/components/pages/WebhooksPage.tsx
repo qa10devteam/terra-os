@@ -40,7 +40,7 @@ export default function WebhooksPage() {
 
   const fetchWebhooks = async () => {
     try {
-      const data = await authFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v2/webhooks`);
+      const data = await authFetch(`/api/v2/webhooks`);
       setWebhooks(data.webhooks || []);
     } catch (err) {
       console.error("Failed to fetch webhooks:", err);
@@ -51,8 +51,8 @@ export default function WebhooksPage() {
 
   const createWebhook = async () => {
     try {
-      const data = await authFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v2/webhooks`, {
-        method: "POST",
+      const data = await authFetch(`/api/v2/webhooks`, {
+        method: POST,
         body: JSON.stringify(form),
       });
       setWebhooks((prev) => [...prev, data]);
@@ -65,7 +65,7 @@ export default function WebhooksPage() {
 
   const toggleWebhook = async (id: string, enabled: boolean) => {
     try {
-      await authFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v2/webhooks/${id}`, {
+      await authFetch(`/api/v2/webhooks/${id}`, {
         method: "PATCH",
         body: JSON.stringify({ enabled: !enabled }),
       });
@@ -77,7 +77,7 @@ export default function WebhooksPage() {
 
   const deleteWebhook = async (id: string) => {
     try {
-      await authFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v2/webhooks/${id}`, { method: "DELETE" });
+      await authFetch(`/api/v2/webhooks/${id}`, { method: "DELETE" });
       setWebhooks((prev) => prev.filter((w) => w.id !== id));
     } catch (err) {
       console.error("Failed to delete webhook:", err);
@@ -86,7 +86,7 @@ export default function WebhooksPage() {
 
   const testWebhook = async (id: string) => {
     try {
-      await authFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/v2/webhooks/${id}/test`, { method: "POST" });
+      await authFetch(`/api/v2/webhooks/${id}/test`, { method: "POST" });
     } catch (err) {
       console.error("Failed to test webhook:", err);
     }

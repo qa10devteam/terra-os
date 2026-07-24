@@ -251,7 +251,7 @@ def get_analytics_dashboard(current_user: AuthUser):
             "pipeline_value": float(pipeline_stats.pipeline_value) if pipeline_stats else 0.0,
             "active_bids": int(pipeline_stats.active_bids) if pipeline_stats else 0,
             "win_rate_pct": win_rate,
-            "avg_margin_pct": 12.5,  # placeholder until historical_bids table is populated
+            "avg_margin_pct": None,  # populated once historical_bids has data
             "funnel": [{"status": r.status, "count": r.count} for r in funnel],
         }
     except Exception as exc:

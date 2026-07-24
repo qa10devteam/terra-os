@@ -4637,3 +4637,36 @@
 2026-07-24 13:00:29,771 [INFO] ingestion.alert_dispatcher: Alert 'Drogi i infrastruktura': 0 nowych przetargów od 2026-07-24 11:55 — pomijam
 2026-07-24 13:00:29,771 [INFO] ingestion.alert_dispatcher: Alert dispatcher zakończony: {'alerts_checked': 14, 'alerts_fired': 10, 'emails_sent': 10, 'tenders_found': 103, 'skipped': 4, 'since_minutes': 65}
 2026-07-24 13:00:29,771 [INFO] run_alert_dispatcher: Alert dispatcher complete: checked=14 fired=10 emails=10 tenders=103 skipped=4
+2026-07-24 14:00:11,685 [INFO] run_alert_dispatcher: Starting alert dispatcher (since_minutes=65, dry_run=False)
+2026-07-24 14:00:12,889 [INFO] ingestion.alert_dispatcher: Alert dispatcher: szukam przetargów od 2026-07-24T12:55:12.889613+00:00 (ostatnie 65 min)
+2026-07-24 14:00:12,899 [INFO] ingestion.alert_dispatcher: Aktywnych alertów: 14
+2026-07-24 14:00:12,901 [INFO] ingestion.alert_dispatcher: Alert 'test': 0 nowych przetargów od 2026-07-24 12:55 — pomijam
+2026-07-24 14:00:12,904 [INFO] ingestion.alert_dispatcher: Alert 'Roboty budowlane CPV45': 3 nowych przetargów → wysyłam digest
+2026-07-24 14:00:12,905 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'Roboty budowlane CPV45' do fallback JSON
+2026-07-24 14:00:12,943 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'Roboty budowlane CPV45' → mateusz@qa10.io (3 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-24 14:00:12,947 [INFO] ingestion.alert_dispatcher: Alert 'roboty budowlane | CPV:45 | slaskie': 0 nowych przetargów od 2026-07-24 12:55 — pomijam
+2026-07-24 14:00:12,948 [INFO] ingestion.alert_dispatcher: Alert 'Alert CPV 45 Śląsk': 0 nowych przetargów od 2026-07-24 12:55 — pomijam
+2026-07-24 14:00:12,949 [INFO] ingestion.alert_dispatcher: Alert 'Alert test': 0 nowych przetargów od 2026-07-24 12:55 — pomijam
+2026-07-24 14:00:12,950 [INFO] ingestion.alert_dispatcher: Alert 'Test CPV 45': 8 nowych przetargów → wysyłam digest
+2026-07-24 14:00:12,950 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'Test CPV 45' do fallback JSON
+2026-07-24 14:00:12,987 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'Test CPV 45' → mateusz@qa10.io (8 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-24 14:00:12,990 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert': 3 nowych przetargów → wysyłam digest
+2026-07-24 14:00:12,990 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'Test Alert' do fallback JSON
+2026-07-24 14:00:13,026 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'Test Alert' → mateusz@qa10.io (3 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-24 14:00:13,028 [INFO] ingestion.alert_dispatcher: Alert 'Test alert': 1 nowych przetargów → wysyłam digest
+2026-07-24 14:00:13,029 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'Test alert' do fallback JSON
+2026-07-24 14:00:13,064 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'Test alert' → deleted_40a71ef6-d6eb-48a3-b62e-7da3df5f0a17@terra.deleted (1 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-24 14:00:13,067 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert Coverage G1': 19 nowych przetargów → wysyłam digest
+2026-07-24 14:00:13,067 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'Test Alert Coverage G1' do fallback JSON
+2026-07-24 14:00:13,104 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'Test Alert Coverage G1' → deleted_40a71ef6-d6eb-48a3-b62e-7da3df5f0a17@terra.deleted (19 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-24 14:00:13,107 [INFO] ingestion.alert_dispatcher: Alert 'My Alert': 11 nowych przetargów → wysyłam digest
+2026-07-24 14:00:13,107 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'My Alert' do fallback JSON
+2026-07-24 14:00:13,144 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'My Alert' → deleted_40a71ef6-d6eb-48a3-b62e-7da3df5f0a17@terra.deleted (11 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-24 14:00:13,146 [INFO] ingestion.alert_dispatcher: Alert 'Bad CPV Alert': 0 nowych przetargów od 2026-07-24 12:55 — pomijam
+2026-07-24 14:00:13,147 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert Coverage': 0 nowych przetargów od 2026-07-24 12:55 — pomijam
+2026-07-24 14:00:13,148 [INFO] ingestion.alert_dispatcher: Alert 'Przetargi budowlane ogólnopolskie': 2 nowych przetargów → wysyłam digest
+2026-07-24 14:00:13,148 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'Przetargi budowlane ogólnopolskie' do fallback JSON
+2026-07-24 14:00:13,185 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'Przetargi budowlane ogólnopolskie' → demo@terra-os.pl (2 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-24 14:00:13,188 [INFO] ingestion.alert_dispatcher: Alert 'Drogi i infrastruktura': 0 nowych przetargów od 2026-07-24 12:55 — pomijam
+2026-07-24 14:00:13,188 [INFO] ingestion.alert_dispatcher: Alert dispatcher zakończony: {'alerts_checked': 14, 'alerts_fired': 7, 'emails_sent': 7, 'tenders_found': 47, 'skipped': 7, 'since_minutes': 65}
+2026-07-24 14:00:13,188 [INFO] run_alert_dispatcher: Alert dispatcher complete: checked=14 fired=7 emails=7 tenders=47 skipped=7

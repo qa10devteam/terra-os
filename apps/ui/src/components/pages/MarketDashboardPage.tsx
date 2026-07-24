@@ -367,11 +367,9 @@ export function MarketDashboardPage() {
     setError(null);
     let cancelled = false;
 
-    (authFetch('/api/v2/dashboard/market-charts') as Promise<Response>)
-      .then(async (res) => {
+    (authFetch('/api/v2/dashboard/market-charts') as Promise<MarketData>)
+      .then((json) => {
         if (cancelled) return;
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json() as MarketData;
         setData(json);
         setRefreshedAt(new Date());
       })

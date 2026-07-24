@@ -241,6 +241,25 @@ def create_crm(body: BuyerCRMCreate, user: AuthUser, db: DB):
     return dict(row)
 
 
+@router.get("/stats", summary="Statystyki CRM — liczby etapów, follow-upów, wartości")
+def get_crm_stats(user: AuthUser, db: DB):
+    org_id = _require_org(user)
+    rows = db.execute(text("""
+        SELECT
+            COUNT(*)                                              AS total,
+            COUNT(*) FILTER (WHERE crm_stage = 'lead')           AS leads,
+            COUNT(*) FILTER (WHERE crm_stage = 'qualified')      AS qualified,
+            COUNT(*) FILTER (WHERE crm_stage = 'proposal')       AS proposals,
+            COUNT(*) FILTER (WHERE crm_stage = 'won')            AS won,
+            COUNT(*) FILTER (WHERE crm_stage = 'lost')           AS lost,
+            COUNT(*) FILTER (WHERE next_followup <= NOW())       AS overdue_followups,
+            COUNT(*) FILTER (WHERE next_followup::date = CURRENT_DATE) AS followups_today
+        FROM buyer_crm
+        WHERE tenant_id = :org_id
+    """), {"org_id": org_id}).mappings().one()
+    return dict(rows)
+
+
 @router.get("/{crm_id}", summary="Profil zamawiającego z enrichmentem atlas_buyers")
 def get_crm(crm_id: UUID, user: AuthUser, db: DB):
     org_id = _require_org(user)

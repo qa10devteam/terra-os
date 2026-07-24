@@ -512,7 +512,7 @@ class RFQSendToSubcontractors(BaseModel):
     message: str = ""
 
 
-@router.post("/api/v2/rfq/{rfq_id}/send-to-subcontractors", tags=["rfq"])
+@router.post("/rfq/{rfq_id}/send-to-subcontractors", tags=["rfq"])
 def send_rfq_to_subcontractors(
     rfq_id: str,
     body: RFQSendToSubcontractors,

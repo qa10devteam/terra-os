@@ -79,7 +79,7 @@ interface BpmnEdge {
 }
 
 const NODES: BpmnNode[] = [
-  { id: 'start',      type: 'start',      x: 55,   y: 95,  label: 'Nowy\nprzetarg BZP',     sublabel: '847 przetargów' },
+  { id: 'start',      type: 'start',      x: 55,   y: 95,  label: 'Nowy\nprzetarg BZP',     sublabel: 'auto-monitoring' },
   { id: 'scraping',   type: 'task',       x: 190,  y: 95,  label: 'Scraping +\nwalidacja',   sublabel: 'BZP, TED, UZP',    icon: '⬇' },
   { id: 'scoring',    type: 'task',       x: 355,  y: 95,  label: 'AI Match\nScore',         sublabel: 'NLP · cosine',     icon: '🤖' },
   { id: 'gw1',        type: 'gateway',    x: 490,  y: 95,  label: 'Score\n> 0.6?' },
@@ -88,7 +88,7 @@ const NODES: BpmnNode[] = [
   { id: 'gw2',        type: 'gateway',    x: 925,  y: 95,  label: 'Decyzja\nGO?' },
   { id: 'knr',        type: 'task',       x: 1060, y: 95,  label: 'Kosztorys\nKNR',          sublabel: 'Normy branżowe',   icon: '📋' },
   { id: 'pdf',        type: 'task',       x: 1215, y: 95,  label: 'Generuj\nOfertę PDF',     sublabel: 'Auto-podpisana',   icon: '📄' },
-  { id: 'end_ok',     type: 'end',        x: 1360, y: 95,  label: 'Złożona\noferta',         sublabel: '~23/mies.' },
+  { id: 'end_ok',     type: 'end',        x: 1360, y: 95,  label: 'Złożona\noferta',         sublabel: 'monitorowanie' },
   { id: 'end_ignore', type: 'end_danger', x: 490,  y: 230, label: 'Zignorowano',             sublabel: 'Score < 0.6' },
   { id: 'end_nogo',   type: 'end_danger', x: 925,  y: 230, label: 'Odrzucono',               sublabel: 'Decyzja NO-GO' },
 ];
@@ -274,7 +274,7 @@ interface DetailInfo {
 }
 
 const NODE_DETAILS: Record<string, DetailInfo> = {
-  start:      { title: 'Nowy przetarg BZP/TED', desc: 'Automatyczne pobieranie ogłoszeń z platform zamówień publicznych.', stats: [{ label: 'Dziennie', value: '~120' }, { label: 'Razem', value: '847' }] },
+  start:      { title: 'Nowy przetarg BZP/TED', desc: 'Automatyczne pobieranie ogłoszeń z platform zamówień publicznych.', stats: [{ label: 'Dziennie', value: '~120' }, { label: 'Razem', value: 'live' }] },
   scraping:   { title: 'Scraping + walidacja danych', desc: 'Parsowanie XML/JSON z BZP, TED, UZP. Filtrowanie CPV, kwoty, terminy.', stats: [{ label: 'Czas', value: '<2s' }, { label: 'Skuteczność', value: '98.2%' }] },
   scoring:    { title: 'AI Match Score', desc: 'Model NLP porównuje opis przetargu z profilem firmy. Cosine similarity + fine-tuned classifier.', stats: [{ label: 'Próg', value: '0.60' }, { label: 'Avg score', value: '0.74' }] },
   gw1:        { title: 'Bramka: Score > 0.6?', desc: 'Decyzja na podstawie AI Match Score. Przetargi poniżej progu są ignorowane.', stats: [{ label: 'Przechodzi', value: '~34%' }, { label: 'Ignoruje', value: '~66%' }] },
@@ -283,7 +283,7 @@ const NODE_DETAILS: Record<string, DetailInfo> = {
   gw2:        { title: 'Bramka: Decyzja GO?', desc: 'Człowiek lub auto-reguły zatwierdzają lub odrzucają ofertę na podstawie rekomendacji.', stats: [{ label: 'GO rate', value: '~71%' }, { label: 'Avg czas', value: '4h' }] },
   knr:        { title: 'Kosztorys KNR', desc: 'Automatyczne generowanie kosztorysu na podstawie norm KNR. Import z Normy PRO.', stats: [{ label: 'Pozycji', value: '50–200' }, { label: 'Dokładność', value: '±3%' }] },
   pdf:        { title: 'Generuj Ofertę PDF', desc: 'Kompilacja oferty: kosztorys + dane firmy + podpis elektroniczny. Format ZP-ORG.', stats: [{ label: 'Czas', value: '<10s' }, { label: 'Format', value: 'PDF/A-1b' }] },
-  end_ok:     { title: 'Złożona oferta', desc: 'Oferta przesłana do platformy zamówień. Status monitorowany automatycznie.', stats: [{ label: 'Miesięcznie', value: '~23' }, { label: 'Win rate', value: '38%' }] },
+  end_ok:     { title: 'Złożona oferta', desc: 'Oferta przesłana do platformy zamówień. Status monitorowany automatycznie.', stats: [{ label: 'Miesięcznie', value: 'live' }, { label: 'Win rate', value: '—' }] },
   end_ignore: { title: 'Zignorowano', desc: 'Przetarg nie spełnił minimalnego progu dopasowania AI. Bez dalszych działań.', stats: [{ label: 'Dziennie', value: '~79' }] },
   end_nogo:   { title: 'Odrzucono (NO-GO)', desc: 'Przetarg nie uzyskał decyzji GO. Może wrócić do analizy przy zmianie parametrów.', stats: [{ label: 'Miesięcznie', value: '~12' }] },
 };
