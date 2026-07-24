@@ -535,6 +535,11 @@ def kosztorys_autofill(body: AutofillRequest, user: AuthUser) -> dict:
 @router.get("/dashboard")
 def icb_dashboard() -> dict:
     """Dashboard z kluczowymi wskaźnikami cenowymi z InterCenBud."""
+    _REDIS_KEY = "icb:dashboard:v1"
+    cached = rcache_get(_REDIS_KEY)
+    if cached:
+        return cached
+
     now = time.time()
     with _dashboard_lock:
         if 'data' in _dashboard_cache and now - _dashboard_cache['ts'] < _DASHBOARD_TTL:
@@ -626,6 +631,7 @@ def icb_dashboard() -> dict:
         _dashboard_cache['data'] = result
         _dashboard_cache['ts'] = time.time()
 
+    rcache_set(_REDIS_KEY, result, ttl=3600)  # 1h Redis cache
     return result
 
 
@@ -686,27 +692,39 @@ def robocizna_map(user: AuthUser) -> dict:
 
 @router.get("/volatility-matrix")
 def volatility_matrix(user: AuthUser, quarters: int = 8) -> list[dict]:
-    """Macierz zmienności (CV) per category × typ_rms za ostatnich N kwartałów."""
+    """Macierz zmienności (CV) per category × typ_rms za ostatnich N kwartałów.
+    
+    Używa materialized view mv_icb_volatility (odświeżany co godzinę) dla szybkości.
+    Fallback na surową tabelę gdy MV nie istnieje.
+    """
     engine = get_engine()
     with engine.connect() as conn:
-        rows = conn.execute(sa.text("""
-            WITH recent AS (
-                SELECT DISTINCT kwartalrok, kwartalnr
-                FROM icb_ceny_srednie
-                ORDER BY kwartalrok DESC, kwartalnr DESC
-                LIMIT :n
-            )
-            SELECT c.category, c.typ_rms,
-                   ROUND(AVG(c.cena_netto)::numeric, 2) as mean_price,
-                   ROUND(STDDEV(c.cena_netto)::numeric, 2) as std_price,
-                   ROUND((STDDEV(c.cena_netto) / NULLIF(AVG(c.cena_netto), 0))::numeric, 4) as cv,
-                   COUNT(*) as n
-            FROM icb_ceny_srednie c
-            JOIN recent r ON c.kwartalrok = r.kwartalrok AND c.kwartalnr = r.kwartalnr
-            WHERE c.category IS NOT NULL AND c.cena_netto > 0
-            GROUP BY c.category, c.typ_rms
-            ORDER BY cv DESC NULLS LAST
-        """), {"n": quarters}).fetchall()
+        try:
+            rows = conn.execute(sa.text("""
+                SELECT category, typ_rms, mean_price, std_price, cv, n
+                FROM mv_icb_volatility
+                ORDER BY cv DESC NULLS LAST
+            """)).fetchall()
+        except Exception:
+            # Fallback jeśli MV nie istnieje
+            rows = conn.execute(sa.text("""
+                WITH recent AS (
+                    SELECT DISTINCT kwartalrok, kwartalnr
+                    FROM icb_ceny_srednie
+                    ORDER BY kwartalrok DESC, kwartalnr DESC
+                    LIMIT :n
+                )
+                SELECT c.category, c.typ_rms,
+                       ROUND(AVG(c.cena_netto)::numeric, 2) as mean_price,
+                       ROUND(STDDEV(c.cena_netto)::numeric, 2) as std_price,
+                       ROUND((STDDEV(c.cena_netto) / NULLIF(AVG(c.cena_netto), 0))::numeric, 4) as cv,
+                       COUNT(*) as n
+                FROM icb_ceny_srednie c
+                JOIN recent r ON c.kwartalrok = r.kwartalrok AND c.kwartalnr = r.kwartalnr
+                WHERE c.category IS NOT NULL AND c.cena_netto > 0
+                GROUP BY c.category, c.typ_rms
+                ORDER BY cv DESC NULLS LAST
+            """), {"n": quarters}).fetchall()
 
     return [
         {

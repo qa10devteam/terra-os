@@ -21,10 +21,11 @@ import math
 from datetime import datetime, timedelta
 from typing import Any, Optional
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Depends
 import sqlalchemy as sa
 
 from terra_db.session import get_engine
+from ..auth.deps import AuthUser
 
 router = APIRouter(prefix="/api/v2/proactive", tags=["proactive-agent"])
 logger = logging.getLogger(__name__)
@@ -34,23 +35,28 @@ logger = logging.getLogger(__name__)
 
 @router.get("/alerts")
 def get_deadline_alerts(
+    user: AuthUser,
     days_ahead: int = Query(14, ge=1, le=90),
     severity: Optional[str] = Query(None, pattern="^(critical|warning|info)$"),
+    limit: int = Query(50, ge=1, le=500),
 ) -> list[dict[str, Any]]:
     """Get upcoming deadline alerts sorted by urgency."""
     engine = get_engine()
+    tenant_id = user.org_id
     sql = sa.text("""
         SELECT id, title, buyer, deadline_at, value_pln, match_score, pipeline_status,
                EXTRACT(DAY FROM (deadline_at - NOW())) AS days_left
         FROM tender
-        WHERE deadline_at IS NOT NULL
+        WHERE tenant_id = :tid
+          AND deadline_at IS NOT NULL
           AND deadline_at > NOW()
           AND deadline_at <= NOW() + INTERVAL '1 day' * :days
           AND pipeline_status NOT IN ('won', 'lost', 'cancelled')
         ORDER BY deadline_at ASC
+        LIMIT :limit
     """)
     with engine.connect() as conn:
-        rows = conn.execute(sql, {"days": days_ahead}).fetchall()
+        rows = conn.execute(sql, {"days": days_ahead, "tid": tenant_id, "limit": limit}).fetchall()
 
     alerts = []
     for r in rows:

@@ -275,6 +275,23 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # pragma: no co
         logging.getLogger(__name__).info("Cost estimator warm-up OK")
     except Exception as e:
         logging.getLogger(__name__).warning("Cost estimator warm-up failed: %s", e)
+    # Warm-up: prime Redis cache for heavy endpoints (ICB dash, intelligence/summary)
+    import threading
+    def _warm_up_caches():
+        import time
+        time.sleep(5)  # Wait for DB connections to settle
+        try:
+            from .routers.icb_advanced import icb_dashboard
+            icb_dashboard()
+            logging.getLogger(__name__).info("ICB dashboard cache warm-up OK")
+        except Exception as e:
+            logging.getLogger(__name__).debug("ICB dashboard warm-up: %s", e)
+        try:
+            from .routers.market_intelligence import market_summary
+            # market_summary requires auth user — skip, Redis hit via direct call
+        except Exception:
+            pass
+    threading.Thread(target=_warm_up_caches, daemon=True).start()
     # Faza 8.02: BZP Auto-sync scheduler
     _scheduler = None
     try:
