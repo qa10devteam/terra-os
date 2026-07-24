@@ -190,11 +190,11 @@ def get_dashboard_digest(user: AuthUser) -> dict:
     engine = get_engine()
     with engine.connect() as conn:
         row = conn.execute(sa.text("""
-            SELECT detail, created_at
+            SELECT detail, ts
             FROM audit_log
             WHERE action = 'dashboard_digest'
               AND tenant_id = :tid
-            ORDER BY created_at DESC
+            ORDER BY ts DESC
             LIMIT 1
         """), {"tid": tenant_id}).fetchone()
 
@@ -273,7 +273,7 @@ def generate_dashboard_digest(user: AuthUser) -> dict:
     engine = get_engine()
     with engine.begin() as conn:
         conn.execute(sa.text("""
-            INSERT INTO audit_log (tenant_id, user_id, action, entity_type, detail, created_at)
+            INSERT INTO audit_log (tenant_id, user_id, action, entity, detail, ts)
             VALUES (:tid, 'system', 'dashboard_digest', 'dashboard', CAST(:details AS jsonb), NOW())
         """), {"tid": tenant_id, "details": details_json})
 
