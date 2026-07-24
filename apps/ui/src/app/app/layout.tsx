@@ -25,6 +25,11 @@ import {
   Settings,
   Target,
   ChevronLeft,
+  Bell,
+  Zap,
+  Link2,
+  Upload,
+  Download,
 } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { TopBar } from '@/components/TopBar';
@@ -70,6 +75,7 @@ const NAV: NavSection[] = [
   {
     section: 'OFERTOWANIE',
     items: [
+      { label: 'Workflow',       href: '/app/workflow',            icon: GitBranch       },
       { label: 'Oferta',         href: '/app/oferta',             icon: FileText        },
       { label: 'Kontrakty',      href: '/app/contracts',          icon: Target          },
       { label: 'Dokumenty',      href: '/app/documents',          icon: FolderOpen      },
@@ -102,7 +108,13 @@ const NAV: NavSection[] = [
   {
     section: 'SYSTEM',
     items: [
-      { label: 'Ustawienia',     href: '/app/settings',           icon: Settings        },
+      { label: 'Alerty',          href: '/app/alerts',             icon: Bell            },
+      { label: 'Powiadomienia',   href: '/app/notifications',      icon: Bell            },
+      { label: 'Automatyzacja',   href: '/app/automation',         icon: Zap             },
+      { label: 'Webhooks',        href: '/app/webhooks',           icon: Link2           },
+      { label: 'Import',          href: '/app/import',             icon: Upload          },
+      { label: 'Eksport',         href: '/app/export',             icon: Download        },
+      { label: 'Ustawienia',      href: '/app/settings',           icon: Settings        },
     ],
   },
 ];
