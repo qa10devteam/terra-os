@@ -19,8 +19,18 @@ interface TenderRow {
   title?: string;
   name?: string;
   score?: number;
+  match_score?: number;
   value?: number;
   value_pln?: number;
+  buyer?: string;
+  status?: string;
+}
+
+interface DashStats {
+  total_tenders?: number;
+  new_today?: number;
+  new_this_week?: number;
+  high_score_count?: number;
 }
 
 interface TendersResponse {
@@ -74,10 +84,14 @@ export default function YunaHubPage() {
   // ── Fetch stats (total count) ────────────────────────────────────────────────
   useEffect(() => {
     const ctrl = new AbortController();
-    fetch('/api/tenders?limit=1', { signal: ctrl.signal })
-      .then((r) => r.ok ? r.json() as Promise<TendersResponse> : null)
+    fetch('/api/v2/dashboard/stats', { signal: ctrl.signal })
+      .then((r) => r.ok ? r.json() as Promise<DashStats> : null)
       .then((d) => {
-        if (d) setStats({ active: String(d.total ?? '—'), week: '—', mine: '—' });
+        if (d) setStats({
+          active: String(d.total_tenders ?? '—'),
+          week: String(d.new_today ?? '—'),
+          mine: String(d.high_score_count ?? '—'),
+        });
         setStatsLoaded(true);
       })
       .catch(() => { setStatsLoaded(true); });
@@ -87,7 +101,7 @@ export default function YunaHubPage() {
   // ── Fetch recent tenders ─────────────────────────────────────────────────────
   useEffect(() => {
     const ctrl = new AbortController();
-    fetch('/api/tenders?limit=3&sort=-created_at', { signal: ctrl.signal })
+    fetch('/api/v2/tenders?limit=3&sort=-created_at', { signal: ctrl.signal })
       .then((r) => r.ok ? r.json() as Promise<TendersResponse> : null)
       .then((d) => {
         if (d) {
@@ -119,12 +133,14 @@ export default function YunaHubPage() {
     if (score === undefined || score === null) {
       return <span className="text-[10.5px] px-2 py-0.5 rounded-full font-semibold bg-zinc-100 text-zinc-400">—</span>;
     }
-    const cls = score >= 80
+    // API returns 0..1 float (e.g. 0.85) — normalize to 0..100
+    const pct = score <= 1 ? Math.round(score * 100) : Math.round(score);
+    const cls = pct >= 80
       ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-      : score >= 65
+      : pct >= 65
         ? 'bg-amber-50 text-amber-700 border border-amber-200'
         : 'bg-zinc-100 text-zinc-500 border border-zinc-200';
-    return <span className={`text-[10.5px] px-2 py-0.5 rounded-full font-semibold tabular-nums font-mono ${cls}`}>{score}</span>;
+    return <span className={`text-[10.5px] px-2 py-0.5 rounded-full font-semibold tabular-nums font-mono ${cls}`}>{pct}</span>;
   }
 
   return (
@@ -380,7 +396,7 @@ export default function YunaHubPage() {
                         {title}
                       </span>
                       <div className="flex items-center gap-3 shrink-0">
-                        <ScoreBadge score={t.score} />
+                        <ScoreBadge score={t.match_score ?? t.score} />
                         <span className="text-[12px] text-zinc-500 font-mono tabular-nums">{valueFmt}</span>
                       </div>
                     </Link>
