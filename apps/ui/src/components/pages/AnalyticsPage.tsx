@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import {
   Target, TrendingUp, BarChart3, AlertTriangle,
@@ -12,32 +12,25 @@ import {
   ResponsiveContainer, AreaChart, Area,
 } from 'recharts';
 import { useStore } from '@/store/useStore';
+import { useAuthFetch } from '@/lib/api-v2';
 import { PageShell } from '@/components/PageShell';
 import MarketIntelligenceDashboard from '@/components/MarketIntelligenceDashboard';
 import ICBPriceExplorer from '@/components/ICBPriceExplorer';
 import TenderFTSSearch from '@/components/TenderFTSSearch';
-import { PageTransition } from '@/components/ui/PageTransition';
 
-// ── Mock data for pipeline chart ───────────────────────────────────────────────
-const PIPELINE_DATA = [
-  { month: 'Sty', value: 1.8, won: 0.6 },
-  { month: 'Lut', value: 2.1, won: 0.9 },
-  { month: 'Mar', value: 3.4, won: 1.2 },
-  { month: 'Kwi', value: 2.8, won: 1.0 },
-  { month: 'Maj', value: 4.1, won: 1.5 },
-  { month: 'Cze', value: 3.6, won: 1.8 },
-  { month: 'Lip', value: 5.2, won: 2.1 },
-];
+// ── API data types ─────────────────────────────────────────────────────────────
+interface PipelineFunnelItem {
+  status: string;
+  count: number;
+}
 
-const WIN_TREND_DATA = [
-  { month: 'Sty', rate: 28 },
-  { month: 'Lut', rate: 31 },
-  { month: 'Mar', rate: 29 },
-  { month: 'Kwi', rate: 33 },
-  { month: 'Maj', rate: 35 },
-  { month: 'Cze', rate: 34 },
-  { month: 'Lip', rate: 38 },
-];
+interface WinRateTrendItem {
+  month: string;
+  won: number;
+  lost: number;
+  total: number;
+  win_rate: number;
+}
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface AHPCriterion {
@@ -126,8 +119,35 @@ function ScoreSlider({ label, value, onChange }: { label: string; value: number;
 // ── Main component ─────────────────────────────────────────────────────────────
 export function AnalyticsPage() {
   const token = useStore(s => s.accessToken);
+  const authFetch = useAuthFetch();
   const [tab, setTab] = useState<Tab>('ahp');
   const [loading, setLoading] = useState(false);
+
+  // ── Real API data for top charts ─────────────────────────────────────────
+  const [pipelineData, setPipelineData] = useState<PipelineFunnelItem[]>([]);
+  const [winTrendData, setWinTrendData] = useState<WinRateTrendItem[]>([]);
+  const [chartsLoading, setChartsLoading] = useState(true);
+  const [chartsError, setChartsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setChartsLoading(true);
+    Promise.all([
+      authFetch('/api/v2/analytics/pipeline-funnel').catch(() => null),
+      authFetch('/api/v2/analytics/win-rate-trend').catch(() => null),
+    ]).then(([funnelRes, trendRes]) => {
+      if (cancelled) return;
+      if (funnelRes?.funnel) setPipelineData(funnelRes.funnel);
+      if (trendRes?.trend) setWinTrendData(trendRes.trend);
+      setChartsLoading(false);
+    }).catch(e => {
+      if (!cancelled) {
+        setChartsError(e.message);
+        setChartsLoading(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [authFetch]);
 
   // AHP state
   const [ahpScores, setAhpScores] = useState<Record<string, number>>(
@@ -305,29 +325,36 @@ export function AnalyticsPage() {
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-8">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-sm font-semibold text-slate-200">Pipeline wartość miesięczna</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Złożone oferty vs wygrane (mln PLN)</p>
+            <h3 className="text-sm font-semibold text-slate-200">Pipeline — lejek przetargów</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Liczba przetargów per status (dane na żywo)</p>
           </div>
-          <div className="flex items-center gap-4 text-xs">
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-500/70" /> Złożone</span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-emerald-400" /> Wygrane</span>
-          </div>
+          {chartsLoading && <span className="text-xs text-slate-500 animate-pulse">Ładowanie…</span>}
+          {chartsError && <span className="text-xs text-red-400">Błąd ładowania</span>}
         </div>
         <div className="h-56">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={PIPELINE_DATA} barGap={2}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-              <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} unit=" M" />
-              <Tooltip
-                contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px' }}
-                labelStyle={{ color: '#e2e8f0' }}
-                itemStyle={{ color: '#94a3b8' }}
-              />
-              <Bar dataKey="value" name="Złożone" fill="#10b98170" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="won" name="Wygrane" fill="#34d399" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          {chartsLoading ? (
+            <div className="h-full flex items-center justify-center">
+              <div className="w-8 h-8 border-2 border-emerald-500/40 border-t-emerald-500 rounded-full animate-spin" />
+            </div>
+          ) : pipelineData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={pipelineData} barGap={2}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                <XAxis dataKey="status" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px' }}
+                  labelStyle={{ color: '#e2e8f0' }}
+                  itemStyle={{ color: '#94a3b8' }}
+                />
+                <Bar dataKey="count" name="Przetargi" fill="#10b98170" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-full flex items-center justify-center text-slate-600 text-sm">
+              Brak danych pipeline
+            </div>
+          )}
         </div>
       </div>
 
@@ -336,27 +363,38 @@ export function AnalyticsPage() {
         <div className="flex items-center gap-2 mb-4">
           <TrendingUp className="w-4 h-4 text-emerald-400" />
           <h3 className="text-sm font-semibold text-slate-200">Win Rate Trend</h3>
-          <span className="text-xs text-emerald-500 ml-auto">+8% za 6 mies.</span>
+          {chartsLoading && <span className="text-xs text-slate-500 animate-pulse ml-auto">Ładowanie…</span>}
         </div>
         <div className="h-44">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={WIN_TREND_DATA}>
-              <defs>
-                <linearGradient id="winGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#34d399" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#34d399" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-              <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} unit="%" domain={[20, 45]} />
-              <Tooltip
-                contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px' }}
-                labelStyle={{ color: '#e2e8f0' }}
-              />
-              <Area type="monotone" dataKey="rate" name="Win Rate" stroke="#34d399" fill="url(#winGradient)" strokeWidth={2} />
-            </AreaChart>
-          </ResponsiveContainer>
+          {chartsLoading ? (
+            <div className="h-full flex items-center justify-center">
+              <div className="w-8 h-8 border-2 border-emerald-500/40 border-t-emerald-500 rounded-full animate-spin" />
+            </div>
+          ) : winTrendData.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={winTrendData}>
+                <defs>
+                  <linearGradient id="winGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#34d399" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#34d399" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} unit="%" domain={[0, 100]} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px' }}
+                  labelStyle={{ color: '#e2e8f0' }}
+                  formatter={(v: number) => [`${(v * 100).toFixed(1)}%`, 'Win Rate']}
+                />
+                <Area type="monotone" dataKey="win_rate" name="Win Rate" stroke="#34d399" fill="url(#winGradient)" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-full flex items-center justify-center text-slate-600 text-sm">
+              Brak danych trendu
+            </div>
+          )}
         </div>
       </div>
 

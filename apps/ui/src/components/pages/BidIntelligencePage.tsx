@@ -1,147 +1,94 @@
 "use client";
 
 import { useCallback, useState, useEffect } from "react";
-import { useStore } from "@/store/useStore";
+import { useAuthFetch } from "@/lib/api-v2";
 import { PageShell } from "@/components/PageShell";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { TrendingUp, Target, BarChart2, FileText } from "lucide-react";
+import { TrendingUp, Target, BarChart2, FileText, Award } from "lucide-react";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 interface BidRecord {
   id: string;
-  tender_title: string;
-  submitted_at: string;
-  markup_pct: number;
-  bid_amount: number;
-  status: "won" | "lost" | "pending";
+  tender_id: string;
+  title: string;
+  our_price: number | null;
+  winning_price: number | null;
+  rank_position: number | null;
+  won: boolean;
+  markup_pct: number | null;
+  bid_date: string | null;
 }
 
 interface BidStats {
   total_bids: number;
-  win_rate: number;
-  avg_markup: number;
-  optimal_markup: number;
-  total_revenue: number;
+  win_rate_pct: number;
+  avg_markup_pct: number;
+  avg_rank: number;
+  total_wins: number;
 }
 
-// Analytics dashboard response shape from /api/v2/analytics/dashboard
-interface AnalyticsDashboardResponse {
-  pipeline_value: number;
-  active_bids: number;
-  win_rate: number;       // 0..1
-  win_rate_pct: number;   // 0..100
-  total_won: number;
-  total_lost: number;
-  avg_margin: number | null;
+interface OptimalMarkup {
+  sample_size: number;
+  recommended_markup_pct: number;
+  avg_winning_markup_pct: number;
+  avg_losing_markup_pct: number;
+  win_rate_pct: number;
+  recommendation?: string;
 }
 
-// Offers response (fallback: tenders)
-interface OfferRecord {
+interface LeaderboardItem {
   id: string;
-  tender_title?: string;
-  title?: string;
-  submitted_at?: string;
-  created_at?: string;
-  markup_pct?: number;
-  bid_amount?: number;
-  amount?: number;
-  status?: string;
-}
-
-interface ListResponse {
-  items: OfferRecord[];
-  total: number;
-}
-
-// ── Status helpers ──────────────────────────────────────────────────────────────
-
-const STATUS_META: Record<string, string> = {
-  won:     "text-success bg-success/10",
-  lost:    "text-danger bg-danger/10",
-  pending: "text-warning bg-warning/10",
-};
-
-function normaliseStatus(s: string | undefined): "won" | "lost" | "pending" {
-  if (!s) return "pending";
-  const lower = s.toLowerCase();
-  if (lower === "won" || lower === "decided_go") return "won";
-  if (lower === "lost" || lower === "decided_nogo" || lower === "archived") return "lost";
-  return "pending";
-}
-
-function normaliseBid(r: OfferRecord): BidRecord {
-  return {
-    id:           r.id,
-    tender_title: r.tender_title ?? r.title ?? "—",
-    submitted_at: r.submitted_at ?? r.created_at ?? new Date().toISOString(),
-    markup_pct:   r.markup_pct ?? 0,
-    bid_amount:   r.bid_amount ?? r.amount ?? 0,
-    status:       normaliseStatus(r.status),
-  };
+  title: string;
+  score_total: number | null;
+  percentile_rank: number | null;
 }
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function BidIntelligencePage() {
-  const accessToken = useStore((s) => s.accessToken);
-  const [bids,    setBids]    = useState<BidRecord[]>([]);
-  const [stats,   setStats]   = useState<BidStats | null>(null);
+  const authFetch = useAuthFetch();
+  const [bids, setBids] = useState<BidRecord[]>([]);
+  const [stats, setStats] = useState<BidStats | null>(null);
+  const [optimalMarkup, setOptimalMarkup] = useState<OptimalMarkup | null>(null);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Silent GET — no toast on non-OK, returns null on error
   const silentGet = useCallback(
     async <T,>(url: string): Promise<T | null> => {
       try {
-        const res = await fetch(url, {
-          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
-        });
-        if (!res.ok) return null;
-        return (await res.json()) as T;
+        return await authFetch(url) as T;
       } catch {
         return null;
       }
     },
-    [accessToken],
+    [authFetch],
   );
 
   useEffect(() => {
     let cancelled = false;
 
     async function fetchAll() {
-      // ── 1. Fetch analytics/dashboard for stats ─────────────────────────────
-      let statsResult: BidStats | null = null;
-      const d = await silentGet<AnalyticsDashboardResponse>('/api/v2/analytics/dashboard');
-      if (d) {
-        statsResult = {
-          total_bids:     (d.total_won ?? 0) + (d.total_lost ?? 0) + (d.active_bids ?? 0),
-          win_rate:       d.win_rate_pct ?? 0,
-          avg_markup:     d.avg_margin ?? 0,
-          optimal_markup: 0,
-          total_revenue:  d.pipeline_value ?? 0,
-        };
-      }
+      setLoading(true);
+      try {
+        const [bidsRes, markupRes, statsRes, leaderboardRes] = await Promise.all([
+          silentGet<BidRecord[]>('/api/v2/bid-intelligence?limit=20'),
+          silentGet<OptimalMarkup>('/api/v2/bid-intelligence/optimal-markup'),
+          silentGet<BidStats>('/api/v2/bid-intelligence/stats'),
+          silentGet<{ items: LeaderboardItem[]; total: number }>('/api/v2/scoring/leaderboard?limit=10'),
+        ]);
 
-      // ── 2. Fetch bid/offer history ─────────────────────────────────────────
-      let bidsResult: BidRecord[] = [];
-      // Try /api/v2/offers first; 404 → silentGet returns null
-      const offersResp = await silentGet<ListResponse>('/api/v2/offers?limit=20');
-      if (offersResp) {
-        bidsResult = (offersResp.items ?? []).map(normaliseBid);
-      } else {
-        // Fallback to tenders with decided/terminal statuses
-        const tendersResp = await silentGet<ListResponse>('/api/v2/tenders?limit=20&sort=created_at');
-        if (tendersResp) {
-          bidsResult = (tendersResp.items ?? [])
-            .filter((r) => r.status && ['decided_go','decided_nogo','archived','won','lost'].includes(r.status))
-            .map(normaliseBid);
-        }
-      }
+        if (cancelled) return;
 
-      if (!cancelled) {
-        setStats(statsResult);
-        setBids(bidsResult);
-        setLoading(false);
+        if (Array.isArray(bidsRes)) setBids(bidsRes);
+        if (markupRes) setOptimalMarkup(markupRes);
+        if (statsRes) setStats(statsRes);
+        if (leaderboardRes?.items) setLeaderboard(leaderboardRes.items);
+      } catch (e: unknown) {
+        if (!cancelled) setError((e as Error).message);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     }
 
@@ -152,7 +99,7 @@ export default function BidIntelligencePage() {
   return (
     <PageShell
       title="Bid Intelligence"
-      subtitle="Analiza historii ofertowania"
+      subtitle="Analiza historii ofertowania i rekomendacje"
     >
       {/* Loading skeletons */}
       {loading && (
@@ -166,14 +113,20 @@ export default function BidIntelligencePage() {
         </div>
       )}
 
+      {error && !loading && (
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400 mb-4">
+          Błąd ładowania danych: {error}
+        </div>
+      )}
+
       {/* Stats Cards */}
       {!loading && stats && (
         <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { label: 'Łącznie ofert',     value: String(stats.total_bids),                   icon: FileText,   color: 'text-slate-100' },
-            { label: 'Win Rate',           value: `${stats.win_rate.toFixed(1)}%`,             icon: TrendingUp, color: 'text-success'   },
-            { label: 'Optymalny markup',   value: stats.optimal_markup ? `${stats.optimal_markup}%` : '—', icon: Target, color: 'text-info' },
-            { label: 'Średni markup',      value: stats.avg_markup ? `${stats.avg_markup.toFixed(1)}%` : '—', icon: BarChart2, color: 'text-slate-100' },
+            { label: 'Łącznie ofert',   value: String(stats.total_bids),                                    icon: FileText,   color: 'text-slate-100' },
+            { label: 'Win Rate',         value: `${(stats.win_rate_pct ?? 0).toFixed(1)}%`,                 icon: TrendingUp, color: 'text-success'   },
+            { label: 'Wygrane',          value: String(stats.total_wins ?? 0),                               icon: Award,      color: 'text-success'   },
+            { label: 'Śr. rank',         value: stats.avg_rank ? stats.avg_rank.toFixed(1) : '—',           icon: BarChart2,  color: 'text-slate-100' },
           ].map(s => (
             <div key={s.label} className="card rounded-xl p-5 shadow-md-sm">
               <div className="flex items-center gap-2 text-slate-500 text-xs mb-2">
@@ -182,6 +135,64 @@ export default function BidIntelligencePage() {
               <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Optimal Markup Card */}
+      {!loading && optimalMarkup && optimalMarkup.sample_size > 0 && (
+        <div className="mb-6 card rounded-xl p-5 shadow-md-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <Target size={16} className="text-em" />
+            <h2 className="text-sm font-semibold text-slate-100">Optymalny Markup</h2>
+            <span className="ml-auto text-xs text-slate-500">{optimalMarkup.sample_size} próbek</span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {[
+              { label: 'Rekomendowany',    value: `${(optimalMarkup.recommended_markup_pct ?? 0).toFixed(1)}%`,   color: 'text-em' },
+              { label: 'Śr. wygrywający',  value: `${(optimalMarkup.avg_winning_markup_pct ?? 0).toFixed(1)}%`,   color: 'text-success' },
+              { label: 'Śr. przegrywający', value: `${(optimalMarkup.avg_losing_markup_pct ?? 0).toFixed(1)}%`,  color: 'text-danger' },
+              { label: 'Win Rate',          value: `${(optimalMarkup.win_rate_pct ?? 0).toFixed(1)}%`,            color: 'text-info' },
+            ].map(k => (
+              <div key={k.label} className="bg-ink-900/60 rounded-lg p-3">
+                <div className="text-xs text-slate-500 mb-1">{k.label}</div>
+                <div className={`text-xl font-bold ${k.color}`}>{k.value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Scoring Leaderboard */}
+      {!loading && leaderboard.length > 0 && (
+        <div className="mb-6 card rounded-xl overflow-hidden shadow-md-sm">
+          <div className="border-b border-ink-800/60 px-6 py-4 flex items-center gap-2">
+            <Award size={15} className="text-em" />
+            <h2 className="text-base font-semibold text-slate-100">Top Przetargi (Scoring)</h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-ink-800/60 text-left text-xs text-slate-500">
+                  <th className="px-6 py-3 font-medium">#</th>
+                  <th className="px-6 py-3 font-medium">Przetarg</th>
+                  <th className="px-6 py-3 font-medium">Score</th>
+                  <th className="px-6 py-3 font-medium">Percentyl</th>
+                </tr>
+              </thead>
+              <tbody>
+                {leaderboard.map((item, idx) => (
+                  <tr key={item.id} className="border-b border-ink-900 last:border-0 hover:bg-ink-900/40 transition-colors">
+                    <td className="px-6 py-3 text-slate-500 font-mono">{idx + 1}</td>
+                    <td className="px-6 py-3 text-slate-200 max-w-xs truncate">{item.title || item.id}</td>
+                    <td className="px-6 py-3 text-em font-bold font-mono">{(item.score_total ?? 0).toFixed(1)}</td>
+                    <td className="px-6 py-3 text-slate-400 font-mono">
+                      {item.percentile_rank != null ? `${item.percentile_rank.toFixed(0)}p` : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -205,24 +216,28 @@ export default function BidIntelligencePage() {
                     <th className="px-6 py-3 font-medium">Przetarg</th>
                     <th className="px-6 py-3 font-medium">Data</th>
                     <th className="px-6 py-3 font-medium">Markup</th>
-                    <th className="px-6 py-3 font-medium">Kwota</th>
+                    <th className="px-6 py-3 font-medium">Nasza cena</th>
                     <th className="px-6 py-3 font-medium">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {bids.map((bid) => (
                     <tr key={bid.id} className="border-b border-ink-900 last:border-0 hover:bg-ink-900/40 transition-colors">
-                      <td className="px-6 py-3 text-slate-200">{bid.tender_title}</td>
+                      <td className="px-6 py-3 text-slate-200 max-w-xs truncate">{bid.title || bid.tender_id}</td>
                       <td className="px-6 py-3 text-slate-400">
-                        {new Date(bid.submitted_at).toLocaleDateString('pl-PL')}
+                        {bid.bid_date ? new Date(bid.bid_date).toLocaleDateString('pl-PL') : '—'}
                       </td>
-                      <td className="px-6 py-3 text-slate-200 font-mono">{bid.markup_pct}%</td>
                       <td className="px-6 py-3 text-slate-200 font-mono">
-                        {(bid.bid_amount ?? 0).toLocaleString('pl-PL')} PLN
+                        {bid.markup_pct != null ? `${bid.markup_pct}%` : '—'}
+                      </td>
+                      <td className="px-6 py-3 text-slate-200 font-mono">
+                        {bid.our_price != null ? bid.our_price.toLocaleString('pl-PL') + ' PLN' : '—'}
                       </td>
                       <td className="px-6 py-3">
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${STATUS_META[bid.status] ?? ''}`}>
-                          {bid.status}
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                          bid.won ? 'text-success bg-success/10' : 'text-danger bg-danger/10'
+                        }`}>
+                          {bid.won ? 'Wygrana' : 'Przegrana'}
                         </span>
                       </td>
                     </tr>

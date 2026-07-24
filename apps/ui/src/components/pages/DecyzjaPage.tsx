@@ -271,7 +271,7 @@ export function DecyzjaPage() {
     sseCleanup.current?.();
 
     Promise.all([
-      authFetch(`/api/v2/tenders/${tender.id}/analysis`).catch(() => null),
+      authFetch(`/api/v1/tenders/${tender.id}/analysis`).catch(() => null),
       authFetch(`/api/v1/tenders/${tender.id}/engine`).catch(() => null),
       authFetch(`/api/v1/tenders/${tender.id}/estimate/compare`).catch(() => null),
     ]).then(([ana, eng, cmp]) => {
@@ -366,7 +366,7 @@ export function DecyzjaPage() {
       const previous = decisionStatus;
       setDecisionStatus(status); // optimistic
       try {
-        await authFetch(`/api/v1/tenders/${tender.id}`, {
+        await authFetch(`/api/v2/tenders/${tender.id}`, {
           method: 'PATCH',
           body: JSON.stringify({ pipeline_status: status }),
         });

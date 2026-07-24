@@ -187,7 +187,7 @@ export function SilnikPage() {
     if (!tenderId) return;
     setLoading(true);
     try {
-      const data = await authFetch(`/api/v2/tenders/${tenderId}/analysis`) as TenderAnalysis;
+      const data = await authFetch(`/api/v1/tenders/${tenderId}/analysis`) as TenderAnalysis;
       setAnalysis(data || null);
     } catch (err) {
       console.error('Failed to fetch analysis:', err);

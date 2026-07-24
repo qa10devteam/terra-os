@@ -588,9 +588,15 @@ def semantic_search_tenders(
 
         where = " AND ".join(conditions)
 
+        # Use match_reason (not description — column does not exist in tender table)
         fts_condition = (
-            "to_tsvector('polish', t.title || ' ' || COALESCE(t.description, ''))"
+            "to_tsvector('polish', t.title || ' ' || COALESCE(t.match_reason, ''))"
             " @@ plainto_tsquery('polish', :q)"
+        )
+        fts_rank = (
+            "ts_rank("
+            "to_tsvector('polish', t.title || ' ' || COALESCE(t.match_reason, '')),"
+            "plainto_tsquery('polish', :q))"
         )
         ilike_condition = "t.title ILIKE '%' || :q || '%'"
 
@@ -609,12 +615,7 @@ def semantic_search_tenders(
                                t.match_score, t.created_at
                         FROM tender t
                         WHERE {where} AND {fts_condition}
-                        ORDER BY
-                            ts_rank(
-                                to_tsvector('polish', t.title || ' ' || COALESCE(t.description, '')),
-                                plainto_tsquery('polish', :q)
-                            ) DESC,
-                            t.created_at DESC
+                        ORDER BY {fts_rank} DESC, t.created_at DESC
                         LIMIT :limit
                     """),
                     params,
@@ -622,6 +623,12 @@ def semantic_search_tenders(
             except Exception:
                 logger.exception("Polish FTS semantic-search failed for q=%r, falling back to ILIKE", q)
                 rows = []
+                # Rollback aborted transaction so ILIKE fallback can proceed
+                try:
+                    conn.rollback()
+                    conn.execute(sa.text("SET app.tenant_id = :tid"), {"tid": tenant_id})
+                except Exception:
+                    pass
 
             # ILIKE fallback if FTS returned 0 results
             if not rows:

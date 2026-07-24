@@ -199,7 +199,7 @@ function IcbSidebar({
     setNotFound(false);
     try {
       const typ = selectedType === 'all' ? '' : `&typ_rms=${selectedType}`;
-      const data = await authFetch(`/api/v2/icb/suggest?q=${encodeURIComponent(q)}${typ}&limit=30`);
+      const data = await authFetch(`/api/v2/icb/suggest?q=${encodeURIComponent(q)}${typ}&limit=20`);
       const items: IcbItem[] = Array.isArray(data) ? data : (data as any)?.results ?? (data as any)?.items ?? [];
       setResults(items);
       setNotFound(items.length === 0);
@@ -440,7 +440,7 @@ function IntelligencePanel({
       if (cpv) {
         const cpv5 = cpv.replace(/[^0-9]/g, '').slice(0, 5);
         try {
-          const bm = await authFetch(`/api/v2/intelligence/benchmark?cpv5=${cpv5}&nuts2_code=PL`);
+          const bm = await authFetch(`/api/v2/intelligence/benchmark?cpv_prefix=${cpv5}`);
           setBenchmark(bm as BenchmarkData);
         } catch { /* ok */ }
       }
@@ -756,7 +756,7 @@ export function KosztorysPage() {
         typ_rms: 'M',
         horizon: String(forecastHorizon),
       });
-      const res = await authFetch(`/api/v1/intelligence/prices/forecast?${params}`);
+      const res = await authFetch(`/api/v2/forecast/predict?${params}`);
       const d = res as { quarters?: ForecastPoint[]; history?: ForecastPoint[] };
       setForecastData(d.quarters ?? d.history ?? []);
     } catch (e) {
@@ -1161,7 +1161,7 @@ export function KosztorysPage() {
     }
     setAiWycenaLoading(true);
     try {
-      await authFetch(`/api/v2/estimates/${kosztorysId}/chat`, {
+      await authFetch(`/api/v1/estimates/${kosztorysId}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: 'Wycenij automatycznie wszystkie pozycje na podstawie rynkowych cen KNR' }),
