@@ -101,12 +101,12 @@ export default function YunaHubPage() {
   // ── Fetch recent tenders ─────────────────────────────────────────────────────
   useEffect(() => {
     const ctrl = new AbortController();
-    fetch('/api/v2/tenders?limit=3&sort=-created_at', { signal: ctrl.signal })
+    fetch('/api/v2/dashboard/recent-tenders', { signal: ctrl.signal })
       .then((r) => r.ok ? r.json() as Promise<TendersResponse> : null)
       .then((d) => {
         if (d) {
           const rows = d.items ?? d.data ?? d.results ?? [];
-          setRecentTenders(rows);
+          setRecentTenders(rows.slice(0, 5));
         }
         setTendersLoaded(true);
       })

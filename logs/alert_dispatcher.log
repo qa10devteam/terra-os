@@ -4169,3 +4169,253 @@
 2026-07-23 19:00:10,148 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert Coverage': 0 nowych przetargów od 2026-07-23 17:55 — pomijam
 2026-07-23 19:00:10,148 [INFO] ingestion.alert_dispatcher: Alert dispatcher zakończony: {'alerts_checked': 12, 'alerts_fired': 2, 'emails_sent': 2, 'tenders_found': 6, 'skipped': 10, 'since_minutes': 65}
 2026-07-23 19:00:10,148 [INFO] run_alert_dispatcher: Alert dispatcher complete: checked=12 fired=2 emails=2 tenders=6 skipped=10
+2026-07-23 20:00:28,121 [INFO] run_alert_dispatcher: Starting alert dispatcher (since_minutes=65, dry_run=False)
+2026-07-23 20:00:29,330 [INFO] ingestion.alert_dispatcher: Alert dispatcher: szukam przetargów od 2026-07-23T18:55:29.330360+00:00 (ostatnie 65 min)
+2026-07-23 20:00:29,339 [INFO] ingestion.alert_dispatcher: Aktywnych alertów: 12
+2026-07-23 20:00:29,342 [INFO] ingestion.alert_dispatcher: Alert 'test': 0 nowych przetargów od 2026-07-23 18:55 — pomijam
+2026-07-23 20:00:29,347 [INFO] ingestion.alert_dispatcher: Alert 'Roboty budowlane CPV45': 0 nowych przetargów od 2026-07-23 18:55 — pomijam
+2026-07-23 20:00:29,349 [INFO] ingestion.alert_dispatcher: Alert 'roboty budowlane | CPV:45 | slaskie': 0 nowych przetargów od 2026-07-23 18:55 — pomijam
+2026-07-23 20:00:29,350 [INFO] ingestion.alert_dispatcher: Alert 'Alert CPV 45 Śląsk': 0 nowych przetargów od 2026-07-23 18:55 — pomijam
+2026-07-23 20:00:29,351 [INFO] ingestion.alert_dispatcher: Alert 'Alert test': 0 nowych przetargów od 2026-07-23 18:55 — pomijam
+2026-07-23 20:00:29,352 [INFO] ingestion.alert_dispatcher: Alert 'Test CPV 45': 0 nowych przetargów od 2026-07-23 18:55 — pomijam
+2026-07-23 20:00:29,353 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert': 0 nowych przetargów od 2026-07-23 18:55 — pomijam
+2026-07-23 20:00:29,354 [INFO] ingestion.alert_dispatcher: Alert 'Test alert': 0 nowych przetargów od 2026-07-23 18:55 — pomijam
+2026-07-23 20:00:29,355 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert Coverage G1': 1 nowych przetargów → wysyłam digest
+2026-07-23 20:00:29,356 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'Test Alert Coverage G1' do fallback JSON
+2026-07-23 20:00:29,391 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'Test Alert Coverage G1' → deleted_40a71ef6-d6eb-48a3-b62e-7da3df5f0a17@terra.deleted (1 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-23 20:00:29,394 [INFO] ingestion.alert_dispatcher: Alert 'My Alert': 1 nowych przetargów → wysyłam digest
+2026-07-23 20:00:29,394 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'My Alert' do fallback JSON
+2026-07-23 20:00:29,426 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'My Alert' → deleted_40a71ef6-d6eb-48a3-b62e-7da3df5f0a17@terra.deleted (1 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-23 20:00:29,428 [INFO] ingestion.alert_dispatcher: Alert 'Bad CPV Alert': 0 nowych przetargów od 2026-07-23 18:55 — pomijam
+2026-07-23 20:00:29,429 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert Coverage': 0 nowych przetargów od 2026-07-23 18:55 — pomijam
+2026-07-23 20:00:29,429 [INFO] ingestion.alert_dispatcher: Alert dispatcher zakończony: {'alerts_checked': 12, 'alerts_fired': 2, 'emails_sent': 2, 'tenders_found': 2, 'skipped': 10, 'since_minutes': 65}
+2026-07-23 20:00:29,429 [INFO] run_alert_dispatcher: Alert dispatcher complete: checked=12 fired=2 emails=2 tenders=2 skipped=10
+2026-07-23 21:00:10,113 [INFO] run_alert_dispatcher: Starting alert dispatcher (since_minutes=65, dry_run=False)
+2026-07-23 21:00:11,332 [INFO] ingestion.alert_dispatcher: Alert dispatcher: szukam przetargów od 2026-07-23T19:55:11.332735+00:00 (ostatnie 65 min)
+2026-07-23 21:00:11,342 [INFO] ingestion.alert_dispatcher: Aktywnych alertów: 12
+2026-07-23 21:00:11,344 [INFO] ingestion.alert_dispatcher: Alert 'test': 0 nowych przetargów od 2026-07-23 19:55 — pomijam
+2026-07-23 21:00:11,349 [INFO] ingestion.alert_dispatcher: Alert 'Roboty budowlane CPV45': 0 nowych przetargów od 2026-07-23 19:55 — pomijam
+2026-07-23 21:00:11,350 [INFO] ingestion.alert_dispatcher: Alert 'roboty budowlane | CPV:45 | slaskie': 0 nowych przetargów od 2026-07-23 19:55 — pomijam
+2026-07-23 21:00:11,351 [INFO] ingestion.alert_dispatcher: Alert 'Alert CPV 45 Śląsk': 0 nowych przetargów od 2026-07-23 19:55 — pomijam
+2026-07-23 21:00:11,352 [INFO] ingestion.alert_dispatcher: Alert 'Alert test': 0 nowych przetargów od 2026-07-23 19:55 — pomijam
+2026-07-23 21:00:11,353 [INFO] ingestion.alert_dispatcher: Alert 'Test CPV 45': 0 nowych przetargów od 2026-07-23 19:55 — pomijam
+2026-07-23 21:00:11,354 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert': 0 nowych przetargów od 2026-07-23 19:55 — pomijam
+2026-07-23 21:00:11,354 [INFO] ingestion.alert_dispatcher: Alert 'Test alert': 0 nowych przetargów od 2026-07-23 19:55 — pomijam
+2026-07-23 21:00:11,355 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert Coverage G1': 1 nowych przetargów → wysyłam digest
+2026-07-23 21:00:11,356 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'Test Alert Coverage G1' do fallback JSON
+2026-07-23 21:00:11,390 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'Test Alert Coverage G1' → deleted_40a71ef6-d6eb-48a3-b62e-7da3df5f0a17@terra.deleted (1 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-23 21:00:11,393 [INFO] ingestion.alert_dispatcher: Alert 'My Alert': 0 nowych przetargów od 2026-07-23 19:55 — pomijam
+2026-07-23 21:00:11,394 [INFO] ingestion.alert_dispatcher: Alert 'Bad CPV Alert': 0 nowych przetargów od 2026-07-23 19:55 — pomijam
+2026-07-23 21:00:11,394 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert Coverage': 0 nowych przetargów od 2026-07-23 19:55 — pomijam
+2026-07-23 21:00:11,395 [INFO] ingestion.alert_dispatcher: Alert dispatcher zakończony: {'alerts_checked': 12, 'alerts_fired': 1, 'emails_sent': 1, 'tenders_found': 1, 'skipped': 11, 'since_minutes': 65}
+2026-07-23 21:00:11,395 [INFO] run_alert_dispatcher: Alert dispatcher complete: checked=12 fired=1 emails=1 tenders=1 skipped=11
+2026-07-23 22:00:10,737 [INFO] run_alert_dispatcher: Starting alert dispatcher (since_minutes=65, dry_run=False)
+2026-07-23 22:00:11,953 [INFO] ingestion.alert_dispatcher: Alert dispatcher: szukam przetargów od 2026-07-23T20:55:11.953886+00:00 (ostatnie 65 min)
+2026-07-23 22:00:11,965 [INFO] ingestion.alert_dispatcher: Aktywnych alertów: 12
+2026-07-23 22:00:11,967 [INFO] ingestion.alert_dispatcher: Alert 'test': 0 nowych przetargów od 2026-07-23 20:55 — pomijam
+2026-07-23 22:00:11,973 [INFO] ingestion.alert_dispatcher: Alert 'Roboty budowlane CPV45': 0 nowych przetargów od 2026-07-23 20:55 — pomijam
+2026-07-23 22:00:11,974 [INFO] ingestion.alert_dispatcher: Alert 'roboty budowlane | CPV:45 | slaskie': 0 nowych przetargów od 2026-07-23 20:55 — pomijam
+2026-07-23 22:00:11,975 [INFO] ingestion.alert_dispatcher: Alert 'Alert CPV 45 Śląsk': 0 nowych przetargów od 2026-07-23 20:55 — pomijam
+2026-07-23 22:00:11,977 [INFO] ingestion.alert_dispatcher: Alert 'Alert test': 0 nowych przetargów od 2026-07-23 20:55 — pomijam
+2026-07-23 22:00:11,978 [INFO] ingestion.alert_dispatcher: Alert 'Test CPV 45': 0 nowych przetargów od 2026-07-23 20:55 — pomijam
+2026-07-23 22:00:11,979 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert': 0 nowych przetargów od 2026-07-23 20:55 — pomijam
+2026-07-23 22:00:11,980 [INFO] ingestion.alert_dispatcher: Alert 'Test alert': 1 nowych przetargów → wysyłam digest
+2026-07-23 22:00:11,980 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'Test alert' do fallback JSON
+2026-07-23 22:00:12,011 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'Test alert' → deleted_40a71ef6-d6eb-48a3-b62e-7da3df5f0a17@terra.deleted (1 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-23 22:00:12,015 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert Coverage G1': 2 nowych przetargów → wysyłam digest
+2026-07-23 22:00:12,015 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'Test Alert Coverage G1' do fallback JSON
+2026-07-23 22:00:12,044 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'Test Alert Coverage G1' → deleted_40a71ef6-d6eb-48a3-b62e-7da3df5f0a17@terra.deleted (2 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-23 22:00:12,047 [INFO] ingestion.alert_dispatcher: Alert 'My Alert': 1 nowych przetargów → wysyłam digest
+2026-07-23 22:00:12,047 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'My Alert' do fallback JSON
+2026-07-23 22:00:12,075 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'My Alert' → deleted_40a71ef6-d6eb-48a3-b62e-7da3df5f0a17@terra.deleted (1 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-23 22:00:12,078 [INFO] ingestion.alert_dispatcher: Alert 'Bad CPV Alert': 0 nowych przetargów od 2026-07-23 20:55 — pomijam
+2026-07-23 22:00:12,079 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert Coverage': 0 nowych przetargów od 2026-07-23 20:55 — pomijam
+2026-07-23 22:00:12,079 [INFO] ingestion.alert_dispatcher: Alert dispatcher zakończony: {'alerts_checked': 12, 'alerts_fired': 3, 'emails_sent': 3, 'tenders_found': 4, 'skipped': 9, 'since_minutes': 65}
+2026-07-23 22:00:12,079 [INFO] run_alert_dispatcher: Alert dispatcher complete: checked=12 fired=3 emails=3 tenders=4 skipped=9
+2026-07-23 23:00:01,732 [INFO] run_alert_dispatcher: Starting alert dispatcher (since_minutes=65, dry_run=False)
+2026-07-23 23:00:02,942 [INFO] ingestion.alert_dispatcher: Alert dispatcher: szukam przetargów od 2026-07-23T21:55:02.942141+00:00 (ostatnie 65 min)
+2026-07-23 23:00:02,953 [INFO] ingestion.alert_dispatcher: Aktywnych alertów: 12
+2026-07-23 23:00:02,955 [INFO] ingestion.alert_dispatcher: Alert 'test': 0 nowych przetargów od 2026-07-23 21:55 — pomijam
+2026-07-23 23:00:02,961 [INFO] ingestion.alert_dispatcher: Alert 'Roboty budowlane CPV45': 0 nowych przetargów od 2026-07-23 21:55 — pomijam
+2026-07-23 23:00:02,962 [INFO] ingestion.alert_dispatcher: Alert 'roboty budowlane | CPV:45 | slaskie': 0 nowych przetargów od 2026-07-23 21:55 — pomijam
+2026-07-23 23:00:02,962 [INFO] ingestion.alert_dispatcher: Alert 'Alert CPV 45 Śląsk': 0 nowych przetargów od 2026-07-23 21:55 — pomijam
+2026-07-23 23:00:02,963 [INFO] ingestion.alert_dispatcher: Alert 'Alert test': 0 nowych przetargów od 2026-07-23 21:55 — pomijam
+2026-07-23 23:00:02,964 [INFO] ingestion.alert_dispatcher: Alert 'Test CPV 45': 0 nowych przetargów od 2026-07-23 21:55 — pomijam
+2026-07-23 23:00:02,965 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert': 0 nowych przetargów od 2026-07-23 21:55 — pomijam
+2026-07-23 23:00:02,966 [INFO] ingestion.alert_dispatcher: Alert 'Test alert': 0 nowych przetargów od 2026-07-23 21:55 — pomijam
+2026-07-23 23:00:02,967 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert Coverage G1': 0 nowych przetargów od 2026-07-23 21:55 — pomijam
+2026-07-23 23:00:02,967 [INFO] ingestion.alert_dispatcher: Alert 'My Alert': 0 nowych przetargów od 2026-07-23 21:55 — pomijam
+2026-07-23 23:00:02,968 [INFO] ingestion.alert_dispatcher: Alert 'Bad CPV Alert': 0 nowych przetargów od 2026-07-23 21:55 — pomijam
+2026-07-23 23:00:02,969 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert Coverage': 0 nowych przetargów od 2026-07-23 21:55 — pomijam
+2026-07-23 23:00:02,969 [INFO] ingestion.alert_dispatcher: Alert dispatcher zakończony: {'alerts_checked': 12, 'alerts_fired': 0, 'emails_sent': 0, 'tenders_found': 0, 'skipped': 12, 'since_minutes': 65}
+2026-07-23 23:00:02,969 [INFO] run_alert_dispatcher: Alert dispatcher complete: checked=12 fired=0 emails=0 tenders=0 skipped=12
+2026-07-24 00:00:12,039 [INFO] run_alert_dispatcher: Starting alert dispatcher (since_minutes=65, dry_run=False)
+2026-07-24 00:00:13,251 [INFO] ingestion.alert_dispatcher: Alert dispatcher: szukam przetargów od 2026-07-23T22:55:13.251495+00:00 (ostatnie 65 min)
+2026-07-24 00:00:13,261 [INFO] ingestion.alert_dispatcher: Aktywnych alertów: 12
+2026-07-24 00:00:13,264 [INFO] ingestion.alert_dispatcher: Alert 'test': 0 nowych przetargów od 2026-07-23 22:55 — pomijam
+2026-07-24 00:00:13,269 [INFO] ingestion.alert_dispatcher: Alert 'Roboty budowlane CPV45': 0 nowych przetargów od 2026-07-23 22:55 — pomijam
+2026-07-24 00:00:13,270 [INFO] ingestion.alert_dispatcher: Alert 'roboty budowlane | CPV:45 | slaskie': 0 nowych przetargów od 2026-07-23 22:55 — pomijam
+2026-07-24 00:00:13,270 [INFO] ingestion.alert_dispatcher: Alert 'Alert CPV 45 Śląsk': 0 nowych przetargów od 2026-07-23 22:55 — pomijam
+2026-07-24 00:00:13,271 [INFO] ingestion.alert_dispatcher: Alert 'Alert test': 0 nowych przetargów od 2026-07-23 22:55 — pomijam
+2026-07-24 00:00:13,272 [INFO] ingestion.alert_dispatcher: Alert 'Test CPV 45': 0 nowych przetargów od 2026-07-23 22:55 — pomijam
+2026-07-24 00:00:13,273 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert': 0 nowych przetargów od 2026-07-23 22:55 — pomijam
+2026-07-24 00:00:13,274 [INFO] ingestion.alert_dispatcher: Alert 'Test alert': 0 nowych przetargów od 2026-07-23 22:55 — pomijam
+2026-07-24 00:00:13,275 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert Coverage G1': 0 nowych przetargów od 2026-07-23 22:55 — pomijam
+2026-07-24 00:00:13,275 [INFO] ingestion.alert_dispatcher: Alert 'My Alert': 0 nowych przetargów od 2026-07-23 22:55 — pomijam
+2026-07-24 00:00:13,276 [INFO] ingestion.alert_dispatcher: Alert 'Bad CPV Alert': 0 nowych przetargów od 2026-07-23 22:55 — pomijam
+2026-07-24 00:00:13,277 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert Coverage': 0 nowych przetargów od 2026-07-23 22:55 — pomijam
+2026-07-24 00:00:13,277 [INFO] ingestion.alert_dispatcher: Alert dispatcher zakończony: {'alerts_checked': 12, 'alerts_fired': 0, 'emails_sent': 0, 'tenders_found': 0, 'skipped': 12, 'since_minutes': 65}
+2026-07-24 00:00:13,277 [INFO] run_alert_dispatcher: Alert dispatcher complete: checked=12 fired=0 emails=0 tenders=0 skipped=12
+2026-07-24 01:00:12,650 [INFO] run_alert_dispatcher: Starting alert dispatcher (since_minutes=65, dry_run=False)
+2026-07-24 01:00:13,857 [INFO] ingestion.alert_dispatcher: Alert dispatcher: szukam przetargów od 2026-07-23T23:55:13.857732+00:00 (ostatnie 65 min)
+2026-07-24 01:00:13,867 [INFO] ingestion.alert_dispatcher: Aktywnych alertów: 12
+2026-07-24 01:00:13,870 [INFO] ingestion.alert_dispatcher: Alert 'test': 0 nowych przetargów od 2026-07-23 23:55 — pomijam
+2026-07-24 01:00:13,875 [INFO] ingestion.alert_dispatcher: Alert 'Roboty budowlane CPV45': 6 nowych przetargów → wysyłam digest
+2026-07-24 01:00:13,876 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'Roboty budowlane CPV45' do fallback JSON
+2026-07-24 01:00:13,907 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'Roboty budowlane CPV45' → mateusz@qa10.io (6 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-24 01:00:13,911 [INFO] ingestion.alert_dispatcher: Alert 'roboty budowlane | CPV:45 | slaskie': 2 nowych przetargów → wysyłam digest
+2026-07-24 01:00:13,911 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'roboty budowlane | CPV:45 | slaskie' do fallback JSON
+2026-07-24 01:00:13,940 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'roboty budowlane | CPV:45 | slaskie' → mateusz@qa10.io (2 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-24 01:00:13,943 [INFO] ingestion.alert_dispatcher: Alert 'Alert CPV 45 Śląsk': 2 nowych przetargów → wysyłam digest
+2026-07-24 01:00:13,943 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'Alert CPV 45 Śląsk' do fallback JSON
+2026-07-24 01:00:13,975 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'Alert CPV 45 Śląsk' → mateusz@qa10.io (2 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-24 01:00:13,977 [INFO] ingestion.alert_dispatcher: Alert 'Alert test': 2 nowych przetargów → wysyłam digest
+2026-07-24 01:00:13,977 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'Alert test' do fallback JSON
+2026-07-24 01:00:14,006 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'Alert test' → mateusz@qa10.io (2 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-24 01:00:14,008 [INFO] ingestion.alert_dispatcher: Alert 'Test CPV 45': 18 nowych przetargów → wysyłam digest
+2026-07-24 01:00:14,009 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'Test CPV 45' do fallback JSON
+2026-07-24 01:00:14,037 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'Test CPV 45' → mateusz@qa10.io (18 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-24 01:00:14,040 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert': 13 nowych przetargów → wysyłam digest
+2026-07-24 01:00:14,041 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'Test Alert' do fallback JSON
+2026-07-24 01:00:14,070 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'Test Alert' → mateusz@qa10.io (13 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-24 01:00:14,072 [INFO] ingestion.alert_dispatcher: Alert 'Test alert': 2 nowych przetargów → wysyłam digest
+2026-07-24 01:00:14,072 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'Test alert' do fallback JSON
+2026-07-24 01:00:14,101 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'Test alert' → deleted_40a71ef6-d6eb-48a3-b62e-7da3df5f0a17@terra.deleted (2 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-24 01:00:14,104 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert Coverage G1': 20 nowych przetargów → wysyłam digest
+2026-07-24 01:00:14,104 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'Test Alert Coverage G1' do fallback JSON
+2026-07-24 01:00:14,133 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'Test Alert Coverage G1' → deleted_40a71ef6-d6eb-48a3-b62e-7da3df5f0a17@terra.deleted (20 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-24 01:00:14,136 [INFO] ingestion.alert_dispatcher: Alert 'My Alert': 20 nowych przetargów → wysyłam digest
+2026-07-24 01:00:14,136 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'My Alert' do fallback JSON
+2026-07-24 01:00:14,166 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'My Alert' → deleted_40a71ef6-d6eb-48a3-b62e-7da3df5f0a17@terra.deleted (20 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-24 01:00:14,168 [INFO] ingestion.alert_dispatcher: Alert 'Bad CPV Alert': 0 nowych przetargów od 2026-07-23 23:55 — pomijam
+2026-07-24 01:00:14,169 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert Coverage': 0 nowych przetargów od 2026-07-23 23:55 — pomijam
+2026-07-24 01:00:14,169 [INFO] ingestion.alert_dispatcher: Alert dispatcher zakończony: {'alerts_checked': 12, 'alerts_fired': 9, 'emails_sent': 9, 'tenders_found': 85, 'skipped': 3, 'since_minutes': 65}
+2026-07-24 01:00:14,169 [INFO] run_alert_dispatcher: Alert dispatcher complete: checked=12 fired=9 emails=9 tenders=85 skipped=3
+2026-07-24 02:00:01,498 [INFO] run_alert_dispatcher: Starting alert dispatcher (since_minutes=65, dry_run=False)
+2026-07-24 02:00:02,718 [INFO] ingestion.alert_dispatcher: Alert dispatcher: szukam przetargów od 2026-07-24T00:55:02.718065+00:00 (ostatnie 65 min)
+2026-07-24 02:00:02,728 [INFO] ingestion.alert_dispatcher: Aktywnych alertów: 12
+2026-07-24 02:00:02,730 [INFO] ingestion.alert_dispatcher: Alert 'test': 0 nowych przetargów od 2026-07-24 00:55 — pomijam
+2026-07-24 02:00:02,736 [INFO] ingestion.alert_dispatcher: Alert 'Roboty budowlane CPV45': 0 nowych przetargów od 2026-07-24 00:55 — pomijam
+2026-07-24 02:00:02,737 [INFO] ingestion.alert_dispatcher: Alert 'roboty budowlane | CPV:45 | slaskie': 0 nowych przetargów od 2026-07-24 00:55 — pomijam
+2026-07-24 02:00:02,738 [INFO] ingestion.alert_dispatcher: Alert 'Alert CPV 45 Śląsk': 0 nowych przetargów od 2026-07-24 00:55 — pomijam
+2026-07-24 02:00:02,738 [INFO] ingestion.alert_dispatcher: Alert 'Alert test': 0 nowych przetargów od 2026-07-24 00:55 — pomijam
+2026-07-24 02:00:02,739 [INFO] ingestion.alert_dispatcher: Alert 'Test CPV 45': 0 nowych przetargów od 2026-07-24 00:55 — pomijam
+2026-07-24 02:00:02,740 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert': 0 nowych przetargów od 2026-07-24 00:55 — pomijam
+2026-07-24 02:00:02,741 [INFO] ingestion.alert_dispatcher: Alert 'Test alert': 0 nowych przetargów od 2026-07-24 00:55 — pomijam
+2026-07-24 02:00:02,742 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert Coverage G1': 0 nowych przetargów od 2026-07-24 00:55 — pomijam
+2026-07-24 02:00:02,743 [INFO] ingestion.alert_dispatcher: Alert 'My Alert': 0 nowych przetargów od 2026-07-24 00:55 — pomijam
+2026-07-24 02:00:02,744 [INFO] ingestion.alert_dispatcher: Alert 'Bad CPV Alert': 0 nowych przetargów od 2026-07-24 00:55 — pomijam
+2026-07-24 02:00:02,744 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert Coverage': 0 nowych przetargów od 2026-07-24 00:55 — pomijam
+2026-07-24 02:00:02,745 [INFO] ingestion.alert_dispatcher: Alert dispatcher zakończony: {'alerts_checked': 12, 'alerts_fired': 0, 'emails_sent': 0, 'tenders_found': 0, 'skipped': 12, 'since_minutes': 65}
+2026-07-24 02:00:02,745 [INFO] run_alert_dispatcher: Alert dispatcher complete: checked=12 fired=0 emails=0 tenders=0 skipped=12
+2026-07-24 03:00:14,271 [INFO] run_alert_dispatcher: Starting alert dispatcher (since_minutes=65, dry_run=False)
+2026-07-24 03:00:15,491 [INFO] ingestion.alert_dispatcher: Alert dispatcher: szukam przetargów od 2026-07-24T01:55:15.491519+00:00 (ostatnie 65 min)
+2026-07-24 03:00:15,501 [INFO] ingestion.alert_dispatcher: Aktywnych alertów: 12
+2026-07-24 03:00:15,503 [INFO] ingestion.alert_dispatcher: Alert 'test': 0 nowych przetargów od 2026-07-24 01:55 — pomijam
+2026-07-24 03:00:15,509 [INFO] ingestion.alert_dispatcher: Alert 'Roboty budowlane CPV45': 0 nowych przetargów od 2026-07-24 01:55 — pomijam
+2026-07-24 03:00:15,510 [INFO] ingestion.alert_dispatcher: Alert 'roboty budowlane | CPV:45 | slaskie': 0 nowych przetargów od 2026-07-24 01:55 — pomijam
+2026-07-24 03:00:15,512 [INFO] ingestion.alert_dispatcher: Alert 'Alert CPV 45 Śląsk': 0 nowych przetargów od 2026-07-24 01:55 — pomijam
+2026-07-24 03:00:15,513 [INFO] ingestion.alert_dispatcher: Alert 'Alert test': 0 nowych przetargów od 2026-07-24 01:55 — pomijam
+2026-07-24 03:00:15,514 [INFO] ingestion.alert_dispatcher: Alert 'Test CPV 45': 0 nowych przetargów od 2026-07-24 01:55 — pomijam
+2026-07-24 03:00:15,515 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert': 0 nowych przetargów od 2026-07-24 01:55 — pomijam
+2026-07-24 03:00:15,516 [INFO] ingestion.alert_dispatcher: Alert 'Test alert': 0 nowych przetargów od 2026-07-24 01:55 — pomijam
+2026-07-24 03:00:15,517 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert Coverage G1': 0 nowych przetargów od 2026-07-24 01:55 — pomijam
+2026-07-24 03:00:15,518 [INFO] ingestion.alert_dispatcher: Alert 'My Alert': 0 nowych przetargów od 2026-07-24 01:55 — pomijam
+2026-07-24 03:00:15,519 [INFO] ingestion.alert_dispatcher: Alert 'Bad CPV Alert': 0 nowych przetargów od 2026-07-24 01:55 — pomijam
+2026-07-24 03:00:15,520 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert Coverage': 0 nowych przetargów od 2026-07-24 01:55 — pomijam
+2026-07-24 03:00:15,520 [INFO] ingestion.alert_dispatcher: Alert dispatcher zakończony: {'alerts_checked': 12, 'alerts_fired': 0, 'emails_sent': 0, 'tenders_found': 0, 'skipped': 12, 'since_minutes': 65}
+2026-07-24 03:00:15,520 [INFO] run_alert_dispatcher: Alert dispatcher complete: checked=12 fired=0 emails=0 tenders=0 skipped=12
+2026-07-24 04:00:14,810 [INFO] run_alert_dispatcher: Starting alert dispatcher (since_minutes=65, dry_run=False)
+2026-07-24 04:00:16,013 [INFO] ingestion.alert_dispatcher: Alert dispatcher: szukam przetargów od 2026-07-24T02:55:16.013731+00:00 (ostatnie 65 min)
+2026-07-24 04:00:16,023 [INFO] ingestion.alert_dispatcher: Aktywnych alertów: 12
+2026-07-24 04:00:16,026 [INFO] ingestion.alert_dispatcher: Alert 'test': 0 nowych przetargów od 2026-07-24 02:55 — pomijam
+2026-07-24 04:00:16,031 [INFO] ingestion.alert_dispatcher: Alert 'Roboty budowlane CPV45': 0 nowych przetargów od 2026-07-24 02:55 — pomijam
+2026-07-24 04:00:16,033 [INFO] ingestion.alert_dispatcher: Alert 'roboty budowlane | CPV:45 | slaskie': 0 nowych przetargów od 2026-07-24 02:55 — pomijam
+2026-07-24 04:00:16,034 [INFO] ingestion.alert_dispatcher: Alert 'Alert CPV 45 Śląsk': 0 nowych przetargów od 2026-07-24 02:55 — pomijam
+2026-07-24 04:00:16,035 [INFO] ingestion.alert_dispatcher: Alert 'Alert test': 0 nowych przetargów od 2026-07-24 02:55 — pomijam
+2026-07-24 04:00:16,036 [INFO] ingestion.alert_dispatcher: Alert 'Test CPV 45': 0 nowych przetargów od 2026-07-24 02:55 — pomijam
+2026-07-24 04:00:16,037 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert': 0 nowych przetargów od 2026-07-24 02:55 — pomijam
+2026-07-24 04:00:16,038 [INFO] ingestion.alert_dispatcher: Alert 'Test alert': 0 nowych przetargów od 2026-07-24 02:55 — pomijam
+2026-07-24 04:00:16,039 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert Coverage G1': 0 nowych przetargów od 2026-07-24 02:55 — pomijam
+2026-07-24 04:00:16,040 [INFO] ingestion.alert_dispatcher: Alert 'My Alert': 0 nowych przetargów od 2026-07-24 02:55 — pomijam
+2026-07-24 04:00:16,041 [INFO] ingestion.alert_dispatcher: Alert 'Bad CPV Alert': 0 nowych przetargów od 2026-07-24 02:55 — pomijam
+2026-07-24 04:00:16,042 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert Coverage': 0 nowych przetargów od 2026-07-24 02:55 — pomijam
+2026-07-24 04:00:16,042 [INFO] ingestion.alert_dispatcher: Alert dispatcher zakończony: {'alerts_checked': 12, 'alerts_fired': 0, 'emails_sent': 0, 'tenders_found': 0, 'skipped': 12, 'since_minutes': 65}
+2026-07-24 04:00:16,042 [INFO] run_alert_dispatcher: Alert dispatcher complete: checked=12 fired=0 emails=0 tenders=0 skipped=12
+2026-07-24 05:00:15,476 [INFO] run_alert_dispatcher: Starting alert dispatcher (since_minutes=65, dry_run=False)
+2026-07-24 05:00:16,680 [INFO] ingestion.alert_dispatcher: Alert dispatcher: szukam przetargów od 2026-07-24T03:55:16.680215+00:00 (ostatnie 65 min)
+2026-07-24 05:00:16,691 [INFO] ingestion.alert_dispatcher: Aktywnych alertów: 12
+2026-07-24 05:00:16,694 [INFO] ingestion.alert_dispatcher: Alert 'test': 0 nowych przetargów od 2026-07-24 03:55 — pomijam
+2026-07-24 05:00:16,699 [INFO] ingestion.alert_dispatcher: Alert 'Roboty budowlane CPV45': 0 nowych przetargów od 2026-07-24 03:55 — pomijam
+2026-07-24 05:00:16,700 [INFO] ingestion.alert_dispatcher: Alert 'roboty budowlane | CPV:45 | slaskie': 0 nowych przetargów od 2026-07-24 03:55 — pomijam
+2026-07-24 05:00:16,701 [INFO] ingestion.alert_dispatcher: Alert 'Alert CPV 45 Śląsk': 0 nowych przetargów od 2026-07-24 03:55 — pomijam
+2026-07-24 05:00:16,702 [INFO] ingestion.alert_dispatcher: Alert 'Alert test': 0 nowych przetargów od 2026-07-24 03:55 — pomijam
+2026-07-24 05:00:16,702 [INFO] ingestion.alert_dispatcher: Alert 'Test CPV 45': 0 nowych przetargów od 2026-07-24 03:55 — pomijam
+2026-07-24 05:00:16,703 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert': 0 nowych przetargów od 2026-07-24 03:55 — pomijam
+2026-07-24 05:00:16,704 [INFO] ingestion.alert_dispatcher: Alert 'Test alert': 0 nowych przetargów od 2026-07-24 03:55 — pomijam
+2026-07-24 05:00:16,705 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert Coverage G1': 0 nowych przetargów od 2026-07-24 03:55 — pomijam
+2026-07-24 05:00:16,706 [INFO] ingestion.alert_dispatcher: Alert 'My Alert': 0 nowych przetargów od 2026-07-24 03:55 — pomijam
+2026-07-24 05:00:16,707 [INFO] ingestion.alert_dispatcher: Alert 'Bad CPV Alert': 0 nowych przetargów od 2026-07-24 03:55 — pomijam
+2026-07-24 05:00:16,707 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert Coverage': 0 nowych przetargów od 2026-07-24 03:55 — pomijam
+2026-07-24 05:00:16,708 [INFO] ingestion.alert_dispatcher: Alert dispatcher zakończony: {'alerts_checked': 12, 'alerts_fired': 0, 'emails_sent': 0, 'tenders_found': 0, 'skipped': 12, 'since_minutes': 65}
+2026-07-24 05:00:16,708 [INFO] run_alert_dispatcher: Alert dispatcher complete: checked=12 fired=0 emails=0 tenders=0 skipped=12
+2026-07-24 06:00:01,186 [INFO] run_alert_dispatcher: Starting alert dispatcher (since_minutes=65, dry_run=False)
+2026-07-24 06:00:02,393 [INFO] ingestion.alert_dispatcher: Alert dispatcher: szukam przetargów od 2026-07-24T04:55:02.393573+00:00 (ostatnie 65 min)
+2026-07-24 06:00:02,403 [INFO] ingestion.alert_dispatcher: Aktywnych alertów: 12
+2026-07-24 06:00:02,406 [INFO] ingestion.alert_dispatcher: Alert 'test': 0 nowych przetargów od 2026-07-24 04:55 — pomijam
+2026-07-24 06:00:02,411 [INFO] ingestion.alert_dispatcher: Alert 'Roboty budowlane CPV45': 0 nowych przetargów od 2026-07-24 04:55 — pomijam
+2026-07-24 06:00:02,412 [INFO] ingestion.alert_dispatcher: Alert 'roboty budowlane | CPV:45 | slaskie': 0 nowych przetargów od 2026-07-24 04:55 — pomijam
+2026-07-24 06:00:02,413 [INFO] ingestion.alert_dispatcher: Alert 'Alert CPV 45 Śląsk': 0 nowych przetargów od 2026-07-24 04:55 — pomijam
+2026-07-24 06:00:02,414 [INFO] ingestion.alert_dispatcher: Alert 'Alert test': 0 nowych przetargów od 2026-07-24 04:55 — pomijam
+2026-07-24 06:00:02,415 [INFO] ingestion.alert_dispatcher: Alert 'Test CPV 45': 2 nowych przetargów → wysyłam digest
+2026-07-24 06:00:02,415 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'Test CPV 45' do fallback JSON
+2026-07-24 06:00:02,447 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'Test CPV 45' → mateusz@qa10.io (2 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-24 06:00:02,451 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert': 0 nowych przetargów od 2026-07-24 04:55 — pomijam
+2026-07-24 06:00:02,451 [INFO] ingestion.alert_dispatcher: Alert 'Test alert': 0 nowych przetargów od 2026-07-24 04:55 — pomijam
+2026-07-24 06:00:02,452 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert Coverage G1': 4 nowych przetargów → wysyłam digest
+2026-07-24 06:00:02,453 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'Test Alert Coverage G1' do fallback JSON
+2026-07-24 06:00:02,484 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'Test Alert Coverage G1' → deleted_40a71ef6-d6eb-48a3-b62e-7da3df5f0a17@terra.deleted (4 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-24 06:00:02,486 [INFO] ingestion.alert_dispatcher: Alert 'My Alert': 0 nowych przetargów od 2026-07-24 04:55 — pomijam
+2026-07-24 06:00:02,487 [INFO] ingestion.alert_dispatcher: Alert 'Bad CPV Alert': 0 nowych przetargów od 2026-07-24 04:55 — pomijam
+2026-07-24 06:00:02,488 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert Coverage': 0 nowych przetargów od 2026-07-24 04:55 — pomijam
+2026-07-24 06:00:02,488 [INFO] ingestion.alert_dispatcher: Alert dispatcher zakończony: {'alerts_checked': 12, 'alerts_fired': 2, 'emails_sent': 2, 'tenders_found': 6, 'skipped': 10, 'since_minutes': 65}
+2026-07-24 06:00:02,488 [INFO] run_alert_dispatcher: Alert dispatcher complete: checked=12 fired=2 emails=2 tenders=6 skipped=10
+2026-07-24 07:00:10,322 [INFO] run_alert_dispatcher: Starting alert dispatcher (since_minutes=65, dry_run=False)
+2026-07-24 07:00:11,539 [INFO] ingestion.alert_dispatcher: Alert dispatcher: szukam przetargów od 2026-07-24T05:55:11.539774+00:00 (ostatnie 65 min)
+2026-07-24 07:00:11,549 [INFO] ingestion.alert_dispatcher: Aktywnych alertów: 12
+2026-07-24 07:00:11,552 [INFO] ingestion.alert_dispatcher: Alert 'test': 0 nowych przetargów od 2026-07-24 05:55 — pomijam
+2026-07-24 07:00:11,556 [INFO] ingestion.alert_dispatcher: Alert 'Roboty budowlane CPV45': 4 nowych przetargów → wysyłam digest
+2026-07-24 07:00:11,556 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'Roboty budowlane CPV45' do fallback JSON
+2026-07-24 07:00:11,589 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'Roboty budowlane CPV45' → mateusz@qa10.io (4 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-24 07:00:11,592 [INFO] ingestion.alert_dispatcher: Alert 'roboty budowlane | CPV:45 | slaskie': 0 nowych przetargów od 2026-07-24 05:55 — pomijam
+2026-07-24 07:00:11,593 [INFO] ingestion.alert_dispatcher: Alert 'Alert CPV 45 Śląsk': 0 nowych przetargów od 2026-07-24 05:55 — pomijam
+2026-07-24 07:00:11,594 [INFO] ingestion.alert_dispatcher: Alert 'Alert test': 0 nowych przetargów od 2026-07-24 05:55 — pomijam
+2026-07-24 07:00:11,595 [INFO] ingestion.alert_dispatcher: Alert 'Test CPV 45': 4 nowych przetargów → wysyłam digest
+2026-07-24 07:00:11,595 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'Test CPV 45' do fallback JSON
+2026-07-24 07:00:11,625 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'Test CPV 45' → mateusz@qa10.io (4 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-24 07:00:11,628 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert': 2 nowych przetargów → wysyłam digest
+2026-07-24 07:00:11,628 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'Test Alert' do fallback JSON
+2026-07-24 07:00:11,658 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'Test Alert' → mateusz@qa10.io (2 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-24 07:00:11,660 [INFO] ingestion.alert_dispatcher: Alert 'Test alert': 4 nowych przetargów → wysyłam digest
+2026-07-24 07:00:11,660 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'Test alert' do fallback JSON
+2026-07-24 07:00:11,690 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'Test alert' → deleted_40a71ef6-d6eb-48a3-b62e-7da3df5f0a17@terra.deleted (4 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-24 07:00:11,693 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert Coverage G1': 18 nowych przetargów → wysyłam digest
+2026-07-24 07:00:11,693 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'Test Alert Coverage G1' do fallback JSON
+2026-07-24 07:00:11,723 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'Test Alert Coverage G1' → deleted_40a71ef6-d6eb-48a3-b62e-7da3df5f0a17@terra.deleted (18 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-24 07:00:11,725 [INFO] ingestion.alert_dispatcher: Alert 'My Alert': 7 nowych przetargów → wysyłam digest
+2026-07-24 07:00:11,726 [INFO] ingestion.alert_dispatcher: SMTP_HOST nie skonfigurowany — zapisuję alert 'My Alert' do fallback JSON
+2026-07-24 07:00:11,756 [INFO] ingestion.alert_dispatcher: [FALLBACK] Alert 'My Alert' → deleted_40a71ef6-d6eb-48a3-b62e-7da3df5f0a17@terra.deleted (7 przetargów) zapisano do /tmp/terra_alerts_pending.json
+2026-07-24 07:00:11,758 [INFO] ingestion.alert_dispatcher: Alert 'Bad CPV Alert': 0 nowych przetargów od 2026-07-24 05:55 — pomijam
+2026-07-24 07:00:11,759 [INFO] ingestion.alert_dispatcher: Alert 'Test Alert Coverage': 0 nowych przetargów od 2026-07-24 05:55 — pomijam
+2026-07-24 07:00:11,759 [INFO] ingestion.alert_dispatcher: Alert dispatcher zakończony: {'alerts_checked': 12, 'alerts_fired': 6, 'emails_sent': 6, 'tenders_found': 39, 'skipped': 6, 'since_minutes': 65}
+2026-07-24 07:00:11,760 [INFO] run_alert_dispatcher: Alert dispatcher complete: checked=12 fired=6 emails=6 tenders=39 skipped=6

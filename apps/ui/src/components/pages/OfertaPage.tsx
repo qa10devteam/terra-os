@@ -1079,7 +1079,7 @@ export function OfertaPage() {
   const loadOffers = useCallback(async () => {
     setLoadingOffers(true);
     try {
-      const data = (await authFetch('/api/v1/offers')) as
+      const data = (await authFetch('/api/v2/offers')) as
         | { items?: Offer[]; total?: number }
         | Offer[];
       const fetched = Array.isArray(data) ? data : (data.items ?? []);
@@ -1187,13 +1187,13 @@ export function OfertaPage() {
     setSaving(true);
     try {
       if (editingOfferId) {
-        await authFetch(`/api/v1/offers/${editingOfferId}`, {
+        await authFetch(`/api/v2/offers/${editingOfferId}`, {
           method: 'PATCH',
           body: JSON.stringify(buildPayload('draft')),
         });
         showToast('success', 'Szkic zaktualizowany');
       } else {
-        const result = (await authFetch('/api/v1/offers', {
+        const result = (await authFetch('/api/v2/offers', {
           method: 'POST',
           body: JSON.stringify(buildPayload('draft')),
         })) as { id: string };
@@ -1219,12 +1219,12 @@ export function OfertaPage() {
       // Save / update the offer first
       let offerId = editingOfferId;
       if (offerId) {
-        await authFetch(`/api/v1/offers/${offerId}`, {
+        await authFetch(`/api/v2/offers/${offerId}`, {
           method: 'PATCH',
           body: JSON.stringify(buildPayload('ready')),
         });
       } else {
-        const result = (await authFetch('/api/v1/offers', {
+        const result = (await authFetch('/api/v2/offers', {
           method: 'POST',
           body: JSON.stringify(buildPayload('ready')),
         })) as { id: string };
@@ -1233,7 +1233,7 @@ export function OfertaPage() {
       }
 
       // Fetch PDF blob via raw fetch (authFetch parses JSON)
-      const res = await fetch(`/api/v1/offers/${offerId}/pdf`, {
+      const res = await fetch(`/api/v2/offers/${offerId}/pdf`, {
         headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
       });
 

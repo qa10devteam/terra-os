@@ -84,7 +84,7 @@ export function DocumentsPage() {
         const res = await authFetch('/api/v2/documents');
         if (!cancelled && res.ok) {
           const json = await res.json();
-          setDocuments(Array.isArray(json) ? json : json.documents ?? []);
+          setDocuments(Array.isArray(json) ? json : json.items ?? json.documents ?? []);
         }
       } catch { /* ignore */ } finally {
         if (!cancelled) setDocsLoading(false);
