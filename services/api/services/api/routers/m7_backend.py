@@ -336,10 +336,9 @@ def team_members(tenant_id: TenantDep) -> list[dict]:
     engine = get_engine()
     with engine.connect() as conn:
         rows = conn.execute(sa.text("""
-            SELECT u.id, u.email, u.full_name, uo.role, u.created_at
-            FROM "user" u
-            JOIN user_org uo ON uo.user_id = u.id
-            WHERE uo.org_id = :tid
+            SELECT u.id, u.email, u.name, u.role, u.created_at
+            FROM users u
+            WHERE u.org_id = :tid
             ORDER BY u.created_at
         """), {"tid": tenant_id}).fetchall()
     return [
@@ -358,8 +357,8 @@ def team_activity(tenant_id: TenantDep) -> list[dict]:
                    COUNT(*) FILTER (WHERE al.action='decision') as decisions,
                    COUNT(*) as total_actions
             FROM audit_log al
-            JOIN "user" u ON u.id = al.user_id
-            WHERE al.tenant_id=:tid AND al.created_at >= NOW() - INTERVAL '30 days'
+            JOIN users u ON u.id = al.user_id::uuid
+            WHERE al.tenant_id=:tid AND al.ts >= NOW() - INTERVAL '30 days'
             GROUP BY al.user_id, u.email
         """), {"tid": tenant_id}).fetchall()
     return [

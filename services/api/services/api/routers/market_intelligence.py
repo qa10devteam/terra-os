@@ -738,7 +738,7 @@ def market_intel_regional(user: AuthUser, limit: int = Query(16, le=50)):
     engine = get_engine()
     with engine.connect() as conn:
         rows = conn.execute(text("""
-            SELECT province, count(*) AS cnt, sum(value_pln)::bigint AS total_pln
+            SELECT province, count(*) AS cnt, sum(estimated_value)::bigint AS total_pln
             FROM historical_tenders
             WHERE province IS NOT NULL
             GROUP BY province ORDER BY cnt DESC LIMIT :limit

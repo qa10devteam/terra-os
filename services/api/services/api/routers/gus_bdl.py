@@ -138,9 +138,9 @@ def list_indicators(
     with engine.connect() as conn:
         rows = conn.execute(
             sa.text(f"""
-                SELECT id, variable_id, name, unit, year, period, value, fetched_at
+                SELECT id, variable_id, variable_name, unit_name, year, value, created_at
                 FROM gus_indicators {where}
-                ORDER BY year DESC, variable_id, period
+                ORDER BY year DESC, variable_id
                 LIMIT :limit
             """),
             params,
@@ -150,12 +150,11 @@ def list_indicators(
             {
                 "id": str(r.id),
                 "variable_id": r.variable_id,
-                "name": r.name,
-                "unit": r.unit,
+                "name": r.variable_name,
+                "unit": r.unit_name,
                 "year": r.year,
-                "period": r.period,
                 "value": float(r.value) if r.value is not None else None,
-                "fetched_at": r.fetched_at.isoformat() if r.fetched_at else None,
+                "fetched_at": r.created_at.isoformat() if r.created_at else None,
             }
             for r in rows
         ]
@@ -169,7 +168,7 @@ def get_inflation_summary(user: AuthUser) -> dict:
     with engine.connect() as conn:
         rows = conn.execute(
             sa.text("""
-                SELECT variable_id, name, unit, year, value, fetched_at
+                SELECT variable_id, variable_name, unit_name, year, value, created_at
                 FROM gus_indicators
                 WHERE variable_id IN ('P1774', 'P3808')
                 ORDER BY year DESC, variable_id
@@ -180,8 +179,8 @@ def get_inflation_summary(user: AuthUser) -> dict:
         "summary": [
             {
                 "variable_id": r.variable_id,
-                "name": r.name,
-                "unit": r.unit,
+                "name": r.variable_name,
+                "unit": r.unit_name,
                 "year": r.year,
                 "value": float(r.value) if r.value is not None else None,
             }
