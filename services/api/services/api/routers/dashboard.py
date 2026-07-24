@@ -199,30 +199,35 @@ def get_dashboard_digest(user: AuthUser) -> dict:
         """), {"tid": tenant_id}).fetchone()
 
     if not row:
-        raise HTTPException(status_code=404, detail="No digest available")
+        # Graceful fallback — nie blokuj UI, zwróć pusty digest
+        return {"content": None, "generated_at": None, "stale": True}
 
     details = row[0] if isinstance(row[0], dict) else (json.loads(row[0]) if row[0] else {})
     generated_at = row[1]
 
-    # Check freshness: must be within the last 8 hours
+    stale = False
     if generated_at is not None:
         if generated_at.tzinfo is None:
             generated_at = generated_at.replace(tzinfo=timezone.utc)
         age_hours = (datetime.now(timezone.utc) - generated_at).total_seconds() / 3600
         if age_hours > 8:
-            raise HTTPException(status_code=404, detail="Digest expired — please regenerate")
+            stale = True
     else:
-        raise HTTPException(status_code=404, detail="No digest available")
+        stale = True
 
     content = details.get("content", "")
-    return {"content": content, "generated_at": generated_at.isoformat()}
+    return {
+        "content": content,
+        "generated_at": generated_at.isoformat() if generated_at else None,
+        "stale": stale,
+    }
 
 
 @router.post("/api/v2/dashboard/digest/generate")
 def generate_dashboard_digest(user: AuthUser) -> dict:
     """Generate a new AI digest via vLLM and persist it to audit_log."""
     tenant_id = str(user.org_id) if user.org_id else "default"
-    vllm_base = os.getenv("VLLM_BASE_URL", "http://127.0.0.1:8001/v1")
+    vllm_base = os.getenv("VLLM_BASE_URL", "http://127.0.0.1:8002/v1")  # SGLang port 8002
 
     # Gather context: KPI stats + top tenders
     data = _get_dashboard_data(tenant_id)

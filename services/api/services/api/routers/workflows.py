@@ -44,7 +44,7 @@ BUDOS_STEPS = [
         "icon": "Search",
         "color": "indigo",
         "required_actions": ["pobierz_dokumenty", "sprawdz_cpv"],
-        "transitions": ["kosztorys"],
+        "transitions": ["kosztorys", "rezygnacja"],
         "is_terminal": False,
     },
     {
@@ -54,7 +54,7 @@ BUDOS_STEPS = [
         "icon": "Calculator",
         "color": "violet",
         "required_actions": ["kosztorys_icb"],
-        "transitions": ["decyzja"],
+        "transitions": ["decyzja", "rezygnacja"],
         "is_terminal": False,
     },
     {
@@ -74,7 +74,7 @@ BUDOS_STEPS = [
         "icon": "FileText",
         "color": "em",
         "required_actions": ["dokumenty_oferty"],
-        "transitions": ["zlozenie"],
+        "transitions": ["zlozenie", "rezygnacja"],
         "is_terminal": False,
     },
     {
@@ -84,7 +84,7 @@ BUDOS_STEPS = [
         "icon": "Send",
         "color": "go",
         "required_actions": ["zloz_oferte"],
-        "transitions": ["wynik"],
+        "transitions": ["wynik", "rezygnacja"],
         "is_terminal": False,
     },
     {
@@ -523,7 +523,9 @@ def transition_step(
 
     now = datetime.now(timezone.utc)
     new_meta = _step_meta(body.to_step)
-    new_status = "completed" if new_meta.get("is_terminal") else "active"
+    # wynik: is_terminal oznacza ostatni krok procesu, ale outcome (won/lost) ustawia /complete
+    # więc status pozostaje 'active' aż do jawnego wywołania /complete
+    new_status = "active"
 
     with engine.begin() as conn:
         conn.execute(sa.text("""
