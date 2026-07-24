@@ -34,6 +34,7 @@ import {
 import { useStore } from '@/store/useStore';
 import { TopBar } from '@/components/TopBar';
 import { PageTransition } from '@/components/ui/PageTransition';
+import { ChatWidget } from '@/components/ChatWidget';
 
 // ── Nav config ─────────────────────────────────────────────────────────────────
 
@@ -431,6 +432,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             {children}
           </PageTransition>
         </main>
+
+        {/* ── AI Chat Widget (floating) ── */}
+        <ChatWidget />
       </div>
     </div>
   );

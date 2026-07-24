@@ -148,9 +148,9 @@ def _fetch_company_kb(tenant_id: str) -> dict:
         try:
             row = conn.execute(
                 text("""
-                    SELECT company_name, nip, regon, krs, certifications,
-                           specialization_md, references_md, rate_card,
-                           cpv_preferred, contact_person, employees_count, founded_year
+                    SELECT company_name, nip, regon, krs, certyfikaty,
+                           scope_notes, references_md, rate_card,
+                           cpv_preferred, personel_kluczowy, uprawnienia, ai_context_md
                     FROM owner_profile WHERE tenant_id = :tid LIMIT 1
                 """),
                 {"tid": tenant_id},
@@ -167,8 +167,8 @@ def _fetch_company_kb(tenant_id: str) -> dict:
                     "rate_card": row[7] or {},
                     "cpv_preferred": row[8] or [],
                     "contact_person": row[9] or "",
-                    "employees_count": row[10],
-                    "founded_year": row[11],
+                    "employees_count": None,
+                    "founded_year": None,
                 }
         except Exception as exc:
             logger.warning("Błąd pobierania owner_profile: %s", exc)

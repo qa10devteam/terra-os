@@ -1093,15 +1093,19 @@ export function KosztorysPage() {
     try {
       if (format === 'pdf' && kosztorysId) {
         const blob = await fetch(`/api/v1/estimates/${kosztorysId}/export/docx`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }).then(r => r.blob());
+          method: 'POST',
+          headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ template: 'standard' }),
+        }).then(r => { if (!r.ok) throw new Error(`Export failed: ${r.status}`); return r.blob(); });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a'); a.href = url; a.download = `kosztorys_${kosztorysId.slice(0, 8)}.pdf`;
         a.click(); URL.revokeObjectURL(url);
       } else if (format === 'ath' && kosztorysId) {
         const blob = await fetch(`/api/v1/estimates/${kosztorysId}/export/xlsx`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }).then(r => r.blob());
+          method: 'POST',
+          headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        }).then(r => { if (!r.ok) throw new Error(`Export failed: ${r.status}`); return r.blob(); });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a'); a.href = url; a.download = `kosztorys_${kosztorysId.slice(0, 8)}.ath`;
         a.click(); URL.revokeObjectURL(url);
