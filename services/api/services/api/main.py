@@ -120,6 +120,12 @@ try:
     _optional_routers.append(('scoring_config', scoring_config))
 except Exception as e:  # pragma: no cover
     logging.getLogger(__name__).warning("scoring_config import error: %s", e)
+
+try:
+    from .routers import company_kb
+    _optional_routers.append(('company_kb', company_kb))
+except Exception as e:  # pragma: no cover
+    logging.getLogger(__name__).warning("company_kb import error: %s", e)
 try:
     from .routers import alert_config
     _optional_routers.append(('alert_config', alert_config))
@@ -624,6 +630,10 @@ if 'resources' in _opt_map:
 # F12: Scoring config
 if 'scoring_config' in _opt_map:
     app.include_router(_opt_map['scoring_config'].router)
+
+# KB: Baza Wiedzy Firmy
+if 'company_kb' in _opt_map:
+    app.include_router(_opt_map['company_kb'].router)
 
 # S50 + S51 — CPV win rates + competitor win rates
 try:

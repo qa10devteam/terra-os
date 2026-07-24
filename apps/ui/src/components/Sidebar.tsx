@@ -24,6 +24,8 @@ import {
   PackageSearch,
   Users,
   Workflow,
+  Building2,
+  Sparkles,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -60,13 +62,14 @@ const moduleGroups: ModuleGroup[] = [
   },
   {
     label:     'Inteligencja',
-    GroupIcon: BarChart3,
+    GroupIcon: Sparkles,
     items: [
       { id: 'dashboard',    icon: LayoutDashboard, name: 'Dashboard',  desc: 'Panel główny' },
       { id: 'analytics',    icon: BarChart3,       name: 'Analityka',  desc: 'AHP, Friedman, Ryzyko' },
       { id: 'icb',          icon: PackageSearch,   name: 'Cennik KNR', desc: 'Baza cen robót budowlanych (KNR/norma)' },
       { id: 'market-intel', icon: TrendingUp,      name: 'Rynek',      desc: 'Trendy i benchmarki CPV' },
       { id: 'rynek',        icon: BarChart3,       name: 'Rynek S6',   desc: 'Dashboard BZP · TED · GUS' },
+      { id: 'firma',        icon: Building2,       name: 'Baza wiedzy firmy', desc: 'Stawki, referencje, historia ofert' },
     ],
   },
   {

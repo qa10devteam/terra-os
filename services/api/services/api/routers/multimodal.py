@@ -249,6 +249,39 @@ def get_cost_estimate(doc_id: str, user: AuthUser) -> dict[str, Any]:
     analysis = row[0] if isinstance(row[0], dict) else json.loads(row[0])
     categories = analysis.get("categories_detected", [])
 
+    # ── Pobierz kontekst firmowy: własne stawki + narzuty ─────────────────────
+    tenant_id = str(user.org_id or user.user_id)
+    company_rate_card: dict[str, float] = {}
+    company_rates_by_cat: dict[str, float] = {}
+    try:
+        with engine.connect() as conn_kb:
+            # rate_card (KP%, KZ%, zysk%)
+            prof_row = conn_kb.execute(sa.text(
+                "SELECT rate_card FROM owner_profile WHERE tenant_id = :tid LIMIT 1"
+            ), {"tid": tenant_id}).fetchone()
+            if prof_row and prof_row[0]:
+                rc = prof_row[0] if isinstance(prof_row[0], dict) else json.loads(prof_row[0])
+                company_rate_card = {k: float(v or 0) for k, v in rc.items() if v}
+
+            # Własne stawki robocizny (typ_rms=R) — średnia per katalog-kategoria
+            rates_rows = conn_kb.execute(sa.text("""
+                SELECT typ_rms, AVG(cena_netto) avg_cena, katalog
+                FROM company_rates_import
+                WHERE tenant_id = :tid AND aktywna = TRUE
+                GROUP BY typ_rms, katalog
+            """), {"tid": tenant_id}).fetchall()
+            for rr in rates_rows:
+                key = f"{rr[0]}_{rr[2] or 'default'}"
+                company_rates_by_cat[key] = float(rr[1] or 0)
+    except Exception:
+        pass  # Jeśli KB puste — kontynuuj z ICB
+
+    # Narzuty z rate_card firmy (jeśli zdefiniowane)
+    kp_pct  = company_rate_card.get("kp_pct", 0.0)
+    kz_pct  = company_rate_card.get("kz_pct", 0.0)
+    zysk_pct = company_rate_card.get("zysk_pct", 0.0)
+    overhead_multiplier = 1.0 + (kp_pct + kz_pct + zysk_pct) / 100.0
+
     # Map detected categories to ICB categories and fetch prices
     category_mapping = {
         "roboty_ziemne": "Roboty ziemne",
@@ -302,14 +335,25 @@ def get_cost_estimate(doc_id: str, user: AuthUser) -> dict[str, Any]:
         estimate_items.append({
             "category": icb_name,
             "category_code": cat,
-            "min_pln": item_min,
-            "max_pln": item_max,
-            "avg_pln": item_avg,
+            "min_pln": round(item_min * overhead_multiplier, 2),
+            "max_pln": round(item_max * overhead_multiplier, 2),
+            "avg_pln": round(item_avg * overhead_multiplier, 2),
             "icb_backed": bool(icb_row and icb_row[3] and icb_row[3] > 0),
+            "company_overhead_applied": overhead_multiplier > 1.0,
             "elements_on_pages": [e["page"] for e in analysis.get("elements", []) if e.get("category") == cat][:5],
         })
-        total_min += item_min
-        total_max += item_max
+        total_min += item_min * overhead_multiplier
+        total_max += item_max * overhead_multiplier
+
+    # Podsumowanie z kontekstem firmowym
+    company_context_summary: dict[str, Any] = {}
+    if company_rate_card:
+        company_context_summary["rate_card"] = company_rate_card
+    if overhead_multiplier > 1.0:
+        company_context_summary["overhead_multiplier"] = round(overhead_multiplier, 4)
+        company_context_summary["overhead_breakdown"] = {
+            "kp_pct": kp_pct, "kz_pct": kz_pct, "zysk_pct": zysk_pct
+        }
 
     estimate = {
         "document_id": doc_id,
@@ -317,12 +361,13 @@ def get_cost_estimate(doc_id: str, user: AuthUser) -> dict[str, Any]:
         "categories_count": len(estimate_items),
         "items": estimate_items,
         "total": {
-            "min_pln": total_min,
-            "max_pln": total_max,
-            "mid_pln": (total_min + total_max) / 2,
+            "min_pln": round(total_min, 2),
+            "max_pln": round(total_max, 2),
+            "mid_pln": round((total_min + total_max) / 2, 2),
             "confidence": "low" if not any(i["icb_backed"] for i in estimate_items) else "medium",
         },
-        "disclaimer": "Szacunek wstępny na podstawie ICB i analizy dokumentu. Wymaga weryfikacji kosztorysanta.",
+        "company_context": company_context_summary,
+        "disclaimer": "Szacunek wstępny na podstawie ICB, własnych stawek firmy i analizy dokumentu. Wymaga weryfikacji kosztorysanta.",
         "generated_at": datetime.utcnow().isoformat(),
     }
 
