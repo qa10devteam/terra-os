@@ -85,7 +85,7 @@ export function ResourcesPage() {
       <motion.div className="flex flex-col gap-6" variants={container} initial="hidden" animate="show">
 
         {/* Stat Cards */}
-        <motion.div variants={item} className="grid grid-cols-4 gap-3">
+        <motion.div variants={item} className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
             { label: 'Łącznie',   value: counts.total,     icon: Users,     color: 'text-slate-200' },
             { label: 'Dostępni',  value: counts.available, icon: UserCheck, color: 'text-success' },
@@ -201,7 +201,7 @@ export function ResourcesPage() {
                   <h4 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
                     <Calendar className="w-4 h-4" /> Dostępność — Lipiec 2026
                   </h4>
-                  <div className="grid grid-cols-7 gap-1">
+                  <div className="grid grid-cols-4 sm:grid-cols-7 gap-1">
                     {['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'].map(d => (
                       <div key={d} className="text-center text-xs text-slate-600 py-1">{d}</div>
                     ))}

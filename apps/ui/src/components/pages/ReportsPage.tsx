@@ -136,7 +136,7 @@ export function ReportsPage() {
       <motion.div className="flex flex-col gap-6" variants={container} initial="hidden" animate="show">
 
         {/* KPI Stats */}
-        <motion.div variants={item} className="grid grid-cols-3 gap-3">
+        <motion.div variants={item} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
           {/* Gotowe */}
           <div className="card rounded-xl p-4 shadow-md-sm flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-emerald-400/10 flex items-center justify-center shrink-0">
@@ -252,7 +252,7 @@ export function ReportsPage() {
         {/* Templates section */}
         <motion.div variants={item} className="mt-2">
           <h3 className="section-label mb-3">Szablony raportów</h3>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             {[
               { name: 'Miesięczne podsumowanie', desc: 'Przychody, koszty, postępy projektów', icon: Calendar },
               { name: 'Raport per projekt', desc: 'Timeline, budżet, ryzyka, KPI', icon: FileBarChart },

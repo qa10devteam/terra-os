@@ -1300,7 +1300,7 @@ export function KosztorysPage() {
               <Plus className="w-3.5 h-3.5 text-em" />
               <span className="section-label">Nowa pozycja</span>
             </div>
-            <div className="grid grid-cols-12 gap-2">
+            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-2">
               <input value={addKst} onChange={e => setAddKst(e.target.value)} placeholder="KNR/kod"
                 className="col-span-2 px-2 py-1.5 rounded-md bg-ink-800/60 border border-ink-700/50 text-slate-200 placeholder-ink-600 text-xs focus:outline-none focus:border-em/50 transition-colors" />
               <input value={addOpis} onChange={e => setAddOpis(e.target.value)} placeholder="Opis pozycji *"
@@ -1692,7 +1692,7 @@ export function KosztorysPage() {
             {/* Sumy */}
             {pozycje.length > 0 && (
               <div className="shrink-0 border-t border-ink-800/60 px-4 py-3 bg-ink-900/40">
-                <div className="grid grid-cols-6 gap-3 text-xs">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 text-xs">
                   <div>
                     <p className="text-indigo-400 font-medium mb-0.5">Robocizna (R)</p>
                     <p className="text-slate-300 tabular-nums font-semibold">{fmtPLN(sumaR)}</p>

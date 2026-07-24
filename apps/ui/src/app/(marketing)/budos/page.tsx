@@ -265,9 +265,6 @@ function Hero() {
         transition={{ duration: 1, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
         className="relative z-10 w-full max-w-6xl"
       >
-        {/* Glow below frame */}
-        <div className="absolute inset-x-24 bottom-0 h-24 rounded-full blur-3xl bg-em/10 pointer-events-none" />
-
         {/* Glass frame — mobile: max-h-56 clipped, md+: full */}
         <div
           className="glass-card rounded-2xl overflow-hidden max-h-56 md:max-h-none"

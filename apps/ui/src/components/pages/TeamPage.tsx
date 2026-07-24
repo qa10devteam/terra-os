@@ -65,7 +65,7 @@ export function TeamPage() {
       <motion.div className="flex flex-col gap-6" variants={container} initial="hidden" animate="show">
 
         {/* Stats */}
-        <motion.div variants={item} className="grid grid-cols-4 gap-3">
+        <motion.div variants={item} className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
             { label: 'Członkowie',     value: members.length },
             { label: 'Administratorzy', value: members.filter(m => m.role === 'owner' || m.role === 'admin').length },

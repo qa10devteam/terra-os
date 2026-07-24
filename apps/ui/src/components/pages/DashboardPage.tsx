@@ -357,12 +357,6 @@ function InlineMetricCard({ icon: Icon, label, value, trend, trendLabel = 'vs. p
         backdropFilter: 'blur(12px)',
       }}
     >
-      {/* subtle top-left glow */}
-      <div
-        className="pointer-events-none absolute -top-8 -left-8 w-24 h-24 rounded-full opacity-20"
-        style={{ background: 'radial-gradient(circle, #10b981 0%, transparent 70%)' }}
-      />
-
       {/* Header row */}
       <div className="flex items-center justify-between">
         <div

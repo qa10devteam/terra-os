@@ -124,7 +124,7 @@ export function ContractsPage() {
       <motion.div className="flex flex-col gap-6" variants={container} initial="hidden" animate="show">
 
         {/* Stats */}
-        <motion.div variants={itemVar} className="grid grid-cols-4 gap-3">
+        <motion.div variants={itemVar} className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
             { label: 'Wartość kontraktów', value: fmtPLN(totals.value),  icon: DollarSign, color: 'text-em' },
             { label: 'Zapłacono',          value: fmtPLN(totals.paid),   icon: TrendingUp, color: 'text-success' },
@@ -199,7 +199,7 @@ export function ContractsPage() {
                     <span className={`text-xs px-2.5 py-1 rounded-full font-medium border ${meta.bg}`}>{meta.label}</span>
                   </div>
 
-                  <div className="mt-4 grid grid-cols-4 gap-4 text-xs">
+                  <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
                     <div><p className="text-slate-600">Wartość</p><p className="text-slate-200 font-mono font-semibold mt-0.5">{fmtPLN(c.value_pln)}</p></div>
                     <div><p className="text-slate-600">Zapłacono</p><p className="text-slate-200 font-mono font-semibold mt-0.5">{fmtPLN(c.paid_pln)}</p></div>
                     <div><p className="text-slate-600">Termin</p><p className="text-slate-200 mt-0.5">{c.start_date || '—'} → {c.end_date || '—'}</p></div>
