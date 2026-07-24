@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
-  FileText, Download, Calendar, BarChart2, FileBarChart, Plus, Clock, CheckCircle, Loader2,
+  FileText, Download, Calendar, BarChart2, FileBarChart, Plus, Clock, CheckCircle, Loader2, X,
 } from 'lucide-react';
 import { PageShell } from '@/components/PageShell';
 import { useAuthFetch } from '@/lib/api-v2';
+import { showToast } from '@/components/Toast';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -86,6 +87,7 @@ export function ReportsPage() {
   const [monthlyData, setMonthlyData] = useState<MonthlyRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [reports, setReports] = useState<Report[]>([]);
+  const [generating, setGenerating] = useState(false);
 
   const fetchMonthly = useCallback(async () => {
     setLoading(true);
@@ -94,7 +96,6 @@ export function ReportsPage() {
       const rows: MonthlyRow[] = data?.items ?? data?.data ?? data ?? [];
       setMonthlyData(Array.isArray(rows) ? rows : []);
     } catch {
-      // Use empty fallback
       setMonthlyData([]);
     } finally {
       setLoading(false);
@@ -113,6 +114,42 @@ export function ReportsPage() {
     ]);
   }, []);
 
+  const handleGenerateReport = useCallback(async () => {
+    setGenerating(true);
+    try {
+      const now = new Date();
+      const res = await authFetch(
+        `/api/v2/reports/monthly?year=${now.getFullYear()}&month=${now.getMonth() + 1}`
+      ) as { items?: MonthlyRow[] };
+      const rows = res?.items ?? [];
+      setMonthlyData(Array.isArray(rows) ? rows : []);
+      showToast('success', 'Raport wygenerowany');
+    } catch (e) {
+      showToast('error', (e as Error).message || 'Błąd generowania raportu');
+    } finally {
+      setGenerating(false);
+    }
+  }, [authFetch]);
+
+  const handleDownloadPDF = useCallback(async (reportId: string, title: string) => {
+    try {
+      // Attempt PDF download via reports/monthly/pdf — fallback to CSV export
+      const res = await authFetch('/api/v2/reports/monthly/pdf') as Blob | { url?: string };
+      if (res instanceof Blob) {
+        const url = URL.createObjectURL(res);
+        const a = document.createElement('a');
+        a.href = url; a.download = `${title.replace(/\s+/g, '_')}.pdf`; a.click();
+        URL.revokeObjectURL(url);
+      } else if (res?.url) {
+        window.open(res.url, '_blank');
+      } else {
+        showToast('info', `Pobieranie raportu ${reportId} — funkcja wkrótce`);
+      }
+    } catch {
+      showToast('info', 'Pobieranie raportów PDF będzie dostępne wkrótce');
+    }
+  }, [authFetch]);
+
   const readyCount     = reports.filter(r => r.status === 'ready').length;
   const totalPages     = reports.reduce((s, r) => s + r.pages, 0);
   const scheduledCount = reports.filter(r => r.status === 'scheduled').length;
@@ -126,8 +163,9 @@ export function ReportsPage() {
       : monthlyData.map(r => ({ month: r.month, count: r.count }));
 
   const actions = (
-    <button type="button" className="btn-primary flex items-center gap-2">
-      <Plus className="w-4 h-4" /> Generuj raport
+    <button type="button" onClick={handleGenerateReport} disabled={generating} className="btn-primary flex items-center gap-2 disabled:opacity-60">
+      {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+      {generating ? 'Generuję...' : 'Generuj raport'}
     </button>
   );
 
@@ -222,6 +260,7 @@ export function ReportsPage() {
                 {r.status === 'ready' && (
                   <button
                     type="button"
+                    onClick={() => handleDownloadPDF(r.id, r.title)}
                     className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-emerald-400/30 text-emerald-400 hover:bg-emerald-400/10 transition-colors whitespace-nowrap"
                   >
                     <Download className="w-3.5 h-3.5" /> Pobierz PDF
@@ -260,6 +299,7 @@ export function ReportsPage() {
             ].map(t => (
               <button type="button"
                 key={t.name}
+                onClick={() => showToast('info', `Szablon "${t.name}" — generowanie wkrótce`)}
                 className="card rounded-xl p-4 text-left card-hover group border border-ink-800/40"
               >
                 <t.icon className="w-5 h-5 text-slate-500 group-hover:text-em transition-colors mb-2" />

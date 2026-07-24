@@ -392,7 +392,7 @@ export function useCompetitorsTop(cpv_prefix?: string, province?: string, limit 
     if (province) params.set('province', province);
     fetch(`/api/v2/intelligence/competitors/top?${params}`)
       .then((d: { data: ContractorTop[] }) => { if (!cancelled) setData(d.data || []); })
-      .catch(() => {})
+      .catch((e: unknown) => console.error('[api-v2]', e))
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [fetch, cpv_prefix, province, limit]);
@@ -412,7 +412,7 @@ export function useBuyersTop(cpv_prefix?: string, province?: string, limit = 15)
     if (province) params.set('province', province);
     fetch(`/api/v2/intelligence/buyers/top?${params}`)
       .then((d: { data: BuyerTop[] }) => { if (!cancelled) setData(d.data || []); })
-      .catch(() => {})
+      .catch((e: unknown) => console.error('[api-v2]', e))
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [fetch, cpv_prefix, province, limit]);
@@ -438,7 +438,7 @@ export function useInflation(category?: string, typ_rms?: string) {
           setData(rows);
         }
       })
-      .catch(() => {})
+      .catch((e: unknown) => console.error('[api-v2]', e))
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [fetch, category, typ_rms]);
@@ -461,7 +461,7 @@ export function useFTS(q: string) {
       .then((d: { items?: FTSResult[]; data?: FTSResult[]; total?: number }) => {
         if (!cancelled) { setData(d.items || d.data || []); setTotal(d.total || 0); }
       })
-      .catch(() => {})
+      .catch((e: unknown) => console.error('[api-v2]', e))
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [fetch, q]);
@@ -484,7 +484,7 @@ export function useWinRates(cpv_prefix: string, limit = 20) {
       .then((d: WinRatesResponse) => {
         if (!cancelled) { setData(d.data || []); setTotal(d.total || 0); }
       })
-      .catch(() => {})
+      .catch((e: unknown) => console.error('[api-v2]', e))
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [fetch, cpv_prefix, limit]);
@@ -507,7 +507,7 @@ export function useTopBuyersCpv(cpv_prefix: string, limit = 20) {
       .then((d: TopBuyersCpvResponse) => {
         if (!cancelled) { setData(d.data || []); setTotal(d.total || 0); }
       })
-      .catch(() => {})
+      .catch((e: unknown) => console.error('[api-v2]', e))
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [fetch, cpv_prefix, limit]);
@@ -539,7 +539,7 @@ export function useSeasonality(cpv_prefix?: string) {
     if (cpv_prefix) params.set('cpv_prefix', cpv_prefix);
     fetch(`/api/v2/intelligence/seasonality?${params}`)
       .then((d: SeasonalityResponse) => { if (!cancelled) setData(d.data || []); })
-      .catch(() => {})
+      .catch((e: unknown) => console.error('[api-v2]', e))
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [fetch, cpv_prefix]);
@@ -562,7 +562,7 @@ export function useAlerts() {
         setData(d.alerts || []);
         setTotal(d.alert_count || 0);
       })
-      .catch(() => {})
+      .catch((e: unknown) => console.error('[api-v2]', e))
       .finally(() => setLoading(false));
   }, [fetch]);
 
@@ -610,7 +610,7 @@ export function useBookmarks(stage?: string) {
         setTotal(items.total || 0);
         setStats(statsRes.stats || []);
       })
-      .catch(() => {})
+      .catch((e: unknown) => console.error('[api-v2]', e))
       .finally(() => setLoading(false));
   }, [fetch, stage]);
 
@@ -640,7 +640,7 @@ export function useCompetitorWatch() {
     setLoading(true);
     fetch('/api/v2/competitors?limit=50')
       .then((d: { items: CompetitorWatch[]; total: number }) => setData(d.items || []))
-      .catch(() => {})
+      .catch((e: unknown) => console.error('[api-v2]', e))
       .finally(() => setLoading(false));
   }, [fetch]);
 
@@ -688,7 +688,7 @@ export function useCompetitorIntel(nip: string | null) {
           setData(flat);
         }
       })
-      .catch(() => {})
+      .catch((e: unknown) => console.error('[api-v2]', e))
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [fetch, nip]);
@@ -707,7 +707,7 @@ export function useCompetitorSearch(q: string) {
     setLoading(true);
     fetch(`/api/v2/competitors/search?q=${encodeURIComponent(q)}&limit=10`)
       .then((d: { results: typeof data }) => { if (!cancelled) setData(d.results || []); })
-      .catch(() => {})
+      .catch((e: unknown) => console.error('[api-v2]', e))
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [fetch, q]);
@@ -733,7 +733,7 @@ export function useBuyerCRM() {
         setData(items.items || []);
         setFollowups(fu.followups || fu.today?.concat(fu.this_week || []) || []);
       })
-      .catch(() => {})
+      .catch((e: unknown) => console.error('[api-v2]', e))
       .finally(() => setLoading(false));
   }, [fetch]);
 
@@ -882,7 +882,7 @@ export function useBuyerCRMList(params?: { stage?: string; search?: string; limi
     q.set('limit', String(params?.limit ?? 50));
     fetch(`/api/v2/buyer-crm?${q}`)
       .then((d: { items: BuyerCRMItem[]; total: number }) => { setData(d.items || []); setTotal(d.total || 0); })
-      .catch(() => {})
+      .catch((e: unknown) => console.error('[api-v2]', e))
       .finally(() => setLoading(false));
   }, [fetch, params?.stage, params?.search, params?.limit]);
   useEffect(() => { reload(); }, [reload]);
@@ -900,7 +900,7 @@ export function useNotifications() {
       fetch('/api/v2/notifications/count'),
     ]).then(([list, count]: [{ items: Notification[]; total: number }, { unread_count: number }]) => {
       setData(list.items || []); setUnread(count.unread_count || 0);
-    }).catch(() => {}).finally(() => setLoading(false));
+    }).catch((e: unknown) => console.error('[api-v2]', e)).finally(() => setLoading(false));
   }, [fetch]);
   useEffect(() => { reload(); const t = setInterval(reload, 30000); return () => clearInterval(t); }, [reload]);
   const markRead = useCallback(async (id: string) => {
@@ -925,7 +925,7 @@ export function useOrgSettings() {
       fetch('/api/v2/organizations/me/invites'),
     ]).then(([o, m, i]: [OrgInfo, { items: OrgMember[] }, { items: OrgInvite[] }]) => {
       setOrg(o); setMembers(m.items || []); setInvites(i.items || []);
-    }).catch(() => {}).finally(() => setLoading(false));
+    }).catch((e: unknown) => console.error('[api-v2]', e)).finally(() => setLoading(false));
   }, [fetch]);
   useEffect(() => { reload(); }, [reload]);
   const invite = useCallback(async (email: string, role: string) => {

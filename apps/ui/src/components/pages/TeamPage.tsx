@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
-import { Users, Shield, Mail, MoreHorizontal, Plus, Crown, UserCog, Eye } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Users, Shield, Mail, MoreHorizontal, Plus, Crown, UserCog, Eye, X, Loader2 } from 'lucide-react';
 import { PageShell } from '@/components/PageShell';
 import { useAuthFetch } from '@/lib/api-v2';
+import { showToast } from '@/components/Toast';
 
 interface TeamMember {
   id: string;
@@ -34,28 +35,67 @@ const item      = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0, tra
 export function TeamPage() {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState('viewer');
   const authFetch = useAuthFetch();
 
-  useEffect(() => {
-    authFetch('/api/v1/resources/employees')
+  const fetchMembers = useCallback(() => {
+    authFetch('/api/v2/organizations/me/members')
       .then((data: any) => {
         const items = (data.items ?? data ?? []).map((e: any) => ({
           id: e.id,
           name: e.name ?? '—',
-          email: e.phone ?? '—',
+          email: e.email ?? '—',
           role: (e.role ?? 'viewer') as any,
           avatar_initials: (e.name ?? '??').split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase(),
-          last_active: e.active ? 'Aktywny' : 'Nieaktywny',
+          last_active: e.is_active ? 'Aktywny' : 'Nieaktywny',
           projects: 0,
         }));
         setMembers(items);
       })
-      .catch(() => {})
+      .catch(() => {
+        // Fallback to employees endpoint
+        authFetch('/api/v1/resources/employees')
+          .then((data: any) => {
+            const items = (data.items ?? data ?? []).map((e: any) => ({
+              id: e.id, name: e.name ?? '—', email: e.phone ?? '—',
+              role: (e.role ?? 'viewer') as any,
+              avatar_initials: (e.name ?? '??').split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase(),
+              last_active: e.active ? 'Aktywny' : 'Nieaktywny', projects: 0,
+            }));
+            setMembers(items);
+          })
+          .catch(() => {});
+      })
       .finally(() => setLoading(false));
   }, [authFetch]);
 
+  useEffect(() => { fetchMembers(); }, [fetchMembers]);
+
+  const handleInvite = useCallback(async () => {
+    const emailTrimmed = inviteEmail.trim();
+    if (!emailTrimmed || !emailTrimmed.includes('@')) { showToast('error', 'Podaj poprawny adres email'); return; }
+    setSaving(true);
+    try {
+      await authFetch('/api/v2/organizations/me/invite', {
+        method: 'POST',
+        body: JSON.stringify({ email: emailTrimmed, role: inviteRole }),
+      });
+      showToast('success', `Zaproszenie wysłane na ${emailTrimmed}`);
+      setShowModal(false);
+      setInviteEmail('');
+      setInviteRole('viewer');
+    } catch (e) {
+      showToast('error', (e as Error).message || 'Błąd wysyłania zaproszenia');
+    } finally {
+      setSaving(false);
+    }
+  }, [authFetch, inviteEmail, inviteRole]);
+
   const actions = (
-    <button type="button" className="btn-primary flex items-center gap-2">
+    <button type="button" onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2">
       <Plus className="w-4 h-4" /> Zaproś użytkownika
     </button>
   );
@@ -149,6 +189,57 @@ export function TeamPage() {
           </table>
         </motion.div>
       </motion.div>
+
+      {/* Invite Modal */}
+      <AnimatePresence>
+        {showModal && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+              className="glass-card w-full max-w-sm mx-4 p-6 flex flex-col gap-4"
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-semibold text-slate-100">Zaproś użytkownika</h3>
+                <button type="button" onClick={() => setShowModal(false)} className="p-1 rounded-md hover:bg-ink-700/60 text-slate-500 hover:text-slate-300 transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="flex flex-col gap-3">
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">Adres email *</label>
+                  <input
+                    type="email" value={inviteEmail}
+                    onChange={e => setInviteEmail(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleInvite(); }}
+                    placeholder="jan@firma.pl"
+                    className="w-full bg-ink-800/60 border border-ink-700/60 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-em/50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">Rola</label>
+                  <select value={inviteRole} onChange={e => setInviteRole(e.target.value)}
+                    className="w-full bg-ink-800/60 border border-ink-700/60 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-em/50">
+                    <option value="viewer">Podgląd</option>
+                    <option value="manager">Kierownik</option>
+                    <option value="admin">Administrator</option>
+                  </select>
+                </div>
+                <p className="text-xs text-slate-500">Użytkownik otrzyma link aktywacyjny na podany adres.</p>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button type="button" onClick={() => setShowModal(false)} className="btn-ghost flex-1 justify-center">Anuluj</button>
+                <button type="button" onClick={handleInvite} disabled={saving} className="btn-primary flex-1 justify-center disabled:opacity-60">
+                  {saving ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Wysyłam...</> : 'Wyślij zaproszenie'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </PageShell>
   );
 }

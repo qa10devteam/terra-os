@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
-import { Users, Truck, Calendar, Plus, Search, UserCheck, UserX } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Users, Truck, Calendar, Plus, Search, UserCheck, UserX, X } from 'lucide-react';
 import { PageShell } from '@/components/PageShell';
 import { useAuthFetch } from '@/lib/api-v2';
+import { showToast } from '@/components/Toast';
 
 interface Resource {
   id: string;
@@ -40,9 +41,12 @@ export function ResourcesPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [allResources, setAllResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ type: 'person', name: '', role: '', phone: '' });
   const authFetch = useAuthFetch();
 
-  useEffect(() => {
+  const fetchResources = useCallback(() => {
     Promise.all([
       authFetch('/api/v1/resources/employees').catch(() => ({ items: [] })),
       authFetch('/api/v1/resources/equipment').catch(() => ({ items: [] })),
@@ -58,6 +62,34 @@ export function ResourcesPage() {
       setAllResources([...emps, ...equip]);
     }).finally(() => setLoading(false));
   }, [authFetch]);
+
+  useEffect(() => { fetchResources(); }, [fetchResources]);
+
+  const handleCreate = useCallback(async () => {
+    if (!form.name.trim()) { showToast('error', 'Nazwa jest wymagana'); return; }
+    setSaving(true);
+    try {
+      if (form.type === 'person') {
+        await authFetch('/api/v1/resources/employees', {
+          method: 'POST',
+          body: JSON.stringify({ name: form.name, role: form.role || 'pracownik', phone: form.phone || undefined }),
+        });
+      } else {
+        await authFetch('/api/v1/resources/equipment', {
+          method: 'POST',
+          body: JSON.stringify({ name: form.name, category: form.role || 'maszyna' }),
+        });
+      }
+      showToast('success', 'Zasób dodany');
+      setShowModal(false);
+      setForm({ type: 'person', name: '', role: '', phone: '' });
+      fetchResources();
+    } catch (e) {
+      showToast('error', (e as Error).message || 'Błąd dodawania zasobu');
+    } finally {
+      setSaving(false);
+    }
+  }, [authFetch, form, fetchResources]);
 
   const resources = allResources.filter(r => {
     if (filter !== 'all' && r.type !== filter) return false;
@@ -75,7 +107,7 @@ export function ResourcesPage() {
   const selected = allResources.find(r => r.id === selectedId);
 
   const actions = (
-    <button type="button" className="btn-primary flex items-center gap-2">
+    <button type="button" onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2">
       <Plus className="w-4 h-4" /> Dodaj zasób
     </button>
   );
@@ -241,6 +273,74 @@ export function ResourcesPage() {
           </div>
         </motion.div>
       </motion.div>
+
+      {/* Add Resource Modal */}
+      <AnimatePresence>
+        {showModal && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+              className="glass-card w-full max-w-md mx-4 p-6 flex flex-col gap-4"
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-semibold text-slate-100">Dodaj zasób</h3>
+                <button type="button" onClick={() => setShowModal(false)} className="p-1 rounded-md hover:bg-ink-700/60 text-slate-500 hover:text-slate-300 transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="flex flex-col gap-3">
+                {/* Type toggle */}
+                <div className="flex rounded-lg overflow-hidden border border-ink-700/60">
+                  {(['person', 'equipment'] as const).map(t => (
+                    <button key={t} type="button"
+                      onClick={() => setForm(f => ({ ...f, type: t }))}
+                      className={`flex-1 py-2 text-xs font-medium transition-colors ${form.type === t ? 'bg-em/20 text-em' : 'text-slate-500 hover:text-slate-300'}`}
+                    >
+                      {t === 'person' ? '👤 Pracownik' : '🚛 Sprzęt'}
+                    </button>
+                  ))}
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">{form.type === 'person' ? 'Imię i nazwisko' : 'Nazwa / model'} *</label>
+                  <input type="text" value={form.name}
+                    onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                    placeholder={form.type === 'person' ? 'Jan Kowalski' : 'Koparka CAT 320'}
+                    className="w-full bg-ink-800/60 border border-ink-700/60 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-em/50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">{form.type === 'person' ? 'Stanowisko' : 'Kategoria'}</label>
+                  <input type="text" value={form.role}
+                    onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
+                    placeholder={form.type === 'person' ? 'Kierownik budowy' : 'maszyna'}
+                    className="w-full bg-ink-800/60 border border-ink-700/60 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-em/50"
+                  />
+                </div>
+                {form.type === 'person' && (
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Telefon</label>
+                    <input type="tel" value={form.phone}
+                      onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                      placeholder="+48 600 000 000"
+                      className="w-full bg-ink-800/60 border border-ink-700/60 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-em/50"
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button type="button" onClick={() => setShowModal(false)} className="btn-ghost flex-1 justify-center">Anuluj</button>
+                <button type="button" onClick={handleCreate} disabled={saving} className="btn-primary flex-1 justify-center disabled:opacity-60">
+                  {saving ? 'Dodaję...' : 'Dodaj zasób'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </PageShell>
   );
 }

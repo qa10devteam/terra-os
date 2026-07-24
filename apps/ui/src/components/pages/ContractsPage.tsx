@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { motion } from 'motion/react';
-import { FileText, DollarSign, Clock, AlertCircle, TrendingUp, Plus, Filter, RefreshCw } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { FileText, DollarSign, Clock, AlertCircle, TrendingUp, Plus, Filter, RefreshCw, X } from 'lucide-react';
 import { useAuthFetch } from '@/lib/api-v2';
 import { PageShell } from '@/components/PageShell';
+import { showToast } from '@/components/Toast';
 
 interface Contract {
   id: string;
@@ -77,11 +78,14 @@ export function ContractsPage() {
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState<string | null>(null);
   const [filter, setFilter]       = useState<'all' | 'active' | 'completed' | 'overdue' | 'draft'>('all');
+  const [showModal, setShowModal] = useState(false);
+  const [saving, setSaving]       = useState(false);
+  const [form, setForm]           = useState({ title: '', state: 'draft', start_date: '', end_date: '' });
 
   const fetchContracts = useCallback(async () => {
     setLoading(true); setError(null);
     try {
-      const data = await authFetch('/api/v1/contracts') as { items?: Record<string, unknown>[]; contracts?: Record<string, unknown>[] } | Record<string, unknown>[];
+      const data = await authFetch('/api/v2/contracts') as { items?: Record<string, unknown>[]; contracts?: Record<string, unknown>[] } | Record<string, unknown>[];
       const raw: Record<string, unknown>[] = Array.isArray(data)
         ? data
         : (data as { items?: Record<string, unknown>[]; contracts?: Record<string, unknown>[] }).items
@@ -90,12 +94,30 @@ export function ContractsPage() {
       const mapped = raw.map(mapBackendContract);
       if (mapped.length > 0) setContracts(mapped);
     } catch (e) {
-      // keep mock data on error — do not surface error to user
-      void e;
+      setError((e as Error).message || 'Błąd pobierania kontraktów');
     } finally {
       setLoading(false);
     }
   }, [authFetch]);
+
+  const handleCreate = useCallback(async () => {
+    if (!form.title.trim()) { showToast('error', 'Tytuł kontraktu jest wymagany'); return; }
+    setSaving(true);
+    try {
+      await authFetch('/api/v2/contracts', {
+        method: 'POST',
+        body: JSON.stringify({ title: form.title, state: form.state, start_date: form.start_date || undefined, end_date: form.end_date || undefined }),
+      });
+      showToast('success', 'Kontrakt utworzony');
+      setShowModal(false);
+      setForm({ title: '', state: 'draft', start_date: '', end_date: '' });
+      fetchContracts();
+    } catch (e) {
+      showToast('error', (e as Error).message || 'Błąd tworzenia kontraktu');
+    } finally {
+      setSaving(false);
+    }
+  }, [authFetch, form, fetchContracts]);
 
   useEffect(() => { fetchContracts(); }, [fetchContracts]);
 
@@ -113,7 +135,7 @@ export function ContractsPage() {
       <button type="button" onClick={fetchContracts} className="btn-ghost p-2" aria-label="Odśwież">
         <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
       </button>
-      <button type="button" className="btn-primary flex items-center gap-2">
+      <button type="button" onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2">
         <Plus className="w-4 h-4" /> Nowy kontrakt
       </button>
     </>
@@ -226,6 +248,66 @@ export function ContractsPage() {
           </motion.div>
         )}
       </motion.div>
+
+      {/* New Contract Modal */}
+      <AnimatePresence>
+        {showModal && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            onClick={(e) => { if (e.target === e.currentTarget) setShowModal(false); }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+              className="glass-card w-full max-w-md mx-4 p-6 flex flex-col gap-4"
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-semibold text-slate-100">Nowy kontrakt</h3>
+                <button type="button" onClick={() => setShowModal(false)} className="p-1 rounded-md hover:bg-ink-700/60 text-slate-500 hover:text-slate-300 transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="flex flex-col gap-3">
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">Tytuł *</label>
+                  <input
+                    type="text" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+                    placeholder="np. Budowa chodnika ul. Główna..."
+                    className="w-full bg-ink-800/60 border border-ink-700/60 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-em/50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">Status</label>
+                  <select value={form.state} onChange={e => setForm(f => ({ ...f, state: e.target.value }))}
+                    className="w-full bg-ink-800/60 border border-ink-700/60 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-em/50">
+                    <option value="draft">Wersja robocza</option>
+                    <option value="active">Aktywny</option>
+                    <option value="completed">Zakończony</option>
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Data rozpoczęcia</label>
+                    <input type="date" value={form.start_date} onChange={e => setForm(f => ({ ...f, start_date: e.target.value }))}
+                      className="w-full bg-ink-800/60 border border-ink-700/60 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-em/50" />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-400 mb-1">Data zakończenia</label>
+                    <input type="date" value={form.end_date} onChange={e => setForm(f => ({ ...f, end_date: e.target.value }))}
+                      className="w-full bg-ink-800/60 border border-ink-700/60 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-em/50" />
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button type="button" onClick={() => setShowModal(false)} className="btn-ghost flex-1 justify-center">Anuluj</button>
+                <button type="button" onClick={handleCreate} disabled={saving} className="btn-primary flex-1 justify-center disabled:opacity-60">
+                  {saving ? 'Tworzę...' : 'Utwórz kontrakt'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </PageShell>
   );
 }
