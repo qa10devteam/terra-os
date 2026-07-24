@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'motion/react';
 import { useStore } from '@/store/useStore';
+import { useAuthFetch } from '@/lib/api-v2';
 import {
   ArrowRight, Bell, LogOut, TrendingUp, Activity, FileText,
   Zap, BarChart3, ChevronRight, Search, Calculator, Brain,
@@ -57,6 +58,7 @@ export default function YunaHubPage() {
   const router      = useRouter();
   const reduce      = useReducedMotion();
   const isAuth      = !!(user && accessToken);
+  const authFetch   = useAuthFetch();
 
   const [hydrated, setHydrated] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -83,10 +85,9 @@ export default function YunaHubPage() {
 
   // ── Fetch stats (total count) ────────────────────────────────────────────────
   useEffect(() => {
-    const ctrl = new AbortController();
-    fetch('/api/v2/dashboard/stats', { signal: ctrl.signal })
-      .then((r) => r.ok ? r.json() as Promise<DashStats> : null)
-      .then((d) => {
+    if (!isAuth) return;
+    authFetch('/api/v2/dashboard/stats')
+      .then((d: any) => {
         if (d) setStats({
           active: String(d.total_tenders ?? '—'),
           week: String(d.new_today ?? '—'),
@@ -95,15 +96,13 @@ export default function YunaHubPage() {
         setStatsLoaded(true);
       })
       .catch(() => { setStatsLoaded(true); });
-    return () => ctrl.abort();
-  }, []);
+  }, [isAuth, authFetch]);
 
   // ── Fetch recent tenders ─────────────────────────────────────────────────────
   useEffect(() => {
-    const ctrl = new AbortController();
-    fetch('/api/v2/dashboard/recent-tenders', { signal: ctrl.signal })
-      .then((r) => r.ok ? r.json() as Promise<TendersResponse> : null)
-      .then((d) => {
+    if (!isAuth) return;
+    authFetch('/api/v2/dashboard/recent-tenders')
+      .then((d: any) => {
         if (d) {
           const rows = d.items ?? d.data ?? d.results ?? [];
           setRecentTenders(rows.slice(0, 5));
@@ -111,8 +110,7 @@ export default function YunaHubPage() {
         setTendersLoaded(true);
       })
       .catch(() => { setTendersLoaded(true); });
-    return () => ctrl.abort();
-  }, []);
+  }, [isAuth, authFetch]);
 
   // ── Auth gate ────────────────────────────────────────────────────────────────
   if (!hydrated) {

@@ -44,9 +44,9 @@ export function ResourcesPage() {
 
   useEffect(() => {
     Promise.all([
-      authFetch('/api/v1/resources/employees').then(r => r.json()).catch(() => ({ items: [] })),
-      authFetch('/api/v1/resources/equipment').then(r => r.json()).catch(() => ({ items: [] })),
-    ]).then(([empData, eqData]) => {
+      authFetch('/api/v1/resources/employees').catch(() => ({ items: [] })),
+      authFetch('/api/v1/resources/equipment').catch(() => ({ items: [] })),
+    ]).then(([empData, eqData]: any[]) => {
       const emps: Resource[] = (empData.items ?? empData ?? []).map((e: any) => ({
         id: e.id, type: 'person' as const, name: e.name ?? '—',
         role: e.role ?? '', status: e.active ? 'available' : 'unavailable',

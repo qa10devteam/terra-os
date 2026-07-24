@@ -19,11 +19,14 @@ interface TeamMember {
 // No more DEMO data — fetched from /api/v1/resources/employees
 
 const ROLE_META: Record<string, { label: string; icon: React.ReactNode; bg: string }> = {
-  owner:   { label: 'Właściciel',    icon: <Crown   className="w-3 h-3" />, bg: 'bg-warning/10 text-warning border-warning/20' },
-  admin:   { label: 'Administrator', icon: <Shield  className="w-3 h-3" />, bg: 'bg-violet/10 text-violet border-violet/20' },
-  manager: { label: 'Kierownik',     icon: <UserCog className="w-3 h-3" />, bg: 'bg-info/10 text-info border-info/20' },
-  viewer:  { label: 'Podgląd',       icon: <Eye     className="w-3 h-3" />, bg: 'bg-ink-700/30 text-slate-400 border-ink-700/40' },
+  owner:    { label: 'Właściciel',    icon: <Crown   className="w-3 h-3" />, bg: 'bg-warning/10 text-warning border-warning/20' },
+  admin:    { label: 'Administrator', icon: <Shield  className="w-3 h-3" />, bg: 'bg-violet/10 text-violet border-violet/20' },
+  manager:  { label: 'Kierownik',     icon: <UserCog className="w-3 h-3" />, bg: 'bg-info/10 text-info border-info/20' },
+  operator: { label: 'Operator',      icon: <UserCog className="w-3 h-3" />, bg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
+  editor:   { label: 'Redaktor',      icon: <UserCog className="w-3 h-3" />, bg: 'bg-sky-500/10 text-sky-400 border-sky-500/20' },
+  viewer:   { label: 'Podgląd',       icon: <Eye     className="w-3 h-3" />, bg: 'bg-ink-700/30 text-slate-400 border-ink-700/40' },
 };
+const DEFAULT_ROLE_META = { label: 'Członek', icon: <Eye className="w-3 h-3" />, bg: 'bg-ink-700/30 text-slate-400 border-ink-700/40' };
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } };
 const item      = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0, transition: { duration: 0.3 } } };
@@ -35,8 +38,7 @@ export function TeamPage() {
 
   useEffect(() => {
     authFetch('/api/v1/resources/employees')
-      .then(r => r.json())
-      .then((data) => {
+      .then((data: any) => {
         const items = (data.items ?? data ?? []).map((e: any) => ({
           id: e.id,
           name: e.name ?? '—',
@@ -112,7 +114,7 @@ export function TeamPage() {
                 </tr>
               )}
               {members.map(m => {
-                const meta = ROLE_META[m.role];
+                const meta = ROLE_META[m.role] ?? DEFAULT_ROLE_META;
                 return (
                   <tr key={m.id} className="hover:bg-ink-800/20 transition-colors">
                     <td className="px-5 py-4">

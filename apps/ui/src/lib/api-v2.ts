@@ -731,7 +731,7 @@ export function useBuyerCRM() {
     ])
       .then(([items, fu]) => {
         setData(items.items || []);
-        setFollowups(fu.today?.concat(fu.this_week || []) || []);
+        setFollowups(fu.followups || fu.today?.concat(fu.this_week || []) || []);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
