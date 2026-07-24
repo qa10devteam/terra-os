@@ -10,14 +10,16 @@ import {
 } from 'lucide-react';
 
 interface Document {
-  document_id: string;
+  document_id: string;  // mapped from id
   filename: string;
   size_bytes: number;
   status: string;
-  has_text: boolean;
+  has_text: boolean;    // mapped from parsed_ok
   has_analysis: boolean;
   has_estimate: boolean;
-  uploaded_at: string;
+  uploaded_at: string;  // mapped from created_at
+  kind?: string;
+  pages?: number;
 }
 
 interface EstimateItem {
@@ -82,8 +84,20 @@ export function DocumentsPage() {
     (async () => {
       try {
         const json = await authFetch('/api/v2/documents');
+        const raw: any[] = Array.isArray(json) ? json : (json as any).items ?? (json as any).documents ?? [];
         if (!cancelled) {
-          setDocuments(Array.isArray(json) ? json : (json as any).items ?? (json as any).documents ?? []);
+          setDocuments(raw.map((d: any) => ({
+            document_id: d.id ?? d.document_id,
+            filename: d.filename,
+            size_bytes: d.size_bytes ?? 0,
+            status: d.status ?? (d.parsed_ok ? 'analyzed' : 'uploaded'),
+            has_text: d.parsed_ok ?? d.has_text ?? false,
+            has_analysis: d.has_analysis ?? d.parsed_ok ?? false,
+            has_estimate: d.has_estimate ?? false,
+            uploaded_at: d.created_at ?? d.uploaded_at ?? '',
+            kind: d.kind,
+            pages: d.pages,
+          })));
         }
       } catch { /* ignore */ } finally {
         if (!cancelled) setDocsLoading(false);

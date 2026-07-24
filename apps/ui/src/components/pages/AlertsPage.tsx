@@ -392,8 +392,8 @@ export function AlertsPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await authFetch('/api/v2/tender-alerts') as { alerts: TenderAlert[]; alert_count: number } | TenderAlert[];
-      const items = Array.isArray(data) ? data : (data?.alerts ?? []);
+      const data = await authFetch('/api/v2/tender-alerts') as { items?: TenderAlert[]; alerts?: TenderAlert[]; alert_count?: number } | TenderAlert[];
+      const items = Array.isArray(data) ? data : (data?.items ?? data?.alerts ?? []);
       setAlerts(items);
     } catch (e: unknown) {
       setError((e as Error).message || 'Błąd ładowania alertów');

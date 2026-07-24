@@ -29,7 +29,7 @@ export default function AxiomEnginePage() {
   const fetchAxioms = async () => {
     try {
       const data = await authFetch(`/api/v2/axioms`);
-      setAxioms(data.axioms || []);
+      setAxioms(Array.isArray(data) ? data : (data.axioms || []));
     } catch (err) {
       console.error("Failed to fetch axioms:", err);
     } finally {

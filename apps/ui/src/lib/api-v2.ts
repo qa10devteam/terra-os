@@ -706,7 +706,7 @@ export function useCompetitorSearch(q: string) {
     let cancelled = false;
     setLoading(true);
     fetch(`/api/v2/competitors/search?q=${encodeURIComponent(q)}&limit=10`)
-      .then((d: { results: typeof data }) => { if (!cancelled) setData(d.results || []); })
+      .then((d: { results?: typeof data; items?: typeof data }) => { if (!cancelled) setData(d.results || d.items || []); })
       .catch((e: unknown) => console.error('[api-v2]', e))
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };

@@ -41,7 +41,7 @@ export default function WebhooksPage() {
   const fetchWebhooks = async () => {
     try {
       const data = await authFetch(`/api/v2/webhooks`);
-      setWebhooks(data.webhooks || []);
+      setWebhooks(Array.isArray(data) ? data : (data.webhooks || []));
     } catch (err) {
       console.error("Failed to fetch webhooks:", err);
     } finally {

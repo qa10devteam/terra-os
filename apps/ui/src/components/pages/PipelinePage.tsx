@@ -53,7 +53,8 @@ interface BackendTenderItem {
 }
 
 interface PipelineKPI {
-  active: number;
+  active?: number;
+  active_count?: number;
   pipeline_value: number;
   win_rate_mtd: number;
 }
@@ -675,7 +676,7 @@ export function PipelinePage() {
             <MetricCard
               icon={Activity}
               label="Aktywne przetargi"
-              value={String(kpi.active)}
+              value={String((kpi as any).active ?? (kpi as any).active_count ?? 0)}
               iconColor="text-indigo"
               loading={loading}
             />

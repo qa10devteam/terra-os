@@ -109,8 +109,8 @@ export function NotificationsPage() {
 
   const fetchUnreadCount = useCallback(async () => {
     try {
-      const data = await authFetch('/api/v2/notifications/unread-count') as { count: number } | number;
-      const count = typeof data === 'number' ? data : (data?.count ?? 0);
+      const data = await authFetch('/api/v2/notifications/unread-count') as { unread_count?: number; count?: number } | number;
+      const count = typeof data === 'number' ? data : (data?.unread_count ?? data?.count ?? 0);
       setUnreadCount(count);
     } catch {
       // non-critical

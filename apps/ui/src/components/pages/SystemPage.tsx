@@ -9,24 +9,32 @@ import { Database, Server, Activity, Shield, Cpu, HardDrive, Users, Bell, Refres
 interface Metrics {
   platform: string;
   version: string;
+  uptime?: string;
   database: {
     size: string;
     tenders: number;
-    embeddings: number;
-    doc_chunks: number;
-    icb_records: number;
-    icb_forecast: number;
+    embeddings?: number;
+    doc_chunks?: number;
+    icb_records?: number;
+    icb_forecast?: number;
     users: number;
-    organizations: number;
+    organizations?: number;
     audit_entries: number;
     unread_notifications: number;
   };
   pipeline: Record<string, number>;
   ai: {
     embedding_coverage: number;
-    rag_chunks: number;
-    model: string;
-    vector_dim: number;
+    rag_chunks?: number;
+    model?: string;
+    vector_dim?: number;
+    llm_calls_today?: number;
+    avg_latency?: string;
+  };
+  system?: {
+    cpu: number;
+    memory: number;
+    disk: number;
   };
 }
 
@@ -53,9 +61,39 @@ export function SystemPage() {
         authFetch('/api/v2/system/db-stats'),
         authFetch('/api/v2/system/routes'),
       ]);
-      setMetrics(m);
-      setTables(Array.isArray(t) ? t : []);
-      setRouteCount(r?.total_routes || 0);
+      // Remap API schema → Metrics interface
+      const rawM: any = m;
+      const remapped: Metrics = {
+        platform: 'BudOS',
+        version: '4.0',
+        uptime: rawM.uptime_s != null ? `${Math.floor(rawM.uptime_s / 3600)}h ${Math.floor((rawM.uptime_s % 3600) / 60)}m` : '—',
+        database: {
+          tenders: 0,
+          users: 0,
+          unread_notifications: 0,
+          audit_entries: 0,
+          icb_records: 0,
+          size: rawM.database?.size != null ? `${rawM.database.size} MB` : '—',
+        },
+        pipeline: { active: 0, success_rate: 0 },
+        ai: { embedding_coverage: 0 },
+        system: {
+          cpu: rawM.cpu_percent ?? 0,
+          memory: rawM.memory?.percent ?? 0,
+          disk: rawM.disk?.percent ?? 0,
+        },
+      };
+      setMetrics(remapped);
+      // db-stats: { db_size, top_tables: [{name, rows, size}] }
+      const rawT: any = t;
+      const topTables = rawT?.top_tables ?? (Array.isArray(rawT) ? rawT : []);
+      setTables(topTables.map((tbl: any) => ({
+        table: tbl.name ?? tbl.table ?? '—',
+        rows: tbl.rows ?? 0,
+        size: tbl.size ?? '—',
+        size_bytes: 0,
+      })));
+      setRouteCount(r?.total_routes || r?.count || 0);
     } catch {}
     setLoading(false);
   }, [authFetch]);
