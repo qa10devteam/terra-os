@@ -103,13 +103,12 @@ export default function BudOSApp() {
     if (!isAuthenticated) router.replace('/login');
   }, [isAuthenticated, router]);
 
-  // Onboarding
+  // Onboarding — show based on localStorage flag (not org_id, so demo users see it too)
   useEffect(() => {
-    if (isAuthenticated && user && !user.org_id) {
-      const dismissed = localStorage.getItem('terra-onboarding-dismissed');
-      if (!dismissed) setShowOnboarding(true);
-    }
-  }, [isAuthenticated, user]);
+    if (!isAuthenticated) return;
+    const dismissed = localStorage.getItem('budos-onboarding-dismissed');
+    if (!dismissed) setShowOnboarding(true);
+  }, [isAuthenticated]);
 
   // ⌘K command palette
   useEffect(() => {
@@ -154,8 +153,8 @@ export default function BudOSApp() {
       <ToastContainer />
       {showOnboarding && (
         <OnboardingWizard onComplete={() => {
+          localStorage.setItem('budos-onboarding-dismissed', '1');
           setShowOnboarding(false);
-          localStorage.setItem('terra-onboarding-dismissed', '1');
         }} />
       )}
     </ErrorBoundary>

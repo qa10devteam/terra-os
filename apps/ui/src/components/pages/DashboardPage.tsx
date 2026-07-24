@@ -431,15 +431,28 @@ export function DashboardPage() {
 
   const fetchDashboard = useCallback(async () => {
     try {
-      const data = await authFetch('/api/v2/dashboard/stats') as DashboardKPI;
-      setKpi(data);
-    } catch (err) {
-      try {
-        const fallback = await authFetch('/api/v2/tenders/stats') as DashboardKPI;
-        setKpi(fallback);
-      } catch {
-        console.error('Dashboard KPI fetch failed:', err);
+      // /api/v2/dashboard returns active_tenders, pipeline_value, win_rate_mtd, avg_deal_size, new_today
+      const data = await authFetch('/api/v2/dashboard') as DashboardKPI;
+      if (data && typeof data === 'object' && 'active_tenders' in data) {
+        setKpi(data as DashboardKPI);
+        return;
       }
+      // fallback: /api/v2/dashboard/stats returns total_tenders — map it
+      const stats = await authFetch('/api/v2/dashboard/stats') as Record<string, unknown>;
+      if (stats && typeof stats === 'object') {
+        setKpi({
+          active_tenders: (stats.total_tenders as number) ?? 0,
+          pipeline_value:  (stats.pipeline_value as number) ?? 0,
+          win_rate_mtd:    (stats.avg_score as number) != null
+                             ? Math.round((stats.avg_score as number) * 100)
+                             : 0,
+          avg_deal_size:   0,
+          new_today:       (stats.new_today as number) ?? 0,
+          total_value:     (stats.pipeline_value as number) ?? 0,
+        });
+      }
+    } catch (err) {
+      console.error('Dashboard KPI fetch failed:', err);
     }
   }, [authFetch]);
 
@@ -447,8 +460,19 @@ export function DashboardPage() {
     try {
       const data = await authFetch(
         '/api/v2/tenders?sort=match_score&limit=5&deadline_days=14',
-      ) as DashboardTender[];
-      setTenders(Array.isArray(data) ? data : []);
+      ) as { items?: Record<string, unknown>[]; total?: number } | Record<string, unknown>[];
+      // API returns { items, total } pagination envelope
+      const raw = Array.isArray(data) ? data : ((data as { items?: Record<string, unknown>[] }).items ?? []);
+      // Normalize API fields to DashboardTender shape
+      const items: DashboardTender[] = raw.map((t) => ({
+        id:          String(t.id ?? ''),
+        title:       String(t.title ?? ''),
+        buyer:       String(t.buyer ?? t.org_name ?? '—'),
+        deadline:    String(t.deadline_at ?? t.deadline ?? ''),
+        match_score: Number(t.match_score ?? t.go_score ?? 0.5),
+        value:       Number(t.value_pln ?? t.value_max ?? t.value_min ?? 0),
+      }));
+      setTenders(items);
     } catch (err) {
       console.error('Tenders fetch failed:', err);
     }

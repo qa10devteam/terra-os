@@ -9,11 +9,10 @@ Faza 8.02:
 """
 from __future__ import annotations
 
-import hashlib
 import json
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import httpx
@@ -23,13 +22,18 @@ from terra_db.session import get_engine
 
 logger = logging.getLogger(__name__)
 
-BZP_API = "https://ezamowienia.gov.pl/mo-client-board/api/v1"
+# Correct BZP API — mo-board (not mo-client-board which serves the Angular SPA)
+BZP_API = "https://ezamowienia.gov.pl/mo-board/api/v1/notice"
 
 
 async def sync_bzp_batch(max_pages: int = 3) -> dict[str, Any]:
     """Fetch latest BZP notices, dedup, insert new ones, trigger embedding."""
     engine = get_engine()
     stats = {"fetched": 0, "inserted": 0, "skipped": 0, "errors": 0}
+
+    # Fetch notices published today and yesterday
+    date_from = (datetime.now(timezone.utc) - timedelta(days=1)).strftime("%Y-%m-%dT00:00:00")
+    date_to   = datetime.now(timezone.utc).strftime("%Y-%m-%dT23:59:59")
 
     try:
         async with httpx.AsyncClient(
@@ -41,20 +45,34 @@ async def sync_bzp_batch(max_pages: int = 3) -> dict[str, Any]:
             for page in range(max_pages):
                 try:
                     resp = await client.get(
-                        f"{BZP_API}/notices/search",
+                        BZP_API,
                         params={
-                            "pageNumber": page,
+                            "NoticeType": "ContractNotice",
+                            "PublicationDateFrom": date_from,
+                            "PublicationDateTo": date_to,
                             "pageSize": 20,
-                            "sortBy": "publicationDate",
-                            "sortOrder": "DESC",
-                            "noticeType": "ZP400PodstawaBzp",
+                            "pageNumber": page,
                         },
                     )
                     if resp.status_code != 200:
+                        logger.warning("source=bzp_sync page=%d http=%d", page, resp.status_code)
+                        break
+
+                    # Guard against empty/HTML responses (endpoint sometimes returns SPA shell)
+                    content_type = resp.headers.get("content-type", "")
+                    raw_text = resp.text.strip()
+                    if not raw_text or "text/html" in content_type or raw_text.startswith("<"):
+                        logger.warning(
+                            "source=bzp_sync page=%d got non-JSON response (ct=%s, len=%d) — skipping",
+                            page, content_type, len(raw_text),
+                        )
                         break
 
                     data = resp.json()
-                    notices = data.get("items") or data.get("notifications") or data if isinstance(data, list) else []
+                    # mo-board returns a plain list
+                    notices = data if isinstance(data, list) else (
+                        data.get("items") or data.get("notifications") or []
+                    )
                     if not notices:
                         break
 
@@ -83,20 +101,20 @@ async def sync_bzp_batch(max_pages: int = 3) -> dict[str, Any]:
 
 def _upsert_tender(engine, notice: dict) -> str:
     """Insert tender if not exists. Returns 'inserted' or 'skipped'."""
-    # Extract fields — BZP API varies in field names
+    # mo-board API field names: noticeNumber, bzpNumber, orderObject, organizationName,
+    # cpvCode, submittingOffersDate, publicationDate, organizationProvince
     notice_number = (
-        notice.get("numerOgloszenia") or
         notice.get("noticeNumber") or
+        notice.get("bzpNumber") or
+        notice.get("numerOgloszenia") or
         notice.get("number") or
         str(notice.get("id") or "")
     )
     if not notice_number:
         return "skipped"
 
-    # Dedup hash
-    dedup_hash = hashlib.sha256(notice_number.encode()).hexdigest()[:16]
-
     title = (
+        notice.get("orderObject") or
         notice.get("nazwaZamowienia") or
         notice.get("name") or
         notice.get("title") or
@@ -104,27 +122,26 @@ def _upsert_tender(engine, notice: dict) -> str:
     )[:500]
 
     buyer = (
-        notice.get("zamawiajacy", {}).get("nazwa") if isinstance(notice.get("zamawiajacy"), dict)
-        else notice.get("buyerName") or notice.get("buyer") or ""
+        notice.get("organizationName") or
+        (notice.get("zamawiajacy", {}).get("nazwa") if isinstance(notice.get("zamawiajacy"), dict) else None) or
+        notice.get("buyerName") or
+        notice.get("buyer") or
+        ""
     )
 
-    value_str = (
-        notice.get("wartoscZamowienia") or
-        notice.get("estimatedValue") or
-        notice.get("value") or "0"
-    )
-    try:
-        value_pln = float(str(value_str).replace(",", ".").replace(" ", ""))
-    except (ValueError, TypeError):
-        value_pln = 0.0
+    cpv = (notice.get("cpvCode") or notice.get("cpv") or notice.get("mainCpv") or "")[:200]
 
-    cpv = notice.get("cpv") or notice.get("mainCpv") or ""
+    # Deadline from submittingOffersDate
+    deadline_str = notice.get("submittingOffersDate") or notice.get("deadline") or None
 
     source_url = (
         notice.get("linkDoOgloszenia") or
         notice.get("url") or
-        f"https://ezamowienia.gov.pl/mo-client-board/bzp/notice-details/{notice_number}"
+        f"https://ezamowienia.gov.pl/mo-client/tenders/{notice.get('tenderId', notice_number)}"
     )
+
+    # Value is not directly in mo-board ContractNotice — default 0
+    value_pln = 0.0
 
     try:
         with engine.begin() as conn:
@@ -136,17 +153,7 @@ def _upsert_tender(engine, notice: dict) -> str:
             if exists:
                 return "skipped"
 
-            # Insert
-            conn.execute(sa.text("""
-                INSERT INTO tender (
-                    id, title, buyer, value_pln, cpv, source_id, source_url,
-                    status, pipeline_status, created_at, updated_at
-                ) VALUES (
-                    :id, :title, :buyer, :value, :cpv, :sid, :url,
-                    'active', 'new', NOW(), NOW()
-                )
-                ON CONFLICT (source_id) DO NOTHING
-            """), {
+            row = {
                 "id": str(uuid.uuid4()),
                 "title": title,
                 "buyer": buyer[:200] if buyer else "",
@@ -154,7 +161,30 @@ def _upsert_tender(engine, notice: dict) -> str:
                 "cpv": cpv[:20] if cpv else "",
                 "sid": notice_number,
                 "url": source_url[:500] if source_url else "",
-            })
+            }
+
+            if deadline_str:
+                conn.execute(sa.text("""
+                    INSERT INTO tender (
+                        id, title, buyer, value_pln, cpv, source_id, source_url,
+                        status, pipeline_status, deadline_at, created_at, updated_at
+                    ) VALUES (
+                        :id, :title, :buyer, :value, :cpv, :sid, :url,
+                        'active', 'new', :deadline, NOW(), NOW()
+                    )
+                    ON CONFLICT (source_id) DO NOTHING
+                """), {**row, "deadline": deadline_str})
+            else:
+                conn.execute(sa.text("""
+                    INSERT INTO tender (
+                        id, title, buyer, value_pln, cpv, source_id, source_url,
+                        status, pipeline_status, created_at, updated_at
+                    ) VALUES (
+                        :id, :title, :buyer, :value, :cpv, :sid, :url,
+                        'active', 'new', NOW(), NOW()
+                    )
+                    ON CONFLICT (source_id) DO NOTHING
+                """), row)
 
             return "inserted"
 

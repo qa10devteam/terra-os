@@ -91,6 +91,7 @@ class DuplicateRef(BaseModel):
 
 class TenderStatsResponse(BaseModel):
     total: int
+    total_active: int = 0         # new+matched+watching+analyzing+estimated
     by_source: dict[str, int]
     by_status: dict[str, int]
     duplicate_pairs: int
@@ -429,6 +430,7 @@ def tender_stats(user: AuthUser) -> TenderStatsResponse:
 
     return TenderStatsResponse(
         total=total,
+        total_active=sum(by_status.get(s, 0) for s in ('new', 'matched', 'watching', 'analyzing', 'estimated')),
         by_source={**{s: 0 for s in VALID_SOURCES}, **by_source},
         by_status=by_status,
         duplicate_pairs=int(dup_count),

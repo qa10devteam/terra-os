@@ -30,16 +30,20 @@ interface TenderItem {
   published_at?: string | null;
 }
 
-// Backend shape from GET /api/v2/tenders
+// Backend shape from GET /api/v2/tenders  (actual API response fields)
 interface BackendTenderItem {
   id: number | string;
   title: string | null;
-  org_name: string | null;
-  value_min: number | null;
-  value_max: number | null;
-  deadline: string | null;
-  cpv_code: string | null;
-  province: string | null;
+  buyer: string | null;          // API returns buyer (not org_name)
+  value_pln: number | null;      // API actual field
+  value_min: number | null;      // fallback
+  value_max: number | null;      // fallback
+  deadline_at: string | null;    // API actual field
+  deadline: string | null;       // fallback
+  cpv: string[] | null;          // API returns array (not cpv_code)
+  cpv_code: string | null;       // fallback
+  voivodeship: string | null;    // API actual field
+  province: string | null;       // fallback
   source: string | null;
   go_score: number | null;
   match_score: number | null;
@@ -71,15 +75,16 @@ const COL_COLOR_MAP: Record<string, string> = Object.fromEntries(
 // ── Map backend shape → TenderItem ───────────────────────────────────────────
 
 function mapBackendTender(t: BackendTenderItem): TenderItem {
+  const cpvArr = Array.isArray(t.cpv) ? t.cpv : (t.cpv_code ? [t.cpv_code] : null);
   return {
     id:              String(t.id),
     title:           t.title ?? '',
-    buyer:           t.org_name ?? null,
-    cpv:             t.cpv_code ? [t.cpv_code] : null,
-    value_pln:       t.value_max ?? t.value_min ?? null,
+    buyer:           t.buyer ?? null,
+    cpv:             cpvArr,
+    value_pln:       t.value_pln ?? t.value_max ?? t.value_min ?? null,
     match_score:     t.go_score ?? t.match_score ?? null,
     pipeline_status: t.pipeline_status ?? 'scouting',
-    deadline_at:     t.deadline ?? null,
+    deadline_at:     t.deadline_at ?? t.deadline ?? null,
   };
 }
 

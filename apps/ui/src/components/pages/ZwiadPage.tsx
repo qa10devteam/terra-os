@@ -30,16 +30,20 @@ interface Przetarg {
   branza: string;
 }
 
-// Backend shape from GET /api/v2/tenders
+// Backend shape from GET /api/v2/tenders  (actual API response fields)
 interface BackendTender {
   id: number | string;
   title: string | null;
-  org_name: string | null;
-  value_min: number | null;
-  value_max: number | null;
-  deadline: string | null;
-  cpv_code: string | null;
-  province: string | null;
+  buyer: string | null;          // was: org_name
+  value_pln: number | null;      // was: value_min/value_max (missing)
+  value_min: number | null;      // fallback
+  value_max: number | null;      // fallback
+  deadline_at: string | null;    // was: deadline
+  deadline: string | null;       // fallback
+  cpv: string[] | null;          // was: cpv_code (now array)
+  cpv_code: string | null;       // fallback
+  voivodeship: string | null;    // was: province
+  province: string | null;       // fallback
   source: string | null;
   go_score: number | null;
   match_score: number | null;
@@ -84,19 +88,26 @@ function mapBackendToPrezetarg(t: BackendTender): Przetarg {
   const rawScore = t.go_score ?? t.match_score ?? 0.5;
   const verdict: 'GO' | 'UWAGA' | 'NO-GO' =
     rawScore >= 0.65 ? 'GO' : rawScore >= 0.35 ? 'UWAGA' : 'NO-GO';
-  const valueSortKey = t.value_max ?? t.value_min ?? 0;
+  // Use value_pln first (actual API field), fallback to value_max/min
+  const valueSortKey = t.value_pln ?? t.value_max ?? t.value_min ?? 0;
+  // cpv is now an array from API
+  const cpvCode = Array.isArray(t.cpv) ? (t.cpv[0] ?? null) : (t.cpv_code ?? null);
+  // deadline_at is the real field, deadline is fallback
+  const deadlineStr = t.deadline_at ?? t.deadline ?? '';
+  // voivodeship is the real field, province is fallback
+  const voiv = t.voivodeship ?? t.province ?? null;
 
   return {
     id:           t.id,
     title:        t.title ?? '',
-    buyer:        t.org_name ?? '—',
-    deadline:     t.deadline ?? '',
+    buyer:        t.buyer ?? '—',
+    deadline:     deadlineStr,
     value:        fmtValueStr(valueSortKey),
     valueSortKey,
     score:        Math.round(rawScore * 100),
     verdict,
-    wojewodztwo:  toProvinceLabel(t.province),
-    branza:       cpvToBranza(t.cpv_code),
+    wojewodztwo:  toProvinceLabel(voiv),
+    branza:       cpvToBranza(cpvCode),
   };
 }
 

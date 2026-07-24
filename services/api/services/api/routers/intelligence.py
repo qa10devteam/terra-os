@@ -5,7 +5,9 @@ Expose historical_tenders intelligence: similar tenders, benchmarks, buyer profi
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
 from ..auth.deps import get_current_user
@@ -79,3 +81,105 @@ async def seasonality(cpv_prefix: str, _user=Depends(get_current_user)):
     engine = get_engine()
     result = _seasonality(engine, cpv_prefix)
     return result
+
+
+# ---------------------------------------------------------------------------
+# Historical Search — full-text + filter search across 1.4M historical_tenders
+# ---------------------------------------------------------------------------
+
+@router.get("/historical-search")
+async def historical_search(
+    q: str | None = Query(None, description="Full-text search query (Polish)"),
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    cpv_prefix: str | None = Query(None, description="CPV prefix filter, e.g. '45'"),
+    province: str | None = Query(None, description="Province / voivodeship filter"),
+    _user=Depends(get_current_user),
+) -> dict[str, Any]:
+    """
+    Search 1.4M historical tenders with optional FTS, CPV prefix and province filters.
+    Returns {items: [...], total: int}.
+    """
+    import os
+    import psycopg2
+    import psycopg2.extras
+
+    db_host = os.environ.get("DB_HOST", "127.0.0.1")
+    db_port = os.environ.get("DB_PORT", "5432")
+    db_name = os.environ.get("DB_NAME", "terraos")
+    db_user = os.environ.get("DB_USER", "terraos")
+    db_password = os.environ.get("DB_PASSWORD", "terra_dev_2026")
+
+    where_clauses: list[str] = []
+    params: list[Any] = []
+
+    if q:
+        where_clauses.append("title_tsv @@ plainto_tsquery('simple', %s)")
+        params.append(q)
+
+    if cpv_prefix:
+        where_clauses.append("cpv_code LIKE %s")
+        params.append(cpv_prefix + "%")
+
+    if province:
+        where_clauses.append("province ILIKE %s")
+        params.append(province)
+
+    where_sql = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
+
+    count_sql = f"SELECT COUNT(*) FROM historical_tenders {where_sql}"
+    data_sql = f"""
+        SELECT
+            id,
+            title,
+            buyer,
+            estimated_value,
+            submitting_offers_date,
+            province,
+            cpv_code
+        FROM historical_tenders
+        {where_sql}
+        ORDER BY date DESC NULLS LAST
+        LIMIT %s OFFSET %s
+    """
+
+    try:
+        conn = psycopg2.connect(
+            host=db_host,
+            port=int(db_port),
+            dbname=db_name,
+            user=db_user,
+            password=db_password,
+        )
+        try:
+            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                cur.execute(count_sql, params)
+                row = cur.fetchone()
+                total: int = row["count"] if row else 0  # type: ignore[index]
+
+            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                cur.execute(data_sql, params + [limit, offset])
+                rows = cur.fetchall()
+        finally:
+            conn.close()
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"DB error: {exc}") from exc
+
+    items = [
+        {
+            "id": r["id"],
+            "title": r["title"],
+            "buyer": r["buyer"],
+            "value_pln": float(r["estimated_value"]) if r["estimated_value"] is not None else None,
+            "deadline": r["submitting_offers_date"],
+            "province": r["province"],
+            "cpv_code": r["cpv_code"],
+            "source": "bzp",
+            "match_score": 0.75,
+            "status": "scouting",
+        }
+        for r in rows
+    ]
+
+    return {"items": items, "total": total}
+
