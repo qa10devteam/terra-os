@@ -67,6 +67,7 @@ class TenderSummary(BaseModel):
     url: str | None
     status: str
     match_score: float | None
+    pipeline_status: str | None = None
     is_duplicate: bool
     master_id: str | None          # set when this tender is a duplicate
     created_at: str
@@ -141,6 +142,7 @@ def _row_to_summary(row: Any, is_dup_set: set[str], dup_masters: dict[str, str])
         url=row.url,
         status=row.status,
         match_score=float(row.match_score) if row.match_score is not None else None,
+        pipeline_status=row.pipeline_status if hasattr(row, 'pipeline_status') else None,
         is_duplicate=rid in is_dup_set,
         master_id=dup_masters.get(rid),
         created_at=row.created_at.isoformat() if row.created_at else "",
@@ -312,7 +314,7 @@ def list_tenders(
             sa.text(f"""
                 SELECT t.id, t.title, t.buyer, t.source::text, t.cpv, t.voivodeship,
                        t.value_pln, t.deadline_at, t.published_at, t.url, t.status::text,
-                       t.match_score, t.created_at
+                       t.match_score, t.created_at, t.pipeline_status::text
                 FROM tender t
                 WHERE {where} {cursor_sql}
                 ORDER BY {order_clause}
@@ -612,7 +614,7 @@ def semantic_search_tenders(
                         SELECT t.id, t.title, t.buyer, t.source::text, t.cpv,
                                t.voivodeship, t.value_pln, t.deadline_at,
                                t.published_at, t.url, t.status::text,
-                               t.match_score, t.created_at
+                               t.match_score, t.created_at, t.pipeline_status::text
                         FROM tender t
                         WHERE {where} AND {fts_condition}
                         ORDER BY {fts_rank} DESC, t.created_at DESC
@@ -637,7 +639,7 @@ def semantic_search_tenders(
                         SELECT t.id, t.title, t.buyer, t.source::text, t.cpv,
                                t.voivodeship, t.value_pln, t.deadline_at,
                                t.published_at, t.url, t.status::text,
-                               t.match_score, t.created_at
+                               t.match_score, t.created_at, t.pipeline_status::text
                         FROM tender t
                         WHERE {where} AND {ilike_condition}
                         ORDER BY t.created_at DESC
