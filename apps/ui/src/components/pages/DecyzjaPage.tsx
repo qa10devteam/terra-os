@@ -596,7 +596,7 @@ export function DecyzjaPage() {
               {!analysisLoading && compare && (
                 <GlassCard className="p-4 mt-3">
                   <p className="section-label mb-3">Porównanie kosztorysów</p>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     <div>
                       <p className="text-slate-600 text-xs mb-1">Dokumentacja</p>
                       <p className="text-slate-200 text-sm font-mono font-semibold">{fmtPLN(compare.doc_total)}</p>

@@ -64,7 +64,7 @@ function IntelPanel({ nip, onClose }: { nip: string; onClose: () => void }) {
         <div className="p-6 space-y-6">
 
           {/* KPI row */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             {[
               { label: 'Wygrane', value: (data.total_wins ?? 0).toLocaleString('pl-PL'), color: '#10b981' },
               { label: 'Win rate', value: `${((data.win_rate ?? 0) * 100).toFixed(0)}%`, color: '#3b82f6' },
@@ -309,7 +309,7 @@ function CompetitorCard({
           </div>
           <div className="text-xs text-slate-500 font-mono mb-3">{c.competitor_nip}</div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
             <div>
               <div className="text-xs text-slate-500 mb-0.5">Wygrane</div>
               <div className="text-base font-bold text-slate-100">{c.total_wins ?? '—'}</div>
@@ -411,7 +411,7 @@ export function CompetitorPage() {
 
           {/* ── Stats strip ──────────────────────────────────────────────── */}
           {!loading && data.length > 0 && (
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {[
                 { label: 'Obserwowane firmy', value: data.length, icon: Users, color: '#10b981' },
                 { label: 'Łączne wygrane', value: totalWins.toLocaleString('pl-PL'), icon: Award, color: '#3b82f6' },

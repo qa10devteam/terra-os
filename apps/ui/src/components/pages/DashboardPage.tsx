@@ -630,7 +630,7 @@ export function DashboardPage() {
           icon={Zap}
           label="Wysokie dopasowanie"
           value={kpi?.high_score_count != null ? String(kpi.high_score_count) : '—'}
-          trend={null}
+          trend={0}
           trendLabel="score > 70%"
           delay={0.08}
         />
@@ -638,7 +638,7 @@ export function DashboardPage() {
           icon={Target}
           label="Średnie GO"
           value={`${animWinRate}%`}
-          trend={null}
+          trend={0}
           trendLabel="skuteczność ofert"
           delay={0.16}
         />
@@ -646,7 +646,7 @@ export function DashboardPage() {
           icon={FileText}
           label="Kosztorysy"
           value={kpi?.kosztorysy_count != null ? String(kpi.kosztorysy_count) : '—'}
-          trend={null}
+          trend={0}
           trendLabel="łącznie w systemie"
           delay={0.24}
         />

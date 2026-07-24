@@ -104,7 +104,7 @@ export default function BidIntelligencePage() {
       {/* Loading skeletons */}
       {loading && (
         <div className="space-y-4">
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="h-24 rounded-xl bg-ink-900/50 animate-shimmer" />
             ))}

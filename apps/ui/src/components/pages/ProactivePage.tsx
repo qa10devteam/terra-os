@@ -182,7 +182,7 @@ export function ProactivePage() {
       {/* Portfolio */}
       {tab === 'portfolio' && portfolio && (
         <div className="space-y-4">
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
               { label: 'Expected Value', value: formatPLN(portfolio.metrics.total_expected_value), icon: TrendingUp },
               { label: 'Effort', value: `${(portfolio.metrics.total_effort_hours ?? 0).toFixed(0)}h`, icon: Clock },

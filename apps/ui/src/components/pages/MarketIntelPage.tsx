@@ -336,7 +336,7 @@ export function MarketIntelPage() {
               {seasonalData.length === 0 ? (
                 <p className="text-slate-400">Brak danych sezonowych</p>
               ) : (
-                <div className="grid grid-cols-12 gap-2">
+                <div className="overflow-x-auto"><div className="grid grid-cols-12 gap-2 min-w-[600px]">
                   {seasonalData.map((m, i) => {
                     const maxIdx = Math.max(...seasonalData.map(s => s.seasonal_index));
                     const height = (m.seasonal_index / (maxIdx || 1)) * 120;
@@ -357,7 +357,7 @@ export function MarketIntelPage() {
                       </div>
                     );
                   })}
-                </div>
+                </div></div>
               )}
             </GlassCard>
           )}

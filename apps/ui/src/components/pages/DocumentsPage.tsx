@@ -352,7 +352,7 @@ export function DocumentsPage() {
                     <h3 className="text-slate-100 font-semibold mb-3">Kosztorys wstępny</h3>
 
                     {/* Summary */}
-                    <div className="grid grid-cols-3 gap-3 mb-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-4">
                       <div className="bg-slate-900/60 rounded-xl p-3 text-center">
                         <div className="text-slate-500 text-xs mb-1">Minimum</div>
                         <div className="text-slate-100 font-bold text-sm">{formatPLN(estimate.total.min_pln)}</div>

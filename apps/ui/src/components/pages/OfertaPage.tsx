@@ -544,7 +544,7 @@ function Step2Kosztorys({
   return (
     <div className="space-y-4">
       {/* Summary strip */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
         {[
           { label: 'Netto', value: fmtPLN(netTotal), color: 'text-slate-200' },
           { label: `VAT ${vatPct}%`, value: fmtPLN(vatTotal), color: 'text-warn' },

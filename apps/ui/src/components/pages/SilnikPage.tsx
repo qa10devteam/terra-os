@@ -384,7 +384,7 @@ export function SilnikPage() {
     return (
       <div className="mt-4 pt-4 border-t border-ink-800">
         <p className="text-xs text-slate-500 mb-3 font-medium">Przykładowy scoring</p>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {previewCards.map((card) => (
             <div key={card.label} className={`rounded-xl px-3 py-2.5 ${card.bg} border ${card.border} text-center`}>
               <p className="text-[10px] text-slate-400 mb-0.5">{card.label}</p>

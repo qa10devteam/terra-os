@@ -591,7 +591,7 @@ function DashboardTab() {
           <h3 className="text-sm font-semibold text-slate-100 mb-4 flex items-center gap-2">
             <BarChart2 size={16} className="text-indigo" /> Ostatnie kwartały wg typu
           </h3>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {(['R', 'M', 'S'] as const).map(t => (
               <div key={t} className="bg-ink-900/60 rounded-md p-4 border border-ink-800 text-center">
                 <div className="text-2xl font-bold text-indigo mb-1">{t}</div>

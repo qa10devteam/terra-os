@@ -301,7 +301,7 @@ export function PogodaPage() {
         {/* First 7 days */}
         <div>
           <h3 className="section-label mb-3">Najbliższe 7 dni</h3>
-          <div className="grid grid-cols-7 gap-2">
+          <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
             {loading
               ? Array.from({ length: 7 }).map((_, i) => <SkeletonCard key={i} />)
               : firstRow.length > 0
@@ -321,7 +321,7 @@ export function PogodaPage() {
         {(secondRow.length > 0 || loading) && (
           <div>
             <h3 className="section-label mb-3">Kolejne 7 dni</h3>
-            <div className="grid grid-cols-7 gap-2">
+            <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
               {loading
                 ? Array.from({ length: 7 }).map((_, i) => <SkeletonCard key={i} />)
                 : secondRow.map(day => <DayCard key={day.date} day={day} size="small" selectedDay={selectedDay} setSelectedDay={setSelectedDay} />)
@@ -360,7 +360,7 @@ export function PogodaPage() {
                         {rc.icon} {risk.charAt(0).toUpperCase() + risk.slice(1)} ryzyko budowy
                       </span>
                     </div>
-                    <div className="grid grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       <div className="bg-ink-800/40 rounded-xl p-3 text-center">
                         <Thermometer className="w-4 h-4 text-indigo-400 mx-auto mb-1" />
                         <p className="text-indigo-400 font-mono text-lg">{(selectedDay.temp_min ?? 0).toFixed(1)}°C</p>

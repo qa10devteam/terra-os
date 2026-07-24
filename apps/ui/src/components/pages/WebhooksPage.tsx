@@ -52,7 +52,7 @@ export default function WebhooksPage() {
   const createWebhook = async () => {
     try {
       const data = await authFetch(`/api/v2/webhooks`, {
-        method: POST,
+        method: 'POST',
         body: JSON.stringify(form),
       });
       setWebhooks((prev) => [...prev, data]);

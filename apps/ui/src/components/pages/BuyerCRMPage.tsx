@@ -531,7 +531,7 @@ function BuyerProfilePanel({
 
       <div className="flex-1 overflow-y-auto">
         {/* KPI strip */}
-        <div className="grid grid-cols-3 gap-3 px-5 pt-4 pb-3 border-b border-ink-800">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 px-5 pt-4 pb-3 border-b border-ink-800">
           {[
             { label: 'Przetargi',  value: item.total_tenders != null ? String(item.total_tenders) : '—', color: '#3b82f6' },
             { label: 'Wartość',    value: fmtMln((item.total_value ?? 0) / 1_000_000), color: '#10b981' },
